@@ -1,0 +1,15 @@
+{
+  "_comment": "PROPOSED sidecar shape for issue #13 sections 2 and 5. Not a contract type; pending Dev 1 sign-off.",
+  "vid-desk-01": {
+    "frames": [{"frame_index": 0, "timestamp_s": 0.0, "mask_url": null, "bbox_px": null}],
+    "primary_frame_index": 0,
+    "dimension_provenance": "estimated",
+    "is_proxy": true
+  },
+  "vid-chair-01": {
+    "frames": [{"frame_index": 0, "timestamp_s": 0.0, "mask_url": null, "bbox_px": null}],
+    "primary_frame_index": 0,
+    "dimension_provenance": "estimated",
+    "is_proxy": true
+  }
+}
