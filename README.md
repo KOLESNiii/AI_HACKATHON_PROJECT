@@ -55,15 +55,37 @@ Competitor research across **IKEA Kreativ, Decato, PromptDecor, RoomCraft, Stage
 
 ## 4. Quickstart (Local Development)
 
+Install Bun 1.3.2+ and uv. uv provisions Python 3.11 from `.python-version`.
+Run all commands from the repository root.
+
 ```bash
-# 1. Start Spatial Engine (Port 8002)
-cd services/spatial_engine && uvicorn main:app --reload --port 8002
+bun run setup
+cp .env.example .env
+```
 
-# 2. Start Reconstruction Service (Port 8001)
-cd services/reconstruction && uvicorn main:app --reload --port 8001
+Start each component in a separate terminal:
 
-# 3. Start Generative Media & Search Service (Port 8003)
-cd services/media_gen && uvicorn main:app --reload --port 8003
+```bash
+bun run dev:reconstruction # http://localhost:8001/docs
+bun run dev:spatial        # http://localhost:8002/docs
+bun run dev:media          # http://localhost:8003/docs
+bun run dev               # http://localhost:5173
+```
 
-# 4. Start Frontend (Port 5173)
-cd frontend && npm install && npm run dev
+The frontend displays live service connection status. Only health endpoints are
+implemented; room reconstruction, auditing, search, and media generation remain
+work for their respective contributors. No provider credentials are needed for health checks.
+
+```bash
+bun run build             # TypeScript check + production frontend bundle
+bun run check             # Frontend lint/format/types + Python lint/format/types/tests
+```
+
+For smaller Python installs, use `uv sync --extra spatial`, `--extra reconstruction`,
+or `--extra media` instead of `--all-extras`. `uv sync` installs the common API and
+development tools. Frontend dependencies and lockfile live in `frontend/`;
+Python dependencies and `uv.lock` live at the root. Use `bun add --cwd frontend`
+for frontend libraries and `uv add` for Python libraries, coordinating shared manifest edits.
+
+See [architecture](docs/architecture.md) for ownership and API boundaries and
+[decisions](docs/decisions.md) for bootstrap trade-offs.

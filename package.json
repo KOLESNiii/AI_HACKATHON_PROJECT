@@ -1,0 +1,14 @@
+{
+  "name": "spaceshift",
+  "private": true,
+  "packageManager": "bun@1.3.2",
+  "scripts": {
+    "dev": "bun run --cwd frontend dev",
+    "dev:reconstruction": "uv run --extra reconstruction uvicorn services.reconstruction.main:app --reload --port 8001 --env-file .env",
+    "dev:spatial": "uv run --extra spatial uvicorn services.spatial_engine.main:app --reload --port 8002 --env-file .env",
+    "dev:media": "uv run --extra media uvicorn services.media_gen.main:app --reload --port 8003 --env-file .env",
+    "build": "bun run --cwd frontend build",
+    "check": "bun run --cwd frontend lint && bun run --cwd frontend format:check && bun run --cwd frontend typecheck && uv run ruff check services tests && uv run ruff format --check services tests && uv run mypy && uv run pytest",
+    "setup": "bun install --cwd frontend && uv sync --all-extras"
+  }
+}

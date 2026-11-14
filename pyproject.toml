@@ -1,0 +1,30 @@
+[project]
+name = "spaceshift"
+version = "0.1.0"
+description = "SpaceShift Python services"
+requires-python = ">=3.11"
+dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1", "pydantic>=2.10,<3", "httpx>=0.28,<1", "python-multipart>=0.0.20,<1"]
+
+[project.optional-dependencies]
+spatial = ["shapely>=2,<3", "numpy>=2,<3", "scipy>=1.15,<2"]
+reconstruction = ["opencv-python-headless>=4.10,<5", "trimesh>=4,<5", "fal-client>=0.5,<1"]
+media = ["fal-client>=0.5,<1"]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1", "mypy>=1.15,<2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["services"]
+strict = true
