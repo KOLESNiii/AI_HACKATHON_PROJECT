@@ -12,7 +12,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from .mask_providers import FalSamProvider, MaskProvider
+from .mask_providers import FalSamProvider, MaskError, MaskProvider
 from .segmentation import read_mask, segment_furniture
 from .selection import object_evidence
 from .selection_models import SegmentationResult
@@ -45,6 +45,8 @@ def write_report(result: SegmentationResult, data_dir: Path, output: Path) -> No
                 [f"evidence.json covers source {best.source_id[:12]} only; see the result.", ""]
             )
         for number, mask in enumerate(m for m in obj.masks if obj.mask_for(m.frame_key) == m):
+            if not all((data_dir / path).is_file() for path in (mask.mask_path, mask.crop_path)):
+                continue  # A failed repair is already listed under missing masks.
             frame = frames[mask.frame_key]
             image = read_image(data_dir, frame)
             pixels = read_mask(data_dir, mask.mask_path)
@@ -89,7 +91,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--object-id", action="append", help="limit to this item; repeat for several"
     )
-    parser.add_argument("--replace", action="store_true", help="segment stored masks again")
+    parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="segment stored masks again; existing SAM 3 masks require --live",
+    )
     parser.add_argument("--live", action="store_true", help="upload frames to fal.ai SAM 3")
     parser.add_argument(
         "--refresh", default="", help="explicit cache namespace for paid re-segmentation"
@@ -126,6 +132,9 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0 if result.complete else 2
+    except MaskError as exc:
+        print(f"Segmentation failed: {exc}")
+        return 1
     except ImportError:
         print("Live segmentation needs fal-client; install the reconstruction Python extra.")
         return 1

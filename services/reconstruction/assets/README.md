@@ -265,7 +265,9 @@ Per item and view, stored under `data_dir` and recorded on the item in the regis
 | `area_px`, `method`, `score` | Mask area; `sam3` or `grabcut`; SAM's confidence, `null` for GrabCut. |
 | `box` | The #14 sighting box used as the prompt. If the sighting box later changes, the mask is stale and is redone. |
 
-File names contain a digest of the mask, so a file never changes once written.
+File names contain a digest of the mask, so a file never changes once written. A missing
+mask or cut-out triggers regeneration. Successful replacement removes the superseded pair
+after the registry update; failed replacements keep the previous files.
 
 **Handoff to Dev 1.** `selection.object_evidence(result, object_id)` accepts the
 `SegmentationResult` and now fills `EvidenceFrame.mask_url` and the mask's tight `bbox_px` for
@@ -284,6 +286,8 @@ The report has `segmentation.json`, `evidence.json` (the section 3 shape, keyed 
 one mask overlay and one cut-out per view, and `report.md`. Exit codes: `0` every selected
 view has a mask, `2` some are missing (report still written), `1` unknown scene/item, invalid
 storage or missing key. `--object-id` limits the run; `--replace` segments stored masks again.
+Stored SAM 3 masks require `--live` for replacement or repair: offline runs refuse to
+overwrite them with approximate GrabCut masks, before doing any segmentation.
 
 **Providers.** The default is local OpenCV GrabCut inside each sighting box: no network, no
 key, deterministic, and approximate (it can keep floor under a table or an object in front).
@@ -292,14 +296,19 @@ it uploads each needed frame and sends all of that frame's item boxes as box pro
 request, so the cost is one request per frame. `--max-requests` bounds new submissions per
 run. Requests are saved in the registry: a rerun, or `--replace`, re-reads the saved result
 without a new charge; an interrupted submission is never repeated blindly; `--refresh
-<label>` deliberately pays again. Masks are downloaded at once over HTTPS from `fal.media`
-hosts only. A live failure is reported per item and never falls back to GrabCut silently.
+<label>` deliberately pays again. Masks are streamed over HTTPS from `fal.media` hosts only,
+with a 20 MB cap enforced while reading. For duplicate prompt indices, the first usable
+mask (highest score first) is kept; unmatched items are reported as missing. A live failure
+is reported per item and never falls back to GrabCut silently.
 
 **What is checked.** A mask must be frame-sized, non-empty and agree with its item's box
 (bounding-box IoU of at least 0.3), which also rejects a mask returned for the wrong item.
+This is a coarse association check: a mask can pass while most of its pixels lie outside
+the prompt box. Inspect overlays for floor or neighbouring-item leakage even at high scores.
 Rejected or failed masks are listed under `missing` with a reason; they never remove an item
 or a stored mask. Warnings, which do not change the exit code, name masks of different items
-that overlap by more than 20 % in one frame and SAM masks scoring below 0.8.
+that overlap by more than 20 % in one frame and SAM masks scoring below 0.8. Quality and
+GrabCut warnings use current masks only, excluding records with changed sighting boxes.
 
 **Live result (2026-11-14).** The reviewed opening room (four items, six frames) took six
 SAM 3 requests and gave 14 of 14 masks. Inspected overlays: the table, the rear sofa and the

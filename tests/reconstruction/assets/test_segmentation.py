@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import json
 import shutil
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from unittest.mock import Mock
 
 import cv2
 import fal_client
+import httpx
 import numpy as np
 import pytest
 from numpy.typing import NDArray
 from pydantic import ValidationError
 
+from services.reconstruction.assets import mask_providers
 from services.reconstruction.assets.mask_providers import (
     FalSamProvider,
     GrabCutProvider,
@@ -22,7 +24,7 @@ from services.reconstruction.assets.mask_providers import (
 from services.reconstruction.assets.models import AssetEvidence
 from services.reconstruction.assets.providers import RecordedProvider, RequestBudget
 from services.reconstruction.assets.registry import Registry
-from services.reconstruction.assets.segment_items import main
+from services.reconstruction.assets.segment_items import main, write_report
 from services.reconstruction.assets.segmentation import read_mask, segment_furniture
 from services.reconstruction.assets.selection import object_evidence, select_furniture_frames
 from services.reconstruction.assets.selection_models import (
@@ -246,6 +248,9 @@ def test_rerun_reuses_stored_masks_and_replace_segments_again(tmp_path: Path) ->
     assert second.complete and second.objects == first.objects
     third = segment_furniture("scene", data_dir=tmp_path, provider=provider, replace=True)
     assert len(provider.calls) == 2 and third.objects == first.objects
+    for obj in third.objects:
+        assert (tmp_path / obj.masks[0].mask_path).is_file()
+        assert (tmp_path / obj.masks[0].crop_path).is_file()
 
 
 def test_changed_box_or_lost_file_is_segmented_again(tmp_path: Path) -> None:
@@ -262,10 +267,102 @@ def test_changed_box_or_lost_file_is_segmented_again(tmp_path: Path) -> None:
     assert provider.calls[1] == [moved] and second.complete
     assert second.objects[0].masks[0].box == moved
     assert second.objects[1].masks == first.objects[1].masks
+    old = first.objects[0].masks[0]
+    assert not (tmp_path / old.mask_path).exists()
+    assert not (tmp_path / old.crop_path).exists()
+    for obj in second.objects:
+        assert (tmp_path / obj.masks[0].mask_path).is_file()
+        assert (tmp_path / obj.masks[0].crop_path).is_file()
     (tmp_path / second.objects[1].masks[0].mask_path).unlink()
     third = segment_furniture("scene", data_dir=tmp_path, provider=provider)
     assert provider.calls[2] == [loose_box(BLUE)] and third.complete
     assert (tmp_path / third.objects[1].masks[0].mask_path).is_file()
+
+
+@pytest.mark.parametrize("artifact", ["mask_path", "crop_path"])
+def test_lost_mask_artifacts_are_regenerated_and_reported(tmp_path: Path, artifact: str) -> None:
+    make_scene(tmp_path, {"vid-000001": RED, "vid-000002": BLUE})
+    provider = FakeProvider()
+    first = segment_furniture("scene", data_dir=tmp_path, provider=provider)
+    (tmp_path / getattr(first.objects[0].masks[0], artifact)).unlink()
+    result = segment_furniture("scene", data_dir=tmp_path, provider=provider)
+    assert result.complete and provider.calls[1] == [loose_box(RED)]
+    assert result.objects == first.objects
+    write_report(result, tmp_path, tmp_path / "report")
+    assert (tmp_path / "report/vid-000001-0-cutout.png").is_file()
+
+
+def test_failed_repair_of_a_lost_cutout_still_writes_an_incomplete_report(tmp_path: Path) -> None:
+    make_scene(tmp_path, {"vid-000001": RED})
+    first = segment_furniture("scene", data_dir=tmp_path, provider=FakeProvider())
+    (tmp_path / first.objects[0].masks[0].crop_path).unlink()
+    result = segment_furniture(
+        "scene", data_dir=tmp_path, provider=FakeProvider(lambda boxes: [None])
+    )
+    assert not result.complete and result.missing[0].reason == "no mask returned"
+    write_report(result, tmp_path, tmp_path / "report")
+    assert "no mask returned" in (tmp_path / "report/report.md").read_text()
+
+
+def test_cli_refuses_to_replace_sam_masks_with_grabcut(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    make_scene(tmp_path, {"vid-000001": RED})
+    first = segment_furniture("scene", data_dir=tmp_path, provider=FakeProvider())
+    stored = Registry(tmp_path).load("scene")
+    assert (
+        main(
+            [
+                "--scene-id",
+                "scene",
+                "--data-dir",
+                str(tmp_path),
+                "--out",
+                str(tmp_path / "report"),
+                "--replace",
+            ]
+        )
+        == 1
+    )
+    assert "--live" in capsys.readouterr().out
+    assert Registry(tmp_path).load("scene") == stored
+    for mask in first.objects[0].masks:
+        assert (tmp_path / mask.mask_path).is_file()
+        assert (tmp_path / mask.crop_path).is_file()
+
+
+def test_grabcut_masks_can_be_upgraded_to_sam3(tmp_path: Path) -> None:
+    make_scene(tmp_path, {"vid-000001": RED})
+    segment_furniture("scene", data_dir=tmp_path)
+    provider = FakeProvider()
+    result = segment_furniture("scene", data_dir=tmp_path, provider=provider, replace=True)
+    assert result.complete and len(provider.calls) == 1
+    assert result.objects[0].masks[0].method == "sam3"
+
+
+def test_rejected_attachment_keeps_the_previous_mask_files(tmp_path: Path) -> None:
+    frame = make_scene(tmp_path, {"vid-000001": RED})
+    first = segment_furniture("scene", data_dir=tmp_path, provider=FakeProvider())
+
+    def replace_after_selection_changes(boxes: list[Box]) -> list[Mask | None]:
+        def change_box(state: RegistryState) -> None:
+            state.objects["vid-000001"].sightings[0].box = loose_box(BLUE)
+
+        Registry(tmp_path).update("scene", change_box)
+        return [rect_mask(RED)]
+
+    result = segment_furniture(
+        "scene",
+        data_dir=tmp_path,
+        provider=FakeProvider(replace_after_selection_changes),
+        replace=True,
+    )
+    assert not result.complete and "selection changed" in result.missing[0].reason
+    assert result.objects[0].mask_for(frame.key) is None
+    assert result.objects[0].masks == first.objects[0].masks
+    for mask in first.objects[0].masks:
+        assert (tmp_path / mask.mask_path).is_file()
+        assert (tmp_path / mask.crop_path).is_file()
 
 
 @pytest.mark.parametrize(
@@ -301,6 +398,24 @@ def test_a_mask_for_the_wrong_item_is_rejected_while_the_right_one_is_kept(tmp_p
     assert len(result.objects[0].masks) == 1 and result.objects[1].masks == []
 
 
+@pytest.mark.parametrize(
+    ("extent", "accepted"), [((5, 15, 125, 135), True), ((0, 0, 160, 150), False)]
+)
+def test_box_agreement_is_a_coarse_check_that_can_allow_pixel_leakage(
+    tmp_path: Path, extent: Rect, accepted: bool
+) -> None:
+    make_scene(tmp_path, {"vid-000001": RED})
+    pixels = rect_mask(extent)
+    # Even majority-outside masks can pass the current bounding-box IoU threshold.
+    assert (pixels & box_mask(loose_box(RED))).sum() / pixels.sum() < 0.5
+    result = segment_furniture(
+        "scene", data_dir=tmp_path, provider=FakeProvider(lambda boxes: [pixels])
+    )
+    assert result.complete is accepted
+    if not accepted:
+        assert "disagrees" in result.missing[0].reason
+
+
 def test_provider_failure_and_missing_frame_image_keep_items_and_other_frames(
     tmp_path: Path,
 ) -> None:
@@ -321,6 +436,27 @@ def test_provider_failure_and_missing_frame_image_keep_items_and_other_frames(
     assert {m.reason for m in failed.missing} >= {"provider unavailable; safe to retry"}
     # A failed replacement never discards the mask that was already stored.
     assert failed.objects[0].masks == result.objects[0].masks
+    for mask in failed.objects[0].masks:
+        assert (tmp_path / mask.mask_path).is_file()
+        assert (tmp_path / mask.crop_path).is_file()
+
+
+@pytest.mark.parametrize("method", ["grabcut", "sam3"])
+def test_stale_masks_do_not_emit_quality_or_grabcut_warnings(tmp_path: Path, method: str) -> None:
+    frame = make_scene(tmp_path, {"vid-000001": RED})
+    segment_furniture("scene", data_dir=tmp_path, provider=FakeProvider())
+
+    def change_box(state: RegistryState) -> None:
+        obj = state.objects["vid-000001"]
+        obj.sightings = [Sighting(frame_key=frame.key, box=loose_box(BLUE))]
+        obj.masks[0] = obj.masks[0].model_copy(update={"method": method, "score": 0.5})
+
+    Registry(tmp_path).update("scene", change_box)
+    result = segment_furniture(
+        "scene", data_dir=tmp_path, provider=FakeProvider(lambda boxes: [None])
+    )
+    assert not result.complete and result.objects[0].mask_for(frame.key) is None
+    assert result.warnings == []
 
 
 def test_overlapping_masks_of_different_items_are_flagged(tmp_path: Path) -> None:
@@ -442,6 +578,69 @@ def test_sam_item_without_a_returned_mask_is_none(tmp_path: Path) -> None:
     only_blue = {"https://v3b.fal.media/files/blue.png": png(rect_mask(BLUE))}
     red, blue = sam(only_blue, [1]).segment(frame, image, boxes, registry)
     assert red is None and blue is not None and np.array_equal(blue.pixels, rect_mask(BLUE))
+
+
+def test_sam_duplicate_indices_keep_the_best_mask_and_the_paid_request_retryable(
+    tmp_path: Path,
+) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    provider = sam(BLUE_FIRST, [1, 1])
+    provider.fetch = Mock(side_effect=BLUE_FIRST.__getitem__)
+    budget = RequestBudget(1)
+    for _ in range(2):
+        red, blue = provider.segment(frame, image, boxes, registry, budget=budget)
+        assert red is None and blue is not None and blue.score == 0.9
+        assert np.array_equal(blue.pixels, rect_mask(BLUE))
+    assert provider.client.submit.call_count == 1 and budget.used == 1
+    provider.client.get_handle.assert_called_once_with("fal-ai/sam-3/image", "request-one")
+    assert provider.fetch.call_count == 2  # The duplicate artifact is never downloaded.
+
+
+@pytest.mark.parametrize("index", [-1, 2, "1"])
+def test_sam_still_rejects_invalid_prompt_indices(tmp_path: Path, index: object) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    provider = sam(BLUE_FIRST, [1, 0])
+    provider.client.submit.return_value.get.return_value["metadata"][0]["index"] = index
+    with pytest.raises(MaskError, match="malformed"):
+        provider.segment(frame, image, boxes, registry)
+
+
+@pytest.mark.parametrize("content_length", [None, "11"])
+def test_mask_download_enforces_the_byte_cap_before_reading_the_entire_body(
+    monkeypatch: pytest.MonkeyPatch, content_length: str | None
+) -> None:
+    read: list[int] = []
+    closed: list[bool] = []
+
+    class Body(httpx.SyncByteStream):
+        def __iter__(self) -> Iterator[bytes]:
+            for index, chunk in enumerate([b"123456", b"78901", b"never read"]):
+                read.append(index)
+                yield chunk
+
+        def close(self) -> None:
+            closed.append(True)
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        headers = {} if content_length is None else {"Content-Length": content_length}
+        return httpx.Response(200, headers=headers, stream=Body())
+
+    monkeypatch.setattr(mask_providers, "MAX_MASK_BYTES", 10)
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        monkeypatch.setattr(mask_providers.httpx, "stream", client.stream)
+        with pytest.raises(MaskError, match="too large"):
+            mask_providers._fetch("https://fal.media/mask.png")
+    assert read == ([] if content_length else [0, 1])
+    assert closed == [True]
+
+
+def test_mask_download_accepts_a_body_at_the_byte_cap(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(mask_providers, "MAX_MASK_BYTES", 4)
+    with httpx.Client(
+        transport=httpx.MockTransport(lambda request: httpx.Response(200, content=b"mask"))
+    ) as client:
+        monkeypatch.setattr(mask_providers.httpx, "stream", client.stream)
+        assert mask_providers._fetch("https://fal.media/mask.png") == b"mask"
 
 
 def test_sam_rerun_rereads_the_saved_request_and_refresh_pays_again(tmp_path: Path) -> None:

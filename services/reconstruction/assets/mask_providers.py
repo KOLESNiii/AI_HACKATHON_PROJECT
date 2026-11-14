@@ -105,9 +105,17 @@ MAX_BOXES_PER_REQUEST = 32
 
 
 def _fetch(url: str) -> bytes:
-    response = httpx.get(url, timeout=30, follow_redirects=False)
-    response.raise_for_status()
-    return response.content
+    with httpx.stream("GET", url, timeout=30, follow_redirects=False) as response:
+        response.raise_for_status()
+        length = response.headers.get("Content-Length")
+        if length is not None and int(length) > MAX_MASK_BYTES:
+            raise MaskError("mask artifact too large")
+        data = bytearray()
+        for chunk in response.iter_bytes():
+            if len(data) + len(chunk) > MAX_MASK_BYTES:
+                raise MaskError("mask artifact too large")
+            data.extend(chunk)
+        return bytes(data)
 
 
 class FalSamProvider:
@@ -251,8 +259,10 @@ class FalSamProvider:
                 raise TypeError("mask entry")
             if not isinstance(score, int | float) or not 0 <= score <= 1:
                 score = None
-            if not 0 <= index < count or masks[index] is not None:
+            if not 0 <= index < count:
                 raise ValueError("mask index")
+            if masks[index] is not None:
+                continue  # Best score first: keep the first usable mask for each box.
             target = urlsplit(url)
             host = target.hostname or ""
             if target.scheme != "https" or not (host == "fal.media" or host.endswith(".fal.media")):

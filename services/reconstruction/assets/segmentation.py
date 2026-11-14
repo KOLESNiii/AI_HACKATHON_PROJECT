@@ -130,8 +130,10 @@ def segment_furniture(
     """Store a mask and cut-out for every selected view of the scene's (or the named) items.
 
     Offline unless a live provider is passed. Stored masks are reused unless `replace`, their
-    sighting box changed or their file is gone. A failed or unusable mask is reported in
-    `missing`; it never raises, never removes an item and never discards a stored mask.
+    sighting box changed or either artifact is gone. Refuses to overwrite SAM 3 masks with
+    approximate GrabCut masks (MaskError); pass a live provider to regenerate them.
+    A failed or unusable mask is reported in `missing`; it never raises, never removes an
+    item and never discards a stored mask.
     Unknown scenes/items raise ValueError.
     """
     if not scene_id.strip() or len(scene_id) > 200:
@@ -153,11 +155,27 @@ def segment_furniture(
         obj = state.objects[object_id]
         for key in obj.selected_views:
             stored = obj.mask_for(key)
-            if replace or stored is None or not (data_dir / stored.mask_path).is_file():
+            if (
+                replace
+                or stored is None
+                or not (data_dir / stored.mask_path).is_file()
+                or not (data_dir / stored.crop_path).is_file()
+            ):
+                previous = next((m for m in obj.masks if m.frame_key == key), None)
+                if (
+                    previous is not None
+                    and previous.method == "sam3"
+                    and provider.method == "grabcut"
+                ):
+                    raise MaskError(
+                        "refusing to replace stored SAM 3 masks with approximate GrabCut; "
+                        "use --live to regenerate SAM 3 masks"
+                    )
                 box = next(s.box for s in obj.sightings if s.frame_key == key)
                 todo.setdefault(key, []).append((object_id, box))
     budget = RequestBudget(max_requests)
     missing: list[MissingMask] = []
+    warnings: list[str] = []
     for key in sorted(todo):
         frame, items = state.frames[key], todo[key]
         width, height = frame.image_size_px
@@ -190,6 +208,8 @@ def segment_furniture(
             except MaskError as exc:
                 missing.append(MissingMask(object_id=object_id, frame_key=key, reason=str(exc)))
 
+        superseded: list[MaskRecord] = []
+
         def attach(
             state: RegistryState,
             key: str = key,
@@ -209,25 +229,45 @@ def segment_furniture(
                         )
                     )
                     continue
+                superseded.extend(m for m in current.masks if m.frame_key == key)
                 current.masks = sorted(
                     [m for m in current.masks if m.frame_key != key] + [record],
                     key=lambda m: m.frame_key,
                 )
 
         if records:
-            registry.update(scene_id, attach)
+            attached = registry.update(scene_id, attach)
+            retained = {
+                path
+                for obj in attached.objects.values()
+                for record in obj.masks
+                for path in (record.mask_path, record.crop_path)
+            }
+            for record in superseded:
+                for reference in (record.mask_path, record.crop_path):
+                    path = (data_dir / reference).resolve()
+                    # Delete only generated files after their replacement is committed.
+                    if reference not in retained and path.is_relative_to(data_dir / folder):
+                        try:
+                            path.unlink(missing_ok=True)
+                        except OSError:
+                            warnings.append("could not remove a superseded mask artifact")
     state = registry.load(scene_id)
     objects = [state.objects[i] for i in wanted if i in state.objects]
-    warnings = _overlaps(data_dir, state, wanted)
+    warnings.extend(_overlaps(data_dir, state, wanted))
     for obj in objects:
         for record in obj.masks:
-            if record.low_confidence:
+            if obj.mask_for(record.frame_key) == record and record.low_confidence:
                 frame = state.frames[record.frame_key]
                 warnings.append(
                     f"low-confidence mask ({record.score:.2f}) for {obj.id} in source "
                     f"{frame.source_id[:12]} frame {frame.frame_index}; review its overlay"
                 )
-    if any(m.method == "grabcut" for obj in objects for m in obj.masks):
+    if any(
+        m.method == "grabcut" and obj.mask_for(m.frame_key) == m
+        for obj in objects
+        for m in obj.masks
+    ):
         warnings.append(
             "local GrabCut masks are approximate and can include floor or an occluder; "
             "inspect the overlays or rerun with a live provider and replace"
