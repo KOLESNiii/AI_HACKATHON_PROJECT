@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { catalog, catalogCategories } from '../../data/catalog'
 import { sendAgentMessage } from '../../lib/agent'
+import type { AuditReport, RoomScene } from '../../lib/contracts'
 import { fitsRoom } from '../../lib/geometry'
 import { useStore, type Tab } from '../../store'
 import { Button, Chip, ScoreRing, StatusDot, type Status } from '../ui'
@@ -179,6 +180,16 @@ function StatsTab() {
     raw.scene_revision === scene.revision
       ? raw
       : null
+  return <AuditStats audit={audit} scene={scene} />
+}
+
+export function AuditStats({
+  audit,
+  scene,
+}: {
+  audit: AuditReport | null
+  scene: RoomScene
+}) {
   const name = (id: string) =>
     scene.furniture.find((i) => i.id === id)?.name ?? id
 
@@ -202,17 +213,41 @@ function StatsTab() {
         <ScoreRing score={audit.overall_score} size={52} />
         <Metric
           label="Walkable floor"
-          value={`${Math.round(audit.walkable_floor_ratio * 100)}%`}
+          value={
+            audit.walkable_floor_ratio == null
+              ? 'Not checked'
+              : `${Math.round(audit.walkable_floor_ratio * 100)}%`
+          }
         />
-        <Metric label="Feng shui" value={String(audit.feng_shui.score)} />
+        <Metric
+          label="Feng shui"
+          value={
+            audit.feng_shui == null
+              ? 'Not checked'
+              : String(audit.feng_shui.score)
+          }
+        />
       </div>
+      {audit.overall_score == null && (
+        <p className="text-[11px] text-ink-medium">
+          Overall score: Not checked
+        </p>
+      )}
       <span className="flex items-center gap-2 text-[11px] font-medium text-ink-medium">
         <StatusDot
-          status={audit.glare_orientation_grounded ? 'valid' : 'warning'}
+          status={
+            audit.glare_orientation_grounded == null
+              ? 'pending'
+              : audit.glare_orientation_grounded
+                ? 'valid'
+                : 'warning'
+          }
         />
-        {audit.glare_orientation_grounded
-          ? 'Glare orientation grounded'
-          : 'North not grounded: glare uses the default orientation'}
+        {audit.glare_orientation_grounded == null
+          ? 'Glare orientation: Not checked'
+          : audit.glare_orientation_grounded
+            ? 'Glare orientation grounded'
+            : 'North not grounded: glare uses the default orientation'}
       </span>
       <hr className="ink-divider" />
       <h3 className="font-serif text-[20px] leading-[23px] font-semibold">
@@ -251,8 +286,14 @@ function StatsTab() {
             value={`${c.actual_m.toFixed(2)} / ${c.required_m.toFixed(2)} m`}
           />
         ))}
+        {audit.glare_alerts == null && (
+          <Row status="pending" label="Glare" value="Not checked" />
+        )}
+        {audit.feng_shui == null && (
+          <Row status="pending" label="Feng shui" value="Not checked" />
+        )}
         {audit.glare_alerts
-          .filter((g) => g.severity !== 'none')
+          ?.filter((g) => g.severity !== 'none')
           .map((g, i) => (
             <Row
               key={`glare-${i}`}
@@ -261,7 +302,7 @@ function StatsTab() {
               value={g.severity}
             />
           ))}
-        {audit.feng_shui.sightlines.map((s, i) => (
+        {audit.feng_shui?.sightlines.map((s, i) => (
           <Row
             key={`fs-${i}`}
             status={s.status === 'command_position' ? 'valid' : 'danger'}
