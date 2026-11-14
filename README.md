@@ -89,3 +89,8 @@ for frontend libraries and `uv add` for Python libraries, coordinating shared ma
 
 See [architecture](docs/architecture.md) for ownership and API boundaries and
 [decisions](docs/decisions.md) for bootstrap trade-offs.
+
+Dev 2's [furniture frame selector](services/reconstruction/assets/README.md#implemented-frame-selection-and-identity-14)
+can now sample walkthroughs, persist furniture identities and produce a local evidence report.
+It requires FFmpeg/FFprobe. Offline reviewed replay needs no keys; live fal vision proposals
+require inventory review. Masks, reconstructed meshes and final room placement remain later stages.
