@@ -66,9 +66,147 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794665717.5430295,
-    "seen": 1794666065.429702,
-    "ast_hash": "043143509d265b4ebe85caab356ee74f",
+    "mtime": 1794666672.328133,
+    "seen": 1794666779.2227874,
+    "ast_hash": "c50268189b7e84eb50eeb0bc2ebdcd9c",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/mock_scene.json": {
+    "mtime": 1794665937.3199441,
+    "seen": 1794666779.2227492,
+    "ast_hash": "990a075d20fe3117fa5931934806d6a2",
+    "semantic_hash": ""
+  },
+  "frontend/.oxlintrc.json": {
+    "mtime": 1794666576.5316646,
+    "seen": 1794666779.2227561,
+    "ast_hash": "029f4905006c1fffd96bc863e2d98d3e",
+    "semantic_hash": ""
+  },
+  "frontend/.prettierrc.json": {
+    "mtime": 1794666677.7663224,
+    "seen": 1794666779.2227576,
+    "ast_hash": "cc24ea51edff69d96b6cdc39b55cc647",
+    "semantic_hash": ""
+  },
+  "frontend/package.json": {
+    "mtime": 1794666672.3276942,
+    "seen": 1794666779.2227588,
+    "ast_hash": "aaea4496dc9b9182a36ebccee5d46260",
+    "semantic_hash": ""
+  },
+  "frontend/src/App.tsx": {
+    "mtime": 1794666677.9476345,
+    "seen": 1794666779.2227597,
+    "ast_hash": "0e99c1912a79e4b4c9b2cde654f057c8",
+    "semantic_hash": ""
+  },
+  "frontend/src/main.tsx": {
+    "mtime": 1794666576.5326617,
+    "seen": 1794666779.222761,
+    "ast_hash": "787e5a07efeb2bf6209d5937195f2f68",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.app.json": {
+    "mtime": 1794666694.3707755,
+    "seen": 1794666779.2227626,
+    "ast_hash": "bd8ea9a4e769387a390e3cfb7700bbbe",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.json": {
+    "mtime": 1794666576.532771,
+    "seen": 1794666779.2227635,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.node.json": {
+    "mtime": 1794666576.5328188,
+    "seen": 1794666779.2227645,
+    "ast_hash": "f9cb81ddcea69ffdab672fc8c48dca66",
+    "semantic_hash": ""
+  },
+  "frontend/vite.config.ts": {
+    "mtime": 1794666677.988634,
+    "seen": 1794666779.2227657,
+    "ast_hash": "f6d7e1f482853174ff7e805203b5633e",
+    "semantic_hash": ""
+  },
+  "package.json": {
+    "mtime": 1794666636.8154657,
+    "seen": 1794666779.222767,
+    "ast_hash": "107e4dd399e6e1d636cf1aa01c66d72b",
+    "semantic_hash": ""
+  },
+  "pyproject.toml": {
+    "mtime": 1794666636.814835,
+    "seen": 1794666779.222768,
+    "ast_hash": "27df352664def2e6ada1330c3e8b6b80",
+    "semantic_hash": ""
+  },
+  "services/__init__.py": {
+    "mtime": 1794666636.8154657,
+    "seen": 1794666779.2227714,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "services/media_gen/__init__.py": {
+    "mtime": 1794666636.8154657,
+    "seen": 1794666779.2227721,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "services/media_gen/main.py": {
+    "mtime": 1794666636.8157532,
+    "seen": 1794666779.2227736,
+    "ast_hash": "c249c03efc413381c0e4b9ebf8d06780",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/__init__.py": {
+    "mtime": 1794666636.8154657,
+    "seen": 1794666779.2227747,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/main.py": {
+    "mtime": 1794666636.8156567,
+    "seen": 1794666779.2227755,
+    "ast_hash": "1d08ed207bc695d77b1686ff99d881dc",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/__init__.py": {
+    "mtime": 1794666636.8154657,
+    "seen": 1794666779.2227767,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/main.py": {
+    "mtime": 1794666636.815716,
+    "seen": 1794666779.2227778,
+    "ast_hash": "a61c83d67865113ecea1878a0b63cab0",
+    "semantic_hash": ""
+  },
+  "tests/test_health.py": {
+    "mtime": 1794666636.8158052,
+    "seen": 1794666779.2227786,
+    "ast_hash": "fc1a2ef946d4b40ca17a42a0d42f5a80",
+    "semantic_hash": ""
+  },
+  "docs/architecture.md": {
+    "mtime": 1794666672.3282206,
+    "seen": 1794666779.2227883,
+    "ast_hash": "3b3fbda9851445890037d5beb051d9da",
+    "semantic_hash": ""
+  },
+  "docs/decisions.md": {
+    "mtime": 1794666672.3282511,
+    "seen": 1794666779.2227893,
+    "ast_hash": "02e7549d44e81cffcba6ef9d1284e15f",
+    "semantic_hash": ""
+  },
+  "frontend/index.html": {
+    "mtime": 1794666726.838025,
+    "seen": 1794666779.2227902,
+    "ast_hash": "36d5d9a093d4afbe9f677586d0078653",
     "semantic_hash": ""
   }
 }
