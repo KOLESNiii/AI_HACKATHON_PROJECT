@@ -1,6 +1,6 @@
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { memo, useEffect, useMemo } from 'react'
+import { memo, useEffect, useLayoutEffect, useMemo } from 'react'
 import type { Object3D } from 'three'
 import type { WallSegment } from '../../lib/contracts'
 import { inwardNormal } from '../../lib/geometry'
@@ -14,9 +14,11 @@ import { disposeInk, inkify } from './ink'
 export const Shell = memo(function Shell({
   url,
   walls,
+  cutaway = true,
 }: {
   url: string
   walls: WallSegment[]
+  cutaway?: boolean
 }) {
   const gltf = useGLTF(url)
   const root = useMemo(() => {
@@ -44,12 +46,17 @@ export const Shell = memo(function Shell({
       const n = inwardNormal(w)
       out.push({ node, sx: w.start.x, sz: w.start.z, nx: -n.x, nz: -n.z }) // outward
     }
-    const ceiling = root.getObjectByName('ceiling')
-    if (ceiling) ceiling.visible = false
     return out
   }, [root, walls])
 
+  useLayoutEffect(() => {
+    const ceiling = root.getObjectByName('ceiling')
+    if (ceiling) ceiling.visible = !cutaway
+    if (!cutaway) for (const w of wallNodes) w.node.visible = true
+  }, [cutaway, root, wallNodes])
+
   useFrame(({ camera }) => {
+    if (!cutaway) return
     for (const w of wallNodes) {
       const outside =
         (camera.position.x - w.sx) * w.nx + (camera.position.z - w.sz) * w.nz >

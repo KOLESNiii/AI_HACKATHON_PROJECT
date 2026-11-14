@@ -20,11 +20,12 @@ export function KeyboardControls({ speed }: { speed: number }) {
     const clear = () => held.clear()
     const onDown = (event: KeyboardEvent) => {
       const key = editorKey(event)
+      if (useStore.getState().mode !== 'edit') return clear()
       if (!key) return clear()
       if (panKeys.has(key)) {
         if (useStore.getState().interacting) return
         event.preventDefault()
-        held.add(key)
+        if (!event.repeat) held.add(key)
       } else {
         handleItemKey(event)
       }
@@ -46,7 +47,11 @@ export function KeyboardControls({ speed }: { speed: number }) {
   }, [])
 
   useFrame(({ camera }, delta) => {
-    if (!controls?.enabled || useStore.getState().interacting) {
+    if (
+      !controls?.enabled ||
+      useStore.getState().interacting ||
+      useStore.getState().mode !== 'edit'
+    ) {
       keys.current.clear()
       return
     }

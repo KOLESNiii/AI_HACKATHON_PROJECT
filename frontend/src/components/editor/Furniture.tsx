@@ -60,7 +60,13 @@ function Mesh({ item }: { item: FurnitureItem }) {
 }
 
 /** Dimensioned, visibly labelled placeholder for is_proxy items or meshes that fail to load. */
-function ProxyBox({ item }: { item: FurnitureItem }) {
+function ProxyBox({
+  item,
+  showLabel,
+}: {
+  item: FurnitureItem
+  showLabel: boolean
+}) {
   const { width, height, depth } = item.bbox_m
   const edges = useMemo(() => {
     const box = new BoxGeometry(width, height, depth)
@@ -82,7 +88,10 @@ function ProxyBox({ item }: { item: FurnitureItem }) {
         position={[0, height / 2 + 0.05, 0]}
         center
         zIndexRange={[10, 0]}
-        style={{ pointerEvents: 'none' }}
+        style={{
+          pointerEvents: 'none',
+          display: showLabel ? undefined : 'none',
+        }}
       >
         <span className="scroll-panel flex items-center gap-1.5 px-2 py-1 whitespace-nowrap">
           <span className="text-[11px] font-medium">{item.name}</span>
@@ -150,6 +159,7 @@ export const Furniture = memo(function Furniture({
 }) {
   const item = useStore((s) => s.scene.furniture.find((i) => i.id === id))
   const selected = useStore((s) => s.selectedId === id)
+  const play = useStore((s) => s.mode === 'play')
   const { select, setPose, commitEdit, setInteracting } = useStore.getState()
   const controls = useThree((s) => s.controls) as { enabled: boolean } | null
   const drag = useRef<{ dx: number; dz: number; moved: boolean } | null>(null)
@@ -180,6 +190,8 @@ export const Furniture = memo(function Furniture({
     e.ray.intersectPlane(floorPlane, new Vector3())
 
   const onDown = (e: ThreeEvent<PointerEvent>) => {
+    if (useStore.getState().mode !== 'edit' || useStore.getState().placingHuman)
+      return
     e.stopPropagation()
     select(id)
     if (item.is_fixed) return
@@ -231,17 +243,17 @@ export const Furniture = memo(function Furniture({
         onPointerCancel={onUp}
       >
         {item.glb_url && !item.is_proxy ? (
-          <MeshBoundary fallback={<ProxyBox item={item} />}>
-            <Suspense fallback={<ProxyBox item={item} />}>
+          <MeshBoundary fallback={<ProxyBox item={item} showLabel={!play} />}>
+            <Suspense fallback={<ProxyBox item={item} showLabel={!play} />}>
               <Mesh item={item} />
             </Suspense>
           </MeshBoundary>
         ) : (
-          <ProxyBox item={item} />
+          <ProxyBox item={item} showLabel={!play} />
         )}
       </group>
-      {flagged && <OverlapGlow item={item} />}
-      {(selected || flagged) && (
+      {!play && flagged && <OverlapGlow item={item} />}
+      {!play && (selected || flagged) && (
         <Line
           points={outline}
           color={flagged ? '#c43a31' : '#1c1a17'}

@@ -1,10 +1,14 @@
 import { OrbitControls } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
-import { Suspense, useEffect, useMemo } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
+import { Suspense, useEffect, useMemo, useState, type RefObject } from 'react'
+import type { PerspectiveCamera } from 'three'
 import { useShallow } from 'zustand/react/shallow'
 import { bounds } from '../../lib/geometry'
 import { flaggedItemIds, spatialPreview } from '../../lib/spatialPreview'
 import { useStore } from '../../store'
+import type { PlayControllerHandle } from '../play/controls'
+import { Human } from '../play/Human'
+import { PlayController } from '../play/PlayController'
 import { DoorSwings } from './DoorSwings'
 import { Furniture, MeshBoundary } from './Furniture'
 import { KeyboardControls } from './KeyboardControls'
@@ -12,7 +16,11 @@ import { SelectionTools } from './SelectionTools'
 import { Shell } from './Shell'
 
 /** Interactive room in the ink "clarity" style (Canvas/Room Render in Figma). */
-export function RoomView() {
+export function RoomView({
+  controller,
+}: {
+  controller: RefObject<PlayControllerHandle | null>
+}) {
   // Subscribe to stable parts only; each Furniture reads its own pose, so drags
   // re-render just the moving item.
   const shellUrl = useStore((s) => s.scene.shell_glb_url)
@@ -33,6 +41,7 @@ export function RoomView() {
   )
   const select = useStore((s) => s.select)
   const toast = useStore((s) => s.toast)
+  const play = useStore((s) => s.mode === 'play')
 
   const { centre, span } = useMemo(() => {
     const b = bounds(floor)
@@ -46,20 +55,27 @@ export function RoomView() {
     }
   }, [floor])
 
+  const cameraOptions = useMemo(
+    () => ({
+      fov: 38,
+      position: [
+        centre[0] - span * 0.9,
+        span * 1.45,
+        centre[2] + span * 1.35,
+      ] as [number, number, number],
+      near: 0.05,
+      far: 100,
+    }),
+    [centre, span],
+  )
+
   return (
     <Canvas
       gl={{ alpha: true, antialias: true }}
-      camera={{
-        fov: 38,
-        position: [
-          centre[0] - span * 0.9,
-          span * 1.45,
-          centre[2] + span * 1.35,
-        ],
-        near: 0.05,
-        far: 100,
+      camera={cameraOptions}
+      onPointerMissed={() => {
+        if (useStore.getState().mode === 'edit') select(null)
       }}
-      onPointerMissed={() => select(null)}
       dpr={[1, 2]}
     >
       <ambientLight intensity={1.6} />
@@ -69,30 +85,56 @@ export function RoomView() {
       />
       <MeshBoundary fallback={<ShellFailed onFail={toast} />}>
         <Suspense fallback={null}>
-          <Shell url={shellUrl} walls={walls} />
+          <Shell url={shellUrl} walls={walls} cutaway={!play} />
         </Suspense>
       </MeshBoundary>
-      <DoorSwings
-        doors={doors}
-        walls={walls}
-        blocked={flagged
-          .filter((f) => f.startsWith('door:'))
-          .map((f) => f.slice(5))}
-      />
+      {!play && (
+        <DoorSwings
+          doors={doors}
+          walls={walls}
+          blocked={flagged
+            .filter((f) => f.startsWith('door:'))
+            .map((f) => f.slice(5))}
+        />
+      )}
       {ids.map((id) => (
         <Furniture key={id} id={id} flagged={flagged.includes(id)} />
       ))}
-      <SelectionTools />
+      {!play && <SelectionTools />}
+      <Navigation centre={centre} span={span} controller={controller} />
+    </Canvas>
+  )
+}
+
+function Navigation({
+  centre,
+  span,
+  controller,
+}: {
+  centre: [number, number, number]
+  span: number
+  controller: RefObject<PlayControllerHandle | null>
+}) {
+  const currentCamera = useThree((s) => s.camera)
+  const [editorCamera] = useState(() => currentCamera as PerspectiveCamera)
+  const play = useStore((s) => s.mode === 'play')
+  const interacting = useStore((s) => s.interacting)
+  return (
+    <>
       <OrbitControls
+        camera={editorCamera}
         makeDefault
         target={centre}
+        enabled={!play && !interacting}
         maxPolarAngle={Math.PI / 2.15}
         minDistance={2}
         maxDistance={span * 4}
         enableDamping
       />
       <KeyboardControls speed={Math.max(1, span * 0.35)} />
-    </Canvas>
+      <PlayController controllerRef={controller} editorCamera={editorCamera} />
+      {!play && <Human controller={controller} />}
+    </>
   )
 }
 

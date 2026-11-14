@@ -86,7 +86,7 @@ export function UploadScreen() {
             className="cursor-pointer text-[11px] font-medium text-ink-mist underline-offset-2 hover:underline"
             onClick={() => setScreen('reading')}
           >
-            Skip with demo room
+            Skip with demo home
           </button>
           {/* Upload to the reconstruction service is not wired yet; files stay in the browser. */}
           <Button
