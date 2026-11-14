@@ -1,0 +1,41 @@
+{
+  "rooms": [
+    {
+      "name": "Bedroom",
+      "x": 0.505,
+      "y": 0.176,
+      "width_m": 3.53,
+      "depth_m": 3.45
+    },
+    {
+      "name": "Kitchen",
+      "x": 0.287,
+      "y": 0.448,
+      "width_m": 4.42,
+      "depth_m": 3.3
+    },
+    {
+      "name": "Bedroom",
+      "x": 0.725,
+      "y": 0.448,
+      "width_m": 4.2,
+      "depth_m": 3.49
+    },
+    {
+      "name": "Reception Room",
+      "x": 0.291,
+      "y": 0.648,
+      "width_m": 4.42,
+      "depth_m": 3.5
+    },
+    {
+      "name": "Bedroom",
+      "x": 0.612,
+      "y": 0.672,
+      "width_m": 4.12,
+      "depth_m": 3.6
+    }
+  ],
+  "floors": [],
+  "compass": null
+}
