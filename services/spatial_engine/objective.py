@@ -1,8 +1,9 @@
 """Deterministic layout comparison for tools/agents, without a displayed score."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from math import hypot, isclose, isfinite, radians
-from typing import Literal
+from typing import Literal, get_args
 
 from shapely.ops import unary_union  # type: ignore[import-untyped]
 
@@ -13,8 +14,30 @@ from services.spatial_engine.geometry import (
     SpatialInputError,
     door_swing_sector,
     prepare_scene,
+    window_plan_segment,
 )
 from services.spatial_engine.report import audit_scene
+
+LayoutGoal = Literal["balanced", "brighter", "roomier", "minimal_changes"]
+"""What the user asked for. It reorders soft priorities only; see `compare_evaluations`."""
+LAYOUT_GOALS: tuple[LayoutGoal, ...] = get_args(LayoutGoal)
+
+NEAR_WINDOW_M = 0.5
+"""An item counts as near a window when its footprint is within this plan distance of one."""
+
+_HARD_PRIORITIES = ("critical_issue_count", "critical_violation_area_m2")
+_SOFT_PRIORITIES: dict[LayoutGoal, tuple[str, ...]] = {
+    "balanced": ("clearance_deficit", "reachable_floor_ratio", "movement_m"),
+    "brighter": (
+        "brightness_openness",
+        "clearance_deficit",
+        "reachable_floor_ratio",
+        "movement_m",
+    ),
+    "roomier": ("reachable_floor_ratio", "clearance_deficit", "movement_m"),
+    "minimal_changes": ("clearance_deficit", "movement_m", "reachable_floor_ratio"),
+}
+_MAXIMISED = frozenset({"reachable_floor_ratio", "brightness_openness"})
 
 
 @dataclass(frozen=True)
@@ -29,6 +52,9 @@ class LayoutMetrics:
     rotation_equivalent_m: float
     moved_item_count: int
     brightness_openness: float | None
+    near_window_shortfall_m: float | None = None
+    """Summed distance beyond NEAR_WINDOW_M for the requested items; zero means every one is
+    near a window. None when no item was requested or the room has no windows."""
 
     @property
     def critical_issue_count(self) -> int:
@@ -49,6 +75,8 @@ class LayoutEvaluation:
     report: AuditReport
     metrics: LayoutMetrics
     brightness_measured: bool
+    near_window_item_ids: tuple[str, ...] = ()
+    """Items the user asked to place near a window, sorted; empty when none was requested."""
 
 
 @dataclass(frozen=True)
@@ -104,8 +132,30 @@ def _door_overlap_area(scene: RoomScene, prepared: SceneGeometry, report: AuditR
     return total
 
 
+def _near_window_shortfall(
+    scene: RoomScene, prepared: SceneGeometry, item_ids: tuple[str, ...]
+) -> float | None:
+    if not item_ids or not scene.windows:
+        return None
+    walls = {wall.id: wall for wall in scene.walls}
+    segments = []
+    for window in scene.windows:
+        if window.wall_id not in walls:
+            raise SpatialInputError("Window references an unknown wall")
+        segments.append(window_plan_segment(window, walls[window.wall_id]))
+    footprints = {entry.item.id: entry.footprint for entry in prepared.furniture}
+    return sum(
+        max(0.0, min(float(footprints[item_id].distance(s)) for s in segments) - NEAR_WINDOW_M)
+        for item_id in item_ids
+    )
+
+
 def evaluate_layout(
-    original: RoomScene, candidate: RoomScene, *, measure_brightness: bool = False
+    original: RoomScene,
+    candidate: RoomScene,
+    *,
+    measure_brightness: bool = False,
+    near_window_item_ids: Sequence[str] = (),
 ) -> LayoutEvaluation:
     """Measure a candidate against the immutable original, without modifying either.
 
@@ -117,8 +167,13 @@ def evaluate_layout(
     Clearance sums each item's largest missing proportion once. Movement is total
     translation plus shortest-yaw arc length at half each bbox's plan diagonal.
     Brightness is only measured on request. Unknown metrics stay None.
+    `near_window_item_ids` names items the user wants near a window: their summed
+    plan distance beyond NEAR_WINDOW_M to the nearest window is measured.
     """
     _check_comparable(original, candidate)
+    near_ids = tuple(sorted(set(near_window_item_ids)))
+    if not set(near_ids) <= {item.id for item in original.furniture}:
+        raise SpatialInputError("Near-window items must be known furniture IDs")
     prepared = prepare_scene(candidate)
     report = audit_scene(candidate, _prepared=prepared)
     outside_ids = set(report.out_of_bounds_item_ids)
@@ -157,6 +212,9 @@ def evaluate_layout(
         if measure_brightness
         else None
     )
+    near_window = _near_window_shortfall(candidate, prepared, near_ids)
+    if near_window is not None and not isfinite(near_window):
+        raise SpatialInputError("Layout metrics must be finite")
     return LayoutEvaluation(
         report=report,
         metrics=LayoutMetrics(
@@ -170,50 +228,46 @@ def evaluate_layout(
             rotation_equivalent_m=rotation,
             moved_item_count=moved,
             brightness_openness=brightness,
+            near_window_shortfall_m=near_window,
         ),
         brightness_measured=measure_brightness,
+        near_window_item_ids=near_ids,
     )
 
 
-def compare_layouts(
-    original: RoomScene,
-    candidate: RoomScene,
-    *,
-    baseline: RoomScene | None = None,
-    prefer_brightness: bool = False,
+def compare_evaluations(
+    baseline: LayoutEvaluation, candidate: LayoutEvaluation, goal: LayoutGoal = "balanced"
 ) -> LayoutComparison:
-    """Compare to baseline (default original); movement always references original.
+    """Rank two evaluations of the same original under the user's goal.
 
-    Minimise critical count, critical area and clearance deficit; maximise walking
-    access; optionally maximise window openness; finally minimise movement.
-    Any unavailable optional metric is skipped, never replaced by zero or infinity.
+    Hard feasibility always comes first: fewer critical issues, then smaller
+    critical violation area. A requested near-window placement comes next. The
+    goal only reorders the remaining soft priorities:
+
+    - balanced: front clearance, walking area, least movement.
+    - brighter: window openness, front clearance, walking area, least movement.
+    - roomier: walking area, front clearance, least movement.
+    - minimal_changes: front clearance, least movement, walking area.
+
+    Any unavailable metric is skipped, never replaced by zero or infinity.
     All priorities use 1e-9 absolute/relative float tolerance. Counts are exact.
     """
-    baseline_evaluation = evaluate_layout(
-        original, original if baseline is None else baseline, measure_brightness=prefer_brightness
-    )
-    proposed = evaluate_layout(original, candidate, measure_brightness=prefer_brightness)
-    a, b = baseline_evaluation.metrics, proposed.metrics
-    priorities: list[tuple[str, float | None, float | None, bool]] = [
-        ("critical_issue_count", a.critical_issue_count, b.critical_issue_count, False),
-        (
-            "critical_violation_area_m2",
-            a.critical_violation_area_m2,
-            b.critical_violation_area_m2,
-            False,
-        ),
-        ("clearance_deficit", a.clearance_deficit, b.clearance_deficit, False),
-        ("reachable_floor_ratio", a.reachable_floor_ratio, b.reachable_floor_ratio, True),
+    if goal not in _SOFT_PRIORITIES:
+        raise SpatialInputError("Unknown layout goal")
+    if baseline.near_window_item_ids != candidate.near_window_item_ids:
+        raise SpatialInputError("Compared layouts must measure the same near-window items")
+    if goal == "brighter" and not (baseline.brightness_measured and candidate.brightness_measured):
+        raise SpatialInputError("The brighter goal requires measured window openness")
+    names = [*_HARD_PRIORITIES]
+    if candidate.near_window_item_ids:
+        names.append("near_window_shortfall_m")
+    names.extend(_SOFT_PRIORITIES[goal])
+    a, b = baseline.metrics, candidate.metrics
+    values: list[tuple[str, float | None, float | None]] = [
+        (name, getattr(a, name), getattr(b, name)) for name in names
     ]
-    if prefer_brightness:
-        priorities.append(
-            ("brightness_openness", a.brightness_openness, b.brightness_openness, True)
-        )
-    priorities.append(("movement_m", a.movement_m, b.movement_m, False))
-    skipped = tuple(
-        name for name, before, after, _ in priorities if before is None or after is None
-    )
-    for name, before, after, maximise in priorities:
+    skipped = tuple(name for name, before, after in values if before is None or after is None)
+    for name, before, after in values:
         if before is None or after is None:
             continue
         equal = (
@@ -222,8 +276,34 @@ def compare_layouts(
             else isclose(before, after, rel_tol=1e-9, abs_tol=1e-9)
         )
         if not equal:
-            better = after > before if maximise else after < before
+            better = after > before if name in _MAXIMISED else after < before
             return LayoutComparison(
-                baseline_evaluation, proposed, "better" if better else "worse", name, skipped
+                baseline, candidate, "better" if better else "worse", name, skipped
             )
-    return LayoutComparison(baseline_evaluation, proposed, "equal", None, skipped)
+    return LayoutComparison(baseline, candidate, "equal", None, skipped)
+
+
+def compare_layouts(
+    original: RoomScene,
+    candidate: RoomScene,
+    *,
+    baseline: RoomScene | None = None,
+    goal: LayoutGoal = "balanced",
+    near_window_item_ids: Sequence[str] = (),
+) -> LayoutComparison:
+    """Compare to baseline (default original); movement always references original.
+
+    Evaluates both layouts and ranks them with `compare_evaluations`. Window
+    openness is measured only for the brighter goal.
+    """
+    measure = goal == "brighter"
+    baseline_evaluation = evaluate_layout(
+        original,
+        original if baseline is None else baseline,
+        measure_brightness=measure,
+        near_window_item_ids=near_window_item_ids,
+    )
+    proposed = evaluate_layout(
+        original, candidate, measure_brightness=measure, near_window_item_ids=near_window_item_ids
+    )
+    return compare_evaluations(baseline_evaluation, proposed, goal)

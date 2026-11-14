@@ -18,6 +18,7 @@ from contracts.schema import (
     RoomScene,
     Vec2,
     WallSegment,
+    WindowOpening,
 )
 
 
@@ -278,6 +279,21 @@ def door_swing_sector(
     if not sector.is_valid or not isfinite(sector.area) or sector.area <= 0:
         raise SpatialInputError("Door sweep must have valid geometry with finite, positive area")
     return sector
+
+
+def window_plan_segment(window: WindowOpening, wall: WallSegment) -> LineString:
+    """The opening's extent along its wall's interior face, in room X/Z coordinates."""
+    dx, dz = wall.end.x - wall.start.x, wall.end.z - wall.start.z
+    length = hypot(dx, dz)
+    values = (dx, dz, window.offset_along_wall_m, window.width_m)
+    if not all(isfinite(value) for value in values) or length <= 1e-8 or window.width_m <= 0:
+        raise SpatialInputError("Window and wall geometry must be finite with positive size")
+    tx, tz = dx / length, dz / length
+    start = (
+        wall.start.x + tx * window.offset_along_wall_m,
+        wall.start.z + tz * window.offset_along_wall_m,
+    )
+    return LineString([start, (start[0] + tx * window.width_m, start[1] + tz * window.width_m)])
 
 
 def room_floor_polygon(points: Sequence[Vec2]) -> Polygon:

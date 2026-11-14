@@ -14,7 +14,13 @@ from contracts.schema import (
     WallSegment,
     WindowOpening,
 )
-from services.spatial_engine.objective import compare_layouts, evaluate_layout
+from services.spatial_engine.geometry import SpatialInputError
+from services.spatial_engine.objective import (
+    NEAR_WINDOW_M,
+    compare_evaluations,
+    compare_layouts,
+    evaluate_layout,
+)
 
 
 def item(item_id: str, x: float, z: float, *, clearance: float = 0) -> FurnitureItem:
@@ -233,22 +239,22 @@ def test_brightness_is_opt_in_and_cannot_overrule_critical_problems() -> None:
     assert default.outcome == "worse" and default.deciding_metric == "movement_m"
     assert default.candidate.metrics.brightness_openness is None
     assert not default.candidate.brightness_measured
-    preferred = compare_layouts(original, candidate, prefer_brightness=True)
+    preferred = compare_layouts(original, candidate, goal="brighter")
     assert preferred.outcome == "better" and preferred.deciding_metric == "brightness_openness"
     candidate.furniture[0].pose.z = 8
-    assert compare_layouts(original, candidate, prefer_brightness=True).outcome == "worse"
+    assert compare_layouts(original, candidate, goal="brighter").outcome == "worse"
 
 
 def test_requested_brightness_without_windows_remains_unknown() -> None:
     original = room([item("a", 2, 2)])
-    result = compare_layouts(original, original, prefer_brightness=True)
+    result = compare_layouts(original, original, goal="brighter")
     assert result.outcome == "equal"
     assert result.candidate.brightness_measured
     assert result.candidate.metrics.brightness_openness is None
-    assert result.skipped_unknown_metrics == ("reachable_floor_ratio", "brightness_openness")
+    assert result.skipped_unknown_metrics == ("brightness_openness", "reachable_floor_ratio")
 
 
-def test_clearance_precedes_even_explicit_brightness_preference() -> None:
+def test_requested_brightness_outranks_clearance_only_under_that_goal() -> None:
     original = room([item("target", 2, 2, clearance=1), item("blocker", 2, 3.5)])
     original.windows = [
         WindowOpening(
@@ -263,11 +269,122 @@ def test_clearance_precedes_even_explicit_brightness_preference() -> None:
     ]
     candidate = original.model_copy(deep=True)
     candidate.furniture[1].pose.z = 0.5
-    result = compare_layouts(original, candidate, prefer_brightness=True)
+    result = compare_layouts(original, candidate, goal="brighter")
     assert (
         result.baseline.metrics.brightness_openness > result.candidate.metrics.brightness_openness
     )
-    assert result.outcome == "better" and result.deciding_metric == "clearance_deficit"
+    assert result.outcome == "worse" and result.deciding_metric == "brightness_openness"
+    balanced = compare_layouts(original, candidate)
+    assert balanced.outcome == "better" and balanced.deciding_metric == "clearance_deficit"
+
+
+def test_roomier_ranks_walking_area_above_clearance() -> None:
+    # A 0.3 m gap in front of the target is too narrow to walk in. Closing it frees
+    # walkable floor elsewhere but leaves the target with no front access at all.
+    original = room([item("target", 5, 4, clearance=1), item("blocker", 5, 5.3)], door=True)
+    candidate = original.model_copy(deep=True)
+    candidate.furniture[1].pose.z = 5
+    before = evaluate_layout(original, original).metrics
+    after = evaluate_layout(original, candidate).metrics
+    assert after.clearance_deficit > before.clearance_deficit
+    assert before.reachable_floor_ratio is not None and after.reachable_floor_ratio is not None
+    assert after.reachable_floor_ratio > before.reachable_floor_ratio + 1e-3
+    roomier = compare_layouts(original, candidate, goal="roomier")
+    assert roomier.outcome == "better" and roomier.deciding_metric == "reachable_floor_ratio"
+    balanced = compare_layouts(original, candidate)
+    assert balanced.outcome == "worse" and balanced.deciding_metric == "clearance_deficit"
+
+
+def test_minimal_changes_will_not_move_furniture_just_for_walking_area() -> None:
+    original = room([item("a", 2, 2), item("b", 2, 3.3)], door=True)
+    candidate = original.model_copy(deep=True)
+    candidate.furniture[1].pose.z = 3
+    assert compare_layouts(original, candidate).deciding_metric == "reachable_floor_ratio"
+    assert compare_layouts(original, candidate).outcome == "better"
+    minimal = compare_layouts(original, candidate, goal="minimal_changes")
+    assert minimal.outcome == "worse" and minimal.deciding_metric == "movement_m"
+
+
+def test_minimal_changes_still_fixes_access_with_the_smaller_move() -> None:
+    original = room([item("target", 2, 2, clearance=1), item("blocker", 2, 3.5)])
+    near = original.model_copy(deep=True)
+    near.furniture[1].pose.x = 3
+    far = original.model_copy(deep=True)
+    far.furniture[1].pose.x = 6
+    assert compare_layouts(original, near, goal="minimal_changes").outcome == "better"
+    result = compare_layouts(original, far, baseline=near, goal="minimal_changes")
+    assert result.outcome == "worse" and result.deciding_metric == "movement_m"
+
+
+def window_room(furniture: list[FurnitureItem]) -> RoomScene:
+    scene = room(furniture)
+    scene.windows = [
+        WindowOpening(
+            id="window",
+            wall_id="north",
+            offset_along_wall_m=1,
+            width_m=2,
+            sill_height_m=1,
+            head_height_m=2,
+            plan_normal_deg=0,
+        )
+    ]
+    return scene
+
+
+def test_near_window_shortfall_measures_distance_beyond_the_threshold() -> None:
+    # The window spans x 1..3 on the z=0 wall; the desk footprint is 1 m square.
+    original = window_room([item("desk", 2, 4), item("bed", 6, 6)])
+    measured = evaluate_layout(original, original, near_window_item_ids=["desk"])
+    assert measured.near_window_item_ids == ("desk",)
+    assert measured.metrics.near_window_shortfall_m == pytest.approx(3.5 - NEAR_WINDOW_M)
+    assert evaluate_layout(original, original).metrics.near_window_shortfall_m is None
+
+    candidate = original.model_copy(deep=True)
+    candidate.furniture[0].pose = Pose2D(x=4.5, z=0.9)  # 1 m along the wall past the window edge
+    close = evaluate_layout(original, candidate, near_window_item_ids=["desk"])
+    assert close.metrics.near_window_shortfall_m == pytest.approx(
+        math.hypot(1, 0.4) - NEAR_WINDOW_M
+    )
+    candidate.furniture[0].pose = Pose2D(x=2, z=0.9)
+    satisfied = evaluate_layout(original, candidate, near_window_item_ids=["desk"])
+    assert satisfied.metrics.near_window_shortfall_m == 0
+
+
+def test_near_window_request_outranks_soft_goals_but_not_feasibility() -> None:
+    original = window_room([item("desk", 2, 4), item("bed", 6, 6)])
+    candidate = original.model_copy(deep=True)
+    candidate.furniture[0].pose = Pose2D(x=2, z=0.6)
+    assert compare_layouts(original, candidate).outcome == "worse"
+    for goal in ("balanced", "brighter", "roomier", "minimal_changes"):
+        result = compare_layouts(original, candidate, goal=goal, near_window_item_ids=["desk"])
+        assert result.outcome == "better", goal
+        assert result.deciding_metric == "near_window_shortfall_m"
+    candidate.furniture[0].pose = Pose2D(x=2, z=0.2)  # nearer still, but through the wall
+    result = compare_layouts(original, candidate, near_window_item_ids=["desk"])
+    assert result.outcome == "worse" and result.deciding_metric == "critical_issue_count"
+
+
+def test_near_window_without_windows_is_unknown_and_skipped() -> None:
+    original = room([item("desk", 2, 4)])
+    result = compare_layouts(original, original, near_window_item_ids=["desk"])
+    assert result.candidate.metrics.near_window_shortfall_m is None
+    assert "near_window_shortfall_m" in result.skipped_unknown_metrics
+    assert result.outcome == "equal"
+
+
+def test_goal_and_near_window_inputs_are_validated() -> None:
+    original = window_room([item("desk", 2, 4)])
+    with pytest.raises(SpatialInputError, match="known furniture"):
+        evaluate_layout(original, original, near_window_item_ids=["sofa"])
+    plain = evaluate_layout(original, original)
+    with pytest.raises(SpatialInputError, match="measured window openness"):
+        compare_evaluations(plain, plain, "brighter")
+    with pytest.raises(SpatialInputError, match="Unknown layout goal"):
+        compare_evaluations(plain, plain, "cosier")  # type: ignore[arg-type]
+    requested = evaluate_layout(original, original, near_window_item_ids=["desk"])
+    with pytest.raises(SpatialInputError, match="same near-window items"):
+        compare_evaluations(plain, requested)
 
 
 def test_tiny_movement_is_a_numerical_tie() -> None:
