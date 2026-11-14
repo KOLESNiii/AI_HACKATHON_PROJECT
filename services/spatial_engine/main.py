@@ -3,9 +3,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from shapely.errors import GEOSException  # type: ignore[import-untyped]
+from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
 from contracts.schema import AuditReport, RoomScene
+from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.report import audit_scene
 
 app = FastAPI(title="SpaceShift spatial_engine", version="0.1.0")
@@ -50,11 +51,11 @@ def audit(scene: RoomScene) -> AuditReport:
                 for error in exc.errors(include_input=False, include_context=False)
             ],
         ) from exc
-    except ValueError as exc:
+    except SpatialInputError as exc:
         raise HTTPException(
             status_code=422, detail=[{"loc": ["body"], "msg": str(exc), "type": "value_error"}]
         ) from exc
-    except GEOSException as exc:
+    except (ShapelyError, ArithmeticError) as exc:
         raise HTTPException(
             status_code=422,
             detail=[
@@ -65,3 +66,20 @@ def audit(scene: RoomScene) -> AuditReport:
                 }
             ],
         ) from exc
+
+
+@app.exception_handler(Exception)
+async def unexpected_failure(_request: Request, _exc: Exception) -> JSONResponse:
+    """Programming errors remain 500s; return structured output without leaking internals."""
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": [
+                {
+                    "loc": ["body"],
+                    "msg": "Spatial audit failed unexpectedly",
+                    "type": "internal_error",
+                }
+            ]
+        },
+    )

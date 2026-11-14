@@ -34,11 +34,17 @@ The audit response uses the shared models with these nullable fields:
 "not checked", never zero/perfect scores or "no glare". Python and TypeScript
 schemas changed together; use this revision when wiring the frontend. A future
 assessed empty glare list means no alerts, whereas null means not checked.
-`glare_orientation_grounded` is false until glare is actually evaluated.
+`glare_orientation_grounded` is also nullable: null = not assessed, true = grounded
+assessment, false = assessment using the orientation fallback. Do not infer that a
+compass is absent merely because glare was not assessed.
 
 `walkable_floor_ratio` now means reachable walking area for a 50 cm person, unioned
 across all suitable door entries, divided by usable floor area. It is not raw free
-area. A room with no doors returns 422; known but unusable entries give ratio zero.
+area. With no known doors, the response remains HTTP 200, its walking ratio is
+null, and collision/boundary/clearance findings are retained. Known but unusable
+entries give zero; doors listed in `blocked_doors` cannot seed walking access.
+Both nullable-field changes are mirrored in the shared schemas: merge this
+contract revision when updating frontend consumers.
 
 ## Load the same examples in the editor and backend
 

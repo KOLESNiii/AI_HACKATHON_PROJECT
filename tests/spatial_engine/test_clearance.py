@@ -85,6 +85,33 @@ def test_rotation_uses_full_width_not_centre_ray(yaw: float) -> None:
     assert result[0].actual_m == pytest.approx(0.5)
 
 
+@pytest.mark.parametrize(("yaw", "x", "z"), [(90, 4.1, 3), (270, 1.9, 3)])
+def test_cardinal_front_direction_in_fixed_world_coordinates(
+    yaw: float, x: float, z: float
+) -> None:
+    # Independent world-space examples: yaw 90 front is +X; yaw 270 front is -X.
+    target = item(x=3, z=3)
+    target.pose.yaw_deg = yaw
+    blocker = obstacle(x=x, z=z)
+    blocker.bbox_m.width = blocker.bbox_m.depth = 0.2
+    findings = detect_front_clearance(room([target, blocker]))
+    assert len(findings) == 1
+    assert findings[0].actual_m == pytest.approx(0.5)
+
+
+def test_l_room_clear_strip_and_partial_width_corner_obstruction() -> None:
+    scene = room([item(x=1, z=1)])
+    scene.floor_polygon = [
+        Vec2(x=x, z=z) for x, z in [(0, 0), (4, 0), (4, 2), (2, 2), (2, 4), (0, 4)]
+    ]
+    assert detect_front_clearance(scene) == []
+    scene.furniture[0].pose.x = 2
+    findings = detect_front_clearance(scene)
+    assert len(findings) == 1
+    assert findings[0].blocked_by_item_id is None
+    assert findings[0].actual_m == pytest.approx(0.5)
+
+
 def test_room_boundary_limits_clearance_and_exact_contact_allowed() -> None:
     result = detect_front_clearance(room([item(z=5)]))
     assert len(result) == 1

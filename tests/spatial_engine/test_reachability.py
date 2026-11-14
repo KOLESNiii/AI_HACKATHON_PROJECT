@@ -101,6 +101,9 @@ def test_furniture_blocking_entrance_prevents_seeding_far_side() -> None:
 def test_wide_door_uses_available_sides_not_just_midpoint() -> None:
     scene = room()
     scene.doors[0].width_m = 2
+    # Swing outward so the indoor obstacle does not prevent opening the leaf.
+    scene.doors[0].hinge_pos.x = 3
+    scene.doors[0].swings_into_room = False
     scene.furniture = [obstacle("centre-blocker", 2, 0.15, 0.2, 0.1)]
     assert calculate_reachable_floor_ratio(scene) > 0.98
 
@@ -161,8 +164,18 @@ def test_invalid_width(width: float) -> None:
 def test_missing_door_is_unknown_not_clear() -> None:
     scene = room()
     scene.doors = []
-    with pytest.raises(ValueError, match="at least one door"):
-        calculate_reachable_floor_ratio(scene)
+    assert calculate_reachable_floor_ratio(scene) is None
+
+
+def test_swing_obstruction_excludes_entry_even_when_threshold_is_clear() -> None:
+    scene = room()
+    # Beyond the entry inset, but within the clockwise inward door sweep.
+    scene.furniture = [obstacle("swing-blocker", 1.6, 0.7, 0.1, 0.1)]
+    assert calculate_reachable_floor_ratio(scene) == 0
+    scene.doors.append(
+        DoorOpening(id="other", wall_id="north", hinge_pos=Vec2(x=4, z=0), width_m=1)
+    )
+    assert calculate_reachable_floor_ratio(scene) > 0.98
 
 
 def test_unknown_wall_and_duplicate_ids_rejected() -> None:

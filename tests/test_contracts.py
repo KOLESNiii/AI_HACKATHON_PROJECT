@@ -24,6 +24,38 @@ def load_mock() -> RoomScene:
     return RoomScene.model_validate(json.loads(MOCK_SCENE.read_text()))
 
 
+def test_unassessed_audit_fields_round_trip_as_null() -> None:
+    report = AuditReport(scene_id="room", scene_revision=3, collisions=[], blocked_doors=[])
+    raw = report.model_dump()
+    for field in (
+        "overall_score",
+        "walkable_floor_ratio",
+        "glare_alerts",
+        "feng_shui",
+        "glare_orientation_grounded",
+    ):
+        assert field in raw and raw[field] is None
+    assert AuditReport.model_validate_json(report.model_dump_json()) == report
+
+
+@pytest.mark.parametrize("grounded", [True, False])
+def test_assessed_audit_fields_remain_backwards_compatible(grounded: bool) -> None:
+    report = AuditReport(
+        scene_id="room",
+        scene_revision=0,
+        collisions=[],
+        blocked_doors=[],
+        overall_score=80,
+        walkable_floor_ratio=0.7,
+        glare_orientation_grounded=grounded,
+        glare_alerts=[],
+        feng_shui=FengShuiReport(score=60, sightlines=[]),
+    )
+    restored = AuditReport.model_validate_json(report.model_dump_json())
+    assert restored == report
+    assert restored.glare_orientation_grounded is grounded
+
+
 def test_mock_scene_validates_with_defaults() -> None:
     scene = load_mock()
     assert scene.revision == 0

@@ -50,9 +50,12 @@ def test_shared_cases_through_http(case: dict[str, Any]) -> None:
     )
 
 
-def test_unimplemented_assessments_are_explicit_nulls_even_with_compass() -> None:
+@pytest.mark.parametrize("compass", [None, 0, 45, 270])
+def test_unimplemented_assessments_are_explicit_nulls_even_with_compass(
+    compass: float | None,
+) -> None:
     body = payload()
-    body["north_compass_deg"] = 0
+    body["north_compass_deg"] = compass
     with TestClient(app) as client:
         response = client.post("/audit", json=body)
     assert response.status_code == 200
@@ -60,7 +63,7 @@ def test_unimplemented_assessments_are_explicit_nulls_even_with_compass() -> Non
     assert report["overall_score"] is None
     assert report["feng_shui"] is None
     assert report["glare_alerts"] is None
-    assert report["glare_orientation_grounded"] is False
+    assert report["glare_orientation_grounded"] is None
 
 
 def test_report_contains_clearance_findings_and_does_not_mutate_input() -> None:
@@ -84,7 +87,6 @@ def test_report_contains_clearance_findings_and_does_not_mutate_input() -> None:
         "unknown_wall",
         "bad_door",
         "negative_clearance",
-        "no_doors",
         "self_intersection",
         "invalid_parts",
         "missing_field",
@@ -104,8 +106,6 @@ def test_invalid_scenes_return_actionable_422(case: str) -> None:
         body["doors"][0]["width_m"] = 0
     elif case == "negative_clearance":
         body["furniture"][0]["requires_front_clear_m"] = -1
-    elif case == "no_doors":
-        body["doors"] = []
     elif case == "self_intersection":
         body["walls"] = []
         body["floor_polygon"] = [{"x": x, "z": z} for x, z in [(0, 0), (4, 4), (0, 4), (3, 0)]]
@@ -167,16 +167,58 @@ def test_openapi_exposes_shared_models_and_nullable_scores() -> None:
         "/AuditReport"
     )
     properties = document["components"]["schemas"]["AuditReport"]["properties"]
-    for field in ("overall_score", "feng_shui", "glare_alerts"):
+    for field in (
+        "overall_score",
+        "feng_shui",
+        "glare_alerts",
+        "walkable_floor_ratio",
+        "glare_orientation_grounded",
+    ):
         assert {"type": "null"} in properties[field]["anyOf"]
 
 
-def test_unexpected_errors_are_failures_not_clean_reports(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("error_type", [RuntimeError, TypeError, IndexError, ValueError])
+def test_unexpected_errors_are_failures_not_clean_reports(
+    monkeypatch: pytest.MonkeyPatch, error_type: type[Exception]
+) -> None:
     def fail(_scene: RoomScene) -> AuditReport:
-        raise RuntimeError("private internal error")
+        raise error_type("private internal error")
 
     monkeypatch.setattr("services.spatial_engine.main.audit_scene", fail)
     with TestClient(app, raise_server_exceptions=False) as client:
         response = client.post("/audit", json=payload())
     assert response.status_code == 500
     assert "private internal error" not in response.text
+    assert response.json()["detail"][0]["type"] == "internal_error"
+
+
+def test_no_doors_keeps_independent_findings_available() -> None:
+    body = payload()
+    body["doors"] = []
+    body["furniture"][0]["pose"]["x"] = -1
+    wardrobe = next(item for item in body["furniture"] if item["id"] == "item_wardrobe")
+    wardrobe["pose"] = {"x": 2.1, "z": 2.5, "yaw_deg": 0}
+    with TestClient(app) as client:
+        response = client.post("/audit", json=body)
+    assert response.status_code == 200
+    report = response.json()
+    assert report["walkable_floor_ratio"] is None
+    assert report["collisions"]
+    assert report["out_of_bounds_item_ids"] == ["item_bed"]
+    assert report["clearance_issues"]
+    assert report["blocked_doors"] == []
+    assert report["scene_id"] == body["scene_id"] and report["scene_revision"] == 0
+
+
+def test_geometry_library_errors_are_safe_422(monkeypatch: pytest.MonkeyPatch) -> None:
+    from shapely.errors import GEOSException
+
+    def fail(_scene: RoomScene) -> AuditReport:
+        raise GEOSException("private internal geometry data")
+
+    monkeypatch.setattr("services.spatial_engine.main.audit_scene", fail)
+    with TestClient(app) as client:
+        response = client.post("/audit", json=payload())
+    assert response.status_code == 422
+    assert "private internal geometry data" not in response.text
+    assert response.json()["detail"][0]["msg"] == "Room geometry could not be processed"

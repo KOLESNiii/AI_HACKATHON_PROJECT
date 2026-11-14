@@ -15,7 +15,8 @@ Coordinate conventions (all services and the editor MUST agree on these):
   Convert between them with: bearing = (180 - yaw) mod 360.
 - True compass azimuth of any plan bearing b: azimuth = (b - north) mod 360, where
   north = `RoomScene.north_compass_deg`, or 0 when it is None (fallback: -Z is North, and
-  `AuditReport.glare_orientation_grounded` is False).
+  `AuditReport.glare_orientation_grounded` is False when that fallback is assessed;
+  it is None when glare is not assessed).
 - Every furniture .glb has its bounding-box bottom-centre at the origin and its front facing +Z.
   `Pose2D.x/z` is where that bottom-centre sits in room coordinates; Y is currently always 0
   (on the floor).
@@ -416,10 +417,13 @@ class AuditReport(ContractModel):
     """Echo of the audited RoomScene.revision. Consumers ignore reports older than their scene."""
     overall_score: Optional[int] = None
     """None means scoring is not implemented/assessed; never interpret it as zero."""
-    walkable_floor_ratio: float
+    walkable_floor_ratio: Optional[float] = None
     """Reachable floor fraction for a 0.5 m wide standing person, unioned across all doors.
+    None means no entry doors are known. Known but blocked entries produce zero.
     This is distinct from raw unoccupied floor area; see the spatial service README."""
-    glare_orientation_grounded: bool
+    glare_orientation_grounded: Optional[bool] = None
+    """None when glare is not assessed; True for grounded orientation, False only for an
+    assessment that used the plan-normal/-Z fallback."""
     collisions: List[CollisionIssue]
     blocked_doors: List[BlockedDoorIssue]
     out_of_bounds_item_ids: List[str] = []

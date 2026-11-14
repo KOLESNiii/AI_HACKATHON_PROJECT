@@ -11,7 +11,8 @@
  *   from -Z viewed from above. Direction = (sin(b), 0, -cos(b)): 0 = -Z, 90 = +X, 180 = +Z, 270 = -X.
  *   bearing = (180 - yaw) mod 360.
  * - Compass azimuth of a plan bearing b = (b - north) mod 360, north = north_compass_deg ?? 0
- *   (null => -Z is North and glare_orientation_grounded is false).
+ *   (null => -Z is North; glare_orientation_grounded is false when assessed using that fallback,
+ *   and null when glare is not assessed).
  * - Furniture .glb: bounding-box bottom-centre at origin, front faces +Z. `Pose2D.x/z` is where
  *   that bottom-centre sits in the room; Y is currently always 0. `bbox_m` is authoritative: the
  *   mesh is scaled to fit it, within 1 mm per axis.
@@ -279,8 +280,9 @@ export interface AuditReport {
   /** 0..100 when assessed; null means scoring unavailable, never zero. */
   overall_score: number | null;
   /** Reachable floor fraction for a 0.5 m person, unioned across doors; not raw empty floor. */
-  walkable_floor_ratio: number; // 0.0 - 1.0
-  glare_orientation_grounded: boolean; // True if derived from floor-plan compass or manual calibration
+  walkable_floor_ratio: number | null; // 0..1; null = no known entry doors
+  /** null = not assessed; true = grounded; false = assessed using orientation fallback. */
+  glare_orientation_grounded: boolean | null;
   collisions: CollisionIssue[];
   blocked_doors: BlockedDoorIssue[];
   /** Items whose footprint leaves the floor polygon or intersects a wall. Default []. */

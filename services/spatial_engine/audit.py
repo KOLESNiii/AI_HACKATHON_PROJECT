@@ -11,7 +11,6 @@ from shapely.ops import unary_union  # type: ignore[import-untyped]
 from contracts.schema import (
     MIN_HEIGHT_OVERLAP_M,
     MIN_PLAN_OVERLAP_M2,
-    WALK_HEADROOM_M,
     BlockedDoorIssue,
     ClearanceIssue,
     CollisionIssue,
@@ -19,15 +18,19 @@ from contracts.schema import (
     RoomScene,
 )
 from services.spatial_engine.geometry import (
+    FurnitureGeometry,
+    SceneGeometry,
+    SpatialInputError,
     door_swing_sector,
     front_clearance_zone,
-    furniture_collision_volumes,
-    furniture_footprint,
-    room_floor_polygon,
+    prepare_furniture,
+    scene_geometry,
 )
 
 
-def detect_front_clearance(scene: RoomScene) -> list[ClearanceIssue]:
+def detect_front_clearance(
+    scene: RoomScene, *, _prepared: SceneGeometry | None = None
+) -> list[ClearanceIssue]:
     """Check full-width front access strips, returning one issue per blocker.
 
     actual_m is the minimum forward distance from the bbox front to the blocker
@@ -43,24 +46,21 @@ def detect_front_clearance(scene: RoomScene) -> list[ClearanceIssue]:
     geometry, invalid required clearance or duplicate item IDs raise ValueError.
     Inputs are never modified.
     """
-    floor = room_floor_polygon(scene.floor_polygon)
-    furniture = sorted(scene.furniture, key=lambda item: item.id)
-    if len({item.id for item in furniture}) != len(furniture):
-        raise ValueError("Furniture IDs must be unique for front-clearance checks")
+    prepared = scene_geometry(scene, _prepared)
+    floor = prepared.floor
+    furniture = [entry.item for entry in prepared.furniture]
     zones = {item.id: front_clearance_zone(item) for item in furniture}
-    volumes = {item.id: furniture_collision_volumes(item) for item in furniture}
     issues = []
     for target in furniture:
         zone = zones[target.id]
         if target.category == "chair" or zone.is_empty:
             continue
         blockers: list[tuple[str | None, Polygon]] = [(None, zone.difference(floor))]
-        for other in furniture:
-            if other.id == target.id or other.category == "chair":
+        for other in prepared.furniture:
+            if other.item.id == target.id or other.item.category == "chair":
                 continue
-            parts = [part.footprint for part in volumes[other.id] if part.y_min < WALK_HEADROOM_M]
-            if parts:
-                blockers.append((other.id, zone.intersection(unary_union(parts))))
+            if not other.walking_projection.is_empty:
+                blockers.append((other.item.id, zone.intersection(other.walking_projection)))
         for blocker_id, intersection in blockers:
             if intersection.is_empty or intersection.area <= 1e-9:
                 continue
@@ -87,7 +87,9 @@ def detect_front_clearance(scene: RoomScene) -> list[ClearanceIssue]:
     return issues
 
 
-def calculate_free_floor_ratio(scene: RoomScene) -> float:
+def calculate_free_floor_ratio(
+    scene: RoomScene, *, _prepared: SceneGeometry | None = None
+) -> float:
     """Return the usable floor fraction not blocked under the shared headroom rule.
 
     Project occupied parts with y_min < WALK_HEADROOM_M onto the floor, union
@@ -100,20 +102,11 @@ def calculate_free_floor_ratio(scene: RoomScene) -> float:
     No AuditReport field is assigned here. Inputs are not modified; invalid
     floor/furniture geometry and duplicate furniture IDs raise ValueError.
     """
-    floor = room_floor_polygon(scene.floor_polygon)
-    if len({item.id for item in scene.furniture}) != len(scene.furniture):
-        raise ValueError("Furniture IDs must be unique for free-floor checks")
-    blockers = [
-        volume.footprint
-        for item in sorted(scene.furniture, key=lambda i: i.id)
-        for volume in furniture_collision_volumes(item)
-        if volume.y_min < WALK_HEADROOM_M
-    ]
-    if not blockers:
-        return 1.0
-    free_area = float(floor.difference(unary_union(blockers)).area)
+    prepared = scene_geometry(scene, _prepared)
+    floor = prepared.floor
+    free_area = float(prepared.free_floor.area)
     if not isfinite(free_area):
-        raise ValueError("Free floor area must be finite")
+        raise SpatialInputError("Free floor area must be finite")
     return max(0.0, min(1.0, free_area / float(floor.area)))
 
 
@@ -126,7 +119,10 @@ def _height_overlaps(bottom_a: float, top_a: float, bottom_b: float, top_b: floa
 
 
 def detect_blocked_doors(
-    scene: RoomScene, *, area_tolerance_m2: float = MIN_PLAN_OVERLAP_M2
+    scene: RoomScene,
+    *,
+    area_tolerance_m2: float = MIN_PLAN_OVERLAP_M2,
+    _prepared: SceneGeometry | None = None,
 ) -> list[BlockedDoorIssue]:
     """Report furniture intersecting door sweeps, sorted by door and item ID.
 
@@ -139,39 +135,35 @@ def detect_blocked_doors(
     furniture is present. Does not modify the scene.
     """
     if not isfinite(area_tolerance_m2) or area_tolerance_m2 < 0:
-        raise ValueError("Door overlap tolerance must be finite and non-negative")
-    room_floor_polygon(scene.floor_polygon)
-    for entries, label in (
-        (scene.walls, "Wall"),
-        (scene.doors, "Door"),
-        (scene.furniture, "Furniture"),
-    ):
-        if len({entry.id for entry in entries}) != len(entries):
-            raise ValueError(f"{label} IDs must be unique for door checks")
+        raise SpatialInputError("Door overlap tolerance must be finite and non-negative")
+    prepared = scene_geometry(scene, _prepared)
     walls = {wall.id: wall for wall in scene.walls}
-    volumes = [
-        (item.id, furniture_collision_volumes(item))
-        for item in sorted(scene.furniture, key=lambda i: i.id)
-    ]
     issues = []
     for door in sorted(scene.doors, key=lambda d: d.id):
         if door.wall_id not in walls:
-            raise ValueError(f"Door {door.id} references an unknown wall")
+            raise SpatialInputError(f"Door {door.id} references an unknown wall")
         sweep = door_swing_sector(door, walls[door.wall_id], scene.floor_polygon)
-        for item_id, parts in volumes:
-            for part in parts:
+        for entry in prepared.furniture:
+            for part in entry.volumes:
                 if not _height_overlaps(0, door.head_height_m, part.y_min, part.y_max):
                     continue
                 area = float(sweep.intersection(part.footprint).area)
                 if not isfinite(area):
-                    raise ValueError("Door overlap area must be finite")
+                    raise SpatialInputError("Door overlap area must be finite")
                 if area > area_tolerance_m2:
-                    issues.append(BlockedDoorIssue(door_id=door.id, blocked_by_item_id=item_id))
+                    issues.append(
+                        BlockedDoorIssue(door_id=door.id, blocked_by_item_id=entry.item.id)
+                    )
                     break
     return issues
 
 
-def detect_out_of_bounds(scene: RoomScene, *, boundary_tolerance_m: float = 1e-9) -> list[str]:
+def detect_out_of_bounds(
+    scene: RoomScene,
+    *,
+    boundary_tolerance_m: float = 1e-9,
+    _prepared: SceneGeometry | None = None,
+) -> list[str]:
     """Return sorted item IDs whose rectangular footprint leaves the interior floor.
 
     Boundary contact is allowed. The tolerance expands the floor by this distance
@@ -183,20 +175,20 @@ def detect_out_of_bounds(scene: RoomScene, *, boundary_tolerance_m: float = 1e-9
     a non-finite/negative tolerance. Validates the floor even with no furniture.
     """
     if not isfinite(boundary_tolerance_m) or boundary_tolerance_m < 0:
-        raise ValueError("Boundary tolerance must be finite and non-negative")
-    floor = room_floor_polygon(scene.floor_polygon)
-    if len({item.id for item in scene.furniture}) != len(scene.furniture):
-        raise ValueError("Furniture IDs must be unique for containment checks")
+        raise SpatialInputError("Boundary tolerance must be finite and non-negative")
+    prepared = scene_geometry(scene, _prepared)
+    floor = prepared.floor
     allowed_floor = floor.buffer(boundary_tolerance_m) if boundary_tolerance_m else floor
     return [
-        item.id
-        for item in sorted(scene.furniture, key=lambda i: i.id)
-        if not allowed_floor.covers(furniture_footprint(item))
+        entry.item.id for entry in prepared.furniture if not allowed_floor.covers(entry.footprint)
     ]
 
 
 def detect_collisions(
-    furniture: Sequence[FurnitureItem], *, area_tolerance_m2: float = MIN_PLAN_OVERLAP_M2
+    furniture: Sequence[FurnitureItem],
+    *,
+    area_tolerance_m2: float = MIN_PLAN_OVERLAP_M2,
+    _prepared: tuple[FurnitureGeometry, ...] | None = None,
 ) -> list[CollisionIssue]:
     """Report each overlapping pair once, in stable item-ID order.
 
@@ -209,34 +201,26 @@ def detect_collisions(
     negative tolerance. Input items and their order are never modified.
     """
     if not isfinite(area_tolerance_m2) or area_tolerance_m2 < 0:
-        raise ValueError("Collision area tolerance must be finite and non-negative")
-    if len({item.id for item in furniture}) != len(furniture):
-        raise ValueError("Furniture IDs must be unique for collision detection")
-
-    geometry = [
-        (item.id, furniture_footprint(item), furniture_collision_volumes(item))
-        for item in sorted(furniture, key=lambda i: i.id)
-    ]
+        raise SpatialInputError("Collision area tolerance must be finite and non-negative")
+    geometry = prepare_furniture(furniture) if _prepared is None else _prepared
     issues = []
-    for (id_a, footprint_a, parts_a), (id_b, footprint_b, parts_b) in combinations(geometry, 2):
+    for a, b in combinations(geometry, 2):
         # Parts may extend up to the contract's bbox tolerance, so broad-phase
         # rejection must include their actual bounds as well as the nominal box.
-        bounds_a = unary_union([footprint_a, *(p.footprint for p in parts_a)]).envelope
-        bounds_b = unary_union([footprint_b, *(p.footprint for p in parts_b)]).envelope
-        if not bounds_a.intersects(bounds_b):
+        if not a.broad_bounds.intersects(b.broad_bounds):
             continue
         intersections = []
-        for part_a in parts_a:
-            for part_b in parts_b:
+        for part_a in a.volumes:
+            for part_b in b.volumes:
                 if not _height_overlaps(part_a.y_min, part_a.y_max, part_b.y_min, part_b.y_max):
                     continue
                 intersection = part_a.footprint.intersection(part_b.footprint)
                 area = float(intersection.area)
                 if not isfinite(area):
-                    raise ValueError("Furniture overlap area must be finite")
+                    raise SpatialInputError("Furniture overlap area must be finite")
                 if area > area_tolerance_m2:
                     intersections.append(intersection)
         if intersections:
             area = float(unary_union(intersections).area)
-            issues.append(CollisionIssue(item_a=id_a, item_b=id_b, overlap_area_m2=area))
+            issues.append(CollisionIssue(item_a=a.item.id, item_b=b.item.id, overlap_area_m2=area))
     return issues

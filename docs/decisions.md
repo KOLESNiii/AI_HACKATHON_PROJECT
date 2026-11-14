@@ -54,3 +54,23 @@
   responses still validate; consumers must now handle null.
 - Keep malformed input/geometry as HTTP 422 and unexpected failures as server
   errors. Omit raw request data and validation context from error responses.
+
+## PR #44 review follow-up
+
+- Reviewer `bananadado` explicitly approved the original nullable score/glare/
+  Feng Shui contract change in [review 5906650105](https://github.com/KOLESNiii/AI_HACKATHON_PROJECT/pull/44#pullrequestreview-5906650105),
+  requesting documentation. Tests and handoff docs cover null and legacy assessed
+  values. Shared schema, documentation and test edits are intentional parts of
+  this API integration, as requested by the Dev 4 operator.
+- In response to review items 1 and 3, extend the same null convention to unknown
+  walking entry (`walkable_floor_ratio`) and unassessed glare orientation
+  (`glare_orientation_grounded`), mirrored in Python/TypeScript. These follow-up
+  semantics are documented for reviewer/consumer acknowledgement, not represented
+  as already reviewed approval of this subsequent patch.
+- Conservatively exclude any door with a reported swing obstruction from walking
+  entry. We do not infer whether a partly blocked leaf can open enough to pass.
+- Preserve the shared chair-as-blocker exemption and the operator's chair-target
+  exemption. They are front-access product rules, not walking-space exemptions.
+- Preserve full-width front clearance and interior-floor wall semantics. A notch
+  obstructing any part of the required strip is a finding even if its centre line
+  is clear; wall thickness already extends outward from the usable floor.

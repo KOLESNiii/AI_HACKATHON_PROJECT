@@ -26,21 +26,25 @@ a universally clean demo layout.
 
 `overall_score`, `glare_alerts` and `feng_shui` return **null**, meaning not assessed.
 They must not be rendered as zero, a perfect score or no glare. The shared Python
-and TypeScript types were updated together. `glare_orientation_grounded` remains
-false until a grounded glare calculation is implemented. No scoring or solver
-has been added.
+and TypeScript types were updated together. `glare_orientation_grounded` is also
+null until glare is assessed. Later, true denotes grounded orientation and false
+denotes an assessment using the plan-normal/-Z fallback. No scoring or solver has
+been added. See the recorded contract approval in `docs/decisions.md`.
 
 Malformed JSON/schema and invalid geometry return HTTP 422:
 
 ```json
-{"detail": [{"loc": ["body"], "msg": "Reachability needs at least one door as an entry point", "type": "value_error"}]}
+{"detail": [{"loc": ["body"], "msg": "Furniture height must be finite and positive", "type": "value_error"}]}
 ```
 
 Field errors have more specific `loc` paths. Responses omit raw input and validation
-context, including values that cannot safely be JSON-encoded. A missing entry door
-is invalid for this endpoint; a valid room whose doors cannot be traversed returns
-a reachable ratio of zero. Unexpected faults remain server errors, never clean
-audits. `GET /health` is unchanged. `POST /solve` is still unimplemented.
+context, including values that cannot safely be JSON-encoded. Known domain errors
+use trusted messages; geometry-library/numeric errors use a generic message.
+Unexpected programming errors (including TypeError/IndexError) remain structured
+500 errors without internal details, never clean audits or disguised input errors.
+A missing entry door leaves `walkable_floor_ratio` null in an HTTP 200 report;
+other checks still run. Known but unusable doors yield zero. `GET /health` is
+unchanged. `POST /solve` is still unimplemented.
 
 ## Front clearance
 
@@ -116,19 +120,34 @@ An empty square room can be slightly below 100%: a round person cannot cover the
 very tips of its corners. This metric is neither raw empty floor nor just the area
 of valid centre positions. It must remain distinguishable from free-floor ratio.
 
-No doors means entry is unknown and raises `ValueError`. Doors too narrow/short,
-or entrances entirely obstructed by furniture, contribute no entry; if none reaches
+No doors means entry is unknown and returns null. Doors too narrow/short, with a
+blocked swing, or entrances entirely obstructed by furniture contribute no entry; if none reaches
 a region the result is zero. Fixed objects and chairs remain walking obstacles.
 High parts are excluded by the shared headroom rule. Low doorways are not treated
 as crawl-through passages. Inputs, duplicate IDs and geometry are validated.
 
-The walking calculation assumes door openings are available for passage. A blocked
-door leaf remains a separate finding; this metric does not simulate opening a door
-or infer a passable opening from its current leaf angle. Circular buffers use 32
+Any door with a swing obstruction is excluded as an entry, even if a person could
+fit through a partially opened leaf. This conservative full-opening rule avoids
+counting a blocked entrance as usable. Other unblocked doors may still reach the
+same area. We do not simulate a partially open leaf. Circular buffers use 32
 segments per quadrant; a 1e-9 m radius reduction handles exact-width contact.
 These are geometric approximations, not certified accessibility measurements.
 The audit endpoint assigns this result to `AuditReport.walkable_floor_ratio`.
 Consumers must use the documented reachable-area meaning.
+
+## Shared geometry and regression cases
+
+The full audit builds item volumes, below-headroom projections, broad-phase bounds
+and the free-floor union once per request. All checks use that context; standalone
+functions still build their own geometry. Nothing is cached across room edits.
+
+The chair exception is limited to front access; a chair still occupies walking
+space. L-shaped/re-entrant rooms are checked over the whole front strip, not a
+centre ray; intrusion into one side is intentionally a violation. Wall thickness
+is not subtracted twice because `floor_polygon` already follows interior faces.
+Tests include independent world-space 90/270-degree examples, 45-degree cases,
+clear/obstructed L-shaped rooms, partial reports without doors, nullable/legacy
+contracts, blocked-door entry, safe error responses and request-local cache reuse.
 
 Run the focused tests from the repository root:
 

@@ -51,16 +51,23 @@ milestone; generated video is stretch scope.
 The editor uses `/api/spatial_engine/audit` through Vite. The request is read-only,
 has no provider calls, and echoes the submitted scene ID/revision. Results combine
 collisions, room containment, door obstruction, front clearance and a reachable
-floor ratio using a 50 cm person and entry through any suitable door. Door swing
-obstruction remains a separate finding from walking reachability.
+floor ratio using a 50 cm person and entry through any suitable unblocked door.
+Door swing obstruction is reported and also excludes that door as a walking entry.
 
 Scoring, glare and Feng Shui remain unimplemented. `overall_score`, `glare_alerts`
 and `feng_shui` are nullable in both shared schemas. Consumers must display null
-as unassessed, not zero/no issues. `glare_orientation_grounded` is false because
-there is no grounded glare assessment, even if the room contains a compass.
+as unassessed, not zero/no issues. `glare_orientation_grounded` is also nullable:
+null means glare was not assessed, true means assessed with grounded orientation,
+and false means an assessment used the plan-normal/-Z fallback.
 Scene input and geometry failures return HTTP 422 with a `detail` list containing
 `loc`, `msg`, and `type`; raw input/context is omitted. Unexpected failures remain
-server errors. Missing doors produce 422 because entry reachability is unknown.
+server errors with generic structured details. Missing doors return a successful
+partial report: `walkable_floor_ratio` is null and independent findings remain
+available. Known but unusable/blocked entries produce a ratio of zero.
+
+Audit requests build a request-local geometry context once, reusing item volumes,
+walking projections, broad-phase bounds and free-floor geometry across checks.
+It is rebuilt after each request and is never retained across scene revisions.
 
 Scoring/optimisation, persistence and live editor wiring are separate work. No
 `POST /solve` route exists yet. See the spatial README and Dev 3 handoff for examples.
