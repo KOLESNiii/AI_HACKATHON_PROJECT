@@ -13,8 +13,9 @@ The ownership and geometry rules in `ARCHITECTURE_DAG.md`, `CLAUDE.md`, and
 - `tests/`: API smoke tests. Each service can add tests in its own directory later.
 
 Each service owns its FastAPI app and routes. Domain endpoints must import the
-existing Pydantic models from `contracts.schema`; no domain routes are implemented
-by the bootstrap. Operational `GET /health` returns
+existing Pydantic models from `contracts.schema`. Reconstruction and media expose
+health only; the spatial service implements `POST /audit` as described below.
+Operational `GET /health` returns
 `{"status":"ok","service":"<service folder>"}` and checks process liveness only.
 All services expose OpenAPI at `/openapi.json` and Swagger UI at `/docs`.
 
@@ -43,3 +44,23 @@ Dev 1 and Dev 2 share the reconstruction service through planned `room/` and
 Dev 2's asset normalisation pipeline. Existing directories, ports and contracts
 are unchanged. Photoreal integration is assigned after the validated-layout
 milestone; generated video is stretch scope.
+
+## Spatial audit API
+
+`POST /audit` on port 8002 accepts `RoomScene` directly and returns `AuditReport`.
+The editor uses `/api/spatial_engine/audit` through Vite. The request is read-only,
+has no provider calls, and echoes the submitted scene ID/revision. Results combine
+collisions, room containment, door obstruction, front clearance and a reachable
+floor ratio using a 50 cm person and entry through any suitable door. Door swing
+obstruction remains a separate finding from walking reachability.
+
+Scoring, glare and Feng Shui remain unimplemented. `overall_score`, `glare_alerts`
+and `feng_shui` are nullable in both shared schemas. Consumers must display null
+as unassessed, not zero/no issues. `glare_orientation_grounded` is false because
+there is no grounded glare assessment, even if the room contains a compass.
+Scene input and geometry failures return HTTP 422 with a `detail` list containing
+`loc`, `msg`, and `type`; raw input/context is omitted. Unexpected failures remain
+server errors. Missing doors produce 422 because entry reachability is unknown.
+
+Scoring/optimisation, persistence and live editor wiring are separate work. No
+`POST /solve` route exists yet. See the spatial README and Dev 3 handoff for examples.

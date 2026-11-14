@@ -1,8 +1,8 @@
 # Spatial findings: Dev 3 / Dev 4 handoff
 
 Status: Dev 4's integration contract and reusable examples for issue #29.
-Record Dev 1/3 acknowledgement in the issue or PR. No audit/solve HTTP endpoint
-has been implemented yet; the HTTP contract below is the implementation target.
+Record Dev 1/3 acknowledgement in the issue or PR. `POST /audit` is implemented;
+`POST /solve` remains a future implementation target.
 The authoritative wire models remain `contracts/schema.py` and `schema.ts`.
 
 ## HTTP handoff contract
@@ -28,10 +28,17 @@ use `loc: ["body"]` when no narrower field location is available. Other non-2xx
 responses, network errors and malformed success bodies mean assessment unavailable;
 none must be converted into a clean report. Internal error details stay server-side.
 
-This defines future transport only: the current fixture subset must not be served
-as a complete `AuditReport`. Unimplemented checks must be labelled "not checked",
-and any minimal schema change needed to express that must be coordinated before
-publishing the complete endpoint. Do not invent perfect/neutral assessment scores.
+The audit response uses the shared models with these nullable fields:
+`overall_score: number | null`, `glare_alerts: GlareAlert[] | null`, and
+`feng_shui: FengShuiReport | null`. All three currently return null: display
+"not checked", never zero/perfect scores or "no glare". Python and TypeScript
+schemas changed together; use this revision when wiring the frontend. A future
+assessed empty glare list means no alerts, whereas null means not checked.
+`glare_orientation_grounded` is false until glare is actually evaluated.
+
+`walkable_floor_ratio` now means reachable walking area for a 50 cm person, unioned
+across all suitable door entries, divided by usable floor area. It is not raw free
+area. A room with no doors returns 422; known but unusable entries give ratio zero.
 
 ## Load the same examples in the editor and backend
 
@@ -69,7 +76,8 @@ reviewed update. This fixture pack adds no shared room-model fields.
 `collisions`, `out_of_bounds_item_ids`, and `blocked_doors`. It is deliberately
 not a complete `AuditReport`; do not cast it to that type or invent scores,
 walkable ratios, glare assessments or Feng Shui assessments to fill required fields.
-Dev 3 can render these three lists in isolation before the complete report exists.
+Dev 3 can render these three lists in isolation; the live `/audit` response is now
+a complete shared report with nulls for unavailable assessments.
 
 Findings reference stable furniture and door IDs. Use those IDs to locate and
 highlight the actual scene objects; never parse category/source out of an ID.
@@ -92,9 +100,11 @@ then re-audit. Preserve fixed items and respect `locked_item_ids`.
   record agreement and verification in the issue/PR. This is not a requirement
   to implement the solver or live editor integration as part of #29.
 - Dev 3 adds frontend checks using the same expected results during editor work.
-- Before releasing a complete audit, agree floor-ratio/clearance measurement,
-  scoring, and a way to distinguish unimplemented assessments. Those choices
-  are not supplied by this fixture pack.
+- The endpoint now uses the 50 cm reachability and full-width front-clearance
+  definitions in the spatial README. Chairs are excluded as clearance targets
+  and blockers, but still block walking and participate in collisions. Review
+  these behaviours when adding frontend previews. Scoring is deferred, with
+  unavailable assessments explicitly null.
 
 Dev 3 is the direct UI consumer of `AuditReport`. Dev 1's floor/wall/opening/pose
 geometry and Dev 2's bounds/collision parts are upstream integration dependencies.

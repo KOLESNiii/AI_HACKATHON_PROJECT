@@ -238,7 +238,9 @@ export interface AuditReport {
   scene_id: string;
   /** Echo of the audited RoomScene.revision (required); ignore reports older than the current scene. */
   scene_revision: number;
-  overall_score: number; // 0 - 100
+  /** 0..100 when assessed; null means scoring unavailable, never zero. */
+  overall_score: number | null;
+  /** Reachable floor fraction for a 0.5 m person, unioned across doors; not raw empty floor. */
   walkable_floor_ratio: number; // 0.0 - 1.0
   glare_orientation_grounded: boolean; // True if derived from floor-plan compass or manual calibration
   collisions: CollisionIssue[];
@@ -247,8 +249,10 @@ export interface AuditReport {
   out_of_bounds_item_ids: string[];
   /** Default []. */
   clearance_issues: ClearanceIssue[];
-  glare_alerts: GlareAlert[];
-  feng_shui: FengShuiReport;
+  /** null = not assessed; [] = assessed with no alerts. */
+  glare_alerts: GlareAlert[] | null;
+  /** null = not assessed. */
+  feng_shui: FengShuiReport | null;
 }
 
 export interface OptimiseRequest {

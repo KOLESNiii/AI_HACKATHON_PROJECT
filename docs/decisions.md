@@ -40,3 +40,17 @@
 - Source evidence stays inside the reconstruction service and out of `RoomScene`.
 - Full reasoning: `docs/superpowers/specs/2026-11-14-3d-representation-design.md`. The agreed
   Dev 2 → Dev 1 handoff: `services/reconstruction/assets/README.md`.
+
+## Spatial audit without speculative scores
+
+- Expose implemented checks through `POST /audit`, with existing scene/revision
+  echoes and no mutation, provider calls or persistence.
+- Use the reachable-floor calculation (50 cm person, union across suitable doors)
+  for `walkable_floor_ratio`. Keep raw free-floor area as a separate internal
+  metric; it must not be described as reachability.
+- Return `null` for unimplemented overall scoring, glare alerts and Feng Shui.
+  Mirror nullable types in Python and TypeScript instead of publishing fabricated
+  scores or treating unperformed checks as clean. Existing numeric/assessed
+  responses still validate; consumers must now handle null.
+- Keep malformed input/geometry as HTTP 422 and unexpected failures as server
+  errors. Omit raw request data and validation context from error responses.

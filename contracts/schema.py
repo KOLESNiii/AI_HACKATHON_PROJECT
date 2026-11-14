@@ -367,16 +367,21 @@ class AuditReport(ContractModel):
     """Echo of the audited RoomScene.scene_id. Required so an un-echoed report fails validation."""
     scene_revision: int = Field(ge=0)
     """Echo of the audited RoomScene.revision. Consumers ignore reports older than their scene."""
-    overall_score: int
+    overall_score: Optional[int] = None
+    """None means scoring is not implemented/assessed; never interpret it as zero."""
     walkable_floor_ratio: float
+    """Reachable floor fraction for a 0.5 m wide standing person, unioned across all doors.
+    This is distinct from raw unoccupied floor area; see the spatial service README."""
     glare_orientation_grounded: bool
     collisions: List[CollisionIssue]
     blocked_doors: List[BlockedDoorIssue]
     out_of_bounds_item_ids: List[str] = []
     """Items whose footprint leaves the floor polygon or intersects a wall."""
     clearance_issues: List[ClearanceIssue] = []
-    glare_alerts: List[GlareAlert]
-    feng_shui: FengShuiReport
+    glare_alerts: Optional[List[GlareAlert]] = None
+    """None means not assessed; an empty list means assessed with no alerts."""
+    feng_shui: Optional[FengShuiReport] = None
+    """None means not assessed. Do not manufacture a score for an unavailable assessment."""
 
 
 class OptimiseRequest(ContractModel):

@@ -1,7 +1,46 @@
 # Spatial engine
 
-Pure checks live in `audit.py`; the HTTP app currently exposes health only.
+Pure checks live in `audit.py`; `report.py` composes them for `POST /audit`.
 Geometry comes from shared scene JSON, never from mesh downloads.
+
+## Audit endpoint
+
+Run `bun run dev:spatial` from the repository root (or the equivalent documented
+uvicorn command). `POST http://localhost:8002/audit` accepts the shared `RoomScene`
+as a JSON body and returns `AuditReport`, without an extra envelope. The frontend
+development URL is `/api/spatial_engine/audit`. Swagger is at `/docs`.
+
+Example from PowerShell at the repository root:
+
+```powershell
+$sceneJson = Get-Content -Raw contracts/mock_room/mock_scene.json
+Invoke-RestMethod -Method Post -Uri http://localhost:8002/audit -ContentType application/json -Body $sceneJson
+```
+
+The report includes collisions, out-of-bounds item IDs, blocked doors, front
+clearance and reachable walking-area ratio. It echoes `scene_id` and `revision`
+as `scene_id` and `scene_revision`; a consumer must discard results that don't
+match its current scene. Input is not modified and no provider credentials are
+needed. The shared room has a blocked door and a bed-clearance issue; it is not
+a universally clean demo layout.
+
+`overall_score`, `glare_alerts` and `feng_shui` return **null**, meaning not assessed.
+They must not be rendered as zero, a perfect score or no glare. The shared Python
+and TypeScript types were updated together. `glare_orientation_grounded` remains
+false until a grounded glare calculation is implemented. No scoring or solver
+has been added.
+
+Malformed JSON/schema and invalid geometry return HTTP 422:
+
+```json
+{"detail": [{"loc": ["body"], "msg": "Reachability needs at least one door as an entry point", "type": "value_error"}]}
+```
+
+Field errors have more specific `loc` paths. Responses omit raw input and validation
+context, including values that cannot safely be JSON-encoded. A missing entry door
+is invalid for this endpoint; a valid room whose doors cannot be traversed returns
+a reachable ratio of zero. Unexpected faults remain server errors, never clean
+audits. `GET /health` is unchanged. `POST /solve` is still unimplemented.
 
 ## Front clearance
 
@@ -53,9 +92,8 @@ or duplicate item IDs raise `ValueError`; the input scene is not modified.
 
 This is free geometric area, including disconnected regions and narrow gaps.
 It does not establish reachable circulation or accessibility, and does not reserve
-door-swing or furniture-front clearance areas. No endpoint or `AuditReport`
-assignment is added yet; agree the public meaning of `walkable_floor_ratio` with
-Dev 3 before exposing this calculation under that name.
+door-swing or furniture-front clearance areas. This metric is not assigned to
+`AuditReport.walkable_floor_ratio`; the endpoint uses reachable area instead.
 
 ## Reachable walking space
 
@@ -89,8 +127,8 @@ door leaf remains a separate finding; this metric does not simulate opening a do
 or infer a passable opening from its current leaf angle. Circular buffers use 32
 segments per quadrant; a 1e-9 m radius reduction handles exact-width contact.
 These are geometric approximations, not certified accessibility measurements.
-There is still no API or assignment to `AuditReport.walkable_floor_ratio`; the
-consumer must adopt the documented reachable-area meaning before it is exposed.
+The audit endpoint assigns this result to `AuditReport.walkable_floor_ratio`.
+Consumers must use the documented reachable-area meaning.
 
 Run the focused tests from the repository root:
 
