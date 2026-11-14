@@ -80,6 +80,8 @@ class AlignmentResult(BaseModel):
     """One per asset, in the order given."""
     records: dict[str, AlignmentRecord]
     warnings: list[str] = []
+    observer_failed: bool = False
+    """The observer raised, so hinted assets got the default layout. A retry may do better."""
 
     def place_in(self, scene: RoomScene) -> RoomScene:
         """The scene with these items added; furniture it already had keeps its place."""
@@ -426,6 +428,7 @@ def align_assets(
             pending.append(asset)
 
     hints: dict[str, PlacementHint] = {}
+    observer_failed = False
     if pending:
         try:
             observed = observer.observe(scene, pending, frames or _no_frames)
@@ -433,6 +436,7 @@ def align_assets(
             log.warning("placement observer failed: %s", exc)
             warnings.append(f"placement observer failed ({type(exc).__name__}); default layout")
             observed = []
+            observer_failed = True
         hints = _usable_hints(scene, room, pending, observed, warnings)
 
     def area(a: FurnitureAsset) -> float:
@@ -520,4 +524,5 @@ def align_assets(
         items=[items[a.id] for a in assets],
         records={a.id: records[a.id] for a in assets},
         warnings=warnings,
+        observer_failed=observer_failed,
     )

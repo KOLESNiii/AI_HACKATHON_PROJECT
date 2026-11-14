@@ -32,9 +32,10 @@ import cv2
 
 from contracts.schema import FurnitureItem, RoomScene
 from services.reconstruction import demo_assets
-from services.reconstruction.assets.models import AssetEvidence, EvidenceFrame, FurnitureAsset
+from services.reconstruction.assets.models import FurnitureAsset
 
 from .align import AlignmentRecord, AlignmentResult, align_assets, wall_relative
+from .assemble import assets_of
 from .observe import (
     FixedObserver,
     FrameSource,
@@ -44,19 +45,6 @@ from .observe import (
     PlacementObserver,
 )
 from .plan_view import render_room, wall_letters
-
-
-def assets_of(scene: RoomScene) -> list[FurnitureAsset]:
-    """A scene's furniture as pose-less assets with placeholder evidence (no source frames)."""
-    evidence = AssetEvidence(
-        frames=[EvidenceFrame(frame_index=0, timestamp_s=0.0)], primary_frame_index=0
-    )
-    return [
-        FurnitureAsset.model_validate(
-            {**item.model_dump(exclude={"pose"}), "evidence": evidence.model_dump()}
-        )
-        for item in scene.furniture
-    ]
 
 
 def pose_error(reference: FurnitureItem, item: FurnitureItem) -> tuple[float, float]:
