@@ -181,3 +181,29 @@ def test_unusable_geometry_is_a_safe_input_error_and_stores_nothing() -> None:
     assert drafts.draft_count == 1
     with pytest.raises(SpatialInputError):
         DraftSession(room([item("bed", 2, 2), item("bed", 5, 5)]))
+
+
+def test_identical_arrangements_reuse_the_existing_draft_without_using_budget() -> None:
+    scene = room([item("bed", 2, 2), item("desk", 6, 6)])
+    drafts = DraftSession(scene, max_evaluations=1, session_token="t")
+    assert drafts.evaluations_remaining == 1
+
+    moved = drafts.apply_moves(drafts.original_draft_id, [PoseChange("bed", 3, 2, 90)])
+    again = drafts.apply_moves(drafts.original_draft_id, [PoseChange("bed", 3, 2, 450)])
+    back = drafts.apply_moves(moved.draft_id, [PoseChange("bed", 2, 2, -360)])
+    assert again is moved and back.draft_id == drafts.original_draft_id
+    assert (drafts.draft_count, drafts.evaluations_used, drafts.evaluations_remaining) == (2, 1, 0)
+
+    with pytest.raises(LayoutMoveError) as error:
+        drafts.apply_moves(drafts.original_draft_id, [PoseChange("bed", 4, 2)])
+    assert error.value.code == "budget_exhausted" and drafts.draft_count == 2
+
+
+def test_failed_evaluations_consume_the_shared_budget() -> None:
+    drafts = DraftSession(room([item("bed", 2, 2)]), max_evaluations=1)
+    with pytest.raises(SpatialInputError):
+        drafts.apply_moves(drafts.original_draft_id, [PoseChange("bed", 1e300, 2)])
+    assert drafts.evaluations_remaining == 0
+    assert DraftSession(room([item("bed", 2, 2)])).evaluations_remaining is None
+    with pytest.raises(SpatialInputError):
+        DraftSession(room([item("bed", 2, 2)]), max_evaluations=-1)

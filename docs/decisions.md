@@ -81,3 +81,25 @@
 - Preserve full-width front clearance and interior-floor wall semantics. A notch
   obstructing any part of the required strip is a finding even if its centre line
   is clear; wall thickness already extends outward from the usable floor.
+
+## Agent-driven layout recommendations
+
+- Sonnet proposes furniture poses through validated tools; our geometry code
+  audits every proposal. No mathematical solver or exhaustive position search is
+  used. Issue #33's "bounded search" means bounded agent exploration.
+- User customisation is a fixed choice of four goals (`balanced`, `brighter`,
+  `roomier`, `minimal_changes`) that reorder soft priorities only. Collisions,
+  room containment, blocked doors, fixed items and locked items are never traded.
+  There is no weight editor and the model cannot define scoring.
+- Operator decision (2026-11-14): a requested goal ranks above front clearance,
+  so "make it brighter" may reduce access in front of furniture. The alternative
+  (access always first) was rejected because a request could then be reported as
+  improved without delivering what was asked.
+- Operator decision (2026-11-14): support one measured placement request,
+  "item near a window" (footprint within 0.5 m of a window opening). Other
+  placement wording is acknowledged as unsupported rather than guessed.
+- Operator decision (2026-11-14): the user types free text; optional explicit
+  goal and locked-item choices from the UI override the model's reading.
+- Drafts are request-local and immutable, with one evaluation budget per request.
+  The server keeps the best fully valid draft; an invalid draft is never returned
+  as a recommendation, even if it improves on an invalid starting layout.

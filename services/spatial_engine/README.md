@@ -13,7 +13,9 @@ null. `evaluate_layout(original, candidate)` exposes the individual measurements
 Pass `baseline=current_best_draft` to compare two drafts while retaining the same
 original reference for both movement costs; otherwise the baseline is original.
 
-Comparison uses this priority order, not a weighted public score:
+Comparison uses a priority order, not a weighted public score. Hard feasibility
+always comes first, then an explicitly requested placement, then soft priorities
+whose order depends on the user's goal (default `balanced`, shown below):
 
 1. Fewer critical issues: overlapping furniture pairs + outside-room items +
    blocked doors. Several items blocking one door count as one blocked door.
@@ -24,20 +26,46 @@ Comparison uses this priority order, not a weighted public score:
    its nearest blocker. For 0.6 m required/0.2 m available the deficit is 2/3,
    regardless of how many further blockers exist. Existing chair rules apply.
 4. More reachable walking area using the existing 50 cm metric.
-5. Only with `prefer_brightness=True`: more area-weighted window openness.
-6. Less movement from the original: total translation plus shortest rotation arc
+5. Less movement from the original: total translation plus shortest rotation arc
    at half each item's plan bbox diagonal, expressed in equivalent metres.
+
+`goal` (`objective.LayoutGoal`) reorders only priorities 3-5. Nothing a user asks
+for can outrank priorities 1-2, fixed items or locked items.
+
+| Goal | Soft priority order |
+| --- | --- |
+| `balanced` | front clearance, walking area, least movement |
+| `brighter` | window openness, front clearance, walking area, least movement |
+| `roomier` | walking area, front clearance, least movement |
+| `minimal_changes` | front clearance, least movement, walking area |
+
+The team chose that a requested goal may cost some front access: under `brighter`
+or `roomier` a layout can rank better while a wardrobe's access gets worse. The
+shortfall stays in the report for the user to judge. `minimal_changes` moves
+furniture only to fix a fit or access problem, never just for walking space.
+
+`near_window_item_ids` measures one placement request: "put this item near a
+window". For each named item take the plan distance from its bbox footprint to
+the nearest window opening, subtract `NEAR_WINDOW_M` (0.5 m) and clamp at zero;
+`near_window_shortfall_m` is the sum. Zero means every named item is near a
+window. It ranks directly after priorities 1-2 for every goal, and is unknown
+(null, skipped) in a room without windows. Other placement relations ("against
+the same wall", "facing the door") are not measured.
+
+`compare_evaluations(baseline, candidate, goal)` ranks two existing evaluations
+without auditing again; `compare_layouts` evaluates and then calls it.
 
 Counts are exact; floating comparisons use 1e-9 absolute/relative tolerance. Tied
 metrics advance to the next priority; no ranking is hidden in the public score.
 Any unavailable metric is skipped and reported as such, never replaced by zero.
-Known zero walking access differs from unknown entry. Default comparison does
-not measure brightness; `prefer_brightness=True` measures and ranks it after
-access, before movement. `evaluate_layout(..., measure_brightness=True)` can
-measure the proxy without choosing a ranking policy.
+Known zero walking access differs from unknown entry. `compare_layouts` measures
+brightness only for the `brighter` goal. `evaluate_layout(..., measure_brightness=True)`
+can measure the proxy without choosing a ranking policy. The 1e-9 tolerance means
+a very small gain in the goal metric still wins; no minimum meaningful gain is
+applied yet.
 
-Examples: removing a collision beats brighter windows; reducing a wardrobe's
-access shortfall beats avoiding a move. Moving furniture without improving a
+Examples: removing a collision beats brighter windows under every goal; under
+`balanced`, reducing a wardrobe's access shortfall beats avoiding a move. Moving furniture without improving a
 higher-priority metric loses to the original. A smaller collision is progress
 but remains infeasible: `passes_critical_checks` explicitly tracks the known
 collision/boundary/door checks. It does not certify unknown assessments or that
@@ -61,8 +89,9 @@ uv run --extra spatial pytest tests/spatial_engine/test_objective.py
 `drafts.DraftSession(scene, locked_item_ids)` is a scratchpad for one request. It
 copies the submitted scene, audits it as the first draft (`original_draft_id`),
 and `apply_moves(base_draft_id, [PoseChange(item_id, x, z, yaw_deg), ...])`
-returns a **new** audited `LayoutDraft`. Stored drafts, the caller's scene and the
-move list are never modified. `scene(draft_id)` returns a throwaway `RoomScene`
+returns a **new** audited `LayoutDraft`, or the existing draft when that exact
+arrangement (yaw compared modulo 360) was already evaluated. Stored drafts, the
+caller's scene and the move list are never modified. `scene(draft_id)` returns a throwaway `RoomScene`
 copy at the base revision, so each draft's report identifies the submitted scene.
 
 Only poses of known, movable items can change. A request is rejected with
@@ -80,12 +109,51 @@ overlapping intermediate). Check `evaluation.metrics.passes_critical_checks`
 before treating a draft as a recommendation. Each draft records brightness
 openness as a measurement; ranking it is the comparison policy's decision.
 
-Not included yet: evaluation budgets, duplicate-arrangement detection, best-draft
-retention, tool schemas, Sonnet and `POST /solve`. Draft IDs are not secrets; the
-per-session token only stops an ID from another request being accepted.
+`max_evaluations` is one allowance for the whole request, not per call. Each
+attempted evaluation after the original uses one, including an attempt whose
+geometry cannot be processed; reusing an existing draft uses none. When it is
+spent, `apply_moves` raises `budget_exhausted` and existing drafts stay readable.
+`near_window_item_ids` is passed through to every evaluation. Draft IDs are not
+secrets; the per-session token only stops an ID from another request being accepted.
 
 ```bash
 uv run --extra spatial pytest tests/spatial_engine/test_drafts.py
+```
+
+## Layout exploration tools (issue #33)
+
+`layout_tools.LayoutToolbox(scene, locked_item_ids=..., preferences=..., max_evaluations=...)`
+exposes the draft session to an agent as three tools. `TOOL_DEFINITIONS` holds
+their names, descriptions and closed JSON schemas in the Anthropic tool format.
+No model is called here; tests drive the tools with scripted calls.
+
+| Tool | Purpose | Uses budget |
+| --- | --- | --- |
+| `inspect_layout(draft_id)` | Room outline, windows, door keep-clear boxes, each item's size/pose/`movable`, findings, metrics and the user's request | no |
+| `evaluate_moves(base_draft_id, moves)` | New audited draft and its ranking against the original and the best so far | one per new arrangement |
+| `compare_layouts(first_draft_id, second_draft_id)` | Rank two drafts under the user's goal | no |
+
+`call(name, arguments)` returns a JSON-safe dict and never raises for agent
+input. Success is `{"ok": true, ...}`; a rejected call is
+`{"ok": false, "error": {"code", "message"}}`. Both include `best_draft_id` and
+`evaluations_remaining`. Codes: `unknown_tool`, `invalid_arguments` (wrong types,
+missing or extra fields, NaN/infinity, coordinates beyond 1000 m, more than 32
+moves), the draft codes above, and `invalid_layout` when geometry cannot be
+evaluated. Arguments are validated strictly: `"5"` and `true` are not numbers,
+and a move cannot carry extra fields such as a new width.
+
+The server, not the agent, tracks the recommendation. `best_draft_id` starts as
+the original and moves only to a draft that passes the critical checks **and**
+ranks better than the current best under `LayoutPreferences` (goal plus
+near-window items). An invalid draft is never the best, even when it has fewer
+problems than an invalid original; `improved` stays false until a fully valid
+draft exists. A caller must still re-audit the best draft before returning it.
+
+Furniture names are untrusted text: they are truncated to 40 characters and
+returned only as data. Nothing in a name or ID changes which items may move.
+
+```bash
+uv run --extra spatial pytest tests/spatial_engine/test_layout_tools.py
 ```
 
 ## Brightness approximation for layout comparison

@@ -47,12 +47,21 @@ def _echo(value: object) -> str:
     return repr(str(value)[:_ECHO_LIMIT])
 
 
+def _arrangement(poses: tuple[PoseChange, ...]) -> tuple[tuple[str, float, float, float], ...]:
+    """Identity of a layout: equal yaws modulo a full turn are the same arrangement."""
+    return tuple((pose.item_id, pose.x, pose.z, pose.yaw_deg % 360 % 360) for pose in poses)
+
+
 class DraftSession:
     """Drafts for one request. Not shared, persisted or reused across scene revisions.
 
     Only poses of known, movable furniture can change. Room data, dimensions, assets,
     fixed items and the caller's locked items are never altered. Stored drafts are
-    never modified: every accepted set of moves creates a new draft.
+    never modified: accepted moves create a new draft, or return the existing draft
+    when that exact arrangement was already evaluated.
+
+    `max_evaluations` is one allowance for the whole request. Every attempted
+    evaluation after the original consumes it, including one that fails.
     """
 
     def __init__(
@@ -60,11 +69,18 @@ class DraftSession:
         scene: RoomScene,
         locked_item_ids: Iterable[str] = (),
         *,
+        near_window_item_ids: Iterable[str] = (),
+        max_evaluations: int | None = None,
         session_token: str | None = None,
     ) -> None:
+        if max_evaluations is not None and max_evaluations < 0:
+            raise SpatialInputError("Evaluation budget must not be negative")
         self._original = scene.model_copy(deep=True)
+        self._near_window_item_ids = tuple(near_window_item_ids)
+        self._max_evaluations = max_evaluations
+        self.evaluations_used = 0
         # Evaluating first rejects invalid geometry and duplicate IDs before they are indexed.
-        evaluation = evaluate_layout(self._original, self._original, measure_brightness=True)
+        evaluation = self._evaluate(self._original)
         item_ids = {item.id for item in self._original.furniture}
         locked = frozenset(locked_item_ids)
         unknown = sorted(locked - item_ids)
@@ -75,6 +91,7 @@ class DraftSession:
         # Draft IDs carry a per-session token so an ID from another request is never accepted.
         self._token = token_hex(4) if session_token is None else session_token
         self._drafts: dict[str, LayoutDraft] = {}
+        self._by_arrangement: dict[tuple[tuple[str, float, float, float], ...], str] = {}
         poses = tuple(
             PoseChange(item.id, item.pose.x, item.pose.z, item.pose.yaw_deg)
             for item in sorted(self._original.furniture, key=lambda item: item.id)
@@ -87,7 +104,16 @@ class DraftSession:
         draft_id = f"draft-{self._token}-{len(self._drafts)}"
         draft = LayoutDraft(draft_id, parent_id, poses, evaluation)
         self._drafts[draft.draft_id] = draft
+        self._by_arrangement[_arrangement(poses)] = draft_id
         return draft
+
+    def _evaluate(self, scene: RoomScene) -> LayoutEvaluation:
+        return evaluate_layout(
+            self._original,
+            scene,
+            measure_brightness=True,
+            near_window_item_ids=self._near_window_item_ids,
+        )
 
     def _scene_with(self, poses: tuple[PoseChange, ...]) -> RoomScene:
         """A fresh scene at the base revision, so its audit identifies the submitted scene."""
@@ -104,6 +130,13 @@ class DraftSession:
     def draft_count(self) -> int:
         return len(self._drafts)
 
+    @property
+    def evaluations_remaining(self) -> int | None:
+        """None means unlimited."""
+        if self._max_evaluations is None:
+            return None
+        return max(0, self._max_evaluations - self.evaluations_used)
+
     def draft(self, draft_id: str) -> LayoutDraft:
         found = self._drafts.get(draft_id) if isinstance(draft_id, str) else None
         if found is None:
@@ -119,9 +152,12 @@ class DraftSession:
     def apply_moves(self, base_draft_id: str, moves: Sequence[PoseChange]) -> LayoutDraft:
         """Create and audit a new draft from `base_draft_id` with `moves` applied.
 
-        Rejected requests raise `LayoutMoveError` and leave the session unchanged.
-        A draft with collisions or other critical issues is still created, so that
-        several items can be rearranged over successive drafts.
+        Rejected requests raise `LayoutMoveError` and store no draft. A draft with
+        collisions or other critical issues is still created, so that several items
+        can be rearranged over successive drafts. An arrangement that was already
+        evaluated returns its existing draft without using the budget; compare
+        `draft_count` before and after to tell. `budget_exhausted` is raised once
+        the request's evaluation allowance is spent.
         """
         base = self.draft(base_draft_id)
         if not moves:
@@ -152,7 +188,12 @@ class DraftSession:
                 move.item_id, float(move.x), float(move.z), float(move.yaw_deg)
             )
         ordered = tuple(poses[item_id] for item_id in sorted(poses))
-        evaluation = evaluate_layout(
-            self._original, self._scene_with(ordered), measure_brightness=True
-        )
-        return self._store(base.draft_id, ordered, evaluation)
+        existing = self._by_arrangement.get(_arrangement(ordered))
+        if existing is not None:
+            return self._drafts[existing]
+        if self.evaluations_remaining == 0:
+            raise LayoutMoveError(
+                "budget_exhausted", "No layout evaluations remain for this request"
+            )
+        self.evaluations_used += 1
+        return self._store(base.draft_id, ordered, self._evaluate(self._scene_with(ordered)))
