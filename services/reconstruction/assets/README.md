@@ -200,8 +200,9 @@ uv run --extra reconstruction python -m services.reconstruction.assets.select_fr
   --recorded tests/reconstruction/assets/fixtures/opening_room.reviewed.json
 ```
 
-The supplied annotations are manually reviewed **coarse visible boxes**, not SAM masks or
-raw provider output. They cover four target items in six frames: two separate sofas, a table
+The coding agent visually reviewed the supplied **coarse visible boxes**; they are not
+independently human-verified, SAM masks, or raw provider output. They cover four target items
+in six frames: two separate sofas, a table
 and one office chair. Automated tests repeat the run with reordered observations and require
 the same IDs and evidence. No private images or generated assets are added by this issue.
 

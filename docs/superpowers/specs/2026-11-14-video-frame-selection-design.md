@@ -425,8 +425,8 @@ always marks live proposals as requiring review. It uses the documented `image_u
 not the old singular `image_url` example from the room annotator.
 
 A manually reviewed recording covers the four target items within the first six seconds:
-rear sofa, right sofa, table and one office chair. It is explicitly human-reviewed annotation,
-not claimed raw model output. Six selected original frames provide repeat sightings; replay,
+rear sofa, right sofa, table and one office chair. The coding agent visually reviewed these
+annotations; they are not independently human-verified or claimed raw model output. Replay,
 changed object order, provider failure and persisted IDs are exercised by regression tests.
 Original images remain local/runtime artifacts; only source hashes and coarse box annotations
 are committed. This demonstrates reviewed frame coverage/identity, not autonomous cross-room

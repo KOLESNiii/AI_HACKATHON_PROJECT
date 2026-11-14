@@ -71,7 +71,7 @@ class OfflineProvider:
 
 
 class RecordedProvider:
-    """User-reviewed detections keyed by full source frame keys, never by batch position."""
+    """Reviewed detections keyed by full source frame keys, never by batch position."""
 
     def __init__(self, discovery: Discovery) -> None:
         self.discovery = discovery
