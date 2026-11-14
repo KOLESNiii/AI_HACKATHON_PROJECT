@@ -91,6 +91,40 @@ def render_floor(floor: ParsedFloor, px_per_m: float = 80.0) -> np.ndarray:
     return img
 
 
+def render_shell_section(floor: ParsedFloor, y: float = 1.0, px_per_m: float = 80.0) -> np.ndarray:
+    """Cut every room's shell horizontally at height y and draw the cut, like an architectural
+    plan: walls show as outlines, and door and window openings show as gaps."""
+    import trimesh
+
+    from .shell import build_shell
+
+    pts = [(p.x, p.z) for r in floor.rooms for p in r.scene.floor_polygon]
+    if not pts:
+        return np.full((100, 100, 3), 255, np.uint8)
+    pad = 0.5
+    w = int((max(x for x, _ in pts) + 2 * pad + 0.5) * px_per_m)
+    h = int((max(z for _, z in pts) + 2 * pad + 0.5) * px_per_m)
+    img = np.full((h, w, 3), 255, np.uint8)
+
+    def px(x: float, z: float) -> tuple[int, int]:
+        return int((x + pad) * px_per_m), int((z + pad) * px_per_m)
+
+    for room in floor.rooms:
+        poly = np.array([px(p.x, p.z) for p in room.scene.floor_polygon], np.int32)
+        cv2.fillPoly(img, [poly], (235, 235, 225))
+        shell = build_shell(room.scene)
+        for node in shell.graph.nodes_geometry:
+            if not node.startswith("wall_"):
+                continue
+            mesh = shell.geometry[shell.graph[node][1]]
+            lines = trimesh.intersections.mesh_plane(  # type: ignore[no-untyped-call]
+                mesh, [0, 1, 0], [0, y, 0]
+            )
+            for a, b in lines:
+                cv2.line(img, px(a[0], a[2]), px(b[0], b[2]), (30, 30, 30), 2)
+    return img
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(prog="python -m services.reconstruction.room")
     ap.add_argument("images", nargs="+", type=Path)
@@ -101,6 +135,11 @@ def main() -> None:
         nargs="*",
         default=None,
         help="recorded PlanAnnotations JSON, one per image",
+    )
+    ap.add_argument(
+        "--shells",
+        action="store_true",
+        help="also write each room's shell .glb and a per-floor section of the shells at 1 m",
     )
     args = ap.parse_args()
 
@@ -138,6 +177,14 @@ def main() -> None:
             )
         out_png = args.out / f"{floor.floor_id}.png"
         out_png.write_bytes(cv2.imencode(".png", render_floor(floor))[1].tobytes())
+        if args.shells:
+            from .shell import shell_glb
+
+            for room in floor.rooms:
+                (args.out / f"{room.room_id}.glb").write_bytes(shell_glb(room.scene))
+            section = render_shell_section(floor)
+            out_sec = args.out / f"{floor.floor_id}-shell-section.png"
+            out_sec.write_bytes(cv2.imencode(".png", section)[1].tobytes())
     for w in plan.warnings:
         print("warning:", w)
 
