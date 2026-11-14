@@ -1,11 +1,25 @@
 """Metric floor geometry using the coordinate conventions in contracts.schema."""
 
+from collections.abc import Sequence
 from math import cos, isfinite, radians, sin
 
 # The existing spatial extra ships Shapely without type stubs.
 from shapely.geometry import Polygon  # type: ignore[import-untyped]
 
-from contracts.schema import FurnitureItem
+from contracts.schema import FurnitureItem, Vec2
+
+
+def room_floor_polygon(points: Sequence[Vec2]) -> Polygon:
+    """Build the usable interior floor, accepting either winding and a closed ring.
+
+    Reject invalid geometry instead of silently repairing the room boundary.
+    """
+    if len(points) < 3 or not all(isfinite(v) for point in points for v in (point.x, point.z)):
+        raise ValueError("Room floor requires at least three finite X/Z points")
+    polygon = Polygon([(point.x, point.z) for point in points])
+    if not polygon.is_valid or not isfinite(polygon.area) or polygon.area <= 0:
+        raise ValueError("Room floor must be a valid polygon with finite, positive area")
+    return polygon
 
 
 def furniture_footprint(item: FurnitureItem) -> Polygon:

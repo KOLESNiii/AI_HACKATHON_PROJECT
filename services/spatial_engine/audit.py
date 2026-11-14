@@ -4,8 +4,32 @@ from collections.abc import Sequence
 from itertools import combinations
 from math import isfinite
 
-from contracts.schema import CollisionIssue, FurnitureItem
-from services.spatial_engine.geometry import furniture_footprint
+from contracts.schema import CollisionIssue, FurnitureItem, RoomScene
+from services.spatial_engine.geometry import furniture_footprint, room_floor_polygon
+
+
+def detect_out_of_bounds(scene: RoomScene, *, boundary_tolerance_m: float = 1e-9) -> list[str]:
+    """Return sorted item IDs whose rectangular footprint leaves the interior floor.
+
+    Boundary contact is allowed. The tolerance expands the floor by this distance
+    solely to absorb floating-point noise; it is not wall thickness or clearance.
+    Set it to zero for exact containment. Walls/shell meshes and item height do
+    not affect this floor-layout check. Inputs are never modified.
+
+    Raises ValueError for invalid floor/footprints, duplicate furniture IDs, or
+    a non-finite/negative tolerance. Validates the floor even with no furniture.
+    """
+    if not isfinite(boundary_tolerance_m) or boundary_tolerance_m < 0:
+        raise ValueError("Boundary tolerance must be finite and non-negative")
+    floor = room_floor_polygon(scene.floor_polygon)
+    if len({item.id for item in scene.furniture}) != len(scene.furniture):
+        raise ValueError("Furniture IDs must be unique for containment checks")
+    allowed_floor = floor.buffer(boundary_tolerance_m) if boundary_tolerance_m else floor
+    return [
+        item.id
+        for item in sorted(scene.furniture, key=lambda i: i.id)
+        if not allowed_floor.covers(furniture_footprint(item))
+    ]
 
 
 def detect_collisions(
