@@ -1,0 +1,74 @@
+{
+  ".graphify_ast.json": {
+    "mtime": 1794644052.0582492,
+    "seen": 1794666065.4296784,
+    "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
+    "semantic_hash": ""
+  },
+  ".graphify_cached.json": {
+    "mtime": 1794644029.234256,
+    "seen": 1794666065.4296865,
+    "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
+    "semantic_hash": ""
+  },
+  ".graphify_detect.json": {
+    "mtime": 1794644020.845635,
+    "seen": 1794666065.4296904,
+    "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
+    "semantic_hash": ""
+  },
+  "contracts/schema.py": {
+    "mtime": 1794665882.7059245,
+    "seen": 1794666065.4296925,
+    "ast_hash": "a29e21340e7de454f138029031e932a3",
+    "semantic_hash": ""
+  },
+  "contracts/schema.ts": {
+    "mtime": 1794665869.0079105,
+    "seen": 1794666065.4296935,
+    "ast_hash": "5bc22ba7e6699331074d1c8655e44626",
+    "semantic_hash": ""
+  },
+  "scripts/generate_mock_glbs.py": {
+    "mtime": 1794666047.8368258,
+    "seen": 1794666065.4296947,
+    "ast_hash": "54bbe5b0be3f6ef5f68a05de866e6b1e",
+    "semantic_hash": ""
+  },
+  ".graphify_uncached.txt": {
+    "mtime": 1794644029.2348397,
+    "seen": 1794666065.429696,
+    "ast_hash": "c313f37f2b3c5e6b6db9b6bd8e54b087",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1794644019.4011016,
+    "seen": 1794666065.4296973,
+    "ast_hash": "c12e6f2d240680d22dcfa89dcfb73abe",
+    "semantic_hash": ""
+  },
+  "ARCHITECTURE_DAG.md": {
+    "mtime": 1794666041.390471,
+    "seen": 1794666065.4296987,
+    "ast_hash": "f26b85e708ae6505a27aa67db3c90584",
+    "semantic_hash": ""
+  },
+  "CLAUDE.md": {
+    "mtime": 1794665896.7081842,
+    "seen": 1794666065.4297,
+    "ast_hash": "62c34c966ea55ab19aad2de02e49263f",
+    "semantic_hash": ""
+  },
+  "FIGMA_DESIGN_SPEC.md": {
+    "mtime": 1794665909.346941,
+    "seen": 1794666065.4297009,
+    "ast_hash": "0829ae7d186f27816e0db38ea2eba9d9",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1794665717.5430295,
+    "seen": 1794666065.429702,
+    "ast_hash": "043143509d265b4ebe85caab356ee74f",
+    "semantic_hash": ""
+  }
+}
