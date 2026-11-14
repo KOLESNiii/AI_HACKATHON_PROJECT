@@ -6,19 +6,23 @@ Writes to frontend/public/mock_room/ (served by Vite at /mock_room/).
 - Furniture boxes follow the asset invariant: bottom-centre at the origin, front faces +Z. Each box
   has a dark strip on the top-front edge so yaw is visible. The strip is inside the bounds, so
   the mesh bounds still equal bbox_m exactly.
-- shell.glb is in room coordinates (not normalised): a floor plus walls whose start/end lie on
-  the interior face, with thickness extending outward, and door/window openings cut out.
+- shell.glb follows the shell rules in contracts/schema.py: room coordinates, nodes `floor`,
+  `ceiling` and `wall_<id>`, walls on the interior face with thickness along the outward normal,
+  door/window openings cut out.
 """
 
-import json
 import math
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
 import trimesh
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from contracts.schema import RoomScene  # noqa: E402
+
 SCENE_PATH = ROOT / "contracts" / "mock_room" / "mock_scene.json"
 OUT_DIR = ROOT / "frontend" / "public" / "mock_room"
 
@@ -30,7 +34,8 @@ COLOURS = {
 FRONT_MARKER = [30, 30, 35, 255]
 WALL_COLOUR = [225, 222, 215, 255]
 FLOOR_COLOUR = [170, 160, 145, 255]
-DOOR_HEAD_HEIGHT_M = 2.05
+CEILING_COLOUR = [240, 240, 238, 255]
+SLAB_M = 0.02
 
 
 def coloured_box(extents, rgba, centre) -> trimesh.Trimesh:
@@ -63,6 +68,60 @@ def rotate_y(v: np.ndarray, deg: float) -> np.ndarray:
     return np.array([v[0] * c + v[1] * s, -v[0] * s + v[1] * c])
 
 
+def cross2(a: np.ndarray, b: np.ndarray) -> float:
+    return float(a[0] * b[1] - a[1] * b[0])
+
+
+def convex_vertices(poly: np.ndarray) -> np.ndarray:
+    """Per vertex: True when convex. With the contract winding (positive shoelace), convex is a
+    positive turn."""
+    return np.array(
+        [
+            cross2(poly[i] - poly[i - 1], poly[(i + 1) % len(poly)] - poly[i]) > 0
+            for i in range(len(poly))
+        ]
+    )
+
+
+def triangulate(poly: np.ndarray) -> np.ndarray:
+    """Ear clipping for a simple polygon with positive shoelace winding (no extra dependency)."""
+    idx, tris = list(range(len(poly))), []
+    while len(idx) > 3:
+        for k in range(len(idx)):
+            a, b, c = idx[k - 1], idx[k], idx[(k + 1) % len(idx)]
+            if cross2(poly[b] - poly[a], poly[c] - poly[b]) < 0:
+                continue  # reflex: not an ear
+            others = (p for p in idx if p not in (a, b, c))
+            if any(
+                cross2(poly[b] - poly[a], poly[p] - poly[a]) >= 0
+                and cross2(poly[c] - poly[b], poly[p] - poly[b]) >= 0
+                and cross2(poly[a] - poly[c], poly[p] - poly[c]) >= 0
+                for p in others
+            ):
+                continue  # another vertex inside: not an ear
+            tris.append((a, b, c))
+            idx.pop(k)
+            break
+        else:
+            raise ValueError("floor_polygon is not a simple polygon")
+    tris.append(tuple(idx))
+    return np.array(tris)
+
+
+def slab(poly: np.ndarray, y0: float, rgba) -> trimesh.Trimesh:
+    """The floor polygon extruded from y0 to y0 + SLAB_M."""
+    # extrude_triangulation extrudes the 2D (u, v) plane along +w. Feed (x, -z), then rotate -90
+    # degrees about X, which maps (u, v, w) to (u, w, -v) = (x, height, z).
+    mesh = trimesh.creation.extrude_triangulation(
+        poly * [1, -1], triangulate(poly)[:, ::-1], SLAB_M
+    )
+    mesh.apply_transform(trimesh.transformations.rotation_matrix(-math.pi / 2, [1, 0, 0]))
+    mesh.apply_translation([0, y0, 0])
+    trimesh.repair.fix_normals(mesh)
+    mesh.visual.vertex_colors = rgba
+    return mesh
+
+
 def wall_piece(start, direction, outward, t0, t1, y0, y1, thickness) -> trimesh.Trimesh:
     """Box spanning [t0, t1] along the wall and [y0, y1] vertically, extruded outward."""
     length = t1 - t0
@@ -76,79 +135,79 @@ def wall_piece(start, direction, outward, t0, t1, y0, y1, thickness) -> trimesh.
     return box
 
 
-def assert_convex(poly: np.ndarray) -> None:
-    edges = np.roll(poly, -1, axis=0) - poly
-    cross = (
-        edges[:, 0] * np.roll(edges, -1, axis=0)[:, 1]
-        - edges[:, 1] * np.roll(edges, -1, axis=0)[:, 0]
-    )
-    if not (np.all(cross >= -1e-9) or np.all(cross <= 1e-9)):
-        raise ValueError("Mock shell generator only supports convex floor polygons")
+def mm_key(p: np.ndarray) -> tuple[int, int]:
+    """Vertex lookup key, so wall endpoints match polygon vertices despite float noise."""
+    return round(p[0] * 1000), round(p[1] * 1000)
 
 
-def shell_mesh(scene: dict) -> trimesh.Trimesh:
-    """Mock-only shell. Assumes a convex floor polygon (outward side found from the centroid,
-    floor drawn as the bounding rectangle); real shells come from Dev 1's pipeline."""
-    poly = np.array([[p["x"], p["z"]] for p in scene["floor_polygon"]])
-    assert_convex(poly)
-    centroid = poly.mean(axis=0)
-    (min_x, min_z), (max_x, max_z) = poly.min(axis=0), poly.max(axis=0)
-    parts = [
-        coloured_box(
-            [max_x - min_x, 0.02, max_z - min_z],
-            FLOOR_COLOUR,
-            [(min_x + max_x) / 2, -0.01, (min_z + max_z) / 2],
-        )
-    ]
+def wall_mesh(scene: dict, wall: dict, convex_at: dict) -> trimesh.Trimesh:
+    start = np.array([wall["start"]["x"], wall["start"]["z"]])
+    end = np.array([wall["end"]["x"], wall["end"]["z"]])
+    length = float(np.linalg.norm(end - start))
+    direction = (end - start) / length
+    outward = np.array([direction[1], -direction[0]])  # contract winding: (dz, -dx)
+    h, th = wall["height_m"], wall["thickness_m"]
 
-    for wall in scene["walls"]:
-        start = np.array([wall["start"]["x"], wall["start"]["z"]])
-        end = np.array([wall["end"]["x"], wall["end"]["z"]])
-        length = float(np.linalg.norm(end - start))
-        direction = (end - start) / length
-        normal = np.array([-direction[1], direction[0]])
-        outward = normal if np.dot((start + end) / 2 - centroid, normal) > 0 else -normal
-        h, th = wall["height_m"], wall["thickness_m"]
+    # Openings as (t0, t1, sill, head) along this wall.
+    openings = []
+    for win in scene["windows"]:
+        if win["wall_id"] == wall["id"]:
+            t0 = win["offset_along_wall_m"]
+            openings.append((t0, t0 + win["width_m"], win["sill_height_m"], win["head_height_m"]))
+    for door in scene["doors"]:
+        if door["wall_id"] != wall["id"]:
+            continue
+        hinge = np.array([door["hinge_pos"]["x"], door["hinge_pos"]["z"]])
+        swing_side = -outward if door["swings_into_room"] else outward
+        # The closed leaf is wall-parallel; a 90-degree turn in the swing direction must point
+        # it to the swing side. Clockwise is negative yaw, so closed = swing_side turned back.
+        # Independent of swing_angle_deg, which is only how far the door opens.
+        closed_dir = rotate_y(swing_side, 90 if door["swing_clockwise"] else -90)
+        t_hinge = float(np.dot(hinge - start, direction))
+        sign = 1 if np.dot(closed_dir, direction) > 0 else -1
+        t_a, t_b = sorted([t_hinge, t_hinge + sign * door["width_m"]])
+        openings.append((t_a, t_b, 0.0, door["head_height_m"]))
+    openings.sort()
 
-        # Openings as (t0, t1, sill, head) along this wall.
-        openings = []
-        for win in scene["windows"]:
-            if win["wall_id"] == wall["id"]:
-                t0 = win["offset_along_wall_m"]
-                t1 = t0 + win["width_m"]
-                openings.append((t0, t1, win["sill_height_m"], win["head_height_m"]))
-        for door in scene["doors"]:
-            if door["wall_id"] != wall["id"]:
-                continue
-            hinge = np.array([door["hinge_pos"]["x"], door["hinge_pos"]["z"]])
-            swing_side = -outward if door.get("swings_into_room", True) else outward
-            # The closed leaf is wall-parallel; a 90-degree turn in the swing direction must point
-            # it to the swing side. Clockwise is negative yaw, so closed = swing_side turned back.
-            # Independent of swing_angle_deg, which is only how far the door opens.
-            closed_dir = rotate_y(swing_side, 90 if door["swing_clockwise"] else -90)
-            t_hinge = float(np.dot(hinge - start, direction))
-            sign = 1 if np.dot(closed_dir, direction) > 0 else -1
-            t_a, t_b = sorted([t_hinge, t_hinge + sign * door["width_m"]])
-            openings.append((t_a, t_b, 0.0, DOOR_HEAD_HEIGHT_M))
-        openings.sort()
-
-        # Extend each wall by its thickness at both ends to close the outer corners.
-        cursor = -th
-        for t0, t1, sill, head in openings:
-            if t0 > cursor:
-                parts.append(wall_piece(start, direction, outward, cursor, t0, 0, h, th))
-            if sill > 0:
-                parts.append(wall_piece(start, direction, outward, t0, t1, 0, sill, th))
-            if head < h:
-                parts.append(wall_piece(start, direction, outward, t0, t1, head, h, th))
-            cursor = t1
-        parts.append(wall_piece(start, direction, outward, cursor, length + th, 0, h, th))
-
+    # At a convex corner extend by the thickness to close the outer corner. At a reflex corner
+    # the extension would poke into the room, and the neighbouring wall already covers it.
+    cursor = -th if convex_at.get(mm_key(start), False) else 0.0
+    stop = length + (th if convex_at.get(mm_key(end), False) else 0.0)
+    parts = []
+    for t0, t1, sill, head in openings:
+        if t0 > cursor:
+            parts.append(wall_piece(start, direction, outward, cursor, t0, 0, h, th))
+        if sill > 0:
+            parts.append(wall_piece(start, direction, outward, t0, t1, 0, sill, th))
+        if head < h:
+            parts.append(wall_piece(start, direction, outward, t0, t1, head, h, th))
+        cursor = t1
+    parts.append(wall_piece(start, direction, outward, cursor, stop, 0, h, th))
     return trimesh.util.concatenate(parts)
 
 
+def shell_scene(scene: dict) -> trimesh.Scene:
+    """Mock-only shell; real shells come from Dev 1. Takes a validated RoomScene dump. Assumes a
+    flat ceiling at the walls' common height, and right-angle corners of equal wall thickness."""
+    poly = np.array([[p["x"], p["z"]] for p in scene["floor_polygon"]])
+    heights = {w["height_m"] for w in scene["walls"]}
+    if len(heights) != 1:
+        raise ValueError("Mock shell generator needs every wall to have the same height")
+    convex_at = {mm_key(p): c for p, c in zip(poly, convex_vertices(poly))}
+
+    shell = trimesh.Scene()
+    shell.add_geometry(slab(poly, -SLAB_M, FLOOR_COLOUR), node_name="floor", geom_name="floor")
+    shell.add_geometry(
+        slab(poly, heights.pop(), CEILING_COLOUR), node_name="ceiling", geom_name="ceiling"
+    )
+    for wall in scene["walls"]:
+        name = f"wall_{wall['id']}"
+        shell.add_geometry(wall_mesh(scene, wall, convex_at), node_name=name, geom_name=name)
+    return shell
+
+
 def main() -> None:
-    scene = json.loads(SCENE_PATH.read_text())
+    scene = RoomScene.model_validate_json(SCENE_PATH.read_text()).model_dump()
     os.makedirs(OUT_DIR, exist_ok=True)
 
     for item in scene["furniture"]:
@@ -157,7 +216,7 @@ def main() -> None:
         mesh = furniture_mesh(b["width"], b["height"], b["depth"], rgba)
         mesh.export(OUT_DIR / Path(item["glb_url"]).name)
 
-    shell_mesh(scene).export(OUT_DIR / Path(scene["shell_glb_url"]).name)
+    shell_scene(scene).export(OUT_DIR / Path(scene["shell_glb_url"]).name)
     print(f"Exported mock .glb files to {OUT_DIR.relative_to(ROOT)}/")
 
 

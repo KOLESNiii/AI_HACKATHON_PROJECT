@@ -13,9 +13,16 @@
  * - Compass azimuth of a plan bearing b = (b - north) mod 360, north = north_compass_deg ?? 0
  *   (null => -Z is North and glare_orientation_grounded is false).
  * - Furniture .glb: bounding-box bottom-centre at origin, front faces +Z. `Pose2D.x/z` is where
- *   that bottom-centre sits in the room; Y is always 0.
- * - Wall start/end lie on the interior (room-side) face; thickness extends outward, away from
- *   `floor_polygon`, which is therefore the usable interior floor.
+ *   that bottom-centre sits in the room; Y is currently always 0. `bbox_m` is authoritative: the
+ *   mesh is scaled to fit it, within 1 mm per axis.
+ * - `floor_polygon` is a simple polygon wound clockwise in plan view (positive shoelace sum
+ *   over (x, z)). Walls run start -> end the same way, so for wall direction (dx, dz) the room is
+ *   on the (-dz, dx) side and the outward normal is (dz, -dx). Works for non-convex rooms.
+ * - Wall start/end lie on the interior (room-side) face; thickness extends along the outward
+ *   normal, so `floor_polygon` is the usable interior floor.
+ * - Shell .glb: NOT normalised. Room coordinates, identity transforms, floor top at Y=0. Derived
+ *   from floor_polygon/walls/windows/doors (which stay authoritative). Nodes: `floor`, `ceiling`,
+ *   `wall_<wall_id>`. Hide `ceiling` when the camera is above it.
  *
  * These types describe the wire format. Pydantic always serialises defaults, so every field is
  * present in service responses and in contracts/mock_room fixtures. `?` marks only nullable
@@ -26,6 +33,7 @@ export interface Vec2 { x: number; z: number; }
 export interface Vec3 { x: number; y: number; z: number; }
 
 export interface WallSegment {
+  /** [A-Za-z0-9_-]+. Also names the shell node `wall_<id>` (Three.js strips `.`, `:`, `/`). */
   id: string;
   /** Interior (room-side) face; thickness extends outward. */
   start: Vec2;
@@ -42,9 +50,9 @@ export interface WindowOpening {
   width_m: number;
   sill_height_m: number; // default 0.9
   head_height_m: number; // default 2.1
-  /** Outward normal as a plan bearing: clockwise from -Z viewed from above (0 = -Z, 90 = +X, 180 = +Z, 270 = -X). */
+  /** Outward normal of wall_id as a plan bearing: clockwise from -Z viewed from above (0 = -Z, 90 = +X, 180 = +Z, 270 = -X). Derived: the wall wins if they disagree. */
   plan_normal_deg: number;
-  /** Optional true compass azimuth (0 = North, 180 = South). Null if floor plan has no compass arrow. */
+  /** True compass azimuth (0 = North) = (plan_normal_deg - north_compass_deg) mod 360. Derived: north_compass_deg wins. Null if the floor plan has no compass. */
   compass_azimuth_deg?: number | null;
 }
 
@@ -59,6 +67,7 @@ export interface DoorOpening {
   wall_id: string;
   hinge_pos: Vec2;
   width_m: number; // default 0.85
+  head_height_m: number; // default 2.05
   swing_angle_deg: number; // default 90
   /** Opening direction viewed from above (plan view, -Z up). Default true. */
   swing_clockwise: boolean;
@@ -83,10 +92,14 @@ export interface FurnitureItem {
   name: string;
   category: "bed" | "desk" | "chair" | "wardrobe" | "sofa" | "storage" | "other";
   source: "extracted_video" | "catalog_search" | "url_import";
+  /**
+   * Absolute http(s) URL or site-root path, fetched as-is. Never a filesystem or raw fal URL.
+   * Immutable: a new mesh means a new glb_url on the same id, so cache by URL.
+   */
   glb_url: string;
   product_url?: string | null;
   price_gbp?: number | null;
-  /** Canonical metric bounding box (bottom-center origin at 0,0,0; front faces +Z at yaw=0) */
+  /** Authoritative metric size (bottom-centre origin, front +Z at yaw 0); the mesh is fitted to it. */
   bbox_m: BBoxM;
   pose: Pose2D;
   has_screen: boolean; // default false
@@ -94,18 +107,19 @@ export interface FurnitureItem {
   wall_flush_preferred: boolean; // default true
   /** Default false. True when the mesh is a dimensioned placeholder box; label it visibly. */
   is_proxy: boolean;
-  /** Default "estimated". Provenance of bbox_m; only measured/user_corrected are exact. */
-  dimension_source: "measured" | "estimated" | "user_corrected";
-  /** Default false. Scale or placement is uncertain; prompt the user to correct it. */
-  needs_correction: boolean;
+  /** Default "estimated". Provenance of bbox_m; all but "estimated" are trusted. */
+  dimension_source: "measured" | "catalog" | "estimated" | "user_corrected";
+  /** Default []. What is uncertain; the editor prompts the user to confirm each entry. */
+  correction_needed: ("dimensions" | "placement" | "orientation")[];
 }
 
 export interface RoomScene {
   scene_id: string;
   /** Default 0. Incremented on every edit; services echo it so stale responses can be discarded. */
   revision: number;
+  /** Room-coordinate shell; see the shell rule above. Same URL rules as glb_url. */
   shell_glb_url: string;
-  /** Interior floor outline (the walls' room-side faces). */
+  /** Interior floor outline (the walls' room-side faces); clockwise in plan view. */
   floor_polygon: Vec2[];
   walls: WallSegment[];
   windows: WindowOpening[];
@@ -190,7 +204,7 @@ export interface LayoutProposal {
 export interface RenderCamera {
   position: Vec3;
   target: Vec3;
-  /** Vertical field of view. */
+  /** Vertical field of view. Camera up is +Y (no roll). */
   fov_deg: number;
   near_m: number;
   far_m: number;

@@ -34,6 +34,7 @@
       "wall_id": "w_north",
       "hinge_pos": { "x": 0.4, "z": 0.0 },
       "width_m": 0.85,
+      "head_height_m": 2.05,
       "swing_angle_deg": 90.0,
       "swing_clockwise": true,
       "swings_into_room": true
@@ -53,7 +54,7 @@
       "wall_flush_preferred": true,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "needs_correction": false
+      "correction_needed": []
     },
     {
       "id": "item_desk",
@@ -68,7 +69,7 @@
       "wall_flush_preferred": false,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "needs_correction": false
+      "correction_needed": []
     },
     {
       "id": "item_wardrobe",
@@ -83,7 +84,7 @@
       "wall_flush_preferred": true,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "needs_correction": false
+      "correction_needed": []
     }
   ]
 }
