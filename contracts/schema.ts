@@ -203,6 +203,44 @@ export interface RoomScene {
   sun_hour: number;
 }
 
+/** One room parsed from a floor plan; `scene` uses its floor's shared frame. */
+export interface ParsedRoom {
+  /** Unique within the plan; opaque (ITEM_ID_PATTERN). */
+  room_id: string;
+  /** Printed label, or "Unlabelled space <n>". */
+  name: string;
+  /** First printed dimension, when a label was read (axis not stated by the plan). */
+  labelled_width_m?: number | null;
+  /** Second printed dimension, when a label was read. */
+  labelled_depth_m?: number | null;
+  area_m2: number;
+  /** "measured" when the floor's scale came from printed dimension labels. */
+  dimension_source: "measured" | "estimated" | "user_corrected";
+  correction_needed: Array<"dimensions" | "openings" | "orientation">;
+  /** furniture is []; scene_id is `<plan_id>-<room_id>`. */
+  scene: RoomScene;
+}
+
+/** One storey. Rooms share its frame: metres, origin at the floor's top-left wall bound, +Z down the image. */
+export interface ParsedFloor {
+  floor_id: string;
+  /** Printed caption, or "Floor <n>". */
+  name: string;
+  /** 0 = ground. */
+  level: number;
+  /** Index into the uploaded floor-plan images. */
+  source_image_index: number;
+  rooms: ParsedRoom[];
+}
+
+/** Every floor and room parsed from the floor-plan images; the editor loads one room's scene. */
+export interface ParsedFloorPlan {
+  /** Derived from the image bytes. */
+  plan_id: string;
+  floors: ParsedFloor[];
+  warnings: string[];
+}
+
 export interface CollisionIssue { item_a: string; item_b: string; overlap_area_m2: number; }
 
 export interface BlockedDoorIssue { door_id: string; blocked_by_item_id: string; }
