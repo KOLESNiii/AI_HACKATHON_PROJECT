@@ -1,57 +1,44 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useCallback } from 'react'
+import { EditorScreen } from './components/editor/EditorScreen'
+import { FloorPlanScreen } from './components/intake/FloorPlanScreen'
+import { ProgressScreen } from './components/intake/ProgressScreen'
+import { UploadScreen } from './components/intake/UploadScreen'
+import { Toasts } from './components/ui'
+import { mockSegments } from './data/segments'
+import { useStore } from './store'
 
-const services = ['reconstruction', 'spatial_engine', 'media_gen'] as const
-
+/** Flow: upload → read floor plan → pick a room → build that room → editor. */
 export default function App() {
-  const [status, setStatus] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    const controller = new AbortController()
-    for (const service of services) {
-      fetch(`/api/${service}/health`, { signal: controller.signal })
-        .then(async (response) => {
-          if (!response.ok) throw new Error('Service unavailable')
-          const body: unknown = await response.json()
-          if (
-            !body ||
-            typeof body !== 'object' ||
-            !('status' in body) ||
-            body.status !== 'ok'
-          ) {
-            throw new Error('Invalid health response')
-          }
-          setStatus((previous) => ({ ...previous, [service]: 'Connected' }))
-        })
-        .catch(() => {
-          if (!controller.signal.aborted) {
-            setStatus((previous) => ({
-              ...previous,
-              [service]: 'Unavailable — start the service and refresh',
-            }))
-          }
-        })
-    }
-    return () => controller.abort()
-  }, [])
+  const screen = useStore((s) => s.screen)
+  const segmentId = useStore((s) => s.segmentId)
+  const toasts = useStore((s) => s.toasts)
+  const dismissToast = useStore((s) => s.dismissToast)
+  const setScreen = useStore((s) => s.setScreen)
+  const toFloorPlan = useCallback(() => setScreen('floorplan'), [setScreen])
+  const toEditor = useCallback(() => setScreen('editor'), [setScreen])
+  const roomLabel = mockSegments.find((s) => s.room_id === segmentId)?.label
 
   return (
-    <main>
-      <p className="eyebrow">SpaceShift · Development</p>
-      <h1>Your room, reimagined.</h1>
-      <p>
-        The workspace is ready for the room editor, spatial audit, and media
-        tools.
-      </p>
-      <h2>Service connections</h2>
-      <ul aria-live="polite">
-        {services.map((service) => (
-          <li key={service}>
-            <strong>{service.replaceAll('_', ' ')}</strong>
-            <span>{status[service] ?? 'Connecting…'}</span>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <div className="h-full">
+      {screen === 'upload' && <UploadScreen />}
+      {screen === 'reading' && (
+        <ProgressScreen
+          steps={['Parsing floor plan', 'Segmenting rooms']}
+          onDone={toFloorPlan}
+        />
+      )}
+      {screen === 'floorplan' && <FloorPlanScreen />}
+      {screen === 'building' && (
+        <ProgressScreen
+          title={roomLabel}
+          steps={['Extracting furniture from video', 'Assembling room']}
+          onDone={toEditor}
+        />
+      )}
+      {screen === 'editor' && <EditorScreen />}
+      <Toasts toasts={toasts} onDismiss={dismissToast} />
+      <div className="aged-vignette" />
+      <div className="paper-grain-overlay" />
+    </div>
   )
 }
