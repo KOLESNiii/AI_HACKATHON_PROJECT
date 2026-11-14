@@ -44,8 +44,13 @@ class UnreadableImage(ValueError):
 
 
 def decode(data: bytes) -> NDArray[np.uint8]:
+    if not data:
+        raise UnreadableImage("the floor-plan image is empty")
     arr = np.frombuffer(data, dtype=np.uint8)
-    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    try:
+        img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    except cv2.error as exc:
+        raise UnreadableImage("could not decode the floor-plan image") from exc
     if img is None:
         raise UnreadableImage("could not decode the floor-plan image")
     return np.asarray(img, dtype=np.uint8)

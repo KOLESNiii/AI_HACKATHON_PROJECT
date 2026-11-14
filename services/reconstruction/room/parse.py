@@ -121,9 +121,31 @@ def _room_scale(mask: np.ndarray, label: RoomLabel) -> float | None:
     return (s1 + s2) / 2
 
 
+@dataclass
+class ScaleEvidence:
+    px_per_m: float
+    consistent: bool
+    """False when the labelled rooms on the floor imply incompatible scales."""
+    rooms: int
+
+
+def _consensus(candidates: list[float]) -> ScaleEvidence:
+    """The scale a strict majority of labelled rooms agree on (each within SCALE_AGREEMENT of
+    the cluster's centre). Without a majority the labels contradict each other: their median
+    satisfies none of them, so it is returned only as an untrusted estimate."""
+    best: list[float] = []
+    for c in candidates:
+        cluster = [x for x in candidates if abs(x - c) / c <= SCALE_AGREEMENT]
+        if len(cluster) > len(best):
+            best = cluster
+    if len(best) * 2 > len(candidates):
+        return ScaleEvidence(statistics.median(best), True, len(candidates))
+    return ScaleEvidence(statistics.median(candidates), False, len(candidates))
+
+
 def _floor_scales(
     seg: Segmentation, regions: dict[int, Region], raster: Raster
-) -> dict[int, float]:
+) -> dict[int, ScaleEvidence]:
     per_floor: dict[int, list[float]] = {}
     for reg in regions.values():
         if reg.label is None:
@@ -131,7 +153,7 @@ def _floor_scales(
         s = _room_scale(_region_mask(seg, reg.rid), reg.label)
         if s is not None:
             per_floor.setdefault(reg.floor, []).append(s)
-    return {f: statistics.median(v) for f, v in per_floor.items()}
+    return {f: _consensus(v) for f, v in per_floor.items()}
 
 
 def _fallback_scale(seg: Segmentation, raster: Raster) -> float:
@@ -390,22 +412,31 @@ def _parse_image(
     regions = _assign_labels(seg, raster, ann.rooms)
     first = _floor_scales(seg, regions, raster)
     if first:
-        seg = segment(raster, statistics.median(first.values()))
+        seg = segment(raster, statistics.median(e.px_per_m for e in first.values()))
         regions = _assign_labels(seg, raster, ann.rooms)
-    measured = _floor_scales(seg, regions, raster)
+    evidence = _floor_scales(seg, regions, raster)
+    trusted = {f: e.px_per_m for f, e in evidence.items() if e.consistent}
 
     floor_ids = sorted({r.floor for r in regions.values()})
-    sheet = statistics.median(measured.values()) if measured else None
+    sheet = statistics.median(trusted.values()) if trusted else None
     scales: dict[int, FloorScale] = {}
     for f in floor_ids:
-        if f in measured:
-            scales[f] = FloorScale(measured[f], True)
+        ev = evidence.get(f)
+        if ev is not None and ev.consistent:
+            scales[f] = FloorScale(ev.px_per_m, True)
+        elif ev is not None:
+            # The labels contradict each other: never present a compromise as measured.
+            scales[f] = FloorScale(sheet if sheet is not None else ev.px_per_m, False)
+            warnings.append(
+                f"image {image_index}: the {ev.rooms} labelled rooms on one floor imply "
+                "conflicting scales; its dimensions are estimated and need correction"
+            )
         elif sheet is not None:
             # Same sheet, same drawing scale: borrow the other floors' measurement.
             scales[f] = FloorScale(sheet, True)
         else:
             scales[f] = FloorScale(_fallback_scale(seg, raster), False)
-    if not measured:
+    if not evidence:
         warnings.append(
             f"image {image_index}: no printed room dimensions could be matched; scale is estimated"
         )
@@ -564,6 +595,8 @@ def parse_floor_plan(images: list[tuple[bytes, str]], annotator: PlanAnnotator) 
                 want = sorted((lab.width_m, lab.depth_m), reverse=True)
                 err = max(abs(g - w) / w for g, w in zip(got, want))
                 if err > LABEL_MISMATCH_WARN:
+                    if "dimensions" not in correction:
+                        correction.append("dimensions")
                     warnings.append(
                         f"{name}: traced {got[0]:.2f} x {got[1]:.2f} m but the plan prints "
                         f"{lab.width_m} x {lab.depth_m} m"
