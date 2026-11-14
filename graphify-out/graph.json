@@ -1591,6 +1591,66 @@
       "source_location": "L113"
     },
     {
+      "id": "architecture_dag_5_developer_focus_and_ordered_task_lists",
+      "label": "5. Developer focus and ordered task lists",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "5. developer focus and ordered task lists",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L131"
+    },
+    {
+      "id": "architecture_dag_dev_1_room_geometry_and_scene_assembly",
+      "label": "Dev 1: Room geometry and scene assembly",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "dev 1: room geometry and scene assembly",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L137"
+    },
+    {
+      "id": "architecture_dag_dev_2_furniture_extraction_and_reusable_asset_pipeline",
+      "label": "Dev 2: Furniture extraction and reusable asset pipeline",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "dev 2: furniture extraction and reusable asset pipeline",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L152"
+    },
+    {
+      "id": "architecture_dag_dev_3_interactive_editor_and_aligned_render_maps",
+      "label": "Dev 3: Interactive editor and aligned render maps",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "dev 3: interactive editor and aligned render maps",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L167"
+    },
+    {
+      "id": "architecture_dag_dev_4_spatial_audit_and_layout_optimisation",
+      "label": "Dev 4: Spatial audit and layout optimisation",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "dev 4: spatial audit and layout optimisation",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L182"
+    },
+    {
       "id": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
       "label": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
       "_origin": "ast",
@@ -2799,6 +2859,50 @@
       "weight": 1.0
     },
     {
+      "source": "architecture_dag_5_developer_focus_and_ordered_task_lists",
+      "target": "architecture_dag_dev_1_room_geometry_and_scene_assembly",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_dag_5_developer_focus_and_ordered_task_lists",
+      "target": "architecture_dag_dev_2_furniture_extraction_and_reusable_asset_pipeline",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L152",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_dag_5_developer_focus_and_ordered_task_lists",
+      "target": "architecture_dag_dev_3_interactive_editor_and_aligned_render_maps",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L167",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_dag_5_developer_focus_and_ordered_task_lists",
+      "target": "architecture_dag_dev_4_spatial_audit_and_layout_optimisation",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L182",
+      "weight": 1.0
+    },
+    {
       "source": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
       "target": "architecture_dag_4_acceptance_and_scope_priorities",
       "relation": "contains",
@@ -2807,6 +2911,17 @@
       "confidence_score": 1.0,
       "source_file": "ARCHITECTURE_DAG.md",
       "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
+      "target": "architecture_dag_5_developer_focus_and_ordered_task_lists",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L131",
       "weight": 1.0
     },
     {
@@ -4549,5 +4664,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "67f7c4a82bc5cc5bc3812e5028f87b2c9a37e1f6"
+  "built_at_commit": "38e4567210dae4c4302d0245b23e61189f0fd352"
 }

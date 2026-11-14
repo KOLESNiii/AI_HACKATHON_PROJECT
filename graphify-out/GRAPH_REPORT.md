@@ -1,16 +1,16 @@
 # Graph Report - hackathon-project  (2026-11-14)
 
 ## Corpus Check
-- 34 files · ~7,113 words
+- 34 files · ~7,990 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 205 nodes · 197 edges · 26 communities (21 shown, 5 thin omitted)
+- 210 nodes · 202 edges · 26 communities (21 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `67f7c4a8`
+- Built from commit: `38e45672`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -41,11 +41,11 @@
 2. `compilerOptions` - 15 edges
 3. `scripts` - 8 edges
 4. `scripts` - 8 edges
-5. `SpaceShift — System Architecture & 4-Developer Execution DAG` - 5 edges
-6. `SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin` - 5 edges
-7. `plugins` - 4 edges
-8. `3. Full Tech Stack` - 4 edges
-9. `Decisions` - 3 edges
+5. `SpaceShift — System Architecture & 4-Developer Execution DAG` - 6 edges
+6. `5. Developer focus and ordered task lists` - 5 edges
+7. `SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin` - 5 edges
+8. `plugins` - 4 edges
+9. `3. Full Tech Stack` - 4 edges
 10. `health()` - 3 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -73,8 +73,8 @@ Cohesion: 0.50
 Nodes (3): 1. Aesthetic Direction: "Architectural CAD meets Spatial Glass", 2. Screen Choreography (Zero Clutter), SpaceShift — Figma Design System & Spatial UI Spec
 
 ### Community 4 - "SpaceShift — System Architecture & 4-Developer Execution DAG"
-Cohesion: 0.33
-Nodes (5): 1. Ownership and implementation boundaries, 2. Handoffs to agree at kickoff, 3. Execution DAG, 4. Acceptance and scope priorities, SpaceShift — System Architecture & 4-Developer Execution DAG
+Cohesion: 0.18
+Nodes (10): 1. Ownership and implementation boundaries, 2. Handoffs to agree at kickoff, 3. Execution DAG, 4. Acceptance and scope priorities, 5. Developer focus and ordered task lists, Dev 1: Room geometry and scene assembly, Dev 2: Furniture extraction and reusable asset pipeline, Dev 3: Interactive editor and aligned render maps (+2 more)
 
 ### Community 7 - "compilerOptions"
 Cohesion: 0.08
@@ -117,7 +117,7 @@ Cohesion: 0.50
 Nodes (3): health(), get, Process liveness only; does not probe external providers.
 
 ## Knowledge Gaps
-- **109 isolated node(s):** `1. Ownership and implementation boundaries`, `2. Handoffs to agree at kickoff`, `3. Execution DAG`, `4. Acceptance and scope priorities`, `Workstream ownership` (+104 more)
+- **113 isolated node(s):** `1. Ownership and implementation boundaries`, `2. Handoffs to agree at kickoff`, `3. Execution DAG`, `4. Acceptance and scope priorities`, `Dev 1: Room geometry and scene assembly` (+108 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -125,11 +125,11 @@ Nodes (3): health(), get, Process liveness only; does not probe external provide
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `devDependencies` connect `devDependencies` to `scripts`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `dependencies` to `scripts`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+  _High betweenness centrality (0.033) - this node is a cross-community bridge._
 - **What connects `1. Ownership and implementation boundaries`, `2. Handoffs to agree at kickoff`, `3. Execution DAG` to the rest of the system?**
-  _109 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _113 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin` be split into smaller, more focused modules?**
   _Cohesion score 0.125 - nodes in this community are weakly interconnected._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
