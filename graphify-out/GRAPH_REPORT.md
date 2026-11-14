@@ -1,16 +1,16 @@
 # Graph Report - AI_HACKATHON_PROJECT  (2026-11-14)
 
 ## Corpus Check
-- 57 files · ~65,714 words
+- 59 files · ~70,294 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 962 nodes · 2126 edges · 73 communities (61 shown, 12 thin omitted)
-- Extraction: 70% EXTRACTED · 30% INFERRED · 0% AMBIGUOUS · INFERRED: 638 edges (avg confidence: 0.5)
+- 1085 nodes · 2540 edges · 72 communities (59 shown, 13 thin omitted)
+- Extraction: 71% EXTRACTED · 29% INFERRED · 0% AMBIGUOUS · INFERRED: 746 edges (avg confidence: 0.51)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `8a66f958`
+- Built from commit: `9cee0479`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -66,7 +66,6 @@
 - [[_COMMUNITY_Community 50|Community 50]]
 - [[_COMMUNITY_Community 51|Community 51]]
 - [[_COMMUNITY_Community 52|Community 52]]
-- [[_COMMUNITY_Community 53|Community 53]]
 - [[_COMMUNITY_Community 54|Community 54]]
 - [[_COMMUNITY_Community 55|Community 55]]
 - [[_COMMUNITY_Community 56|Community 56]]
@@ -83,34 +82,34 @@
 - [[_COMMUNITY_Community 67|Community 67]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `ContractModel` - 57 edges
-2. `RoomScene` - 57 edges
-3. `PlanAnnotations` - 52 edges
-4. `ParsedFloorPlan` - 46 edges
-5. `Bridge` - 42 edges
-6. `RoomLabel` - 39 edges
-7. `FloorCaption` - 39 edges
-8. `PlanAnnotator` - 39 edges
-9. `Raster` - 39 edges
-10. `ParsedRoom` - 38 edges
+1. `RoomScene` - 85 edges
+2. `PlanAnnotations` - 65 edges
+3. `ParsedFloorPlan` - 58 edges
+4. `ContractModel` - 57 edges
+5. `Bridge` - 43 edges
+6. `FixedAnnotator` - 42 edges
+7. `PlanAnnotator` - 41 edges
+8. `RoomLabel` - 40 edges
+9. `FloorCaption` - 40 edges
+10. `Raster` - 40 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `int` --uses--> `RoomScene`  [INFERRED]
   scripts/generate_mock_glbs.py → contracts/schema.py
 - `Scene` --uses--> `RoomScene`  [INFERRED]
   scripts/generate_mock_glbs.py → contracts/schema.py
+- `Scene` --uses--> `RoomScene`  [INFERRED]
+  scripts/generate_mock_glbs.py → contracts/schema.py
 - `EvidenceFrame` --uses--> `ContractModel`  [INFERRED]
   services/reconstruction/assets/models.py → contracts/schema.py
-- `EvidenceFrame` --uses--> `BBoxM`  [INFERRED]
-  services/reconstruction/assets/models.py → contracts/schema.py
-- `EvidenceFrame` --uses--> `CollisionPart`  [INFERRED]
+- `EvidenceFrame` --uses--> `Pose2D`  [INFERRED]
   services/reconstruction/assets/models.py → contracts/schema.py
 
-## Communities (73 total, 12 thin omitted)
+## Communities (72 total, 13 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.12
-Nodes (27): BaseModel, BlockedDoorIssue, ClearanceIssue, CollisionIssue, ContractModel, FengShuiSightline, GlareAlert, OptimiseRequest (+19 more)
+Cohesion: 0.13
+Nodes (26): Typed Dev 2 -> Dev 1 asset handoff (see README.md in this folder).  Evidence sta, BaseModel, AuditReport, BBoxM, BlockedDoorIssue, ClearanceIssue, CollisionIssue, CollisionPart (+18 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.09
@@ -161,20 +160,20 @@ Cohesion: 0.50
 Nodes (4): media_gen/main.py, health(), get, Process liveness only; does not probe external providers.
 
 ### Community 15 - "Community 15"
-Cohesion: 0.50
-Nodes (4): reconstruction/main.py, health(), get, Process liveness only; does not probe external providers.
+Cohesion: 0.06
+Nodes (79): object, build_shell(), _clip(), _cross(), _door_span(), _is_simple_quad(), _key(), _miter() (+71 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.50
 Nodes (4): spatial_engine/main.py, health(), get, Process liveness only; does not probe external providers.
 
 ### Community 19 - "Community 19"
-Cohesion: 0.16
-Nodes (25): Any, FurnitureItem, parametrize, inputs(), item(), part(), float, str (+17 more)
+Cohesion: 0.14
+Nodes (31): Any, FurnitureItem, RoomCaptureInputs, What the user uploads for one room. Scale is read from the dimension labels on t, parametrize, Compass, RoomCaptureInputs, inputs() (+23 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.15
-Nodes (23): AuditReport, FengShuiReport, LayoutProposal, Pose2D, Floor placement of an item's bounding-box bottom-centre. See module doc for yaw., Proposed furniture poses. Only poses change: shell, openings, item IDs and…, RoomScene, Path (+15 more)
+Cohesion: 0.19
+Nodes (18): RoomScene, Path, RoomScene, load_generator(), load_mock(), True when the point lies inside one of the mesh's boxes (all mock parts are boxe, schema.ts treats every non-nullable field as present, so the fixture must includ, plan_normal_deg is derived from the wall's outward normal (dz, -dx). (+10 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.24
@@ -193,12 +192,12 @@ Cohesion: 0.20
 Nodes (9): Asset Handoff Agreement Implementation Plan, Deferred, each under its own issue, Execution notes (2026-11-14), File Structure, Global Constraints, Review Focus, Task 1: Contract additions, Task 2: One fixture scene (+1 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.13
-Nodes (78): DoorOpening, DoorOpening, ParsedFloor, ParsedRoom, Vec2, WallSegment, WindowOpening, A hinged door in a wall. `hinge_pos` lies on the wall's interior-face line. The… (+70 more)
+Cohesion: 0.11
+Nodes (96): DoorOpening, DoorOpening, ParsedFloor, ParsedFloorPlan, ParsedRoom, RoomScene, Vec2, WallSegment (+88 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.08
-Nodes (76): ParsedFloorPlan, RoomScene, Every floor and room parsed from 1..MAX_FLOOR_PLAN_IMAGES floor-plan images. The, Depends, description, File, MonkeyPatch, ParsedRoom (+68 more)
+Cohesion: 0.06
+Nodes (90): MonkeyPatch, ParsedFloor, ParsedRoom, AnnotationResult, _extract_json(), FalVisionAnnotator, FixedAnnotator, NullAnnotator (+82 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.09
@@ -209,12 +208,12 @@ Cohesion: 0.05
 Nodes (36): 10. How each consumer uses it, 11. Contract changes requested, 12. Order of work, 13. Left to the builder, 1. Intent, 2. Goals, non-goals, anti-goals, 3. Constraints, 4.1 What is the geometric truth? (+28 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.17
-Nodes (24): AssetEvidence, FurnitureAsset, What Dev 2 returns: every `FurnitureItem` field except `pose`, plus evidence., Dev 1 places the asset: add the pose it aligned from the floor plan., BBoxM, CollisionPart, FurnitureItem, RoomCaptureInputs (+16 more)
+Cohesion: 0.20
+Nodes (20): AssetEvidence, EvidenceFrame, FurnitureAsset, NormalisedMesh, One video frame an asset was seen in. Optional fields are null for fixtures., What Dev 2 returns: every `FurnitureItem` field except `pose`, plus evidence., Dev 1 places the asset: add the pose it aligned from the floor plan., Output of `normalise_mesh` (#17): a re-hosted mesh fitted to `bbox_m`. (+12 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.16
-Nodes (25): Scene, coloured_box(), convex_vertices(), cross2(), furniture_mesh(), main(), mm_key(), float (+17 more)
+Cohesion: 0.15
+Nodes (27): Scene, coloured_box(), convex_vertices(), cross2(), furniture_mesh(), main(), mm_key(), float (+19 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.10
@@ -241,8 +240,8 @@ Cohesion: 0.13
 Nodes (14): Asset Handoff Agreement Implementation Plan, code:bash (git fetch origin), code:python (LEGACY_DESK = {  # the pre-change shape: none of the new fie), code:text (Occupied volume and collision (the editor preview and the au), code:python (ROOT = Path(__file__).resolve().parent.parent), code:bash (git rm services/reconstruction/assets/fixtures/vid-desk-01.g), Deferred, each under its own issue, Execution notes (2026-11-14) (+6 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.19
-Nodes (14): Gray, decode(), estimate_wall_px(), flatten_illumination(), rasterise(), Image → binary masks: all ink, and the structural strokes that are walls.  Every, Divide by a smooth estimate of the paper so a photographed printout thresholds e, Thickness of the main walls: the dominant stroke width, weighted towards thick s (+6 more)
+Cohesion: 0.08
+Nodes (31): Gray, decode(), estimate_wall_px(), flatten_illumination(), rasterise(), Image → binary masks: all ink, and the structural strokes that are walls.  Every, Divide by a smooth estimate of the paper so a photographed printout thresholds e, Divide by a smooth estimate of the paper so a photographed printout thresholds e (+23 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.15
@@ -251,10 +250,6 @@ Nodes (12): 1. Ownership and implementation boundaries, 2. Handoffs to agree at 
 ### Community 47 - "Community 47"
 Cohesion: 0.15
 Nodes (12): fix-radiator-01, frames, primary_frame_index, vid-chair-01, frames, primary_frame_index, vid-desk-01, frames (+4 more)
-
-### Community 48 - "Community 48"
-Cohesion: 0.24
-Nodes (8): AnnotationResult, _extract_json(), Plans print labels in capitals ("BEDROOM (4)"); show them in title case., _tidy_name(), bytes, int, str, test_model_output_json_is_extracted()
 
 ### Community 49 - "Community 49"
 Cohesion: 0.17
@@ -269,16 +264,12 @@ Cohesion: 0.18
 Nodes (10): doors, floor_polygon, furniture, north_compass_deg, revision, scene_id, shell_glb_url, sun_hour (+2 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.31
-Nodes (11): AuditReport, FengShuiReport, LayoutProposal, Pose2D, Floor placement of an item's bounding-box bottom-centre. See module doc for yaw., Proposed furniture poses. Only poses change: shell, openings, item IDs and glb_u, bool, float (+3 more)
-
-### Community 53 - "Community 53"
-Cohesion: 0.20
-Nodes (9): EvidenceFrame, NormalisedMesh, Typed Dev 2 -> Dev 1 asset handoff (see README.md in this folder).  Evidence sta, One video frame an asset was seen in. Optional fields are null for fixtures., Output of `normalise_mesh` (#17): a re-hosted mesh fitted to `bbox_m`., BBoxM, CollisionPart, Canonical metric bounds in the item's local frame: width along X, height along… (+1 more)
+Cohesion: 0.13
+Nodes (21): AuditReport, BlockedDoorIssue, ClearanceIssue, CollisionIssue, FengShuiReport, FengShuiSightline, GlareAlert, LayoutProposal (+13 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.33
-Nodes (4): floor_polygon is clockwise in plan view and every wall has the room on its…, floor_polygon is clockwise in plan view and every wall has the room on its (-dz,, model_validator, ValueError
+Cohesion: 0.40
+Nodes (3): floor_polygon is clockwise in plan view and every wall has the room on its…, floor_polygon is clockwise in plan view and every wall has the room on its (-dz,, model_validator
 
 ### Community 55 - "Community 55"
 Cohesion: 0.53
@@ -317,8 +308,8 @@ Cohesion: 0.50
 Nodes (3): health(), Process liveness only; does not probe external providers., str
 
 ### Community 64 - "Community 64"
-Cohesion: 0.50
-Nodes (3): health(), Process liveness only; does not probe external providers., str
+Cohesion: 0.40
+Nodes (4): health(), Process liveness only; does not probe external providers., Process liveness only; does not probe external providers., str
 
 ### Community 65 - "Community 65"
 Cohesion: 0.50
@@ -327,22 +318,22 @@ Nodes (3): str, health(), Process liveness only; does not probe external provide
 ## Knowledge Gaps
 - **317 isolated node(s):** `code`, `document`, `paper`, `image`, `video` (+312 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ContractModel` connect `Community 0` to `Community 33`, `Community 34`, `Community 37`, `Community 19`, `Community 52`, `Community 53`, `Community 27`?**
+- **Why does `RoomScene` connect `Community 33` to `Community 0`, `Community 34`, `Community 37`, `Community 38`, `Community 45`, `Community 15`, `Community 52`, `Community 54`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `ContractModel` connect `Community 0` to `Community 33`, `Community 37`, `Community 19`, `Community 52`, `Community 27`?**
   _High betweenness centrality (0.034) - this node is a cross-community bridge._
-- **Why does `RoomScene` connect `Community 34` to `Community 0`, `Community 33`, `Community 37`, `Community 38`, `Community 52`, `Community 54`?**
-  _High betweenness centrality (0.029) - this node is a cross-community bridge._
 - **Why does `Bridge` connect `Community 33` to `Community 35`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+- **Are the 82 inferred relationships involving `RoomScene` (e.g. with `Depends` and `description`) actually correct?**
+  _`RoomScene` has 82 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 49 inferred relationships involving `PlanAnnotations` (e.g. with `EdgeHit` and `FloorCaption`) actually correct?**
+  _`PlanAnnotations` has 49 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 55 inferred relationships involving `ParsedFloorPlan` (e.g. with `Depends` and `description`) actually correct?**
+  _`ParsedFloorPlan` has 55 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 6 inferred relationships involving `ContractModel` (e.g. with `AssetEvidence` and `EvidenceFrame`) actually correct?**
   _`ContractModel` has 6 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 54 inferred relationships involving `RoomScene` (e.g. with `Depends` and `description`) actually correct?**
-  _`RoomScene` has 54 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 38 inferred relationships involving `PlanAnnotations` (e.g. with `EdgeHit` and `FloorCaption`) actually correct?**
-  _`PlanAnnotations` has 38 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 43 inferred relationships involving `ParsedFloorPlan` (e.g. with `Depends` and `description`) actually correct?**
-  _`ParsedFloorPlan` has 43 INFERRED edges - model-reasoned connections that need verification._

@@ -304,8 +304,8 @@
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/main.py": {
-    "mtime": 1794676836.813548,
-    "ast_hash": "b8b707db26154ad98cb0a686dfbae897",
+    "mtime": 1794682027.099492,
+    "ast_hash": "1a45188fdede2e12d96e3061cbab1146",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/__init__.py": {
@@ -324,57 +324,57 @@
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/openings.py": {
-    "mtime": 1794677043.9207284,
+    "mtime": 1794681358.7285595,
     "ast_hash": "4fa39099cea1fb31b6c23d5454b2d863",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/parse.py": {
-    "mtime": 1794677056.420261,
-    "ast_hash": "94fa4577257b684547a3589f754e2c86",
+    "mtime": 1794682029.1161616,
+    "ast_hash": "4d99839763ac173728f90a54371c975c",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/routes.py": {
-    "mtime": 1794676836.6454275,
-    "ast_hash": "a6b2caf7f7ea3230c9d2e0eaac5981f5",
+    "mtime": 1794682027.1034925,
+    "ast_hash": "386bbe4c271b007c94ea34c61b757c2a",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/annotate.py": {
-    "mtime": 1794677236.703497,
+    "mtime": 1794681358.7205431,
     "ast_hash": "dc4d1b5751ffbef8d256dd031a500a21",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/polygon.py": {
-    "mtime": 1794677043.9207284,
+    "mtime": 1794681358.7285595,
     "ast_hash": "d4793d29dd65925a6e9bc00cdec0213c",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/__init__.py": {
-    "mtime": 1794676017.7150862,
+    "mtime": 1794681358.7165349,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/raster.py": {
-    "mtime": 1794677060.8158712,
-    "ast_hash": "1348bf641c6cd56a0566a805057b6c7b",
+    "mtime": 1794682029.1161616,
+    "ast_hash": "fdb224a685cedf40c8b0c2081fc8893c",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/regions.py": {
-    "mtime": 1794677013.0902512,
+    "mtime": 1794681358.7285595,
     "ast_hash": "c8b693355b3c6bc0935a8b554b60df27",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/__main__.py": {
-    "mtime": 1794677047.9238515,
-    "ast_hash": "48a1550c2037d87499aa522525a9c70c",
+    "mtime": 1794682027.099492,
+    "ast_hash": "89aeae2becfcc0bd385f31bff69dfcd0",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/fixtures/one_floor.annotations.json": {
-    "mtime": 1794677236.811882,
+    "mtime": 1794681358.7205431,
     "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/fixtures/three_floor.annotations.json": {
-    "mtime": 1794677236.9202669,
+    "mtime": 1794681358.7205431,
     "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
     "semantic_hash": ""
   },
@@ -389,13 +389,13 @@
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_routes.py": {
-    "mtime": 1794677043.9207284,
-    "ast_hash": "9ad7431ced66682d6f58402d02e8ca8c",
+    "mtime": 1794682029.1161616,
+    "ast_hash": "f1d63a37bd40686d73bf696c85a393b8",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_parse.py": {
-    "mtime": 1794677253.601076,
-    "ast_hash": "cabaa876fe1d7d4c949ec04b9864d7d5",
+    "mtime": 1794682029.1161616,
+    "ast_hash": "d19561d5ed06dc8fe473438088c22858",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_contract_occupancy.py": {
@@ -469,12 +469,12 @@
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/schema.ts": {
-    "mtime": 1794675983.5738077,
+    "mtime": 1794681357.405931,
     "ast_hash": "6369cdc062e59bbc95284316ea06d538",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/schema.py": {
-    "mtime": 1794677025.1400964,
+    "mtime": 1794681357.405931,
     "ast_hash": "705042100c56d67b2352efc077f48a82",
     "semantic_hash": ""
   },
@@ -544,8 +544,8 @@
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/README.md": {
-    "mtime": 1794677253.601076,
-    "ast_hash": "6971d3068e0ae893f4c3916ca66508f3",
+    "mtime": 1794682027.099492,
+    "ast_hash": "d414574d510afee9c7a8c90c758b1484",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/.claude/skills/XUAN_INK_SCROLL_DESIGN.md": {
@@ -559,13 +559,43 @@
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/examples/one_floor.jpg": {
-    "mtime": 1794675499.3257127,
+    "mtime": 1794681357.405931,
     "ast_hash": "2d23fc62a098fd37775ac3a97745e278",
     "semantic_hash": ""
   },
   "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor.png": {
-    "mtime": 1794675511.9594529,
+    "mtime": 1794681357.4139464,
     "ast_hash": "b228360dda07089a5092965f3fb76184",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/shell.py": {
+    "mtime": 1794682983.5169737,
+    "ast_hash": "cb39601d52d3afbcadd062a4ca99804d",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_shell.py": {
+    "mtime": 1794682835.304763,
+    "ast_hash": "9e4c16044a8eb7c0db57bf23596680f9",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_2.mp4": {
+    "mtime": 1794681357.99105,
+    "ast_hash": "9cfcabf309c992e7fbeb19c4c6cc1c9c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_1.mp4": {
+    "mtime": 1794681357.7666209,
+    "ast_hash": "934887046327128df480c09c8a64cfce",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_3.mp4": {
+    "mtime": 1794681358.32373,
+    "ast_hash": "45fa7a5e45e001a7f1f19001375023f9",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_4.mp4": {
+    "mtime": 1794681358.7005022,
+    "ast_hash": "f85edfafaf2e4f9c6cced624641c3ad4",
     "semantic_hash": ""
   }
 }
