@@ -56,7 +56,25 @@ are explicitly review-required. A reviewed real-room recording provides reproduc
 
 `SelectionResult` retains multiple source identities; `object_evidence` adapts one source to
 the fixed `AssetEvidence` without changing ordinal semantics or overloading `provider_pose`.
-Masks/meshes remain #15–#17, and Dev 1 still owns video-to-plan alignment and final placement.
+Meshes remain #16–#17, and Dev 1 still owns video-to-plan alignment and final placement.
+
+## Furniture masks and placement evidence (#15)
+
+`services/reconstruction/assets/segmentation.py` turns each registered item's selected views
+into stored instance masks and cut-outs, recorded on the item in the same SQLite registry.
+
+- Purpose: say which pixels of which source frame belong to each furniture ID, for Dev 1's
+  alignment (#8) and mesh reconstruction (#16).
+- Input: a scene ID whose registry holds #14 sightings, and the retained source frames.
+  Output: a `SegmentationResult`; mask and cut-out PNGs under the runtime data directory;
+  `object_evidence` fills `EvidenceFrame.mask_url` (data-directory relative) and `bbox_px`.
+- Configuration: none offline (local GrabCut). The live provider is fal.ai
+  `fal-ai/sam-3/image` with `FAL_KEY`, one request per frame, opt-in through the CLI's `--live`.
+- Failure: a failed, rejected or budget-deferred mask is reported per item and view; items,
+  IDs and stored masks are kept, and nothing raises past the pipeline. Saved requests are
+  re-read on retry without a new charge.
+
+No HTTP route, contract or dependency changes.
 
 ## Spatial audit API
 

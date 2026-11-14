@@ -164,6 +164,8 @@ def segment_furniture(
         records: dict[str, MaskRecord] = {}
         try:
             image = read_image(data_dir, frame)
+            if image.shape[:2] != (height, width):
+                raise MaskError("frame artifact size differs from its record")
             masks = provider.segment(
                 frame, image, [box for _, box in items], registry, budget=budget
             )

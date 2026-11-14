@@ -13,6 +13,12 @@ the #14 SQLite registry. `object_evidence` and a CLI expose them.
 
 **Spec:** `docs/superpowers/specs/2026-11-14-furniture-segmentation-design.md`
 
+## Execution record
+
+All five tasks were implemented test-first in the session that wrote this plan. Added during
+execution, after inspecting the live masks: `MaskRecord.score`, the low-confidence warning and
+the primary-frame preference (Task 5). Live use: 2 probe requests and 6 acceptance requests.
+
 ## Global Constraints
 
 - Only `services/reconstruction/assets/`, `tests/reconstruction/assets/` and docs change.

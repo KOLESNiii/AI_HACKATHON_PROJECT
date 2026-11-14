@@ -604,3 +604,12 @@ def test_primary_evidence_frame_avoids_a_low_confidence_mask(tmp_path: Path) -> 
     registry.update("scene", doubt_first)
     result = segment_furniture("scene", data_dir=tmp_path, provider=FakeProvider())
     assert object_evidence(result, "vid-000001").primary_frame_index == other.frame_index
+
+
+def test_frame_image_that_no_longer_matches_its_record_is_reported(tmp_path: Path) -> None:
+    frame = make_scene(tmp_path, {"vid-000001": RED})
+    assert cv2.imwrite(str(tmp_path / frame.image_path), np.zeros((H // 2, W // 2, 3), np.uint8))
+    provider = FakeProvider()
+    result = segment_furniture("scene", data_dir=tmp_path, provider=provider)
+    assert [m.reason for m in result.missing] == ["frame artifact size differs from its record"]
+    assert provider.calls == [] and result.objects[0].masks == []
