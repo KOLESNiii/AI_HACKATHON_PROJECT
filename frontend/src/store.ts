@@ -54,6 +54,7 @@ interface State {
   /** Ends a drag/rotate: bumps the revision once. */
   commitEdit: () => void
   snapItem: (id: string) => void
+  rotateItem: (id: string, degrees: number) => void
   /** Turns an item back to yaw 0 (front facing +Z), kept inside the floor. */
   resetRotation: (id: string) => void
   deleteItem: (id: string) => void
@@ -158,6 +159,30 @@ export const useStore = create<State>((set, get) => ({
           mapItem(s.scene, id, (i) => ({
             ...i,
             pose: snapToNearestWall(s.scene.walls, s.scene.floor_polygon, i),
+          })),
+        ),
+      }
+    }),
+  rotateItem: (id, degrees) =>
+    set((s) => {
+      const item = s.scene.furniture.find((i) => i.id === id)
+      if (!item || item.is_fixed || s.interacting || !Number.isFinite(degrees))
+        return {}
+      const yaw = (((item.pose.yaw_deg + degrees) % 360) + 360) % 360
+      if (yaw === item.pose.yaw_deg) return {}
+      const rotated = { ...item, pose: { ...item.pose, yaw_deg: yaw } }
+      const p = clampToFloor(
+        s.scene.floor_polygon,
+        rotated,
+        item.pose.x,
+        item.pose.z,
+      )
+      return {
+        scene: bump(
+          s.scene,
+          mapItem(s.scene, id, (i) => ({
+            ...i,
+            pose: { x: p.x, z: p.z, yaw_deg: yaw },
           })),
         ),
       }

@@ -85,6 +85,12 @@ bun run build             # TypeScript check + production frontend bundle
 bun run check             # Frontend lint/format/types + Python lint/format/types/tests
 ```
 
+In the room editor, select furniture and use the ↶ / ↷ buttons or Q / E to
+rotate it 90° counterclockwise / clockwise. Left / right arrows rotate it 5°
+at a time (hold to repeat). Hold WASD to pan the camera relative to its current
+view. Shortcuts are inactive while typing or dragging furniture; fixed fixtures
+cannot be rotated. Run editor control tests with `bun test ./frontend/tests`.
+
 For smaller Python installs, use `uv sync --extra spatial`, `--extra reconstruction`,
 or `--extra media` instead of `--all-extras`. `uv sync` installs the common API and
 development tools. Frontend dependencies and lockfile live in `frontend/`;

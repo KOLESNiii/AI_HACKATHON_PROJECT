@@ -7,6 +7,7 @@ import { flaggedItemIds, spatialPreview } from '../../lib/spatialPreview'
 import { useStore } from '../../store'
 import { DoorSwings } from './DoorSwings'
 import { Furniture, MeshBoundary } from './Furniture'
+import { KeyboardControls } from './KeyboardControls'
 import { SelectionTools } from './SelectionTools'
 import { Shell } from './Shell'
 
@@ -90,6 +91,7 @@ export function RoomView() {
         maxDistance={span * 4}
         enableDamping
       />
+      <KeyboardControls speed={Math.max(1, span * 0.35)} />
     </Canvas>
   )
 }
