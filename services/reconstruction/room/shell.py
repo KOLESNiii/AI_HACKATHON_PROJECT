@@ -88,7 +88,9 @@ def prism(poly: Vec, y0: float, y1: float, rgba: list[int]) -> trimesh.Trimesh:
         np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, -1, 0, 0], [0, 0, 0, 1]], dtype=np.float64)
     )
     mesh.apply_translation([0.0, y0, 0.0])
-    mesh.fix_normals()
+    # Orient outward without fix_normals(), which needs SciPy (not in the reconstruction extra).
+    if mesh.volume < 0:
+        mesh.invert()
     mesh.visual = trimesh.visual.ColorVisuals(mesh, vertex_colors=rgba)
     return mesh
 
@@ -170,6 +172,7 @@ def _door_span(
 
 
 def _openings(scene: RoomScene, frame: WallFrame) -> list[Opening]:
+    """The wall's openings clipped to the wall, each with its own sill and head."""
     wall_id = frame.wall.id
     raw: list[Opening] = []
     for win in scene.windows:
@@ -188,45 +191,135 @@ def _openings(scene: RoomScene, frame: WallFrame) -> list[Opening]:
         Opening(max(0.0, o.t0), min(frame.length, o.t1), max(0.0, o.sill), min(h, o.head))
         for o in raw
     ]
-    clipped = [o for o in clipped if o.t1 - o.t0 > MIN_PIECE_M and o.head - o.sill > MIN_PIECE_M]
-    clipped.sort(key=lambda o: o.t0)
-    merged: list[Opening] = []
-    for o in clipped:
-        if merged and o.t0 <= merged[-1].t1:
-            m = merged[-1]
-            merged[-1] = Opening(m.t0, max(m.t1, o.t1), min(m.sill, o.sill), max(m.head, o.head))
+    return [o for o in clipped if o.t1 - o.t0 > MIN_PIECE_M and o.head - o.sill > MIN_PIECE_M]
+
+
+def _solid_ranges(openings: list[Opening], h: float) -> tuple[tuple[float, float], ...]:
+    """[0, h] minus the union of the openings' [sill, head] ranges."""
+    gaps = sorted((o.sill, o.head) for o in openings)
+    out: list[tuple[float, float]] = []
+    y = 0.0
+    for lo, hi in gaps:
+        if lo > y + MIN_PIECE_M:
+            out.append((y, lo))
+        y = max(y, hi)
+    if h > y + MIN_PIECE_M:
+        out.append((y, h))
+    return tuple(out)
+
+
+@dataclass(frozen=True)
+class Section:
+    """One wall piece: a vertical prism over `poly` (x, z) from y0 to y1."""
+
+    poly: Vec
+    y0: float
+    y1: float
+
+
+def _clip(poly: Vec, frame: WallFrame, ta: float, tb: float) -> Vec:
+    """Sutherland-Hodgman: keep the part of a convex polygon with ta <= t <= tb, where t is the
+    distance along the wall."""
+    pts = [np.asarray(p, dtype=np.float64) for p in poly]
+    for bound, keep_above in ((ta, True), (tb, False)):
+        out: list[Vec] = []
+        n = len(pts)
+        for i in range(n):
+            p, q = pts[i], pts[(i + 1) % n]
+            tp = float(np.dot(p - frame.start, frame.d))
+            tq = float(np.dot(q - frame.start, frame.d))
+            p_in = tp >= bound if keep_above else tp <= bound
+            q_in = tq >= bound if keep_above else tq <= bound
+            if p_in:
+                out.append(p)
+            if p_in != q_in:
+                out.append(p + (q - p) * ((bound - tp) / (tq - tp)))
+        pts = out
+        if len(pts) < 3:
+            return np.zeros((0, 2))
+    return np.array(pts)
+
+
+def _is_simple_quad(q: Vec) -> bool:
+    signs = [_cross(q[(i + 1) % 4] - q[i], q[(i + 2) % 4] - q[(i + 1) % 4]) for i in range(4)]
+    return all(c > 0 for c in signs) or all(c < 0 for c in signs)
+
+
+def wall_footprint(frame: WallFrame, outer_start: Vec, outer_end: Vec) -> Vec:
+    """The whole wall in plan: interior face plus mitred outer face. Inner and outer edges are
+    parallel, so a simple footprint is convex. When the miters cross (a wall shorter than its
+    miter offsets), the ends are squared instead."""
+    quad = np.array([frame.inner(0.0), frame.inner(frame.length), outer_end, outer_start])
+    if _is_simple_quad(quad):
+        return quad
+    return np.array(
+        [frame.inner(0.0), frame.inner(frame.length), frame.outer(frame.length), frame.outer(0.0)]
+    )
+
+
+def wall_sections(
+    scene: RoomScene, frame: WallFrame, outer_start: Vec, outer_end: Vec
+) -> list[Section]:
+    """Solid pieces of one wall. The wall is split at every opening boundary; each interval
+    keeps everything outside the union of the openings covering it, so neighbouring openings
+    with different sills or heads keep their own heights. Each piece's footprint is the
+    wall's footprint clipped to its interval, so it is always a valid convex polygon."""
+    h = frame.wall.height_m
+    openings = _openings(scene, frame)
+    cuts = sorted({0.0, frame.length, *(o.t0 for o in openings), *(o.t1 for o in openings)})
+    # (ta, tb, solid ranges) per interval, merging neighbours with identical ranges.
+    spans: list[tuple[float, float, tuple[tuple[float, float], ...]]] = []
+    for ta, tb in zip(cuts, cuts[1:]):
+        if tb - ta <= MIN_PIECE_M:
+            continue
+        mid = (ta + tb) / 2
+        solid = _solid_ranges([o for o in openings if o.t0 <= mid <= o.t1], h)
+        if spans and spans[-1][2] == solid and abs(spans[-1][1] - ta) <= MIN_PIECE_M:
+            spans[-1] = (spans[-1][0], tb, solid)
         else:
-            merged.append(o)
-    return merged
+            spans.append((ta, tb, solid))
+    footprint = wall_footprint(frame, outer_start, outer_end)
+    # The end intervals include the miter, which can reach past t = 0 or t = length.
+    reach = 2 * MITER_LIMIT * frame.thickness
+    out: list[Section] = []
+    for i, (ta, tb, solid) in enumerate(spans):
+        lo = -reach if i == 0 and ta <= MIN_PIECE_M else ta
+        hi = (
+            frame.length + reach if i == len(spans) - 1 and tb >= frame.length - MIN_PIECE_M else tb
+        )
+        poly = _clip(footprint, frame, lo, hi)
+        if len(poly) < 3 or abs(_shoelace(poly)) / 2 < 1e-8:
+            continue
+        out.extend(Section(poly, y0, y1) for y0, y1 in solid)
+    return out
 
 
 def wall_mesh(
     scene: RoomScene, frame: WallFrame, outer_start: Vec, outer_end: Vec
 ) -> trimesh.Trimesh:
-    h = frame.wall.height_m
-
-    def footprint(ta: float, tb: float) -> Vec:
-        oa = outer_start if ta <= 0.0 else frame.outer(ta)
-        ob = outer_end if tb >= frame.length else frame.outer(tb)
-        return np.array([frame.inner(ta), frame.inner(tb), ob, oa])
-
-    parts: list[trimesh.Trimesh] = []
-
-    def add(ta: float, tb: float, y0: float, y1: float) -> None:
-        if tb - ta > MIN_PIECE_M and y1 - y0 > MIN_PIECE_M:
-            parts.append(prism(footprint(ta, tb), y0, y1, WALL_COLOUR))
-
-    cursor = 0.0
-    for o in _openings(scene, frame):
-        add(cursor, o.t0, 0.0, h)
-        add(o.t0, o.t1, 0.0, o.sill)
-        add(o.t0, o.t1, o.head, h)
-        cursor = o.t1
-    add(cursor, frame.length, 0.0, h)
+    parts = [
+        prism(sec.poly, sec.y0, sec.y1, WALL_COLOUR)
+        for sec in wall_sections(scene, frame, outer_start, outer_end)
+    ]
     if not parts:
         raise ValueError(f"wall {frame.wall.id} is entirely open")
     merged: trimesh.Trimesh = trimesh.util.concatenate(parts)
     return merged
+
+
+def wall_ends(scene: RoomScene) -> list[tuple[WallFrame, Vec, Vec]]:
+    """Each wall with its mitred outer start and end points."""
+    frames = [WallFrame.of(w) for w in scene.walls]
+    by_start = {_key(f.start): f for f in frames}
+    by_end = {_key(f.end): f for f in frames}
+    out = []
+    for f in frames:
+        prev = by_end.get(_key(f.start))
+        nxt = by_start.get(_key(f.end))
+        o_start = _miter(f, prev, f.start, True) if prev and prev is not f else f.outer(0.0)
+        o_end = _miter(f, nxt, f.end, False) if nxt and nxt is not f else f.outer(f.length)
+        out.append((f, o_start, o_end))
+    return out
 
 
 # --- shell ------------------------------------------------------------------------------------
@@ -238,9 +331,6 @@ def build_shell(scene: RoomScene) -> trimesh.Scene:
     if _shoelace(poly) <= 0:
         raise ValueError("floor_polygon must use the contract winding")
     height = max((w.height_m for w in scene.walls), default=2.6)
-    frames = [WallFrame.of(w) for w in scene.walls]
-    by_start = {_key(f.start): f for f in frames}
-    by_end = {_key(f.end): f for f in frames}
 
     shell = trimesh.Scene()
     shell.add_geometry(
@@ -251,11 +341,7 @@ def build_shell(scene: RoomScene) -> trimesh.Scene:
         node_name="ceiling",
         geom_name="ceiling",
     )
-    for f in frames:
-        prev = by_end.get(_key(f.start))
-        nxt = by_start.get(_key(f.end))
-        o_start = _miter(f, prev, f.start, True) if prev and prev is not f else f.outer(0.0)
-        o_end = _miter(f, nxt, f.end, False) if nxt and nxt is not f else f.outer(f.length)
+    for f, o_start, o_end in wall_ends(scene):
         name = f"wall_{f.wall.id}"
         shell.add_geometry(wall_mesh(scene, f, o_start, o_end), node_name=name, geom_name=name)
     return shell
