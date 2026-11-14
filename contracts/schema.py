@@ -49,9 +49,20 @@ Occupied volume and collision (the editor preview and the audit MUST agree on th
 - Walkable floor is blocked by any part whose y_min is below WALK_HEADROOM_M.
 - A door leaf and a sun ray test against the parts in their height range.
 - `is_fixed` items take part in every check but are never moved by the editor or the solver.
+- A chair never blocks another item's `requires_front_clear_m` zone: it is pushed in or out
+  in use (e.g. tucked under a desk).
+
+Room inputs and scale (see `RoomCaptureInputs`):
+
+- A room is captured from 1..MAX_FLOOR_PLAN_IMAGES floor-plan images and 1..MAX_ROOM_VIDEOS
+  videos.
+- Metric scale comes from the dimension labels printed on the floor plan. Labelled lengths are
+  read directly and the remaining walls are scaled from them; geometry sized this way is
+  `dimension_source = "measured"`. Without readable labels, sizes are `estimated` and
+  `"dimensions"` is added to `correction_needed`.
 """
 
-from typing import Dict, List, Literal, Optional
+from typing import Annotated, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -72,6 +83,10 @@ MIN_HEIGHT_OVERLAP_M = 0.005
 """Two parts overlap in height only when their ranges share more than this."""
 WALK_HEADROOM_M = 2.0
 """A part whose y_min is below this blocks the floor beneath it for walking."""
+
+MAX_FLOOR_PLAN_IMAGES = 5
+MAX_ROOM_VIDEOS = 5
+MediaUrl = Annotated[str, Field(pattern=GLB_URL_PATTERN)]
 
 
 class ContractModel(BaseModel):
@@ -191,7 +206,7 @@ class FurnitureItem(ContractModel):
     category: Literal[
         "bed", "desk", "chair", "table", "wardrobe", "sofa", "storage", "fixture", "other"
     ]
-    """`fixture` is part of the room (e.g. a radiator); see `is_fixed`."""
+    """`fixture` is part of the room (e.g. a radiator) and requires `is_fixed`."""
     source: Literal["extracted_video", "catalog_search", "url_import"]
     glb_url: str = Field(pattern=GLB_URL_PATTERN)
     """An absolute http(s) URL or a site-root path (e.g. `/mock_room/bed.glb`) that the frontend
@@ -242,7 +257,20 @@ class FurnitureItem(ContractModel):
                 or part.y_max > box.height + tol
             ):
                 raise ValueError(f"collision part {i} lies outside bbox_m")
+        if self.category == "fixture" and not self.is_fixed:
+            raise ValueError("a `fixture` item must have is_fixed set")
         return self
+
+
+class RoomCaptureInputs(ContractModel):
+    """What the user uploads for one room. Scale is read from the dimension labels on the floor
+    plan (see module doc)."""
+
+    scene_id: str
+    floor_plan_image_urls: List[MediaUrl] = Field(min_length=1, max_length=MAX_FLOOR_PLAN_IMAGES)
+    """Images of the same floor plan (pages, crops or photos). Same URL rules as `glb_url`."""
+    video_urls: List[MediaUrl] = Field(min_length=1, max_length=MAX_ROOM_VIDEOS)
+    """Walkthrough videos of the room. Same URL rules as `glb_url`."""
 
 
 class RoomScene(ContractModel):

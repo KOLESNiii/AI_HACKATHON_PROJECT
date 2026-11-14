@@ -52,7 +52,8 @@ Evidence ties an asset to the frames it was seen in, so Dev 1 can align it.
 - `provider_pose` carries the raw per-object rotation, translation, scale and camera pose
   that fal.ai `sam-3d-objects` returns. Its exact shape is unverified until one live call.
 - Evidence stays inside the reconstruction service. It is never placed in `RoomScene`, which
-  the editor sends to the audit on every move. It becomes typed Python models with #15.
+  the editor sends to the audit on every move. Its types are `EvidenceFrame` and
+  `AssetEvidence` in `models.py`.
 
 ## 4. Mesh references
 
@@ -110,7 +111,7 @@ as a silent default.
 ## 8. Functions and failure contract
 
 Agreed signatures. None is implemented yet; the issue that implements each is noted. Dev 1
-wires them into the reconstruction routes (#9).
+wires them into the reconstruction routes (#9). The types they use are in `models.py`.
 
 ```python
 async def extract_furniture(video_path: Path, scene_id: str) -> list[FurnitureAsset]   # #14–#16
@@ -118,7 +119,8 @@ async def import_catalog_asset(product_url: str, scene_id: str) -> FurnitureAsse
 def normalise_mesh(raw_glb: Path, *, category: str, target_bbox: BBoxM | None) -> NormalisedMesh  # #17
 ```
 
-`FurnitureAsset` is the pose-less asset from section 2. `NormalisedMesh` carries `glb_url`,
+`FurnitureAsset` is the pose-less asset from section 2; Dev 1 places one with
+`asset.to_item(pose)`, which also applies every `FurnitureItem` rule. `NormalisedMesh` carries `glb_url`,
 `bbox_m`, `collision_parts`, `collision_source` and `correction_needed`. Video and catalog
 assets go through the same `normalise_mesh`; there is no second normaliser.
 
@@ -131,8 +133,17 @@ labelled proxy box: `is_proxy: true`, `dimension_source: "estimated"`, and `"dim
 The fixture assets are in the shared fixture scene, `contracts/mock_room/mock_scene.json`:
 a desk with a tucked chair and a table over a fixed radiator. See `fixtures/README.md`.
 
+## 10. Room inputs (#5)
+
+`RoomCaptureInputs` in `contracts/schema.py`:
+
+- 1 to 5 floor-plan images (`MAX_FLOOR_PLAN_IMAGES`) and 1 to 5 walkthrough videos
+  (`MAX_ROOM_VIDEOS`) per room. URLs follow the `glb_url` rules.
+- Scale comes from the dimension labels printed on the floor plan. Labelled lengths are read
+  directly and the remaining walls are scaled from them; geometry sized this way is
+  `dimension_source: "measured"`. A plan without readable labels gives `estimated` sizes with
+  `"dimensions"` in `correction_needed`.
+
 ## Still open
 
-- The team has not yet chosen the real floor plan and matching video, or recorded the known
-  scale reference (#5).
 - The collision check itself and shared collision test vectors are Dev 4's (#29–#30).

@@ -37,6 +37,14 @@
  * - Walkable floor is blocked by any part whose y_min is below WALK_HEADROOM_M.
  * - A door leaf and a sun ray test against the parts in their height range.
  * - `is_fixed` items take part in every check but are never moved by the editor or the solver.
+ * - A chair never blocks another item's `requires_front_clear_m` zone: it is pushed in or out
+ *   in use (e.g. tucked under a desk).
+ *
+ * Room inputs and scale (see RoomCaptureInputs):
+ * - A room is captured from 1..MAX_FLOOR_PLAN_IMAGES floor-plan images and 1..MAX_ROOM_VIDEOS videos.
+ * - Metric scale comes from the dimension labels printed on the floor plan. Labelled lengths are
+ *   read directly and the remaining walls are scaled from them (`dimension_source: "measured"`).
+ *   Without readable labels, sizes are "estimated" with "dimensions" in `correction_needed`.
  *
  * These types describe the wire format. Pydantic always serialises defaults, so every field is
  * present in service responses and in contracts/mock_room fixtures. `?` marks only nullable
@@ -55,6 +63,8 @@ export const MIN_PLAN_OVERLAP_M2 = 0.0001;
 export const MIN_HEIGHT_OVERLAP_M = 0.005;
 /** A part whose y_min is below this blocks the floor beneath it for walking. */
 export const WALK_HEADROOM_M = 2.0;
+export const MAX_FLOOR_PLAN_IMAGES = 5;
+export const MAX_ROOM_VIDEOS = 5;
 
 export interface Vec2 { x: number; z: number; }
 export interface Vec3 { x: number; y: number; z: number; }
@@ -136,7 +146,7 @@ export interface FurnitureItem {
   /** Stable, never reassigned, and opaque: matches ITEM_ID_PATTERN; never parse it. */
   id: string;
   name: string;
-  /** "fixture" is part of the room (e.g. a radiator); see is_fixed. */
+  /** "fixture" is part of the room (e.g. a radiator) and requires is_fixed: true. */
   category: "bed" | "desk" | "chair" | "table" | "wardrobe" | "sofa" | "storage" | "fixture" | "other";
   source: "extracted_video" | "catalog_search" | "url_import";
   /**
@@ -164,6 +174,15 @@ export interface FurnitureItem {
   collision_source: "template" | "mesh" | "user_corrected";
   /** Default false. Part of the room: not draggable, not moved by the solver, still checked. */
   is_fixed: boolean;
+}
+
+/** What the user uploads for one room. URLs follow the glb_url rules. */
+export interface RoomCaptureInputs {
+  scene_id: string;
+  /** 1..MAX_FLOOR_PLAN_IMAGES images of the same floor plan. */
+  floor_plan_image_urls: string[];
+  /** 1..MAX_ROOM_VIDEOS walkthrough videos of the room. */
+  video_urls: string[];
 }
 
 export interface RoomScene {

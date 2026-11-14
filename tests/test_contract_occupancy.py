@@ -3,18 +3,22 @@
 from typing import Any
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from contracts.schema import (
     GLB_BBOX_TOLERANCE_M,
     ITEM_ID_PATTERN,
     MAX_COLLISION_PARTS,
+    MAX_FLOOR_PLAN_IMAGES,
+    MAX_ROOM_VIDEOS,
     MIN_HEIGHT_OVERLAP_M,
     MIN_PART_DIMENSION_M,
     MIN_PLAN_OVERLAP_M2,
     WALK_HEADROOM_M,
     FurnitureItem,
+    RoomCaptureInputs,
 )
+from services.reconstruction.assets.models import FurnitureAsset
 
 # The pre-change shape: none of the collision fields.
 LEGACY_DESK: dict[str, Any] = {
@@ -87,3 +91,43 @@ def test_new_literals() -> None:
 def test_part_values_must_be_finite(field: str, value: float) -> None:
     with pytest.raises(ValidationError):
         item(collision_parts=[part(**{field: value})])
+
+
+def test_fixture_category_must_be_fixed() -> None:
+    with pytest.raises(ValidationError):
+        item(category="fixture", is_fixed=False)
+    assert item(category="wardrobe", is_fixed=True).is_fixed  # built-ins are allowed
+
+
+def inputs(plans: int, videos: int, url: str = "/uploads/a") -> RoomCaptureInputs:
+    return RoomCaptureInputs.model_validate(
+        {"scene_id": "s", "floor_plan_image_urls": [url] * plans, "video_urls": [url] * videos}
+    )
+
+
+def test_room_inputs_counts() -> None:
+    assert (MAX_FLOOR_PLAN_IMAGES, MAX_ROOM_VIDEOS) == (5, 5)
+    inputs(1, 1)
+    inputs(5, 5)
+    for plans, videos in [(0, 1), (1, 0), (6, 1), (1, 6)]:
+        with pytest.raises(ValidationError):
+            inputs(plans, videos)
+
+
+@pytest.mark.parametrize("url", ["uploads/a.mp4", "//evil.example/a.mp4", "file:///a.mp4"])
+def test_room_inputs_reject_non_fetchable_urls(url: str) -> None:
+    with pytest.raises(ValidationError):
+        inputs(1, 1, url)
+
+
+def _wire_schema(model: type[BaseModel], drop: str) -> dict[str, Any]:
+    """Field name -> JSON schema with descriptions removed, so docstrings may differ."""
+    schema = model.model_json_schema()
+    props = {k: v for k, v in schema["properties"].items() if k != drop}
+    for prop in props.values():
+        prop.pop("description", None)
+    return {"props": props, "required": sorted(set(schema["required"]) - {drop})}
+
+
+def test_furniture_asset_mirrors_item_without_pose() -> None:
+    assert _wire_schema(FurnitureAsset, "evidence") == _wire_schema(FurnitureItem, "pose")
