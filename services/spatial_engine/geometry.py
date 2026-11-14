@@ -70,6 +70,7 @@ def door_swing_sector(
         door.hinge_pos.x,
         door.hinge_pos.z,
         door.width_m,
+        door.head_height_m,
         door.swing_angle_deg,
     )
     if not all(isfinite(value) for value in values):
@@ -78,6 +79,8 @@ def door_swing_sector(
         raise ValueError("Door references a different wall")
     if door.width_m <= 0 or not 0 <= door.swing_angle_deg <= 180:
         raise ValueError("Door width must be positive and opening angle must be in 0..180 degrees")
+    if door.head_height_m <= 0:
+        raise ValueError("Door head height must be positive")
 
     dx, dz = wall.end.x - wall.start.x, wall.end.z - wall.start.z
     length = hypot(dx, dz)

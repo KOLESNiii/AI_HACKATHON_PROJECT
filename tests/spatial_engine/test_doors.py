@@ -9,6 +9,7 @@ from shapely.geometry import Point
 from contracts.schema import (
     BBoxM,
     BlockedDoorIssue,
+    CollisionPart,
     DoorOpening,
     FurnitureItem,
     Pose2D,
@@ -237,3 +238,73 @@ def test_empty_scene_and_invalid_furniture() -> None:
     room.furniture[0].bbox_m.width = -1
     with pytest.raises(ValueError):
         detect_blocked_doors(room)
+
+
+@pytest.mark.parametrize(
+    ("bottom", "blocked"),
+    [
+        (2.1, False),
+        (2.05, False),
+        (2.049, False),
+        (2.045, False),
+        (2.04, True),
+        (0, True),
+    ],
+)
+def test_parts_must_overlap_door_height(bottom: float, blocked: bool) -> None:
+    room = scene()
+    obstacle = item()
+    obstacle.bbox_m.height = 3
+    obstacle.collision_parts = [
+        CollisionPart(x=0, z=0, width=0.1, depth=0.1, y_min=bottom, y_max=3)
+    ]
+    room.furniture = [obstacle]
+    assert bool(detect_blocked_doors(room)) is blocked
+
+
+def test_door_uses_stored_head_height() -> None:
+    room = scene()
+    obstacle = item()
+    obstacle.bbox_m.height = 3
+    obstacle.collision_parts = [CollisionPart(x=0, z=0, width=0.1, depth=0.1, y_min=2.1, y_max=3)]
+    room.furniture = [obstacle]
+    assert detect_blocked_doors(room) == []
+    room.doors[0].head_height_m = 2.5
+    assert len(detect_blocked_doors(room)) == 1
+
+
+def test_bbox_overlap_but_parts_clear_door() -> None:
+    room = scene()
+    obstacle = item(x=3.2, z=0.4)
+    obstacle.bbox_m.width = 2
+    obstacle.collision_parts = [CollisionPart(x=0.8, z=0, width=0.1, depth=0.1, y_min=0, y_max=1)]
+    room.furniture = [obstacle]
+    assert detect_blocked_doors(room) == []
+    obstacle.collision_parts[0].x = -0.8
+    assert len(detect_blocked_doors(room)) == 1
+
+
+def test_multiple_blocking_parts_report_pair_once_and_include_fixed_items() -> None:
+    room = scene()
+    obstacle = item()
+    obstacle.is_fixed = True
+    obstacle.collision_parts = [CollisionPart(x=0, z=0, width=0.1, depth=0.1, y_min=0, y_max=1)] * 2
+    room.furniture = [obstacle]
+    assert len(detect_blocked_doors(room)) == 1
+
+
+@pytest.mark.parametrize("height", [0, -1, math.nan, math.inf])
+def test_invalid_door_head_height(height: float) -> None:
+    room = scene()
+    room.doors[0].head_height_m = height
+    with pytest.raises(ValueError):
+        detect_blocked_doors(room)
+
+
+def test_shared_door_area_threshold() -> None:
+    room = scene()
+    obstacle = item()
+    obstacle.bbox_m.width = obstacle.bbox_m.depth = 0.005
+    room.furniture = [obstacle]
+    assert detect_blocked_doors(room) == []
+    assert len(detect_blocked_doors(room, area_tolerance_m2=0)) == 1

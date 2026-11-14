@@ -22,14 +22,23 @@ from services.spatial_engine.geometry import (
 )
 
 
+def _height_overlaps(bottom_a: float, top_a: float, bottom_b: float, top_b: float) -> bool:
+    overlap = min(top_a, top_b) - max(bottom_a, bottom_b)
+    # Decimal threshold equality must not become a collision through subtraction noise.
+    return overlap > MIN_HEIGHT_OVERLAP_M and not isclose(
+        overlap, MIN_HEIGHT_OVERLAP_M, rel_tol=1e-12, abs_tol=1e-12
+    )
+
+
 def detect_blocked_doors(
-    scene: RoomScene, *, area_tolerance_m2: float = 1e-9
+    scene: RoomScene, *, area_tolerance_m2: float = MIN_PLAN_OVERLAP_M2
 ) -> list[BlockedDoorIssue]:
     """Report furniture intersecting door sweeps, sorted by door and item ID.
 
-    Uses full furniture footprints, irrespective of height/parts. This checks
-    leaf obstruction, not walking access through the doorway. Boundary-only
-    contact is allowed; positive overlap above the numerical tolerance is blocked.
+    Tests occupied parts against the door sweep from floor to head_height_m,
+    using shared plan/height thresholds. Empty parts mean a solid bbox. This
+    checks leaf obstruction, not walking access through the doorway. Contact
+    alone is allowed; each door/item pair is reported only once.
     Outward sweeps are not clipped to the room, so outside items can block them.
     Invalid geometry/references and duplicate IDs raise ValueError, even when no
     furniture is present. Does not modify the scene.
@@ -45,20 +54,25 @@ def detect_blocked_doors(
         if len({entry.id for entry in entries}) != len(entries):
             raise ValueError(f"{label} IDs must be unique for door checks")
     walls = {wall.id: wall for wall in scene.walls}
-    footprints = [
-        (item.id, furniture_footprint(item)) for item in sorted(scene.furniture, key=lambda i: i.id)
+    volumes = [
+        (item.id, furniture_collision_volumes(item))
+        for item in sorted(scene.furniture, key=lambda i: i.id)
     ]
     issues = []
     for door in sorted(scene.doors, key=lambda d: d.id):
         if door.wall_id not in walls:
             raise ValueError(f"Door {door.id} references an unknown wall")
         sweep = door_swing_sector(door, walls[door.wall_id], scene.floor_polygon)
-        for item_id, footprint in footprints:
-            area = float(sweep.intersection(footprint).area)
-            if not isfinite(area):
-                raise ValueError("Door overlap area must be finite")
-            if area > area_tolerance_m2:
-                issues.append(BlockedDoorIssue(door_id=door.id, blocked_by_item_id=item_id))
+        for item_id, parts in volumes:
+            for part in parts:
+                if not _height_overlaps(0, door.head_height_m, part.y_min, part.y_max):
+                    continue
+                area = float(sweep.intersection(part.footprint).area)
+                if not isfinite(area):
+                    raise ValueError("Door overlap area must be finite")
+                if area > area_tolerance_m2:
+                    issues.append(BlockedDoorIssue(door_id=door.id, blocked_by_item_id=item_id))
+                    break
     return issues
 
 
@@ -119,10 +133,7 @@ def detect_collisions(
         intersections = []
         for part_a in parts_a:
             for part_b in parts_b:
-                height = min(part_a.y_max, part_b.y_max) - max(part_a.y_min, part_b.y_min)
-                if height <= MIN_HEIGHT_OVERLAP_M or isclose(
-                    height, MIN_HEIGHT_OVERLAP_M, rel_tol=1e-12, abs_tol=1e-12
-                ):
+                if not _height_overlaps(part_a.y_min, part_a.y_max, part_b.y_min, part_b.y_max):
                     continue
                 intersection = part_a.footprint.intersection(part_b.footprint)
                 area = float(intersection.area)
