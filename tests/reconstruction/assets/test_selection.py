@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sqlite3
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
@@ -17,6 +18,7 @@ from services.reconstruction.assets.providers import (
     DiscoveryError,
     FalVisionProvider,
     RecordedProvider,
+    RequestBudget,
     parse_discovery,
 )
 from services.reconstruction.assets.registry import Registry
@@ -40,7 +42,13 @@ from services.reconstruction.assets.video import read_image, sample_video
 
 
 @pytest.fixture
-def video(tmp_path: Path) -> Path:
+def media_tools() -> None:
+    if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None:
+        pytest.skip("video integration tests require FFmpeg and FFprobe on PATH")
+
+
+@pytest.fixture
+def video(tmp_path: Path, media_tools: None) -> Path:
     path = tmp_path / "vfr.mp4"
     subprocess.run(
         [
@@ -171,7 +179,8 @@ def test_distinct_sofas_rerun_order_category_and_co_visibility() -> None:
     objects[0].category = "chair"  # IDs do not encode or depend on category.
     reconcile(state, Discovery(objects=objects[::-1]), state.frames, None)
     assert {obj.sightings[0].box.x: obj.id for obj in state.objects.values()} == original
-    assert state.objects[original[0.05]].category == "chair"
+    assert state.objects[original[0.05]].category == "sofa"
+    assert any("metadata category conflict" in issue for issue in state.unresolved)
     assert all(len(obj.sightings) == 2 and obj.selected_views for obj in state.objects.values())
     new_frame = frame(60)
     state.frames[new_frame.key] = new_frame
@@ -188,7 +197,7 @@ def test_distinct_sofas_rerun_order_category_and_co_visibility() -> None:
         None,
     )
     assert len(state.objects) == 3
-    assert "co-visible" in state.unresolved[-1]
+    assert any("co-visible" in issue for issue in state.unresolved)
 
 
 def test_cross_video_requires_grounded_room_and_uncertain_reruns_are_stable() -> None:
@@ -219,7 +228,8 @@ def test_reflections_are_reported_not_physical_items() -> None:
     f = frame(0)
     state = RegistryState(frames={f.key: f})
     reconcile(state, Discovery(objects=[track([f], 0.1, reflection=True)]), state.frames, None)
-    assert not state.objects and state.unresolved
+    assert not state.objects and not state.unresolved
+    assert "reflection excluded" in state.warnings_by_frame[f.key][0]
 
 
 def test_registry_rollback_concurrency_corruption_and_request_scopes(tmp_path: Path) -> None:
@@ -360,18 +370,23 @@ def test_fal_cache_recovery_malformed_and_uncertain_submission(tmp_path: Path) -
 
 
 def test_budget_retains_known_objects(video: Path, tmp_path: Path) -> None:
+    provider = FalVisionProvider(key="test-never-sent")
+    provider.client = Mock()
     result = select_furniture_frames(
         [video],
         "demo",
         data_dir=tmp_path / "data",
+        provider=provider,
         options=SelectionOptions(
             max_requests=0,
         ),
     )
     assert not result.complete and result.frames and "budget exhausted" in result.warnings[0]
+    provider.client.submit.assert_not_called()
+    provider.client.upload.assert_not_called()
 
 
-def test_reviewed_real_room_coverage_and_identity(tmp_path: Path) -> None:
+def test_reviewed_real_room_coverage_and_identity(tmp_path: Path, media_tools: None) -> None:
     root = Path(__file__).resolve().parents[3]
     video = root / "examples/three_floor_3.mp4"
     if not video.exists():
@@ -502,7 +517,7 @@ def test_partial_results_are_not_accepted_and_timeout_resumes(
     monkeypatch.setattr(providers.time, "monotonic", Mock(side_effect=[0, 2]))
     with pytest.raises(DiscoveryError, match="deadline exceeded"):
         provider.discover([f], [], {f.key: f}, tmp_path, registry)
-    handle.cancel.assert_called_once()
+    handle.cancel.assert_not_called()
     monkeypatch.setattr(providers.time, "monotonic", lambda: 0)
     handle.status.return_value = fal_client.Completed(logs=[], metrics={})
     handle.get.return_value = {"output": '{"objects":[],"empty_frames":["F0"]}'}
@@ -516,3 +531,293 @@ def test_partial_results_are_not_accepted_and_timeout_resumes(
         provider.discover([f], [], {f.key: f}, tmp_path, registry)
     with pytest.raises(ValueError, match="FAL_KEY"):
         FalVisionProvider(key="")
+
+
+@pytest.mark.parametrize("stage", ["read", "encode", "upload"])
+def test_pre_submit_failure_can_retry_without_refresh(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+) -> None:
+    import services.reconstruction.assets.providers as providers
+
+    f = frame(0)
+    cv2.imwrite(str(tmp_path / f.image_path), np.zeros((96, 160, 3), np.uint8))
+    provider = FalVisionProvider(key="test-never-sent")
+    provider.client = Mock()
+    provider.client.upload = Mock(return_value="https://example.test/frame.jpg")
+    handle = provider.client.submit.return_value
+    handle.request_id = "retry-request"
+    handle.status.return_value = fal_client.Completed(logs=[], metrics={})
+    handle.get.return_value = {"output": '{"objects":[],"empty_frames":["F0"]}'}
+    registry = Registry(tmp_path)
+    with monkeypatch.context() as patch:
+        if stage == "read":
+            patch.setattr(providers, "read_image", Mock(side_effect=ValueError("missing image")))
+        elif stage == "encode":
+            patch.setattr(providers.cv2, "imencode", Mock(return_value=(False, None)))
+        else:
+            patch.setattr(
+                provider.client, "upload", Mock(side_effect=RuntimeError("upload failed"))
+            )
+        with pytest.raises(DiscoveryError):
+            provider.discover([f], [], {f.key: f}, tmp_path, registry)
+        provider.client.submit.assert_not_called()
+    # Same cache namespace, without --refresh, now submits exactly once.
+    provider.discover([f], [], {f.key: f}, tmp_path, registry)
+    provider.client.submit.assert_called_once()
+
+
+def test_repeated_wait_timeouts_keep_one_live_handle(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import services.reconstruction.assets.providers as providers
+
+    f = frame(0)
+    cv2.imwrite(str(tmp_path / f.image_path), np.zeros((96, 160, 3), np.uint8))
+    provider = FalVisionProvider(key="test-never-sent", timeout_s=1)
+    provider.client = Mock()
+    handle = provider.client.submit.return_value
+    handle.request_id = "still-running"
+    handle.status.return_value = fal_client.InProgress(logs=[])
+    provider.client.get_handle.return_value = handle
+    registry = Registry(tmp_path)
+    for _ in range(3):
+        monkeypatch.setattr(providers.time, "monotonic", Mock(side_effect=[0, 0.5, 2]))
+        monkeypatch.setattr(providers.time, "sleep", Mock())
+        with pytest.raises(DiscoveryError, match="remote request still active"):
+            provider.discover([f], [], {f.key: f}, tmp_path, registry)
+    provider.client.submit.assert_called_once()
+    handle.cancel.assert_not_called()
+    # The un-cancelled remote job genuinely can finish after the local deadlines.
+    monkeypatch.setattr(providers.time, "monotonic", lambda: 0)
+    handle.status.return_value = fal_client.Completed(logs=[], metrics={})
+    handle.get.return_value = {"output": '{"objects":[],"empty_frames":["F0"]}'}
+    provider.discover([f], [], {f.key: f}, tmp_path, registry, budget=RequestBudget(0))
+    provider.client.submit.assert_called_once()
+
+
+def test_request_budget_resumes_after_cache_hits_and_recorded_replays_are_free(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import services.reconstruction.assets.selection as selection
+    from services.reconstruction.assets.selection_models import SourceVideo
+
+    frames = [frame(i) for i in range(3)]
+    source = SourceVideo(
+        source_id=frames[0].source_id,
+        name="synthetic.mp4",
+        stream_index=0,
+        encoded_size=(160, 96),
+        upright_size=(160, 96),
+        rotation_deg=0,
+        encoded_to_upright=[[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        time_base="1/100",
+    )
+    monkeypatch.setattr(selection, "sample_video", lambda *args: (source, frames, []))
+    for f in frames:
+        cv2.imwrite(str(tmp_path / f.image_path), np.zeros((96, 160, 3), np.uint8))
+    provider = FalVisionProvider(key="test-never-sent")
+    provider.client = Mock()
+    handle = provider.client.submit.return_value
+    handle.request_id = "completed"
+    handle.status.return_value = fal_client.Completed(logs=[], metrics={})
+    handle.get.return_value = {"output": '{"objects":[],"empty_frames":["F0"]}'}
+    options = SelectionOptions(batch_size=1, max_requests=2)
+    first = select_furniture_frames(
+        [Path("synthetic.mp4")], "demo", data_dir=tmp_path, provider=provider, options=options
+    )
+    assert provider.client.submit.call_count == 2
+    assert any("budget exhausted" in warning for warning in first.warnings)
+    second = select_furniture_frames(
+        [Path("synthetic.mp4")], "demo", data_dir=tmp_path, provider=provider, options=options
+    )
+    assert provider.client.submit.call_count == 3
+    assert not any("budget exhausted" in warning for warning in second.warnings)
+    # All results now come from the cache even with zero new paid requests allowed.
+    select_furniture_frames(
+        [Path("synthetic.mp4")],
+        "demo",
+        data_dir=tmp_path,
+        provider=provider,
+        options=SelectionOptions(batch_size=1, max_requests=0),
+    )
+    assert provider.client.submit.call_count == 3
+    reviewed = RecordedProvider(Discovery(objects=[track(frames, 0.1)]))
+    result = select_furniture_frames(
+        [Path("synthetic.mp4")],
+        "reviewed",
+        data_dir=tmp_path,
+        provider=reviewed,
+        options=SelectionOptions(batch_size=1, max_requests=0),
+    )
+    assert result.complete and len(result.objects) == 1
+    reflected = select_furniture_frames(
+        [Path("synthetic.mp4")],
+        "mirror",
+        data_dir=tmp_path,
+        provider=RecordedProvider(Discovery(objects=[track(frames, 0.1, reflection=True)])),
+        options=SelectionOptions(batch_size=1, max_requests=0),
+    )
+    assert reflected.complete and not reflected.objects
+    assert any("reflection excluded" in warning for warning in reflected.warnings)
+
+
+def test_corrected_batches_clear_only_their_issues_and_reflections_are_nonblocking(
+    tmp_path: Path,
+) -> None:
+    a, b = frame(0), frame(1)
+    registry = Registry(tmp_path)
+
+    def seed(state: RegistryState) -> None:
+        state.frames.update({a.key: a, b.key: b})
+        reconcile(
+            state,
+            Discovery(objects=[track([a], 0.1, uncertain=True), track([b], 0.1, uncertain=True)]),
+            state.frames,
+            None,
+        )
+
+    initial = registry.update("scene", seed)
+    assert set(initial.unresolved_by_frame) == {a.key, b.key}
+    ids = list(initial.objects)
+    after_a = registry.update(
+        "scene",
+        lambda state: reconcile(
+            state,
+            Discovery(objects=[track([a], 0.1)]),
+            {a.key: a},
+            None,
+        ),
+    )
+    assert set(after_a.unresolved_by_frame) == {b.key}
+    after_b = registry.update(
+        "scene",
+        lambda state: reconcile(
+            state,
+            Discovery(objects=[track([b], 0.1)]),
+            {b.key: b},
+            None,
+        ),
+    )
+    assert not after_b.unresolved and list(after_b.objects) == ids
+    reflection = registry.update(
+        "mirror",
+        lambda state: (
+            state.frames.update({a.key: a}),
+            reconcile(
+                state, Discovery(objects=[track([a], 0.1, reflection=True)]), {a.key: a}, None
+            ),
+        ),
+    )
+    assert not reflection.objects and not reflection.unresolved
+    corrected = registry.update(
+        "mirror",
+        lambda state: reconcile(
+            state,
+            Discovery(objects=[], empty_frames=[a.key]),
+            {a.key: a},
+            None,
+        ),
+    )
+    assert not corrected.warnings_by_frame and not corrected.unresolved
+
+
+def test_legacy_unresolved_snapshots_can_be_reviewed_without_resetting_ids(tmp_path: Path) -> None:
+    f = frame(0)
+    registry = Registry(tmp_path)
+    state = RegistryState(frames={f.key: f})
+    reconcile(state, Discovery(objects=[track([f], 0.1)]), state.frames, None)
+    legacy = state.model_dump(exclude={"unresolved_by_frame", "warnings_by_frame"})
+    legacy["unresolved"] = ["legacy ambiguity"]
+    with sqlite3.connect(registry.path) as connection:
+        connection.execute("INSERT INTO scenes VALUES (?,?)", ("scene", json.dumps(legacy)))
+    assert registry.load("scene").unresolved_by_frame == {f.key: ["legacy ambiguity"]}
+    corrected = registry.update(
+        "scene",
+        lambda current: reconcile(
+            current,
+            Discovery(objects=[track([f], 0.1)]),
+            {f.key: f},
+            None,
+        ),
+    )
+    assert not corrected.unresolved and list(corrected.objects) == list(state.objects)
+
+
+def test_large_reference_registry_uses_bounded_context_and_still_hits_cache(tmp_path: Path) -> None:
+    f = frame(0)
+    cv2.imwrite(str(tmp_path / f.image_path), np.zeros((96, 160, 3), np.uint8))
+    references = [
+        SelectedObject(
+            id=f"vid-{i:06d}",
+            name="Sofa",
+            category="sofa",
+            appearance="brown",
+            sightings=track([f], 0.1).sightings,
+            selected_views=[f.key],
+        )
+        for i in range(1, 18)
+    ]
+    provider = FalVisionProvider(key="test-never-sent")
+    provider.client = Mock()
+    handle = provider.client.submit.return_value
+    handle.request_id = "large-registry"
+    handle.status.return_value = fal_client.Completed(logs=[], metrics={})
+    handle.get.return_value = {"output": '{"objects":[],"empty_frames":["F0"]}'}
+    registry = Registry(tmp_path)
+    result = provider.discover(
+        [f], references, {f.key: f}, tmp_path, registry, budget=RequestBudget(1)
+    )
+    assert provider.client.upload.call_count == 17  # one full frame plus 16 reference crops
+    assert any("context limited" in warning for warning in result.warnings)
+    assert (
+        provider.discover([f], references, {}, tmp_path, registry, budget=RequestBudget(0))
+        == result
+    )
+    provider.client.submit.assert_called_once()
+
+
+def test_later_metadata_does_not_reclassify_established_items() -> None:
+    a, b = frame(0), frame(1)
+    state = RegistryState(frames={a.key: a, b.key: b})
+    reconcile(state, Discovery(objects=[track([a], 0.1)]), {a.key: a}, None)
+    original = next(iter(state.objects.values())).model_copy(deep=True)
+    changed = track(
+        [b],
+        0.1,
+        reference_id=original.id,
+        category="chair",
+        name="New name",
+        appearance="new misleading appearance",
+    )
+    reconcile(state, Discovery(objects=[changed]), {b.key: b}, None)
+    current = state.objects[original.id]
+    assert (current.name, current.category, current.appearance) == (
+        original.name,
+        original.category,
+        original.appearance,
+    )
+    assert len(current.sightings) == 2 and state.unresolved
+
+
+def test_live_cli_missing_fal_client_exits_cleanly(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import builtins
+
+    original_import = builtins.__import__
+
+    def missing_sdk(name: str, *args: object, **kwargs: object) -> object:
+        if name == "fal_client":
+            raise ModuleNotFoundError("No module named fal_client")
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setenv("FAL_KEY", "test-never-sent")
+    monkeypatch.setattr(builtins, "__import__", missing_sdk)
+    assert main(["not-read.mp4", "--scene-id", "demo", "--live", "--out", str(tmp_path)]) == 1
+    assert "install the reconstruction Python extra" in capsys.readouterr().out

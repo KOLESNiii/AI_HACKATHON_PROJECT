@@ -105,7 +105,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--interval", type=float, default=1)
     parser.add_argument("--max-frames", type=int, default=24)
     parser.add_argument("--batch-size", type=int, default=4)
-    parser.add_argument("--max-requests", type=int, default=8)
+    parser.add_argument(
+        "--max-requests",
+        type=int,
+        default=8,
+        help="new inference submission attempts per run; cache/recorded/recovery reads are free",
+    )
     parser.add_argument(
         "--room-key", help="caller-confirmed physical room, for cross-video matching"
     )
@@ -157,6 +162,9 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0 if result.complete else 2
+    except ImportError:
+        print("Live discovery needs fal-client; install the reconstruction Python extra.")
+        return 1
     except (ValueError, OSError, sqlite3.Error) as exc:
         # Do not echo raw invalid JSON, credentials, or provider payloads in CLI errors.
         print(f"Selection failed ({type(exc).__name__}); check media, options and registry.")

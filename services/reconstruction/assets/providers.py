@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
@@ -47,6 +48,22 @@ class DiscoveryError(Exception):
     """Safe user-facing provider diagnostic; never reflects credentials or raw HTTP bodies."""
 
 
+@dataclass
+class RequestBudget:
+    """Per-run inference submission attempts; cache reads and handle recovery are free."""
+
+    limit: int
+    used: int = 0
+
+    def check(self) -> None:
+        if self.used >= self.limit:
+            raise DiscoveryError("request budget exhausted; uncached batch deferred")
+
+    def claim(self) -> None:
+        self.check()
+        self.used += 1
+
+
 class DiscoveryProvider(Protocol):
     def discover(
         self,
@@ -55,6 +72,8 @@ class DiscoveryProvider(Protocol):
         known_frames: dict[str, Frame],
         data_dir: Path,
         registry: Registry,
+        *,
+        budget: RequestBudget | None = None,
     ) -> Discovery: ...
 
 
@@ -66,6 +85,8 @@ class OfflineProvider:
         known_frames: dict[str, Frame],
         data_dir: Path,
         registry: Registry,
+        *,
+        budget: RequestBudget | None = None,
     ) -> Discovery:
         raise DiscoveryError("offline mode: frames retained; supply recorded detections or --live")
 
@@ -83,6 +104,8 @@ class RecordedProvider:
         known_frames: dict[str, Frame],
         data_dir: Path,
         registry: Registry,
+        *,
+        budget: RequestBudget | None = None,
     ) -> Discovery:
         keys = {frame.key for frame in frames}
         objects = []
@@ -175,9 +198,9 @@ class FalVisionProvider:
         known_frames: dict[str, Frame],
         data_dir: Path,
         registry: Registry,
+        *,
+        budget: RequestBudget | None = None,
     ) -> Discovery:
-        if len(references) > 16:
-            raise DiscoveryError("reference budget exceeded; narrow the room/range")
         # The original reference mapping is stored with the request. Retries must not change it.
         cache_key = hashlib.sha256(
             json.dumps(
@@ -203,8 +226,26 @@ class FalVisionProvider:
             raise DiscoveryError("submission pending/uncertain; will not risk a duplicate charge")
         import fal_client
 
+        submit_started = False
         try:
             if winner:
+                if budget is not None:
+                    budget.check()
+
+                # A large registry must not block a new batch or invalidate a cached result.
+                # Prefer references nearest in time within the same source; keep input order
+                # fixed in the saved handle so later retries retain the original R mapping.
+                def proximity(obj: SelectedObject) -> tuple[float, str]:
+                    distances = [
+                        abs(known_frames[s.frame_key].timestamp_s - frame.timestamp_s)
+                        for s in obj.sightings
+                        for frame in frames
+                        if known_frames[s.frame_key].source_id == frame.source_id
+                    ]
+                    return min(distances, default=float("inf")), obj.id
+
+                omitted = max(0, len(references) - 16)
+                references = sorted(references, key=proximity)[:16]
                 images = [read_image(data_dir, frame) for frame in frames]
                 for obj in references:
                     primary = obj.selected_views[0]
@@ -218,6 +259,9 @@ class FalVisionProvider:
                     urls.append(self.client.upload(encoded.tobytes(), "image/jpeg"))
                 order = [f"F{i}" for i in range(len(frames))]
                 order.extend(f"R{i} ({obj.category})" for i, obj in enumerate(references))
+                if budget is not None:
+                    budget.claim()
+                submit_started = True
                 handle = self.client.submit(
                     self.endpoint,
                     arguments={
@@ -232,6 +276,7 @@ class FalVisionProvider:
                     "status": "submitted",
                     "request_id": handle.request_id,
                     "references": [obj.model_dump() for obj in references],
+                    "omitted_references": omitted,
                 }
                 registry.save_request(cache_key, entry)
             else:
@@ -255,20 +300,30 @@ class FalVisionProvider:
                         "AI inventory requires review: confirm distinct objects and cross-frame "
                         "associations; replay reviewed Discovery JSON with --recorded"
                     )
+                    if entry.get("omitted_references", 0):
+                        discovery.warnings.append(
+                            f"reference context limited to 16 items; "
+                            f"{entry['omitted_references']} more require identity review"
+                        )
                     registry.save_request(
                         cache_key, {"status": "done", "result": discovery.model_dump()}
                     )
                     return discovery
                 time.sleep(min(1, self.timeout_s))
-            # Keep the handle: recovery can retrieve a completed result without resubmission.
-            handle.cancel()
+            # A local wait deadline does not cancel remote work: a later run can retrieve it.
             raise DiscoveryError(
-                "vision deadline exceeded; saved request can be recovered on retry"
+                "vision deadline exceeded; remote request still active and recoverable on retry"
             )
         except DiscoveryError:
             raise
         except Exception as exc:
             # Keep uncertain submissions/resumable handles. Never echo provider HTTP bodies.
-            raise DiscoveryError(
-                f"vision unavailable ({type(exc).__name__}); request state retained"
-            ) from exc
+            recovery = (
+                "safe to retry; no inference submitted"
+                if winner and not submit_started
+                else "request state retained"
+            )
+            raise DiscoveryError(f"vision unavailable ({type(exc).__name__}); {recovery}") from exc
+        finally:
+            if winner and not submit_started:
+                registry.release_reservation(cache_key)

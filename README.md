@@ -56,6 +56,8 @@ Competitor research across **IKEA Kreativ, Decato, PromptDecor, RoomCraft, Stage
 ## 4. Quickstart (Local Development)
 
 Install Bun 1.3.2+ and uv. uv provisions Python 3.11 from `.python-version`.
+Video reconstruction also requires FFmpeg and FFprobe on `PATH` (verified with FFmpeg 8).
+Video-dependent tests skip when those executables are absent; other checks still run.
 Run all commands from the repository root.
 
 ```bash

@@ -6,10 +6,11 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from .models import AssetEvidence, EvidenceFrame
-from .providers import DiscoveryError, DiscoveryProvider, OfflineProvider
+from .providers import DiscoveryError, DiscoveryProvider, OfflineProvider, RequestBudget
 from .registry import Registry
 from .selection_models import (
     Box,
+    DiscoveredObject,
     Discovery,
     Frame,
     RegistryState,
@@ -47,10 +48,20 @@ def _select_views(obj: SelectedObject) -> None:
     obj.selected_views = [s.frame_key for s in chosen]
 
 
+def _diagnostic(messages: dict[str, list[str]], track: DiscoveredObject, message: str) -> None:
+    for sighting in track.sightings:
+        messages.setdefault(sighting.frame_key, []).append(message)
+
+
 def reconcile(
     state: RegistryState, discovery: Discovery, frames: dict[str, Frame], room_key: str | None
 ) -> None:
     """Conservative exact-evidence/reference matching; deliberately no custom assignment solver."""
+    # A successful reprocessing replaces diagnostics only for that batch's source frames.
+    # Other frames retain their issues until they are themselves reviewed again.
+    for key in frames:
+        state.unresolved_by_frame.pop(key, None)
+        state.warnings_by_frame.pop(key, None)
     # Sorting makes first allocation independent of a provider's object ordering.
     tracks = sorted(
         discovery.objects,
@@ -62,7 +73,7 @@ def reconcile(
     used: set[str] = set()
     for track in tracks:
         if track.reflection:
-            state.unresolved.append(f"reflection excluded: {track.name}")
+            _diagnostic(state.warnings_by_frame, track, f"reflection excluded: {track.name}")
             continue
         candidates: set[str] = set()
         for existing in state.objects.values():
@@ -82,10 +93,14 @@ def reconcile(
             if same_source or same_room:
                 candidates.add(reference.id)
             else:
-                state.unresolved.append(f"cross-video identity ungrounded: {track.name}")
+                _diagnostic(
+                    state.unresolved_by_frame,
+                    track,
+                    f"cross-video identity ungrounded: {track.name}",
+                )
         identity = next(iter(candidates)) if len(candidates) == 1 else None
         if len(candidates) > 1 or track.uncertain:
-            state.unresolved.append(f"identity needs review: {track.name}")
+            _diagnostic(state.unresolved_by_frame, track, f"identity needs review: {track.name}")
             # An uncertain cached observation must not allocate another object on each rerun.
             if len(candidates) > 1:
                 continue
@@ -104,10 +119,18 @@ def reconcile(
                 for b in track.sightings
             )
             if identity in used and not conflicting:
-                state.unresolved.append(f"duplicate detection needs review: {track.name}")
+                _diagnostic(
+                    state.unresolved_by_frame,
+                    track,
+                    f"duplicate detection needs review: {track.name}",
+                )
                 continue
             if conflicting:
-                state.unresolved.append(f"co-visible objects cannot share ID: {track.name}")
+                _diagnostic(
+                    state.unresolved_by_frame,
+                    track,
+                    f"co-visible objects cannot share ID: {track.name}",
+                )
                 identity = None
         if identity is None:
             identity = f"vid-{state.next_id:06d}"
@@ -127,11 +150,24 @@ def reconcile(
             sightings = {s.frame_key: s for s in existing.sightings}
             sightings.update({s.frame_key: s for s in track.sightings})
             existing.sightings = sorted(sightings.values(), key=lambda s: s.frame_key)
-            existing.name, existing.category = track.name, track.category
-            existing.appearance = track.appearance
+            if existing.category != track.category:
+                _diagnostic(
+                    state.unresolved_by_frame,
+                    track,
+                    f"metadata category conflict for {identity}: kept {existing.category}, "
+                    f"proposed {track.category}",
+                )
+            elif existing.name != track.name or existing.appearance != track.appearance:
+                _diagnostic(
+                    state.warnings_by_frame,
+                    track,
+                    f"metadata suggestion ignored for established item {identity}",
+                )
         used.add(identity)
         _select_views(state.objects[identity])
-    state.unresolved = sorted(set(state.unresolved))
+    state.unresolved = sorted(
+        {message for issues in state.unresolved_by_frame.values() for message in issues}
+    )
 
 
 def _score_sightings(discovery: Discovery, frames: dict[str, Frame], data_dir: Path) -> None:
@@ -187,6 +223,7 @@ def select_furniture_frames(
 
     registry.update(scene_id, add_sources)
     complete = not warnings
+    budget = RequestBudget(options.max_requests)
     batches: list[list[Frame]] = []
     for source in sources:
         group = [frame for frame in frames if frame.source_id == source.source_id]
@@ -194,10 +231,6 @@ def select_furniture_frames(
             group[i : i + options.batch_size] for i in range(0, len(group), options.batch_size)
         )
     for batch_index, batch in enumerate(batches):
-        if batch_index >= options.max_requests:
-            warnings.append("discovery batch budget exhausted; unprocessed frames remain")
-            complete = False
-            break
         before = registry.load(scene_id)
         # References are same-source unless a caller has confirmed the same physical room.
         source_ids = {f.source_id for f in batch}
@@ -210,7 +243,14 @@ def select_furniture_frames(
             )
         ]
         try:
-            discovery = provider.discover(batch, references, before.frames, data_dir, registry)
+            discovery = provider.discover(
+                batch,
+                references,
+                before.frames,
+                data_dir,
+                registry,
+                budget=budget,
+            )
             discovery.validate_frames({frame.key for frame in batch})
             _score_sightings(discovery, {frame.key: frame for frame in batch}, data_dir)
             registry.update(
@@ -226,6 +266,7 @@ def select_furniture_frames(
             warnings.append(f"batch {batch_index + 1}: {exc}")
             complete = False
     state = registry.load(scene_id)
+    warnings.extend(message for notes in state.warnings_by_frame.values() for message in notes)
     geometry: list[str] = []
     for source in sources:
         keys = [frame.key for frame in frames if frame.source_id == source.source_id]

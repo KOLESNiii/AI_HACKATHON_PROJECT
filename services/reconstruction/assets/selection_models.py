@@ -115,6 +115,8 @@ class RegistryState(Record):
     frames: dict[str, Frame] = {}
     objects: dict[str, SelectedObject] = {}
     unresolved: list[str] = []
+    unresolved_by_frame: dict[str, list[str]] = {}
+    warnings_by_frame: dict[str, list[str]] = {}
 
     @model_validator(mode="after")
     def _links(self) -> RegistryState:
@@ -126,6 +128,12 @@ class RegistryState(Record):
             s.frame_key not in self.frames for obj in self.objects.values() for s in obj.sightings
         ):
             raise ValueError("registry object has missing source evidence")
+        # Older snapshots stored unscoped messages. Conservatively attach them to the
+        # existing frames, so reviewing those frames clears them without dropping IDs.
+        if self.unresolved and not self.unresolved_by_frame:
+            self.unresolved_by_frame = {key: list(self.unresolved) for key in self.frames}
+        if (set(self.unresolved_by_frame) | set(self.warnings_by_frame)) - self.frames.keys():
+            raise ValueError("registry diagnostic has missing source evidence")
         return self
 
 

@@ -207,12 +207,28 @@ and one office chair. Automated tests repeat the run with reordered observations
 the same IDs and evidence. No private images or generated assets are added by this issue.
 
 `--batch-size` is 1–8, `--max-frames` caps sampling per video, and `--max-requests` bounds
-discovery batches (cached batches also count). Capped sampling/budget exhaustion is explicit.
+new inference submission attempts per run. Cached results, saved-handle recovery and recorded
+replays are free, so repeated runs advance past previously completed batches. A zero budget
+still allows those free operations. Capped sampling/budget exhaustion is explicit.
 Provider handles/results are cached by scene, ordered frame keys, model and prompt. A retry
-recovers a saved request instead of resubmitting; an uncertain submission is blocked to avoid
-duplicate charges. `--refresh <new-label>` deliberately starts a new detection cache and can
+recovers a saved request instead of resubmitting. A local wait deadline leaves the remote job
+running so a later run can collect its result; it does not cancel the handle it saves.
+Preparation/encoding/upload failures release their reservation and retry normally. Only a
+failure after submission starts is uncertain and blocked to avoid duplicate charges.
+`--refresh <new-label>` deliberately starts a new detection cache and can
 incur new charges. Failed/partial outputs do not erase known inventory. Runtime errors are
 sanitised; keys/provider HTTP bodies are not included in reports.
+
+Review issues are scoped to source frames: successfully reprocessing a batch replaces those
+frames' issues and preserves issues on other frames. Recognised reflections are excluded
+with an informational warning and do not prevent completion. Existing unscoped registry
+issues migrate conservatively onto their stored frames and clear as those frames are reviewed.
+This clears diagnostics, not established IDs or unwanted initial proposal objects.
+
+New live requests choose at most 16 nearby references from a larger registry and report any
+omitted context; cache hits/recovery retain the original reference mapping. Additional
+sightings do not silently overwrite established names, categories or appearance. Conflicting
+categories require review; metadata corrections remain explicit work.
 
 For multiple videos, source hashes distinguish equal frame ordinals. Each provider batch
 belongs to one source. Cross-video reference matching requires `--room-key` identifying a

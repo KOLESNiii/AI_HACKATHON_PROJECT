@@ -88,3 +88,11 @@ class Registry:
                     key,
                 ),
             )
+
+    def release_reservation(self, key: str) -> None:
+        """Only a known pre-submit failure is safe to release; never remove a saved handle."""
+        with self._connect() as connection:
+            connection.execute(
+                "DELETE FROM requests WHERE key = ? AND payload = ?",
+                (json.dumps([self.namespace, key]), json.dumps({"status": "reserved"})),
+            )

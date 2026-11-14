@@ -368,8 +368,10 @@ changing it for this task.
 
 Read keys only server-side; do not log them. Do not rename `.env` or commit it. Any new
 environment defaults and root manifest changes require coordination before implementation.
-Timeouts must cancel queued work when supported; record request IDs so retries can recover
-results. Rate/concurrency limits and request caching prevent accidental whole-video spend.
+Local wait timeouts retain the running request ID so retries can recover its result without
+resubmission. Cancellation would require a separate terminal state; it is not used by the
+selector's retry path. Rate/concurrency limits and request caching bound new submissions;
+cache reads, recorded replay and recovery do not consume that submission budget.
 Download provider artifacts before treating them as durable evidence. Validate artifact
 size/type and allowed destinations at network boundaries; uploaded file handling remains
 Dev 1's route responsibility.
