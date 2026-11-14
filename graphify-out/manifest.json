@@ -18,20 +18,20 @@
     "semantic_hash": ""
   },
   "contracts/schema.py": {
-    "mtime": 1794682054.177314,
-    "seen": 1794685204.4231346,
-    "ast_hash": "705042100c56d67b2352efc077f48a82",
+    "mtime": 1794672572.6438665,
+    "seen": 1794672577.26367,
+    "ast_hash": "6801cbbdbf3f6c758968d6b8d0e677f8",
     "semantic_hash": ""
   },
   "contracts/schema.ts": {
-    "mtime": 1794682054.1776695,
-    "seen": 1794685204.4231374,
-    "ast_hash": "6369cdc062e59bbc95284316ea06d538",
+    "mtime": 1794672343.4647274,
+    "seen": 1794672391.0433595,
+    "ast_hash": "43854ff32ecfbc7aedf5b1ff1ed3e5f1",
     "semantic_hash": ""
   },
   "scripts/generate_mock_glbs.py": {
-    "mtime": 1794674703.9632232,
-    "seen": 1794685204.4234219,
+    "mtime": 1794672212.914319,
+    "seen": 1794672391.0436265,
     "ast_hash": "db840357dd089cf3270e344245c81471",
     "semantic_hash": ""
   },
@@ -54,8 +54,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1794674703.960446,
-    "seen": 1794685204.4237669,
+    "mtime": 1794672212.9131558,
+    "seen": 1794672391.043951,
     "ast_hash": "e493cb3e304555dc393b35be1acd55df",
     "semantic_hash": ""
   },
@@ -66,15 +66,15 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794684877.6780062,
-    "seen": 1794685204.4237888,
-    "ast_hash": "b1d423783a9951c4c55f837a8bf312c6",
+    "mtime": 1794666672.328133,
+    "seen": 1794666779.2227874,
+    "ast_hash": "c50268189b7e84eb50eeb0bc2ebdcd9c",
     "semantic_hash": ""
   },
   "contracts/mock_room/mock_scene.json": {
-    "mtime": 1794674703.9606164,
-    "seen": 1794685204.4231315,
-    "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
+    "mtime": 1794672450.156865,
+    "seen": 1794672528.1907294,
+    "ast_hash": "9688f70dc2647c40b0eda87f8cb737f1",
     "semantic_hash": ""
   },
   "frontend/.oxlintrc.json": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/main.py": {
-    "mtime": 1794682055.425401,
-    "seen": 1794685204.4235566,
-    "ast_hash": "b8b707db26154ad98cb0a686dfbae897",
+    "mtime": 1794666636.8156567,
+    "seen": 1794666779.2227755,
+    "ast_hash": "1d08ed207bc695d77b1686ff99d881dc",
     "semantic_hash": ""
   },
   "services/spatial_engine/__init__.py": {
@@ -192,15 +192,15 @@
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794684877.7540061,
-    "seen": 1794685204.4237907,
-    "ast_hash": "2c253ba8214d606a61677cd6f438c947",
+    "mtime": 1794667086.4049413,
+    "seen": 1794667158.3994412,
+    "ast_hash": "041d14ba20102d3553f4a3874fde2ba7",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794684877.7580063,
-    "seen": 1794685204.4237921,
-    "ast_hash": "21f3765bb85491a6e803d637cae1be46",
+    "mtime": 1794672514.7033143,
+    "seen": 1794672528.190797,
+    "ast_hash": "a5a1b2e636810fdf58dfd1e029b126ce",
     "semantic_hash": ""
   },
   "frontend/index.html": {
@@ -216,309 +216,356 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/README.md": {
-    "mtime": 1794685332.159491,
-    "seen": 1794685337.1595972,
-    "ast_hash": "2420a5fc7d93787930164487bf42ad71",
+    "mtime": 1794672514.37476,
+    "seen": 1794672528.190804,
+    "ast_hash": "f17ab081ce79f17187ff4c96258cb06f",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/README.md": {
-    "mtime": 1794674703.9633808,
-    "seen": 1794685204.4238284,
+    "mtime": 1794672464.4480112,
+    "seen": 1794672477.9004025,
     "ast_hash": "f64f31e17bf62b0b743fdd209d5bad53",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/evidence.json": {
-    "mtime": 1794674703.9634907,
-    "seen": 1794685204.4235451,
+    "mtime": 1794672450.157057,
+    "seen": 1794672528.1907673,
     "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
     "semantic_hash": ""
   },
   "tests/test_contract_occupancy.py": {
-    "mtime": 1794674703.9634907,
-    "seen": 1794685204.4236336,
-    "ast_hash": "6fcf3ae6c5184a62ce01f2deb831bd95",
+    "mtime": 1794672556.398344,
+    "seen": 1794672577.2637134,
+    "ast_hash": "f876e0de17389d42dc78db2d61371179",
     "semantic_hash": ""
   },
   "tests/test_contracts.py": {
-    "mtime": 1794674703.9634907,
-    "seen": 1794685204.4236357,
+    "mtime": 1794672463.5246537,
+    "seen": 1794672477.9000635,
     "ast_hash": "6d15d39c482e4d9e5cc03da965d56639",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-14-asset-handoff-and-collision-parts.md": {
-    "mtime": 1794674703.9612093,
-    "seen": 1794685204.4237967,
+    "mtime": 1794672572.6441586,
+    "seen": 1794672577.2637358,
     "ast_hash": "ebea73ae0aa3080b1af5d06441cf19e1",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-14-3d-representation-design.md": {
-    "mtime": 1794674703.9614265,
-    "seen": 1794685204.4237998,
+    "mtime": 1794672514.7030373,
+    "seen": 1794672528.1908007,
     "ast_hash": "a713907efee6fa60a327c85b3cf28f22",
     "semantic_hash": ""
   },
   "tests/test_fixture_scene.py": {
-    "mtime": 1794674703.9634907,
-    "seen": 1794685204.4236379,
-    "ast_hash": "9a2631fde7374ee6090eed14ffab00dc",
+    "mtime": 1794672411.050138,
+    "seen": 1794672477.9000747,
+    "ast_hash": "31a7b97b4d5a08ed238440b7af5c2e9f",
     "semantic_hash": ""
   },
-  "services/reconstruction/assets/__init__.py": {
-    "mtime": 1794674703.9632232,
-    "seen": 1794685204.4235425,
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_detect.json": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/package.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "107e4dd399e6e1d636cf1aa01c66d72b",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_ast.json": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_cached.json": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/__init__.py": {
+    "mtime": 1794668461.971696,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
-  "services/reconstruction/assets/models.py": {
-    "mtime": 1794674703.9634907,
-    "seen": 1794685204.4235468,
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/media_gen/__init__.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/media_gen/main.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "c249c03efc413381c0e4b9ebf8d06780",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/__init__.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/main.py": {
+    "mtime": 1794676836.813548,
+    "ast_hash": "b8b707db26154ad98cb0a686dfbae897",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/__init__.py": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/models.py": {
+    "mtime": 1794674684.1346097,
     "ast_hash": "405a76001552686e36dbdf63a7569bee",
     "semantic_hash": ""
   },
-  "services/reconstruction/assets/providers.py": {
-    "mtime": 1794685332.210491,
-    "seen": 1794685337.1594434,
-    "ast_hash": "df34b7f37f85ddbd69903d9ac23b9ecc",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/fixtures/evidence.json": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
     "semantic_hash": ""
   },
-  "services/reconstruction/assets/registry.py": {
-    "mtime": 1794683985.0345902,
-    "seen": 1794685204.4235497,
-    "ast_hash": "a5c0b2765b8c9f501409d5094323c785",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/select_frames.py": {
-    "mtime": 1794684728.4067905,
-    "seen": 1794685204.4235516,
-    "ast_hash": "fb58146c4659d9f1fc57083cd123185c",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/selection.py": {
-    "mtime": 1794685009.6881933,
-    "seen": 1794685204.4235528,
-    "ast_hash": "2881cfab27ea1404ec81bc74411eccb4",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/selection_models.py": {
-    "mtime": 1794684728.4067905,
-    "seen": 1794685204.423554,
-    "ast_hash": "471c601e00d831fd15478fb703444ef9",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/video.py": {
-    "mtime": 1794684728.4067905,
-    "seen": 1794685204.423555,
-    "ast_hash": "246e41b36bd909529a0896b983e61710",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/__init__.py": {
-    "mtime": 1794682055.425401,
-    "seen": 1794685204.4235575,
-    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/__main__.py": {
-    "mtime": 1794682055.4256458,
-    "seen": 1794685204.4235585,
-    "ast_hash": "48a1550c2037d87499aa522525a9c70c",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/annotate.py": {
-    "mtime": 1794682055.4256458,
-    "seen": 1794685204.4235594,
-    "ast_hash": "dc4d1b5751ffbef8d256dd031a500a21",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/fixtures/one_floor.annotations.json": {
-    "mtime": 1794682055.4256458,
-    "seen": 1794685204.4235601,
-    "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/fixtures/three_floor.annotations.json": {
-    "mtime": 1794682055.4259014,
-    "seen": 1794685204.4235613,
-    "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/openings.py": {
-    "mtime": 1794682055.4259014,
-    "seen": 1794685204.4235625,
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/openings.py": {
+    "mtime": 1794677043.9207284,
     "ast_hash": "4fa39099cea1fb31b6c23d5454b2d863",
     "semantic_hash": ""
   },
-  "services/reconstruction/room/parse.py": {
-    "mtime": 1794682055.4261467,
-    "seen": 1794685204.4235635,
-    "ast_hash": "4d99839763ac173728f90a54371c975c",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/parse.py": {
+    "mtime": 1794677056.420261,
+    "ast_hash": "94fa4577257b684547a3589f754e2c86",
     "semantic_hash": ""
   },
-  "services/reconstruction/room/polygon.py": {
-    "mtime": 1794682055.4261467,
-    "seen": 1794685204.4235644,
-    "ast_hash": "d4793d29dd65925a6e9bc00cdec0213c",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/raster.py": {
-    "mtime": 1794682055.4263668,
-    "seen": 1794685204.4235659,
-    "ast_hash": "fdb224a685cedf40c8b0c2081fc8893c",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/regions.py": {
-    "mtime": 1794682055.4265254,
-    "seen": 1794685204.4235668,
-    "ast_hash": "c8b693355b3c6bc0935a8b554b60df27",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/room/routes.py": {
-    "mtime": 1794682055.4265254,
-    "seen": 1794685204.4235678,
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/routes.py": {
+    "mtime": 1794676836.6454275,
     "ast_hash": "a6b2caf7f7ea3230c9d2e0eaac5981f5",
     "semantic_hash": ""
   },
-  "services/spatial_engine/audit.py": {
-    "mtime": 1794682055.4266927,
-    "seen": 1794685204.4235964,
-    "ast_hash": "a8243376ab67e6d6a929b6cd99b1025b",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/annotate.py": {
+    "mtime": 1794677236.703497,
+    "ast_hash": "dc4d1b5751ffbef8d256dd031a500a21",
     "semantic_hash": ""
   },
-  "services/spatial_engine/fixtures/audit_cases.json": {
-    "mtime": 1794682055.4266927,
-    "seen": 1794685204.4235973,
-    "ast_hash": "288a075b44b0c604498a9fd1baafdf22",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/polygon.py": {
+    "mtime": 1794677043.9207284,
+    "ast_hash": "d4793d29dd65925a6e9bc00cdec0213c",
     "semantic_hash": ""
   },
-  "services/spatial_engine/geometry.py": {
-    "mtime": 1794682055.4266927,
-    "seen": 1794685204.4235983,
-    "ast_hash": "ed11d5ad210ce634f5559d2ceada6a8d",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/__init__.py": {
+    "mtime": 1794676017.7150862,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
-  "tests/reconstruction/assets/test_selection.py": {
-    "mtime": 1794685110.5323346,
-    "seen": 1794685204.4236257,
-    "ast_hash": "e74ee4d61effeb14f4ea05b2e8ed38d4",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/raster.py": {
+    "mtime": 1794677060.8158712,
+    "ast_hash": "1348bf641c6cd56a0566a805057b6c7b",
     "semantic_hash": ""
   },
-  "tests/spatial_engine/test_collision_parts.py": {
-    "mtime": 1794682055.4266927,
-    "seen": 1794685204.423627,
-    "ast_hash": "cb05a5000e8b8bec5990ac461a4b666b",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/regions.py": {
+    "mtime": 1794677013.0902512,
+    "ast_hash": "c8b693355b3c6bc0935a8b554b60df27",
     "semantic_hash": ""
   },
-  "tests/spatial_engine/test_collisions.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794685204.4236279,
-    "ast_hash": "0893ba8aa1f34abf3899d1328b67b5fd",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/__main__.py": {
+    "mtime": 1794677047.9238515,
+    "ast_hash": "48a1550c2037d87499aa522525a9c70c",
     "semantic_hash": ""
   },
-  "tests/spatial_engine/test_containment.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794685204.4236288,
-    "ast_hash": "ea5907921ed974f590e0c9cefbf98729",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/fixtures/one_floor.annotations.json": {
+    "mtime": 1794677236.811882,
+    "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
     "semantic_hash": ""
   },
-  "tests/spatial_engine/test_doors.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794685204.4236298,
-    "ast_hash": "781500345577ae75b5778b946fc8938b",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/fixtures/three_floor.annotations.json": {
+    "mtime": 1794677236.9202669,
+    "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
     "semantic_hash": ""
   },
-  "tests/spatial_engine/test_geometry.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794685204.423631,
-    "ast_hash": "63ae6e219e1a23d4624b136be9175a1f",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/spatial_engine/__init__.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
-  "tests/spatial_engine/test_handoff_cases.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794685204.423632,
-    "ast_hash": "d7a5d4c9a5f722d8932df165afd34c17",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/spatial_engine/main.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "a61c83d67865113ecea1878a0b63cab0",
     "semantic_hash": ""
   },
-  "tests/test_room_parse.py": {
-    "mtime": 1794682055.4274359,
-    "seen": 1794685204.423664,
-    "ast_hash": "d19561d5ed06dc8fe473438088c22858",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_routes.py": {
+    "mtime": 1794677043.9207284,
+    "ast_hash": "9ad7431ced66682d6f58402d02e8ca8c",
     "semantic_hash": ""
   },
-  "tests/test_room_routes.py": {
-    "mtime": 1794682055.4274359,
-    "seen": 1794685204.4236655,
-    "ast_hash": "f1d63a37bd40686d73bf696c85a393b8",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_parse.py": {
+    "mtime": 1794677253.601076,
+    "ast_hash": "cabaa876fe1d7d4c949ec04b9864d7d5",
     "semantic_hash": ""
   },
-  "docs/dev3-spatial-handoff.md": {
-    "mtime": 1794682054.1778152,
-    "seen": 1794685204.4237936,
-    "ast_hash": "eeab48d1724a6def9cc619bab1c73bec",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_contract_occupancy.py": {
+    "mtime": 1794674684.1386242,
+    "ast_hash": "6fcf3ae6c5184a62ce01f2deb831bd95",
     "semantic_hash": ""
   },
-  "docs/dev4-plan.md": {
-    "mtime": 1794682054.1780903,
-    "seen": 1794685204.423795,
-    "ast_hash": "5726d029ad78ebfc9bcefee97fcc844f",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_fixture_scene.py": {
+    "mtime": 1794674684.1386242,
+    "ast_hash": "9a2631fde7374ee6090eed14ffab00dc",
     "semantic_hash": ""
   },
-  "docs/superpowers/plans/2026-11-14-video-frame-selection.md": {
-    "mtime": 1794684937.0620148,
-    "seen": 1794685204.423798,
-    "ast_hash": "83d8e0c0ef89c7afcf6a5fd356049b34",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_contracts.py": {
+    "mtime": 1794674684.1386242,
+    "ast_hash": "6d15d39c482e4d9e5cc03da965d56639",
     "semantic_hash": ""
   },
-  "docs/superpowers/specs/2026-11-14-video-frame-selection-design.md": {
-    "mtime": 1794685332.106491,
-    "seen": 1794685337.159593,
-    "ast_hash": "0d8a80da5cdf377457adcd4add6fa382",
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_health.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "fc1a2ef946d4b40ca17a42a0d42f5a80",
     "semantic_hash": ""
   },
-  "services/reconstruction/room/README.md": {
-    "mtime": 1794682055.425401,
-    "seen": 1794685204.4238296,
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/vite.config.ts": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "f6d7e1f482853174ff7e805203b5633e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/.oxlintrc.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "029f4905006c1fffd96bc863e2d98d3e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/tsconfig.app.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "bd8ea9a4e769387a390e3cfb7700bbbe",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/package.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "aaea4496dc9b9182a36ebccee5d46260",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/tsconfig.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/tsconfig.node.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "f9cb81ddcea69ffdab672fc8c48dca66",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/.prettierrc.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "cc24ea51edff69d96b6cdc39b55cc647",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/src/App.tsx": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "0e99c1912a79e4b4c9b2cde654f057c8",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/src/main.tsx": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "787e5a07efeb2bf6209d5937195f2f68",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/scripts/generate_mock_glbs.py": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "db840357dd089cf3270e344245c81471",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/schema.ts": {
+    "mtime": 1794675983.5738077,
+    "ast_hash": "6369cdc062e59bbc95284316ea06d538",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/schema.py": {
+    "mtime": 1794677025.1400964,
+    "ast_hash": "705042100c56d67b2352efc077f48a82",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/mock_room/mock_scene.json": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/AGENTS.md": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "c12e6f2d240680d22dcfa89dcfb73abe",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/README.md": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "c50268189b7e84eb50eeb0bc2ebdcd9c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/FIGMA_DESIGN_SPEC.md": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "0829ae7d186f27816e0db38ea2eba9d9",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/ARCHITECTURE_DAG.md": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "3f941209bea9b4fb289fdd6e8fcfeaad",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_uncached.txt": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "c313f37f2b3c5e6b6db9b6bd8e54b087",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/CLAUDE.md": {
+    "mtime": 1794674684.1265805,
+    "ast_hash": "e493cb3e304555dc393b35be1acd55df",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/architecture.md": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "041d14ba20102d3553f4a3874fde2ba7",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/decisions.md": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "a5a1b2e636810fdf58dfd1e029b126ce",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/superpowers/specs/2026-11-14-3d-representation-design.md": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "a713907efee6fa60a327c85b3cf28f22",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/superpowers/plans/2026-11-14-asset-handoff-and-collision-parts.md": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "ebea73ae0aa3080b1af5d06441cf19e1",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/README.md": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "20d354419993962d5265e4d5d5a01c30",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/fixtures/README.md": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "f64f31e17bf62b0b743fdd209d5bad53",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/README.md": {
+    "mtime": 1794677253.601076,
     "ast_hash": "6971d3068e0ae893f4c3916ca66508f3",
     "semantic_hash": ""
   },
-  "examples/one_floor.jpg": {
-    "mtime": 1794682054.1780903,
-    "seen": 1794685204.4238305,
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.claude/skills/XUAN_INK_SCROLL_DESIGN.md": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "be7465ee75f4768c5c378cb16b9a21f5",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/index.html": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "36d5d9a093d4afbe9f677586d0078653",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/one_floor.jpg": {
+    "mtime": 1794675499.3257127,
     "ast_hash": "2d23fc62a098fd37775ac3a97745e278",
     "semantic_hash": ""
   },
-  "examples/three_floor.png": {
-    "mtime": 1794682054.1849253,
-    "seen": 1794685204.4238315,
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor.png": {
+    "mtime": 1794675511.9594529,
     "ast_hash": "b228360dda07089a5092965f3fb76184",
-    "semantic_hash": ""
-  },
-  "examples/three_floor_1.mp4": {
-    "mtime": 1794682054.5706766,
-    "seen": 1794685204.4238327,
-    "ast_hash": "934887046327128df480c09c8a64cfce",
-    "semantic_hash": ""
-  },
-  "examples/three_floor_2.mp4": {
-    "mtime": 1794682054.8086772,
-    "seen": 1794685204.4238336,
-    "ast_hash": "9cfcabf309c992e7fbeb19c4c6cc1c9c",
-    "semantic_hash": ""
-  },
-  "examples/three_floor_3.mp4": {
-    "mtime": 1794682055.055678,
-    "seen": 1794685204.4238346,
-    "ast_hash": "45fa7a5e45e001a7f1f19001375023f9",
-    "semantic_hash": ""
-  },
-  "examples/three_floor_4.mp4": {
-    "mtime": 1794682055.416679,
-    "seen": 1794685204.4238358,
-    "ast_hash": "f85edfafaf2e4f9c6cced624641c3ad4",
-    "semantic_hash": ""
-  },
-  "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
-    "mtime": 1794684624.3446374,
-    "seen": 1794685337.1595335,
-    "ast_hash": "7d500ae57af354b3d9d569dfc0be1d6d",
     "semantic_hash": ""
   }
 }
