@@ -11,6 +11,7 @@ from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
 from contracts.schema import AuditReport, LayoutProposal, OptimiseRequest, RoomScene
 from services.spatial_engine.agent import (
+    DEFAULT_INTERPRET_MODEL,
     DEFAULT_MODEL,
     AnthropicLayoutModel,
     LayoutModel,
@@ -94,9 +95,20 @@ def get_layout_model() -> LayoutModel | None:
     return AnthropicLayoutModel(api_key, model)
 
 
+def get_interpreter_model() -> LayoutModel | None:
+    """The faster model that reads the typed request; None falls back to the main model."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return None
+    model = os.environ.get("SPACESHIFT_INTERPRET_MODEL", "").strip() or DEFAULT_INTERPRET_MODEL
+    return AnthropicLayoutModel(api_key, model, effort="low")
+
+
 @app.post("/solve", response_model=LayoutProposal)
 def solve(
-    request: OptimiseRequest, model: LayoutModel | None = Depends(get_layout_model)
+    request: OptimiseRequest,
+    model: LayoutModel | None = Depends(get_layout_model),
+    interpreter: LayoutModel | None = Depends(get_interpreter_model),
 ) -> LayoutProposal:
     """Suggest furniture poses for the request; never modifies the submitted scene.
 
@@ -104,7 +116,7 @@ def solve(
     in a 200 response, not as a clean or successful proposal.
     """
     with _input_errors():
-        return propose_layout(request, model)
+        return propose_layout(request, model, interpreter=interpreter)
 
 
 @app.exception_handler(Exception)

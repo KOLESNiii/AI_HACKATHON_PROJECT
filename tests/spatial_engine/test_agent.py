@@ -104,13 +104,16 @@ def move(item_id: str, x: float, z: float, *, stop_reason: str = "tool_use") -> 
 
 
 GOOD = move("box", 5, 5.5)
+FULL = AgentLimits(stop_at_first_valid_draft=False)
+"""Full exploration: the model keeps going until it says it is done."""
 
 
 def test_instruction_is_interpreted_explored_and_reaudited() -> None:
     room = scene()
     snapshot = room.model_dump()
     model = Scripted(interpret("balanced", [], [], ["more storage"]), GOOD, END)
-    proposal = propose_layout(OptimiseRequest(scene=room, instruction="tidy up"), model)
+    request = OptimiseRequest(scene=room, instruction="tidy up")
+    proposal = propose_layout(request, model, limits=FULL)
 
     assert proposal.improved and proposal.outcome == "completed" and proposal.goal == "balanced"
     assert proposal.poses == {"box": Pose2D(x=5, z=5.5)}
@@ -147,6 +150,18 @@ def test_explicit_goal_wins_and_model_can_add_locks_but_not_move_them() -> None:
     assert result["is_error"] and json.loads(result["content"])["error"]["code"] == "locked_item"
 
 
+def test_default_stops_at_the_first_valid_draft_and_a_separate_model_interprets() -> None:
+    reader = Scripted(interpret("balanced", [], [], []))
+    explorer = Scripted(move("box", 7.5, 4.5), GOOD, GOOD)
+    request = OptimiseRequest(scene=scene(), instruction="tidy up")
+    proposal = propose_layout(request, explorer, interpreter=reader)
+
+    # The collision in the first attempt does not stop the loop; the first valid draft does.
+    assert len(reader.requests) == 1 and len(explorer.requests) == 2
+    assert proposal.improved and proposal.outcome == "completed"
+    assert proposal.poses == {"box": Pose2D(x=5, z=5.5)}
+
+
 def test_no_configured_model_is_reported_as_unavailable_not_as_a_clean_result() -> None:
     proposal = propose_layout(OptimiseRequest(scene=scene()), None)
     assert (proposal.improved, proposal.outcome, proposal.poses) == (
@@ -168,7 +183,7 @@ def test_authentication_failure_is_not_retried() -> None:
 def test_one_retry_then_a_later_failure_keeps_the_verified_draft() -> None:
     busy = ProviderError("rate_limited", retryable=True)
     model = Scripted(busy, GOOD, ProviderError("server_error", retryable=True), GOOD)
-    proposal = propose_layout(OptimiseRequest(scene=scene()), model)
+    proposal = propose_layout(OptimiseRequest(scene=scene()), model, limits=FULL)
     assert proposal.improved and proposal.outcome == "stopped_early"
     assert proposal.poses == {"box": Pose2D(x=5, z=5.5)} and len(model.requests) == 3
     assert "stopped early" in proposal.explanation
@@ -176,7 +191,7 @@ def test_one_retry_then_a_later_failure_keeps_the_verified_draft() -> None:
 
 def test_model_call_budget_is_shared_and_ends_the_loop() -> None:
     model = Scripted(*[GOOD] * 20)
-    limits = AgentLimits(max_model_calls=3)
+    limits = AgentLimits(max_model_calls=3, stop_at_first_valid_draft=False)
     proposal = propose_layout(OptimiseRequest(scene=scene()), model, limits=limits)
     assert len(model.requests) == 3
     assert proposal.improved and proposal.outcome == "stopped_early"
@@ -217,7 +232,7 @@ def test_request_limits_and_bad_input_fail_before_any_model_call() -> None:
     crowded.furniture = [item(f"i{n}", 1, 1) for n in range(61)]
     with pytest.raises(ValueError, match="at most 60"):
         propose_layout(OptimiseRequest(scene=crowded), model)
-    assert len(model.requests) == 2  # both from the first, valid request
+    assert len(model.requests) == 1  # only the first, valid request called the model
 
 
 def test_solve_endpoint_returns_the_contract_and_honest_outcomes() -> None:

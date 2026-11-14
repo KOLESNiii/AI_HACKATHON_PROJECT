@@ -393,7 +393,16 @@ window") took 28.7 s: 3 model calls of 7-11 s each, 9,730 tokens, 1 layout
 evaluation. It kept the bed, placed the desk within 0.5 m of the window and
 cleared the blocked door and the bed's access issue. Model time dominates; our
 geometry takes a few milliseconds per evaluation. This is one run, not a
-benchmark. Accepting a proposal and re-auditing reproduces `report` apart from
+benchmark.
+
+Two speed-ups followed, and the same request then took 10.2 s (2 calls, 5,070
+tokens, again one run). The typed request is read by `claude-haiku-5-5` at low
+effort (`SPACESHIFT_INTERPRET_MODEL`), which took 2.1 s instead of 10.2 s. And
+`AgentLimits.stop_at_first_valid_draft` (default true) ends the search at the
+first draft that is valid and better than the original, skipping the model's
+refinement round and closing turn. The cost is that a good first draft is not
+improved further; set it to false to restore full exploration. An invalid first
+attempt does not stop the loop. Accepting a proposal and re-auditing reproduces `report` apart from
 the revision (covered by a test).
 
 ```bash

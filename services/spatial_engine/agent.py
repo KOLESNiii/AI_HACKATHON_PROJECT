@@ -34,6 +34,8 @@ from services.spatial_engine.objective import (
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
+DEFAULT_INTERPRET_MODEL = "claude-haiku-5-5"
+"""Reading the request is a small classification job, so a faster model does it."""
 MAX_FURNITURE = 60
 MAX_TOKENS_PER_CALL = 16000
 _FALLBACK_BETA = "server-side-fallback-2026-07-01"
@@ -51,6 +53,10 @@ class AgentLimits:
     max_evaluations: int = DEFAULT_MAX_EVALUATIONS
     max_total_tokens: int = 200_000
     time_limit_s: float = 90.0
+    stop_at_first_valid_draft: bool = True
+    """Stop as soon as one draft is valid and better than the original, skipping the
+    model's refinement round and its closing turn (about 7 s each in the first live
+    run). Set False to restore full exploration until the model says it is done."""
 
 
 class ProviderError(Exception):
@@ -92,9 +98,10 @@ class LayoutModel(Protocol):
 class AnthropicLayoutModel:
     """Claude through the official SDK. The loop above owns retries, so the SDK makes none."""
 
-    def __init__(self, api_key: str, model: str = DEFAULT_MODEL) -> None:
+    def __init__(self, api_key: str, model: str = DEFAULT_MODEL, *, effort: str = "medium") -> None:
         self._client = anthropic.Anthropic(api_key=api_key, max_retries=0)
         self._model = model
+        self._effort = effort
 
     def complete(
         self,
@@ -118,7 +125,7 @@ class AnthropicLayoutModel:
                 system=system,
                 messages=messages,
                 tools=tools,
-                output_config={"effort": "medium"},
+                output_config={"effort": self._effort},
                 timeout=timeout_s,
                 **extra,
             )
@@ -264,7 +271,9 @@ def _interpret(
     return None, True
 
 
-def _explore(toolbox: LayoutToolbox, model: LayoutModel, budget: _Budget) -> tuple[bool, bool]:
+def _explore(
+    toolbox: LayoutToolbox, model: LayoutModel, budget: _Budget, stop_at_first_valid: bool
+) -> tuple[bool, bool]:
     """Run the tool loop. Returns (model finished normally, a provider call failed)."""
     original = toolbox.session.original_draft_id
     layout = toolbox.call("inspect_layout", {"draft_id": original})
@@ -300,6 +309,8 @@ def _explore(toolbox: LayoutToolbox, model: LayoutModel, budget: _Budget) -> tup
             )
         messages.append({"role": "assistant", "content": reply.content})
         messages.append({"role": "user", "content": results})
+        if stop_at_first_valid and toolbox.improved:
+            return True, False
     return False, False
 
 
@@ -365,6 +376,7 @@ def propose_layout(
     request: OptimiseRequest,
     model: LayoutModel | None,
     *,
+    interpreter: LayoutModel | None = None,
     limits: AgentLimits | None = None,
     clock: Callable[[], float] = time.monotonic,
 ) -> LayoutProposal:
@@ -390,7 +402,7 @@ def propose_layout(
     if model is not None and instruction:
         # Validate the caller's own input before spending a model call on it.
         LayoutToolbox(scene, locked_item_ids=request.locked_item_ids, max_evaluations=0)
-        reading, usable = _interpret(request, model, budget)
+        reading, usable = _interpret(request, interpreter or model, budget)
         if reading is None:
             notes.append("Your written request could not be interpreted, so it was not applied.")
         else:
@@ -413,7 +425,7 @@ def propose_layout(
     )
     finished = failed = False
     if model is not None and usable:
-        finished, failed = _explore(toolbox, model, budget)
+        finished, failed = _explore(toolbox, model, budget, limits.stop_at_first_valid_draft)
     else:
         failed = True
 
