@@ -47,13 +47,45 @@ reject critical violations; this comparator is not an acceptance gate.
 Comparisons must retain the same room, IDs, dimensions, assets and non-pose item
 metadata; item order and revision may differ. Fixed poses must remain identical.
 Changed/removal/shrinkage attempts and invalid geometry raise `SpatialInputError`.
-The next draft-tool increment will additionally enforce request-specific locks.
+Request-specific locks are enforced by the draft session described below.
 Inputs are not modified; each candidate's movement is measured from the same
 original, never from the preceding attempt. Scene geometry is prepared once for
 each evaluated layout and reused in its audit/optional brightness calculation.
 
 ```bash
 uv run --extra spatial pytest tests/spatial_engine/test_objective.py
+```
+
+## Layout drafts for proposed moves (issue #33)
+
+`drafts.DraftSession(scene, locked_item_ids)` is a scratchpad for one request. It
+copies the submitted scene, audits it as the first draft (`original_draft_id`),
+and `apply_moves(base_draft_id, [PoseChange(item_id, x, z, yaw_deg), ...])`
+returns a **new** audited `LayoutDraft`. Stored drafts, the caller's scene and the
+move list are never modified. `scene(draft_id)` returns a throwaway `RoomScene`
+copy at the base revision, so each draft's report identifies the submitted scene.
+
+Only poses of known, movable items can change. A request is rejected with
+`LayoutMoveError` (a `SpatialInputError` with a stable `code`) and stores nothing
+when it has no moves (`empty_moves`), names an item twice (`duplicate_item`),
+an unknown item (`unknown_item`), a fixed item (`fixed_item`), an item locked by
+the user (`locked_item`), a NaN/infinite pose (`non_finite_pose`), or a draft ID
+that is not from this session (`unknown_draft`). An unknown locked ID is rejected
+when the session is created rather than ignored. One bad entry rejects the whole
+request. Messages quote at most 64 characters of any supplied identifier.
+
+A draft with collisions, out-of-room items or a blocked door is **kept**, so
+several items can be rearranged across successive drafts (swap two items via an
+overlapping intermediate). Check `evaluation.metrics.passes_critical_checks`
+before treating a draft as a recommendation. Each draft records brightness
+openness as a measurement; ranking it is the comparison policy's decision.
+
+Not included yet: evaluation budgets, duplicate-arrangement detection, best-draft
+retention, tool schemas, Sonnet and `POST /solve`. Draft IDs are not secrets; the
+per-session token only stops an ID from another request being accepted.
+
+```bash
+uv run --extra spatial pytest tests/spatial_engine/test_drafts.py
 ```
 
 ## Brightness approximation for layout comparison
