@@ -55,6 +55,18 @@
 - Preserve full upright source pixels for later appearance reconstruction. Camera estimation
   was probed, but plan fitting, instance masks, material generation and normalisation remain
   the subsequent owners/issues. There is no claim of recovering original shaders from video.
+
+## Furniture masks (#15)
+
+- Prompt SAM 3 with each item's reviewed box, all boxes of a frame in one request. A live
+  probe showed the masks map back to their boxes through `metadata.index`; the text-prompted
+  video endpoint probed in #14 merged items and is not used.
+- Keep local GrabCut as the offline default so the stage runs without keys or spend. It is
+  labelled approximate and is never a silent substitute for a failed live call.
+- Store masks on the item in the existing registry and keep `mask_url` relative to the data
+  directory. Evidence stays inside the reconstruction service; serving it is a route decision.
+- Report coverage and quality separately: `complete` means every selected view has a mask;
+  overlaps and low SAM scores are warnings. Masks are not edited or merged automatically.
   
 ## Spatial audit without speculative scores
 
@@ -96,6 +108,31 @@
 - Preserve full-width front clearance and interior-floor wall semantics. A notch
   obstructing any part of the required strip is a finding even if its centre line
   is clear; wall thickness already extends outward from the usable floor.
+
+## Human-scale room preview
+
+- Keep one local mannequin and its pose outside the shared room model: walking is
+  a camera preview and must not change spatial findings, proposals or revisions.
+- Use the existing collision parts and 2 m headroom rule with a 50 cm circular
+  body, matching the audit's walking dimensions. A 1.6 m eye height provides a
+  standing view; small collision steps avoid adding a physics framework.
+- Require explicit placement and Play activation. Invalid drops preserve the last
+  placement; pointer-lock denial preserves the editor. Escape and lost capture
+  return to the saved orbit view with the human at its last walking pose.
+- Keep the first version inside one level room with the current lighting. Doorway
+  exits, character animation, jumping and time-of-day controls remain separate work.
+
+## Backend-owned mock meshes
+
+- Serve existing furniture fixtures directly from the reconstruction backend; keep
+  their canonical files under `contracts/mock_room/assets/` without frontend copies.
+- Generate per-room demo shells on demand with the existing backend geometry code
+  and cache them in memory. Remove the frontend asset-copy/build step and generated
+  shell files. Stable demo room names are not immutable content hashes, so these URLs
+  require cache revalidation.
+- Move the original single-room GLBs into backend fixtures and adapt their browser
+  URLs through `/api/reconstruction`. Preserve the shared JSON's original geometry
+  and paths for the audit, asset handoff and existing fixture consumers.
 
 ## Furniture alignment (#8)
 

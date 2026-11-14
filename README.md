@@ -74,6 +74,12 @@ bun run dev:media          # http://localhost:8003/docs
 bun run dev               # http://localhost:5173
 ```
 
+Start the reconstruction backend when using the demo editor: it serves mock furniture
+directly from `contracts/mock_room/assets/` and generates room-shell GLBs on request.
+The frontend requests them through `/api/reconstruction`; no GLBs are copied into
+`frontend/public`, and no demo asset-build step is needed. Legacy mock-room GLBs live
+in `services/reconstruction/fixtures/mock_room/`. These demo routes need no API keys.
+
 The frontend displays live service connection status. The spatial service also
 implements `POST /audit`: send a `RoomScene` to receive collision, boundary, door,
 front-clearance and 50 cm walking-reachability results. Scores, glare and Feng Shui
@@ -93,6 +99,15 @@ at a time (hold to repeat). Hold WASD to pan the camera relative to its current
 view. Shortcuts are inactive while typing or dragging furniture; fixed fixtures
 cannot be rotated. Run editor control tests with `bun test ./frontend/tests`.
 
+To explore at human scale, drag the human from the bottom-right launcher onto
+clear floor. The green/red preview shows whether there is room to stand. Press
+Play, then use WASD to walk and the mouse to look around. Esc returns to the
+previous editor camera and leaves the human where you walked. Drag the mannequin
+to relocate it or use Remove human. Walking respects walls and furniture using
+a 50 cm body and 1.6 m eye height; it does not change the room layout or revision.
+Play requires mouse capture in a desktop browser. Jumping, stairs and leaving
+the room through doorways are not supported.
+
 For smaller Python installs, use `uv sync --extra spatial`, `--extra reconstruction`,
 or `--extra media` instead of `--all-extras`. `uv sync` installs the common API and
 development tools. Frontend dependencies and lockfile live in `frontend/`;
@@ -105,4 +120,6 @@ See [architecture](docs/architecture.md) for ownership and API boundaries and
 Dev 2's [furniture frame selector](services/reconstruction/assets/README.md#implemented-frame-selection-and-identity-14)
 can now sample walkthroughs, persist furniture identities and produce a local evidence report.
 It requires FFmpeg/FFprobe. Offline reviewed replay needs no keys; live fal vision proposals
-require inventory review. Masks, reconstructed meshes and final room placement remain later stages.
+require inventory review. Its [mask stage](services/reconstruction/assets/README.md#implemented-masks-and-placement-evidence-15)
+then stores an instance mask and cut-out per item view, offline with GrabCut or through fal SAM 3.
+Reconstructed meshes and final room placement remain later stages.

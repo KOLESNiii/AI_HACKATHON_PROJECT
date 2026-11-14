@@ -51,10 +51,9 @@ function ChatTab() {
   const { pushChat, setAgentBusy, applyPoses } = useStore.getState()
   const [text, setText] = useState('')
   const end = useRef<HTMLDivElement>(null)
-  useEffect(
-    () => end.current?.scrollIntoView({ behavior: 'smooth' }),
-    [chat.length],
-  )
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chat.length])
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()

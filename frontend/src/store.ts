@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { CatalogItem } from './data/catalog'
-import { freshMockScene } from './data/mockScene'
+import { roomScene } from './data/demoHome'
 import type {
   AuditReport,
   FurnitureItem,
@@ -8,9 +8,12 @@ import type {
   RoomScene,
 } from './lib/contracts'
 import { bounds, clampToFloor, fitYaw, snapToNearestWall } from './lib/geometry'
+import type { Pt } from './lib/geometry'
+import { canStand, humanPoseAt } from './lib/walk'
 
 export type Screen = 'upload' | 'reading' | 'floorplan' | 'building' | 'editor'
 export type Tab = 'chat' | 'stats' | 'library'
+export type EditorMode = 'edit' | 'play'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -36,6 +39,11 @@ interface State {
   /** True while an item is being dragged or rotated. */
   interacting: boolean
   tab: Tab
+  mode: EditorMode
+  /** Local preview actor, never included in RoomScene or its revision. */
+  human: Pose2D | null
+  placingHuman: boolean
+  humanPreview: Pose2D | null
   /** Latest AuditReport from the spatial engine (hooked up in a later PR). */
   audit: AuditReport | null
   chat: ChatMessage[]
@@ -61,6 +69,13 @@ interface State {
   addFromCatalog: (c: CatalogItem) => void
   applyPoses: (messageIndex: number) => void
   setTab: (t: Tab) => void
+  beginHumanPlacement: () => boolean
+  previewHuman: (p: Pt | null) => void
+  finishHumanPlacement: (p: Pt | null) => boolean
+  cancelHumanPlacement: () => void
+  removeHuman: () => void
+  startPlay: () => boolean
+  finishPlay: (pose?: Pose2D) => void
   pushChat: (m: ChatMessage) => void
   setAgentBusy: (b: boolean, abort?: AbortController | null) => void
   toast: (text: string) => void
@@ -108,27 +123,42 @@ function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
 export const useStore = create<State>((set, get) => ({
   screen: 'upload',
   segmentId: null,
-  scene: freshMockScene(),
+  scene: roomScene(null),
   roomSession: 0,
   selectedId: null,
   interacting: false,
   tab: 'chat',
+  mode: 'edit',
+  human: null,
+  placingHuman: false,
+  humanPreview: null,
   audit: null,
   chat: [],
   agentBusy: false,
   agentAbort: null,
   toasts: [],
 
-  setScreen: (screen) => set({ screen }),
+  setScreen: (screen) =>
+    set({
+      screen,
+      mode: 'edit',
+      placingHuman: false,
+      humanPreview: null,
+      interacting: false,
+    }),
   selectSegment: (segmentId) => set({ segmentId }),
   openRoom: () => {
     get().agentAbort?.abort()
     set((s) => ({
       screen: 'building',
-      scene: freshMockScene(),
+      scene: roomScene(s.segmentId),
       roomSession: s.roomSession + 1,
       selectedId: null,
       tab: 'chat',
+      mode: 'edit',
+      human: null,
+      placingHuman: false,
+      humanPreview: null,
       audit: null,
       interacting: false,
       chat: [],
@@ -258,6 +288,64 @@ export const useStore = create<State>((set, get) => ({
     })
   },
   setTab: (tab) => set({ tab }),
+  beginHumanPlacement: () => {
+    const s = get()
+    if (s.mode !== 'edit' || s.interacting) return false
+    set({
+      placingHuman: true,
+      humanPreview: null,
+      interacting: true,
+      selectedId: null,
+    })
+    return true
+  },
+  previewHuman: (p) => {
+    const s = get()
+    if (s.placingHuman)
+      set({ humanPreview: p ? humanPoseAt(p, s.scene, s.human) : null })
+  },
+  finishHumanPlacement: (p) => {
+    const s = get()
+    if (!s.placingHuman) return false
+    const valid = p != null && canStand(p, s.scene)
+    set({
+      human: valid ? humanPoseAt(p, s.scene, s.human) : s.human,
+      placingHuman: false,
+      humanPreview: null,
+      interacting: false,
+    })
+    return valid
+  },
+  cancelHumanPlacement: () => {
+    if (get().placingHuman)
+      set({ placingHuman: false, humanPreview: null, interacting: false })
+  },
+  removeHuman: () => {
+    if (get().mode === 'edit' && !get().interacting) set({ human: null })
+  },
+  startPlay: () => {
+    const s = get()
+    if (
+      s.screen !== 'editor' ||
+      s.mode !== 'edit' ||
+      s.interacting ||
+      !s.human ||
+      !canStand(s.human, s.scene)
+    )
+      return false
+    set({ mode: 'play', selectedId: null })
+    return true
+  },
+  finishPlay: (pose) => {
+    const s = get()
+    if (s.mode !== 'play') return
+    const valid =
+      pose &&
+      Number.isFinite(pose.x) &&
+      Number.isFinite(pose.z) &&
+      Number.isFinite(pose.yaw_deg)
+    set({ mode: 'edit', human: valid && s.human ? { ...pose } : s.human })
+  },
   pushChat: (m) => set((s) => ({ chat: [...s.chat, m] })),
   setAgentBusy: (agentBusy, agentAbort = null) =>
     set({ agentBusy, agentAbort }),
