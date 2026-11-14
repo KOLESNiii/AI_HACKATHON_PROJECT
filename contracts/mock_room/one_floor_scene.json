@@ -1,0 +1,795 @@
+{
+  "scene_id": "one_floor",
+  "revision": 0,
+  "shell_glb_url": "/models/flat-shell.glb",
+  "floor_polygon": [
+    {
+      "x": 0.0,
+      "z": 11.691834
+    },
+    {
+      "x": 0.0,
+      "z": 4.671834
+    },
+    {
+      "x": 1.253822,
+      "z": 4.671834
+    },
+    {
+      "x": 2.421967,
+      "z": 5.308303
+    },
+    {
+      "x": 2.421967,
+      "z": 0.755788
+    },
+    {
+      "x": 3.048188,
+      "z": 0.0
+    },
+    {
+      "x": 6.061967,
+      "z": 0.0
+    },
+    {
+      "x": 6.061967,
+      "z": 4.671834
+    },
+    {
+      "x": 9.661967,
+      "z": 4.671834
+    },
+    {
+      "x": 9.661967,
+      "z": 8.081834
+    },
+    {
+      "x": 8.787938,
+      "z": 8.981834
+    },
+    {
+      "x": 8.24,
+      "z": 8.981834
+    },
+    {
+      "x": 8.24,
+      "z": 12.464289
+    },
+    {
+      "x": 7.32854,
+      "z": 13.211834
+    },
+    {
+      "x": 5.373308,
+      "z": 13.211834
+    },
+    {
+      "x": 4.53,
+      "z": 12.46429
+    },
+    {
+      "x": 4.53,
+      "z": 11.691834
+    }
+  ],
+  "walls": [
+    {
+      "id": "flat-bed-n-w00",
+      "start": {
+        "x": 3.074043,
+        "z": 0.055
+      },
+      "end": {
+        "x": 6.006967,
+        "z": 0.055
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-n-w01",
+      "start": {
+        "x": 6.006967,
+        "z": 0.055
+      },
+      "end": {
+        "x": 6.006967,
+        "z": 3.505
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-n-w02",
+      "start": {
+        "x": 6.006967,
+        "z": 3.505
+      },
+      "end": {
+        "x": 2.476967,
+        "z": 3.505
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-n-w03",
+      "start": {
+        "x": 2.476967,
+        "z": 3.505
+      },
+      "end": {
+        "x": 2.476967,
+        "z": 0.775613
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-n-w04",
+      "start": {
+        "x": 2.476967,
+        "z": 0.775613
+      },
+      "end": {
+        "x": 3.074043,
+        "z": 0.055
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bath-w00",
+      "start": {
+        "x": 4.475,
+        "z": 3.615
+      },
+      "end": {
+        "x": 4.475,
+        "z": 5.253303
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bath-w01",
+      "start": {
+        "x": 4.475,
+        "z": 5.253303
+      },
+      "end": {
+        "x": 2.476967,
+        "z": 5.253303
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bath-w02",
+      "start": {
+        "x": 2.476967,
+        "z": 5.253303
+      },
+      "end": {
+        "x": 2.476967,
+        "z": 3.615
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bath-w03",
+      "start": {
+        "x": 2.476967,
+        "z": 3.615
+      },
+      "end": {
+        "x": 4.475,
+        "z": 3.615
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-kitchen-w00",
+      "start": {
+        "x": 1.239811,
+        "z": 4.726834
+      },
+      "end": {
+        "x": 2.407956,
+        "z": 5.363303
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-kitchen-w01",
+      "start": {
+        "x": 2.407956,
+        "z": 5.363303
+      },
+      "end": {
+        "x": 4.475,
+        "z": 5.363303
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-kitchen-w02",
+      "start": {
+        "x": 4.475,
+        "z": 5.363303
+      },
+      "end": {
+        "x": 4.475,
+        "z": 8.026834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-kitchen-w03",
+      "start": {
+        "x": 4.475,
+        "z": 8.026834
+      },
+      "end": {
+        "x": 0.055,
+        "z": 8.026834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-kitchen-w04",
+      "start": {
+        "x": 0.055,
+        "z": 8.026834
+      },
+      "end": {
+        "x": 0.055,
+        "z": 4.726834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-kitchen-w05",
+      "start": {
+        "x": 0.055,
+        "z": 4.726834
+      },
+      "end": {
+        "x": 1.239811,
+        "z": 4.726834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-e-w00",
+      "start": {
+        "x": 9.606967,
+        "z": 4.726834
+      },
+      "end": {
+        "x": 9.606967,
+        "z": 8.059522
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-e-w01",
+      "start": {
+        "x": 9.606967,
+        "z": 8.059522
+      },
+      "end": {
+        "x": 8.764683,
+        "z": 8.926834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-e-w02",
+      "start": {
+        "x": 8.764683,
+        "z": 8.926834
+      },
+      "end": {
+        "x": 6.116967,
+        "z": 8.926834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-e-w03",
+      "start": {
+        "x": 6.116967,
+        "z": 8.926834
+      },
+      "end": {
+        "x": 6.116967,
+        "z": 4.726834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-e-w04",
+      "start": {
+        "x": 6.116967,
+        "z": 4.726834
+      },
+      "end": {
+        "x": 9.606967,
+        "z": 4.726834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-reception-w00",
+      "start": {
+        "x": 4.475,
+        "z": 8.136834
+      },
+      "end": {
+        "x": 4.475,
+        "z": 11.636834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-reception-w01",
+      "start": {
+        "x": 4.475,
+        "z": 11.636834
+      },
+      "end": {
+        "x": 0.055,
+        "z": 11.636834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-reception-w02",
+      "start": {
+        "x": 0.055,
+        "z": 11.636834
+      },
+      "end": {
+        "x": 0.055,
+        "z": 8.136834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-reception-w03",
+      "start": {
+        "x": 0.055,
+        "z": 8.136834
+      },
+      "end": {
+        "x": 4.475,
+        "z": 8.136834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-s-w00",
+      "start": {
+        "x": 8.185,
+        "z": 9.036834
+      },
+      "end": {
+        "x": 8.185,
+        "z": 12.438266
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-s-w01",
+      "start": {
+        "x": 8.185,
+        "z": 12.438266
+      },
+      "end": {
+        "x": 7.30887,
+        "z": 13.156834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-s-w02",
+      "start": {
+        "x": 7.30887,
+        "z": 13.156834
+      },
+      "end": {
+        "x": 5.394176,
+        "z": 13.156834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-s-w03",
+      "start": {
+        "x": 5.394176,
+        "z": 13.156834
+      },
+      "end": {
+        "x": 4.585,
+        "z": 12.439546
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-s-w04",
+      "start": {
+        "x": 4.585,
+        "z": 12.439546
+      },
+      "end": {
+        "x": 4.585,
+        "z": 9.036834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-bed-s-w05",
+      "start": {
+        "x": 4.585,
+        "z": 9.036834
+      },
+      "end": {
+        "x": 8.185,
+        "z": 9.036834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-hall-w00",
+      "start": {
+        "x": 6.006967,
+        "z": 3.615
+      },
+      "end": {
+        "x": 6.006967,
+        "z": 8.926834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-hall-w01",
+      "start": {
+        "x": 6.006967,
+        "z": 8.926834
+      },
+      "end": {
+        "x": 4.585,
+        "z": 8.926834
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-hall-w02",
+      "start": {
+        "x": 4.585,
+        "z": 8.926834
+      },
+      "end": {
+        "x": 4.585,
+        "z": 3.615
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "flat-hall-w03",
+      "start": {
+        "x": 4.585,
+        "z": 3.615
+      },
+      "end": {
+        "x": 6.006967,
+        "z": 3.615
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    }
+  ],
+  "windows": [
+    {
+      "id": "flat-bed-n-win0",
+      "wall_id": "flat-bed-n-w03",
+      "offset_along_wall_m": 0.309548,
+      "width_m": 1.430148,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 270.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-bed-n-win1",
+      "wall_id": "flat-bed-n-w04",
+      "offset_along_wall_m": 0.097957,
+      "width_m": 0.76558,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 309.6440165047703,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-bath-win0",
+      "wall_id": "flat-bath-w02",
+      "offset_along_wall_m": 0.941533,
+      "width_m": 0.541974,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 270.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-kitchen-win0",
+      "wall_id": "flat-kitchen-w05",
+      "offset_along_wall_m": 0.133073,
+      "width_m": 0.91529,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 0.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-bed-e-win0",
+      "wall_id": "flat-bed-e-w01",
+      "offset_along_wall_m": 0.103145,
+      "width_m": 1.028741,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 134.16129072697368,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-reception-win0",
+      "wall_id": "flat-reception-w01",
+      "offset_along_wall_m": 0.5792,
+      "width_m": 1.1778,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 180.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-reception-win1",
+      "wall_id": "flat-reception-w01",
+      "offset_along_wall_m": 2.7083,
+      "width_m": 1.1778,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 180.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-bed-s-win0",
+      "wall_id": "flat-bed-s-w01",
+      "offset_along_wall_m": 0.068281,
+      "width_m": 0.990197,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 140.64273502072743,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-bed-s-win1",
+      "wall_id": "flat-bed-s-w02",
+      "offset_along_wall_m": 0.31272,
+      "width_m": 1.290453,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 180.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "flat-bed-s-win2",
+      "wall_id": "flat-bed-s-w03",
+      "offset_along_wall_m": 0.069287,
+      "width_m": 0.946628,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 221.55515542761202,
+      "compass_azimuth_deg": null
+    }
+  ],
+  "doors": [
+    {
+      "id": "flat-bed-n-opening-00",
+      "wall_id": "flat-bed-n-w02",
+      "hinge_pos": {
+        "x": 4.94702041160471,
+        "z": 3.505
+      },
+      "width_m": 0.66213,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "flat-bath-opening-01",
+      "wall_id": "flat-bath-w00",
+      "hinge_pos": {
+        "x": 4.4750000000000005,
+        "z": 4.0551135957727436
+      },
+      "width_m": 0.655294,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "flat-kitchen-opening-02",
+      "wall_id": "flat-kitchen-w02",
+      "hinge_pos": {
+        "x": 4.4750000000000005,
+        "z": 7.246895773252278
+      },
+      "width_m": 0.738968,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "flat-bed-e-opening-05",
+      "wall_id": "flat-bed-e-w03",
+      "hinge_pos": {
+        "x": 6.116967154333574,
+        "z": 7.8611032335761335
+      },
+      "width_m": 0.716649,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "flat-reception-opening-03",
+      "wall_id": "flat-reception-w00",
+      "hinge_pos": {
+        "x": 4.4750000000000005,
+        "z": 8.173670774323897
+      },
+      "width_m": 0.716327,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "flat-bed-s-opening-04",
+      "wall_id": "flat-bed-s-w05",
+      "hinge_pos": {
+        "x": 4.687541044384002,
+        "z": 9.036834039630019
+      },
+      "width_m": 0.685767,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "flat-hall-opening-05",
+      "wall_id": "flat-hall-w00",
+      "hinge_pos": {
+        "x": 6.006967154333575,
+        "z": 7.861103233576134
+      },
+      "width_m": 0.716649,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "flat-hall-opening-06",
+      "wall_id": "flat-hall-w00",
+      "hinge_pos": {
+        "x": 6.006967154333575,
+        "z": 3.7597826789960194
+      },
+      "width_m": 0.642779,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "flat-hall-opening-04",
+      "wall_id": "flat-hall-w01",
+      "hinge_pos": {
+        "x": 4.687541044384002,
+        "z": 8.92683403963002
+      },
+      "width_m": 0.685767,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "flat-hall-opening-01",
+      "wall_id": "flat-hall-w02",
+      "hinge_pos": {
+        "x": 4.585,
+        "z": 4.0551135957727436
+      },
+      "width_m": 0.655294,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "flat-hall-opening-02",
+      "wall_id": "flat-hall-w02",
+      "hinge_pos": {
+        "x": 4.585,
+        "z": 7.246895773252278
+      },
+      "width_m": 0.738968,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "flat-hall-opening-03",
+      "wall_id": "flat-hall-w02",
+      "hinge_pos": {
+        "x": 4.585,
+        "z": 8.173670774323897
+      },
+      "width_m": 0.716327,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "flat-hall-opening-00",
+      "wall_id": "flat-hall-w03",
+      "hinge_pos": {
+        "x": 4.94702041160471,
+        "z": 3.615
+      },
+      "width_m": 0.66213,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    }
+  ],
+  "furniture": [],
+  "north_compass_deg": null,
+  "sun_hour": 14.5
+}

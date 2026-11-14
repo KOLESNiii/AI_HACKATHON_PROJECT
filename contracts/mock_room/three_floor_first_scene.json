@@ -1,0 +1,1516 @@
+{
+  "scene_id": "three_floor_first",
+  "revision": 0,
+  "shell_glb_url": "/models/first-shell.glb",
+  "floor_polygon": [
+    {
+      "x": 0.108147,
+      "z": 4.630018
+    },
+    {
+      "x": -0.0,
+      "z": 0.598276
+    },
+    {
+      "x": 0.478711,
+      "z": 0.598276
+    },
+    {
+      "x": 1.016926,
+      "z": 0.0
+    },
+    {
+      "x": 2.982372,
+      "z": 0.0
+    },
+    {
+      "x": 3.744899,
+      "z": 0.557401
+    },
+    {
+      "x": 6.202841,
+      "z": 0.496038
+    },
+    {
+      "x": 6.264894,
+      "z": 3.214373
+    },
+    {
+      "x": 6.26665,
+      "z": 3.294411
+    },
+    {
+      "x": 6.317395,
+      "z": 5.6077
+    },
+    {
+      "x": 6.337924,
+      "z": 5.607147
+    },
+    {
+      "x": 6.375462,
+      "z": 7.047116
+    },
+    {
+      "x": 6.429246,
+      "z": 8.786717
+    },
+    {
+      "x": 3.898192,
+      "z": 8.827706
+    },
+    {
+      "x": 0.169766,
+      "z": 8.914867
+    }
+  ],
+  "walls": [
+    {
+      "id": "f-bed4-w00",
+      "start": {
+        "x": 0.503213,
+        "z": 0.653276
+      },
+      "end": {
+        "x": 1.041428,
+        "z": 0.055
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed4-w01",
+      "start": {
+        "x": 1.041428,
+        "z": 0.055
+      },
+      "end": {
+        "x": 2.964413,
+        "z": 0.055
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed4-w02",
+      "start": {
+        "x": 2.964413,
+        "z": 0.055
+      },
+      "end": {
+        "x": 3.690213,
+        "z": 0.585554
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed4-w03",
+      "start": {
+        "x": 3.690213,
+        "z": 0.585554
+      },
+      "end": {
+        "x": 3.734389,
+        "z": 4.510842
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed4-w04",
+      "start": {
+        "x": 3.734389,
+        "z": 4.510842
+      },
+      "end": {
+        "x": 0.161665,
+        "z": 4.574045
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed4-w05",
+      "start": {
+        "x": 0.161665,
+        "z": 4.574045
+      },
+      "end": {
+        "x": 0.056495,
+        "z": 0.653276
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed4-w06",
+      "start": {
+        "x": 0.056495,
+        "z": 0.653276
+      },
+      "end": {
+        "x": 0.503213,
+        "z": 0.653276
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed6-w00",
+      "start": {
+        "x": 6.149113,
+        "z": 0.552396
+      },
+      "end": {
+        "x": 6.208662,
+        "z": 3.161037
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed6-w01",
+      "start": {
+        "x": 6.208662,
+        "z": 3.161037
+      },
+      "end": {
+        "x": 3.844073,
+        "z": 3.219679
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed6-w02",
+      "start": {
+        "x": 3.844073,
+        "z": 3.219679
+      },
+      "end": {
+        "x": 3.800797,
+        "z": 0.611023
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed6-w03",
+      "start": {
+        "x": 3.800797,
+        "z": 0.611023
+      },
+      "end": {
+        "x": 6.149113,
+        "z": 0.552396
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed5-w00",
+      "start": {
+        "x": 3.755882,
+        "z": 4.620823
+      },
+      "end": {
+        "x": 3.84202,
+        "z": 8.774004
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed5-w01",
+      "start": {
+        "x": 3.84202,
+        "z": 8.774004
+      },
+      "end": {
+        "x": 0.223962,
+        "z": 8.858585
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed5-w02",
+      "start": {
+        "x": 0.223962,
+        "z": 8.858585
+      },
+      "end": {
+        "x": 0.163929,
+        "z": 4.684027
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bed5-w03",
+      "start": {
+        "x": 0.163929,
+        "z": 4.684027
+      },
+      "end": {
+        "x": 3.755882,
+        "z": 4.620823
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w00",
+      "start": {
+        "x": 4.751356,
+        "z": 3.311704
+      },
+      "end": {
+        "x": 4.751356,
+        "z": 4.066545
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w01",
+      "start": {
+        "x": 4.751356,
+        "z": 4.066545
+      },
+      "end": {
+        "x": 5.408821,
+        "z": 4.066545
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w02",
+      "start": {
+        "x": 5.408821,
+        "z": 4.066545
+      },
+      "end": {
+        "x": 5.408821,
+        "z": 4.742067
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w03",
+      "start": {
+        "x": 5.408821,
+        "z": 4.742067
+      },
+      "end": {
+        "x": 4.751356,
+        "z": 4.742067
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w04",
+      "start": {
+        "x": 4.751356,
+        "z": 4.742067
+      },
+      "end": {
+        "x": 4.751356,
+        "z": 6.357253
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w05",
+      "start": {
+        "x": 4.751356,
+        "z": 6.357253
+      },
+      "end": {
+        "x": 3.932605,
+        "z": 6.427987
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w06",
+      "start": {
+        "x": 3.932605,
+        "z": 6.427987
+      },
+      "end": {
+        "x": 3.846518,
+        "z": 3.329911
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-hall-w07",
+      "start": {
+        "x": 3.846518,
+        "z": 3.329911
+      },
+      "end": {
+        "x": 4.751356,
+        "z": 3.311704
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w00",
+      "start": {
+        "x": 6.211127,
+        "z": 3.27119
+      },
+      "end": {
+        "x": 6.262068,
+        "z": 5.593384
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w01",
+      "start": {
+        "x": 6.262068,
+        "z": 5.593384
+      },
+      "end": {
+        "x": 4.861356,
+        "z": 5.593384
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w02",
+      "start": {
+        "x": 4.861356,
+        "z": 5.593384
+      },
+      "end": {
+        "x": 4.861356,
+        "z": 4.852067
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w03",
+      "start": {
+        "x": 4.861356,
+        "z": 4.852067
+      },
+      "end": {
+        "x": 5.518821,
+        "z": 4.852067
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w04",
+      "start": {
+        "x": 5.518821,
+        "z": 4.852067
+      },
+      "end": {
+        "x": 5.518821,
+        "z": 3.956545
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w05",
+      "start": {
+        "x": 5.518821,
+        "z": 3.956545
+      },
+      "end": {
+        "x": 4.861356,
+        "z": 3.956545
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w06",
+      "start": {
+        "x": 4.861356,
+        "z": 3.956545
+      },
+      "end": {
+        "x": 4.861356,
+        "z": 3.309065
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-stair-w07",
+      "start": {
+        "x": 4.861356,
+        "z": 3.309065
+      },
+      "end": {
+        "x": 6.211127,
+        "z": 3.27119
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bath-w00",
+      "start": {
+        "x": 6.284377,
+        "z": 5.663609
+      },
+      "end": {
+        "x": 6.319027,
+        "z": 6.992803
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bath-w01",
+      "start": {
+        "x": 6.319027,
+        "z": 6.992803
+      },
+      "end": {
+        "x": 4.881101,
+        "z": 7.011729
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bath-w02",
+      "start": {
+        "x": 4.881101,
+        "z": 7.011729
+      },
+      "end": {
+        "x": 4.862136,
+        "z": 5.701902
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-bath-w03",
+      "start": {
+        "x": 4.862136,
+        "z": 5.701902
+      },
+      "end": {
+        "x": 6.284377,
+        "z": 5.663609
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-kitchen-w00",
+      "start": {
+        "x": 4.753191,
+        "z": 6.467505
+      },
+      "end": {
+        "x": 4.773611,
+        "z": 7.123154
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-kitchen-w01",
+      "start": {
+        "x": 4.773611,
+        "z": 7.123154
+      },
+      "end": {
+        "x": 6.322156,
+        "z": 7.102772
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-kitchen-w02",
+      "start": {
+        "x": 6.322156,
+        "z": 7.102772
+      },
+      "end": {
+        "x": 6.372547,
+        "z": 8.732628
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-kitchen-w03",
+      "start": {
+        "x": 6.372547,
+        "z": 8.732628
+      },
+      "end": {
+        "x": 3.952696,
+        "z": 8.771816
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-kitchen-w04",
+      "start": {
+        "x": 3.952696,
+        "z": 8.771816
+      },
+      "end": {
+        "x": 3.934655,
+        "z": 6.538219
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "f-kitchen-w05",
+      "start": {
+        "x": 3.934655,
+        "z": 6.538219
+      },
+      "end": {
+        "x": 4.753191,
+        "z": 6.467505
+      },
+      "height_m": 2.6,
+      "thickness_m": 0.055
+    }
+  ],
+  "windows": [
+    {
+      "id": "f-bed4-win0",
+      "wall_id": "f-bed4-w00",
+      "offset_along_wall_m": 0.080834,
+      "width_m": 0.692078,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 311.97486469978776,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "f-bed4-win1",
+      "wall_id": "f-bed4-w01",
+      "offset_along_wall_m": 0.152388,
+      "width_m": 1.611666,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 0.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "f-bed4-win2",
+      "wall_id": "f-bed4-w02",
+      "offset_along_wall_m": 0.048158,
+      "width_m": 0.8123,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 36.16649507553107,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "f-bed6-win0",
+      "wall_id": "f-bed6-w03",
+      "offset_along_wall_m": 0.560135,
+      "width_m": 1.548985,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 358.56985454308847,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "f-bed5-win0",
+      "wall_id": "f-bed5-w01",
+      "offset_along_wall_m": 0.616437,
+      "width_m": 2.237639,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 178.66081735933176,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "f-kitchen-win0",
+      "wall_id": "f-kitchen-w03",
+      "offset_along_wall_m": 0.5011,
+      "width_m": 1.64543,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 179.07219840495196,
+      "compass_azimuth_deg": null
+    }
+  ],
+  "doors": [
+    {
+      "id": "f-bed4-opening-19",
+      "wall_id": "f-bed4-w03",
+      "hinge_pos": {
+        "x": 3.726885472563008,
+        "z": 3.8441392465817525
+      },
+      "width_m": 0.651745,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "f-bed6-opening-21",
+      "wall_id": "f-bed6-w01",
+      "hinge_pos": {
+        "x": 3.8972228503804978,
+        "z": 3.218361006603803
+      },
+      "width_m": 0.763487,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "f-bed5-opening-20",
+      "wall_id": "f-bed5-w00",
+      "hinge_pos": {
+        "x": 3.7600466747666235,
+        "z": 4.821603095515017
+      },
+      "width_m": 0.763986,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "f-hall-opening-23",
+      "wall_id": "f-hall-w04",
+      "hinge_pos": {
+        "x": 4.751355668903076,
+        "z": 5.7463610177243405
+      },
+      "width_m": 0.595892,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "f-hall-opening-24",
+      "wall_id": "f-hall-w04",
+      "hinge_pos": {
+        "x": 4.751355668903076,
+        "z": 4.8202121511273255
+      },
+      "width_m": 0.786935,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "f-hall-opening-22",
+      "wall_id": "f-hall-w05",
+      "hinge_pos": {
+        "x": 3.9475490640583875,
+        "z": 6.426695698112815
+      },
+      "width_m": 0.691014,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "f-hall-opening-19",
+      "wall_id": "f-hall-w06",
+      "hinge_pos": {
+        "x": 3.860732783039406,
+        "z": 3.8414634996103048
+      },
+      "width_m": 0.721159,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "f-hall-opening-20",
+      "wall_id": "f-hall-w06",
+      "hinge_pos": {
+        "x": 3.887882434180229,
+        "z": 4.818523509181098
+      },
+      "width_m": 0.763978,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "f-hall-opening-21",
+      "wall_id": "f-hall-w07",
+      "hinge_pos": {
+        "x": 3.8996200498620097,
+        "z": 3.328842484755533
+      },
+      "width_m": 0.763567,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "f-stair-opening-24",
+      "wall_id": "f-stair-w02",
+      "hinge_pos": {
+        "x": 4.861355668903076,
+        "z": 4.867066991051614
+      },
+      "width_m": 0.711317,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "f-bath-opening-23",
+      "wall_id": "f-bath-w02",
+      "hinge_pos": {
+        "x": 4.862768224597773,
+        "z": 5.745544216801106
+      },
+      "width_m": 0.636785,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "f-kitchen-opening-22",
+      "wall_id": "f-kitchen-w05",
+      "hinge_pos": {
+        "x": 3.9495989528208213,
+        "z": 6.536928335611028
+      },
+      "width_m": 0.69846,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    }
+  ],
+  "furniture": [
+    {
+      "id": "f-bed4-o01",
+      "name": "Black upholstered double bed",
+      "category": "bed",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed4-o01-0992f5c27e.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.42,
+        "height": 1.01,
+        "depth": 2.07
+      },
+      "pose": {
+        "x": 2.650554,
+        "z": 2.752945,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed4-o02",
+      "name": "Pine two-door wardrobe",
+      "category": "wardrobe",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed4-o02-544827083d.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.92,
+        "height": 1.95,
+        "depth": 0.55
+      },
+      "pose": {
+        "x": 0.561513,
+        "z": 2.950822,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed4-o03",
+      "name": "White open bookcase",
+      "category": "storage",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed4-o03-92fc779d9d.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.6,
+        "height": 1.15,
+        "depth": 0.3
+      },
+      "pose": {
+        "x": 3.194185,
+        "z": 4.199361,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed4-o04",
+      "name": "White desk below bay window",
+      "category": "desk",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed4-o04-87b41b3797.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.12,
+        "height": 0.74,
+        "depth": 0.54
+      },
+      "pose": {
+        "x": 1.956922,
+        "z": 0.476196,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [
+        {
+          "x": 0.0,
+          "z": 0.0,
+          "width": 1.12,
+          "depth": 0.54,
+          "y_min": 0.695,
+          "y_max": 0.74
+        },
+        {
+          "x": -0.525,
+          "z": -0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": -0.525,
+          "z": 0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": 0.525,
+          "z": -0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": 0.525,
+          "z": 0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        }
+      ],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed4-o05",
+      "name": "White desk chair",
+      "category": "chair",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed4-o05-2aaa936579.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.47,
+        "height": 0.84,
+        "depth": 0.49
+      },
+      "pose": {
+        "x": 1.956922,
+        "z": 1.12595,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed4-o06",
+      "name": "White basin cabinet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed4-o06-2b4955cf1b.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.48,
+        "height": 0.84,
+        "depth": 0.42
+      },
+      "pose": {
+        "x": 3.469543,
+        "z": 1.389787,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-bed4-o07",
+      "name": "White radiator",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed4-o07-c8d1dbc6cd.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.95,
+        "height": 0.66,
+        "depth": 0.1
+      },
+      "pose": {
+        "x": 0.293344,
+        "z": 1.98342,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-bed5-o01",
+      "name": "Black upholstered double bed",
+      "category": "bed",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed5-o01-cb990903b3.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.42,
+        "height": 1.0,
+        "depth": 2.07
+      },
+      "pose": {
+        "x": 2.683282,
+        "z": 7.277115,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed5-o02",
+      "name": "White two-door wardrobe",
+      "category": "wardrobe",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed5-o02-9e3953d096.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.98,
+        "height": 1.96,
+        "depth": 0.56
+      },
+      "pose": {
+        "x": 0.685716,
+        "z": 5.283115,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed5-o03",
+      "name": "White desk with drawers",
+      "category": "desk",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed5-o03-6cefe51457.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.08,
+        "height": 0.74,
+        "depth": 0.54
+      },
+      "pose": {
+        "x": 1.721923,
+        "z": 8.493183,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [
+        {
+          "x": 0.0,
+          "z": 0.0,
+          "width": 1.08,
+          "depth": 0.54,
+          "y_min": 0.695,
+          "y_max": 0.74
+        },
+        {
+          "x": -0.505,
+          "z": -0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": -0.505,
+          "z": 0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": 0.505,
+          "z": -0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": 0.505,
+          "z": 0.23500000000000001,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        }
+      ],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed5-o04",
+      "name": "Pine chest of drawers",
+      "category": "storage",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed5-o04-fae6390278.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.74,
+        "height": 0.78,
+        "depth": 0.42
+      },
+      "pose": {
+        "x": 3.380999,
+        "z": 5.097954,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "f-bed5-o05",
+      "name": "White radiator",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bed5-o05-438923322f.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.94,
+        "height": 0.66,
+        "depth": 0.1
+      },
+      "pose": {
+        "x": 0.623615,
+        "z": 6.991139,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-bath-o01",
+      "name": "Quadrant shower enclosure",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bath-o01-145fb1f599.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.73,
+        "height": 1.98,
+        "depth": 0.7
+      },
+      "pose": {
+        "x": 5.833331,
+        "z": 6.636507,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-bath-o02",
+      "name": "White toilet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bath-o02-cd8fd7c957.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.36,
+        "height": 0.76,
+        "depth": 0.57
+      },
+      "pose": {
+        "x": 6.028953,
+        "z": 5.96681,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-bath-o03",
+      "name": "Small white basin",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-bath-o03-f1c8193190.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.36,
+        "height": 0.82,
+        "depth": 0.32
+      },
+      "pose": {
+        "x": 5.060439,
+        "z": 6.711507,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-kitchen-o01",
+      "name": "White electric cooker",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-kitchen-o01-1418feaf92.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.55,
+        "height": 0.9,
+        "depth": 0.6
+      },
+      "pose": {
+        "x": 6.022425,
+        "z": 7.717415,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-kitchen-o02",
+      "name": "Timber sink base cabinet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-kitchen-o02-631d6e7889.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.98,
+        "height": 0.92,
+        "depth": 0.58
+      },
+      "pose": {
+        "x": 5.060439,
+        "z": 8.45125,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-kitchen-o03",
+      "name": "White undercounter fridge",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-kitchen-o03-a61bd4832a.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.54,
+        "height": 0.84,
+        "depth": 0.56
+      },
+      "pose": {
+        "x": 4.237122,
+        "z": 8.346416,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "f-kitchen-o04",
+      "name": "Timber base cabinet",
+      "category": "storage",
+      "source": "extracted_video",
+      "glb_url": "/assets/f-kitchen-o04-8309a626fb.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.5,
+        "height": 0.86,
+        "depth": 0.58
+      },
+      "pose": {
+        "x": 6.047425,
+        "z": 8.283516,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    }
+  ],
+  "north_compass_deg": null,
+  "sun_hour": 14.5
+}

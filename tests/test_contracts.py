@@ -17,7 +17,7 @@ from contracts.schema import (
 
 ROOT = Path(__file__).resolve().parent.parent
 MOCK_SCENE = ROOT / "contracts" / "mock_room" / "mock_scene.json"
-MOCK_ASSETS = ROOT / "frontend" / "public" / "mock_room"
+MOCK_ASSETS = ROOT / "services" / "reconstruction" / "fixtures" / "mock_room"
 
 
 def load_mock() -> RoomScene:
