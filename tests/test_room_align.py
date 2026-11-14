@@ -19,6 +19,12 @@ from contracts.schema import (
     WallSegment,
 )
 from services.reconstruction.assets.models import EvidenceFrame, FurnitureAsset
+from services.reconstruction.demo_assets import (
+    BROWSER_ROOT,
+    demo_floors,
+    demo_room_scene,
+    demo_rooms,
+)
 from services.reconstruction.room import footprint as fp
 from services.reconstruction.room.align import (
     AlignmentResult,
@@ -58,11 +64,8 @@ def _emptied(room: RoomScene) -> tuple[RoomScene, list[FurnitureAsset]]:
 
 
 FIXTURE = _scene("mock")
-MOCK_ROOMS = [
-    room
-    for name in ("mock", "three_floor_ground", "three_floor_first", "three_floor_second")
-    for room in fp.split_rooms(_scene(name))
-    if room.furniture
+MOCK_ROOMS = [FIXTURE] + [
+    room for room in (demo_room_scene(room_id) for room_id in demo_rooms()) if room.furniture
 ]
 ROOM_IDS = [room.scene_id for room in MOCK_ROOMS]
 
@@ -221,15 +224,25 @@ def test_yaw_follows_the_contract_front_direction() -> None:
     assert fp.front_direction(90.0) == pytest.approx((1.0, 0.0))  # yaw 90 faces +X
 
 
-def test_split_rooms_assigns_every_wall_and_item_once() -> None:
-    assert [r.floor_polygon for r in fp.split_rooms(FIXTURE)] == [FIXTURE.floor_polygon]
-    ground = _scene("three_floor_ground")
-    rooms = fp.split_rooms(ground)
-    assert sorted(w.id for r in rooms for w in r.walls) == sorted(w.id for w in ground.walls)
-    assert sorted(f.id for r in rooms for f in r.furniture) == sorted(
-        f.id for f in ground.furniture
-    )
-    assert sorted(d.id for r in rooms for d in r.doors) == sorted(d.id for d in ground.doors)
+def test_demo_rooms_are_the_rooms_the_editor_opens() -> None:
+    """`demo_room_scene` follows `roomScene` in frontend/src/data/demoHome.ts: rooms named by
+    wall prefix, furniture by pose-in-outline, browser URLs for the served shell and models."""
+    rooms = {room_id: demo_room_scene(room_id) for room_id in demo_rooms()}
+    reception = rooms["g-reception"]
+    assert reception.scene_id == "g-reception"
+    assert reception.shell_glb_url == f"{BROWSER_ROOT}/shells/g-reception.glb"
+    assert {f.id for f in reception.furniture} == {f"g-reception-o0{i}" for i in range(1, 8)}
+    assert all(f.glb_url.startswith(f"{BROWSER_ROOT}/assets/") for f in reception.furniture)
+    for floor in demo_floors().values():
+        on_floor = [r for r in rooms.values() if r.walls[0] in floor.walls]
+        assert sorted(w.id for r in on_floor for w in r.walls) == sorted(w.id for w in floor.walls)
+        assert sorted(d.id for r in on_floor for d in r.doors) == sorted(d.id for d in floor.doors)
+        # Every item stands in exactly one room.
+        assert sorted(f.id for r in on_floor for f in r.furniture) == sorted(
+            f.id for f in floor.furniture
+        )
+    with pytest.raises(KeyError):
+        demo_room_scene("no-such-room")
 
 
 # --- default placement (no hints) -------------------------------------------------------------
@@ -511,7 +524,7 @@ def test_wall_relative_hints_reproduce_the_reference_poses(room: RoomScene) -> N
 
 
 def _reception() -> RoomScene:
-    return next(r for r in MOCK_ROOMS if any(f.id == "g-reception-o01" for f in r.furniture))
+    return demo_room_scene("g-reception")
 
 
 def test_recorded_reception_hints_place_the_video_furniture() -> None:

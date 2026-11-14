@@ -1,18 +1,23 @@
 """Debug CLI for furniture alignment: place assets in a room and draw the result.
 
-    # Default layout for a scene's own furniture (poses stripped), compared with its poses:
-    uv run python -m services.reconstruction.room align \
-        contracts/mock_room/three_floor_ground_scene.json --out /tmp/align
+    # Default layout for the demo home's own furniture (poses stripped), compared with it:
+    uv run python -m services.reconstruction.room align --demo all --out /tmp/align
+    ... align --demo ground --out /tmp/align           # one floor; or room IDs: g-master f-bed4
 
-    # Given assets in one room, placed from recorded hints or live from frames (needs FAL_KEY):
-    ... align SCENE.json --out DIR --room g-reception-w00 --assets ASSETS.json --hints HINTS.json
-    ... align SCENE.json --out DIR --room g-reception-w00 --assets ASSETS.json \
-        --live --frames FRAMES_DIR --save-hints HINTS.json
+    # Given assets in one room, placed from recorded hints:
+    ... align --demo g-reception --out DIR --assets ASSETS.json --hints HINTS.json
+    # or live from the evidence frames (FAL_KEY), outlining #15 masks when given their data dir:
+    ... align --demo g-reception --out DIR --assets ASSETS.json \
+        --live --frames FRAMES_DIR [--masks DATA_DIR] --save-hints HINTS.json
 
-A whole-floor scene is split into rooms; `--room` picks the one that has that wall. Without
-`--assets`, each room's furniture is turned back into pose-less assets. Furniture the scene
-already has under an asset's ID is taken out first and becomes the reference the result is
-compared with. Writes `aligned.json`, `records.json` and one PNG per room.
+    # Any single-room scene, e.g. one room the floor-plan parser returned:
+    ... align --scene ROOM.json --out DIR --assets ASSETS.json
+
+Demo rooms are the editor's (`demo_assets.demo_room_scene`): `g-reception` is the reception
+room of the ground floor. Without `--assets`, a room's furniture is turned back into pose-less
+assets. Furniture the room already has under an asset's ID is taken out first and becomes the
+reference the result is compared with. Writes `<scene_id>.json` (the aligned room) and
+`<scene_id>.png` per room, and `records.json`.
 """
 
 from __future__ import annotations
@@ -26,9 +31,9 @@ from pathlib import Path
 import cv2
 
 from contracts.schema import FurnitureItem, RoomScene
+from services.reconstruction import demo_assets
 from services.reconstruction.assets.models import AssetEvidence, EvidenceFrame, FurnitureAsset
 
-from . import footprint as fp
 from .align import AlignmentRecord, AlignmentResult, align_assets, wall_relative
 from .observe import (
     FixedObserver,
@@ -97,31 +102,54 @@ class _Capture:
         return hints
 
 
+def demo_selection(names: Sequence[str]) -> list[RoomScene]:
+    """Demo rooms by room ID, floor name (`ground`, `first`, `second`) or `all`, in fixture
+    order. Raises KeyError for a name that is none of these."""
+    rooms = demo_assets.demo_rooms()
+    wanted: list[str] = []
+    for name in names:
+        if name == "all":
+            wanted += list(rooms)
+        elif name in demo_assets.FLOORS:
+            floor = demo_assets.demo_floors()[name]
+            wanted += [r for r, scene in rooms.items() if scene.walls[0] in floor.walls]
+        elif name in rooms:
+            wanted.append(name)
+        else:
+            raise KeyError(name)
+    return [demo_assets.demo_room_scene(room_id) for room_id in dict.fromkeys(wanted)]
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m services.reconstruction.room align")
-    ap.add_argument("scene", type=Path, help="RoomScene JSON: one room or a whole floor")
+    where = ap.add_mutually_exclusive_group(required=True)
+    where.add_argument("--demo", nargs="+", help="demo room IDs, floor names, or `all`")
+    where.add_argument("--scene", type=Path, help="one single-room RoomScene JSON")
     ap.add_argument("--out", type=Path, required=True)
-    ap.add_argument("--room", help="only the room that has this wall ID")
     ap.add_argument("--assets", type=Path, help="JSON list of FurnitureAsset, for one room")
     ap.add_argument("--hints", type=Path, help="recorded PlacementHints JSON")
     ap.add_argument("--live", action="store_true", help="ask the fal vision model for hints")
     ap.add_argument(
         "--frames", type=Path, help="evidence frames as <frame_index>.jpg|.png, for --live"
     )
+    ap.add_argument(
+        "--masks", type=Path, help="asset data directory that evidence `mask_url`s are under"
+    )
     ap.add_argument("--save-hints", type=Path, help="write the hints the observer returned")
     args = ap.parse_args(argv)
 
-    scene = RoomScene.model_validate_json(args.scene.read_text())
-    rooms = fp.split_rooms(scene)
-    if args.room:
-        rooms = [r for r in rooms if any(w.id == args.room for w in r.walls)]
-    if not rooms:
-        print("no matching closed room outline in this scene")
-        return 1
+    if args.scene:
+        rooms = [RoomScene.model_validate_json(args.scene.read_text())]
+    else:
+        try:
+            rooms = demo_selection(args.demo)
+        except KeyError as exc:
+            print(f"unknown demo room or floor {exc}; rooms: {', '.join(demo_assets.demo_rooms())}")
+            return 1
     given = None
     if args.assets:
         if len(rooms) != 1:
-            print("--assets needs one room: pass --room or a single-room scene")
+            print("--assets needs exactly one room")
             return 1
         given = [FurnitureAsset.model_validate(a) for a in json.loads(args.assets.read_text())]
 
@@ -131,14 +159,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.hints:
         inner = FixedObserver.from_file(args.hints)
     elif args.live:
-        from .observe_vision import FalVisionObserver, directory_frames
+        from .observe_vision import FalVisionObserver, directory_frames, selection_masks
 
-        inner = vision = FalVisionObserver()
+        inner = vision = FalVisionObserver(
+            masks=selection_masks(args.masks) if args.masks else None
+        )
         frames = directory_frames(args.frames) if args.frames else None
     observer = _Capture(inner)
 
     args.out.mkdir(parents=True, exist_ok=True)
-    placed: list[FurnitureItem] = []
     records: dict[str, AlignmentRecord] = {}
     for room in rooms:
         assets = given if given is not None else assets_of(room)
@@ -156,14 +185,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("  camera:", vision.camera or "-")
             result.warnings += vision.warnings
         _report(room, result, reference)
-        placed += aligned.furniture
         records.update(result.records)
+        (args.out / f"{room.scene_id}.json").write_text(aligned.model_dump_json(indent=2))
         view = render_room(aligned, result.records, list(reference.values()))
         png = cv2.imencode(".png", view.image)[1].tobytes()
         (args.out / f"{room.scene_id}.png").write_bytes(png)
 
-    whole = scene.model_copy(update={"furniture": placed})
-    (args.out / "aligned.json").write_text(whole.model_dump_json(indent=2))
     (args.out / "records.json").write_text(
         json.dumps({k: v.model_dump() for k, v in records.items()}, indent=2)
     )

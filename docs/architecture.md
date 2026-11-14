@@ -137,6 +137,11 @@ a room resets the actor; component cleanup releases capture and held keys.
 - `GET /mock_room/<filename>.glb` serves the older single-room fixture meshes from
   `services/reconstruction/fixtures/mock_room/`.
 
+`demo_room_scene(room_id)` (not a route) returns one demo room as the editor's `roomScene`
+builds it: its walls and openings, the furniture standing inside it, and browser URLs for
+the shell and models. Furniture alignment (#8) runs on these rooms so its output carries the
+room IDs the editor uses.
+
 Frontend scene adapters prepend `/api/reconstruction` to these URLs, using the
 existing Vite proxy. Shared fixture JSON and geometry stay unchanged. Production
 hosting must forward this prefix to the reconstruction service, as for its other APIs.

@@ -14,8 +14,8 @@ Nothing is ever dropped. What is uncertain goes into `FurnitureItem.correction_n
 `AlignmentRecord` per asset ID, which also links the pose back to its source frame. Records stay
 inside the reconstruction service; they are never placed in `RoomScene`.
 
-Takes a single-room scene (what the parser returns). Split a whole-floor scene with
-`footprint.split_rooms` first.
+Takes a single-room scene: what the parser returns, or a demo room from
+`demo_assets.demo_room_scene` (the three-floor fixtures are whole floors).
 """
 
 from __future__ import annotations

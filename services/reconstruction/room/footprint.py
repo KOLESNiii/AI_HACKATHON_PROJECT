@@ -27,8 +27,6 @@ from contracts.schema import (
     DoorOpening,
     FurnitureItem,
     Pose2D,
-    RoomScene,
-    Vec2,
     WallSegment,
     WindowOpening,
 )
@@ -37,8 +35,8 @@ Point = tuple[float, float]
 
 BOUNDARY_TOLERANCE_M = 1e-9
 """Floating-point slack for "on the boundary"; the audit's out-of-bounds check uses the same."""
-LOOP_TOLERANCE_M = 1e-6
-"""Two wall ends closer than this are the same corner when chaining walls into rooms."""
+MIN_WALL_LENGTH_M = 1e-6
+"""A wall shorter than this has no direction and gives no placement frame."""
 
 
 @dataclass(frozen=True)
@@ -83,7 +81,7 @@ class WallFrame:
 def wall_frame(wall: WallSegment) -> WallFrame | None:
     dx, dz = wall.end.x - wall.start.x, wall.end.z - wall.start.z
     length = math.hypot(dx, dz)
-    if length <= LOOP_TOLERANCE_M:
+    if length <= MIN_WALL_LENGTH_M:
         return None
     ux, uz = dx / length, dz / length
     return WallFrame(wall, (wall.start.x, wall.start.z), (ux, uz), (-uz, ux), length)
@@ -334,61 +332,3 @@ def window_zone(window: WindowOpening, frame: WallFrame, depth_m: float) -> Pris
         window.sill_height_m,
         window.head_height_m,
     )
-
-
-# --- rooms ------------------------------------------------------------------------------------
-
-
-def _near(a: Vec2, b: Vec2) -> bool:
-    return math.hypot(a.x - b.x, a.z - b.z) <= LOOP_TOLERANCE_M
-
-
-def wall_loops(walls: Sequence[WallSegment]) -> list[list[WallSegment]]:
-    """Chain walls end -> start into closed loops. Walls that close no loop are left out."""
-    unused = list(walls)
-    loops: list[list[WallSegment]] = []
-    while unused:
-        loop = [unused.pop(0)]
-        while not _near(loop[-1].end, loop[0].start):
-            nxt = next((w for w in unused if _near(w.start, loop[-1].end)), None)
-            if nxt is None:
-                break
-            unused.remove(nxt)
-            loop.append(nxt)
-        else:
-            if len(loop) >= 3:
-                loops.append(loop)
-    return loops
-
-
-def split_rooms(scene: RoomScene) -> list[RoomScene]:
-    """One single-room scene per closed wall loop of a scene that covers several rooms.
-
-    The parser already returns one `RoomScene` per room; this is for whole-floor scenes, whose
-    partition walls are not on `floor_polygon`. Each room keeps the openings on its own walls
-    and the furniture standing inside it. Rooms are found from wall geometry, never from IDs.
-    A scene that is already one room comes back as one room.
-    """
-    rooms: list[RoomScene] = []
-    for loop in wall_loops(scene.walls):
-        polygon = [(w.start.x, w.start.z) for w in loop]
-        ids = {w.id for w in loop}
-        try:
-            room = RoomScene(
-                scene_id=f"{scene.scene_id}--{loop[0].id}",
-                revision=scene.revision,
-                shell_glb_url=scene.shell_glb_url,
-                floor_polygon=[w.start for w in loop],
-                walls=loop,
-                windows=[w for w in scene.windows if w.wall_id in ids],
-                doors=[d for d in scene.doors if d.wall_id in ids],
-                furniture=[
-                    f for f in scene.furniture if point_in_polygon((f.pose.x, f.pose.z), polygon)
-                ],
-                north_compass_deg=scene.north_compass_deg,
-                sun_hour=scene.sun_hour,
-            )
-        except ValueError:
-            continue  # not a contract-valid room outline (e.g. wound the wrong way)
-        rooms.append(room)
-    return rooms

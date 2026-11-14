@@ -145,3 +145,10 @@
 - Vision placement is a proposal: its confidence is capped below the level that clears the
   `placement` and `orientation` flags. Live runs misplaced both reception sofas.
 - Alignment records and hints stay inside the reconstruction service, out of `RoomScene`.
+- Align per room, using the editor's room convention for the demo home
+  (`demo_assets.demo_room_scene`: rooms by wall prefix, furniture by position) rather than a
+  second geometric splitter with its own room IDs. Both gave identical rooms; only the IDs
+  and shell URLs differed, and the editor's IDs are the ones a scene route (#9) must return.
+- Use #15 masks where they exist: the vision observer traces each item's mask instead of its
+  box, so overlapping items in one frame stay distinguishable. Masks do not change geometry;
+  without a camera solution they carry no metric position.

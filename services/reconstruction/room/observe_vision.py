@@ -1,7 +1,8 @@
 """Placement hints from a vision model on fal.ai (`FAL_KEY`).
 
 The model is shown a plan view of the room with lettered walls, then the evidence frames with
-each asset's box drawn and numbered. It answers, per asset, with a point on the plan, the wall
+each asset marked and numbered: its #15 instance mask traced when a `MaskSource` provides one,
+otherwise its evidence box. It answers, per asset, with a point on the plan, the wall
 the item stands against and the wall its back faces. That is all it decides: `hints_from_reply`
 converts the answer into wall-relative `PlacementHint`s and `align.py` does the geometry.
 
@@ -16,7 +17,7 @@ import json
 import logging
 import math
 import os
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -27,7 +28,8 @@ from pydantic import BaseModel, Field, ValidationError
 
 from contracts.schema import RoomScene
 from services.reconstruction.assets.models import EvidenceFrame, FurnitureAsset
-from services.reconstruction.assets.selection_models import SelectionResult
+from services.reconstruction.assets.segmentation import read_mask
+from services.reconstruction.assets.selection_models import SegmentationResult, SelectionResult
 
 from . import footprint as fp
 from .annotate import DEFAULT_FAL_ENDPOINT, DEFAULT_FAL_MODEL, _extract_json
@@ -37,6 +39,8 @@ from .plan_view import PlanView, render_room, wall_letters
 log = logging.getLogger(__name__)
 
 Image = NDArray[np.uint8]
+MaskSource = Callable[[str, EvidenceFrame], NDArray[np.bool_] | None]
+"""(asset ID, evidence frame) -> that frame's instance mask (True = the item), or None."""
 MAX_FRAMES = 6
 """Evidence frames sent per request; chosen to show every asset at least once."""
 UNREVIEWED_CONFIDENCE = 0.7
@@ -52,8 +56,8 @@ Image 1 is a top-down PLAN of the room. Each wall has a letter. A door is a gap 
 a red arc showing how the door swings. A window is a thick blue line on a wall. Items already
 placed are filled rectangles with their names.
 
-The other images are FRAMES of the video. Each object to place is outlined with a numbered box;
-one number is the same physical object in every frame.
+The other images are FRAMES of the video. Each object to place is outlined and numbered, with
+a box or a traced outline; one number is the same physical object in every frame.
 
 Walls:
 {walls}
@@ -112,9 +116,10 @@ def directory_frames(directory: Path) -> FrameSource:
     return source
 
 
-def selection_frames(result: SelectionResult, data_dir: Path) -> FrameSource:
-    """The upright frames Dev 2's frame selection stored, for evidence made by
-    `assets.selection.object_evidence` from the same `SelectionResult`."""
+def selection_frames(result: SelectionResult | SegmentationResult, data_dir: Path) -> FrameSource:
+    """The upright frames Dev 2's pipeline stored, for evidence made by
+    `assets.selection.object_evidence` from the same selection (#14) or segmentation (#15)
+    result."""
     root = data_dir.resolve()
     by_key = {frame.key: frame for frame in result.frames}
     paths: dict[tuple[str, int], Path] = {}
@@ -132,18 +137,43 @@ def selection_frames(result: SelectionResult, data_dir: Path) -> FrameSource:
     return source
 
 
+def selection_masks(data_dir: Path) -> MaskSource:
+    """The #15 instance masks named by `EvidenceFrame.mask_url`, relative to the asset data
+    directory. A missing, unreadable or out-of-directory mask is None (the box is drawn)."""
+
+    def source(asset_id: str, frame: EvidenceFrame) -> NDArray[np.bool_] | None:
+        if frame.mask_url is None:
+            return None
+        try:
+            return read_mask(data_dir, frame.mask_url)
+        except ValueError:
+            return None
+
+    return source
+
+
 # --- what the model is shown ------------------------------------------------------------------
+
+
+@dataclass
+class _Mark:
+    number: int
+    box: tuple[float, float, float, float] | None
+    """(x, y, w, h) in frame pixels."""
+    mask: NDArray[np.bool_] | None = None
 
 
 @dataclass
 class _Shot:
     data: bytes
-    boxes: list[tuple[int, tuple[float, float, float, float]]] = field(default_factory=list)
+    marks: list[_Mark] = field(default_factory=list)
     shows: set[int] = field(default_factory=set)
     primary_for: int = 0
 
 
-def _shots(assets: Sequence[FurnitureAsset], frames: FrameSource) -> list[_Shot]:
+def _shots(
+    assets: Sequence[FurnitureAsset], frames: FrameSource, masks: MaskSource | None = None
+) -> list[_Shot]:
     """The evidence frames worth sending: every asset shown at least once, widest views first."""
     shots: dict[str, _Shot] = {}
     for number, asset in enumerate(assets, start=1):
@@ -153,8 +183,9 @@ def _shots(assets: Sequence[FurnitureAsset], frames: FrameSource) -> list[_Shot]
                 continue
             shot = shots.setdefault(hashlib.sha256(data).hexdigest(), _Shot(data))
             shot.shows.add(number)
-            if frame.bbox_px is not None:
-                shot.boxes.append((number, frame.bbox_px))
+            mask = masks(asset.id, frame) if masks is not None else None
+            if frame.bbox_px is not None or mask is not None:
+                shot.marks.append(_Mark(number, frame.bbox_px, mask))
             if frame.frame_index == asset.evidence.primary_frame_index:
                 shot.primary_for += 1
     remaining = list(shots.values())
@@ -169,17 +200,49 @@ def _shots(assets: Sequence[FurnitureAsset], frames: FrameSource) -> list[_Shot]
     return chosen
 
 
-def _draw_boxes(shot: _Shot) -> Image | None:
+def _mark_box(mark: _Mark) -> tuple[int, int, int, int] | None:
+    if mark.mask is not None and mark.mask.any():
+        ys, xs = np.nonzero(mark.mask)
+        return int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
+    if mark.box is None:
+        return None
+    x, y, w, h = mark.box
+    return int(x), int(y), int(x + w), int(y + h)
+
+
+def _draw_marks(shot: _Shot) -> Image | None:
+    """The frame with every asset numbered: its mask tinted and traced when the mask matches
+    the frame's size, its evidence box otherwise."""
     image = cv2.imdecode(np.frombuffer(shot.data, np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         return None
     thickness = max(2, round(min(image.shape[:2]) / 200))
     scale = max(0.6, min(image.shape[:2]) / 600)
-    for number, (x, y, w, h) in shot.boxes:
-        colour = _BOX_COLOURS[(number - 1) % len(_BOX_COLOURS)]
-        top_left = (int(x), int(y))
-        cv2.rectangle(image, top_left, (int(x + w), int(y + h)), colour, thickness)
-        label = str(number)
+    usable = [
+        mark.mask
+        if mark.mask is not None and mark.mask.shape == image.shape[:2] and mark.mask.any()
+        else None
+        for mark in shot.marks
+    ]
+    tint = image.copy()
+    for mark, mask in zip(shot.marks, usable):
+        if mask is not None:
+            tint[mask] = _BOX_COLOURS[(mark.number - 1) % len(_BOX_COLOURS)]
+    cv2.addWeighted(tint, 0.3, image, 0.7, 0, dst=image)
+    for mark, mask in zip(shot.marks, usable):
+        colour = _BOX_COLOURS[(mark.number - 1) % len(_BOX_COLOURS)]
+        box = _mark_box(_Mark(mark.number, mark.box, mask))
+        if mask is not None:
+            contours, _ = cv2.findContours(
+                mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+            )
+            cv2.drawContours(image, contours, -1, colour, thickness)
+        elif box is not None:
+            cv2.rectangle(image, box[:2], box[2:], colour, thickness)
+        if box is None:
+            continue
+        top_left = box[:2]
+        label = str(mark.number)
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, scale, 2)
         cv2.rectangle(image, top_left, (top_left[0] + tw + 8, top_left[1] + th + 10), colour, -1)
         cv2.putText(
@@ -300,8 +363,13 @@ class FalVisionObserver:
     """
 
     def __init__(
-        self, endpoint: str | None = None, model: str | None = None, retries: int = 1
+        self,
+        endpoint: str | None = None,
+        model: str | None = None,
+        retries: int = 1,
+        masks: MaskSource | None = None,
     ) -> None:
+        self.masks = masks
         self.endpoint = endpoint or os.environ.get("FAL_VISION_ENDPOINT", DEFAULT_FAL_ENDPOINT)
         self.model = model or os.environ.get("FAL_VISION_MODEL", DEFAULT_FAL_MODEL)
         self.retries = retries
@@ -325,7 +393,8 @@ class FalVisionObserver:
     def _observe(
         self, scene: RoomScene, assets: Sequence[FurnitureAsset], frames: FrameSource
     ) -> list[PlacementHint]:
-        images = [img for shot in _shots(assets, frames) if (img := _draw_boxes(shot)) is not None]
+        shots = _shots(assets, frames, self.masks)
+        images = [img for shot in shots if (img := _draw_marks(shot)) is not None]
         if not images:
             self._warn("no evidence frames available; placement hints were not requested")
             return []
