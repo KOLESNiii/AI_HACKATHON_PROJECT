@@ -1,0 +1,45 @@
+{
+  "base_scene": "contracts/mock_room/mock_scene.json",
+  "cases": [
+    {
+      "id": "blocked-door",
+      "description": "Unmodified shared room: nested furniture fits, but the wardrobe obstructs the door.",
+      "revision": 0,
+      "pose_overrides": {},
+      "expected": {
+        "collisions": [],
+        "out_of_bounds_item_ids": [],
+        "blocked_doors": [{"door_id": "door_1", "blocked_by_item_id": "item_wardrobe"}]
+      }
+    },
+    {
+      "id": "clear-layout",
+      "description": "Move the wardrobe away from the door; all three implemented checks pass.",
+      "revision": 1,
+      "pose_overrides": {"item_wardrobe": {"x": 1.35, "z": 1.5, "yaw_deg": 0}},
+      "expected": {"collisions": [], "out_of_bounds_item_ids": [], "blocked_doors": []}
+    },
+    {
+      "id": "furniture-overlap",
+      "description": "Place the wardrobe within the bed footprint; report one pair with 0.6 square metres of overlap.",
+      "revision": 2,
+      "pose_overrides": {"item_wardrobe": {"x": 3.1, "z": 1.1, "yaw_deg": 0}},
+      "expected": {
+        "collisions": [{"item_a": "item_bed", "item_b": "item_wardrobe", "overlap_area_m2": 0.6}],
+        "out_of_bounds_item_ids": [],
+        "blocked_doors": []
+      }
+    },
+    {
+      "id": "outside-room",
+      "description": "Place the wardrobe outside the floor polygon, clear of the door and other furniture.",
+      "revision": 3,
+      "pose_overrides": {"item_wardrobe": {"x": -1, "z": 0.5, "yaw_deg": 0}},
+      "expected": {
+        "collisions": [],
+        "out_of_bounds_item_ids": ["item_wardrobe"],
+        "blocked_doors": []
+      }
+    }
+  ]
+}

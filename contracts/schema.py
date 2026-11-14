@@ -321,6 +321,53 @@ class RoomScene(ContractModel):
         return self
 
 
+class ParsedRoom(ContractModel):
+    """One room parsed from a floor plan. `scene` uses its floor's shared frame (see
+    `ParsedFloor`), so rooms on the same floor can be shown alone or together."""
+
+    room_id: str = Field(pattern=ITEM_ID_PATTERN)
+    """Unique within the plan. Opaque, like item IDs."""
+    name: str
+    """The printed label (e.g. "Bedroom (4)"), or "Unlabelled space <n>"."""
+    labelled_width_m: Optional[float] = None
+    """First printed dimension, when a label was read. Plans do not say which axis it is."""
+    labelled_depth_m: Optional[float] = None
+    """Second printed dimension, when a label was read."""
+    area_m2: float
+    """Area of `scene.floor_polygon`."""
+    dimension_source: Literal["measured", "estimated", "user_corrected"]
+    """`measured` when the floor's scale came from printed dimension labels."""
+    correction_needed: List[Literal["dimensions", "openings", "orientation"]] = []
+    """What the user should confirm: scale, door/window detection, or north."""
+    scene: RoomScene
+    """The room with `furniture == []`. `scene.scene_id` is `<plan_id>-<room_id>`."""
+
+
+class ParsedFloor(ContractModel):
+    """One storey. Every room's coordinates share this floor's frame: metres, origin at the
+    top-left of the floor's wall bounds, +X right and +Z down the source image."""
+
+    floor_id: str = Field(pattern=ITEM_ID_PATTERN)
+    name: str
+    """The printed caption (e.g. "First floor"), or "Floor <n>"."""
+    level: int
+    """0 = ground. Ordered by caption when read, otherwise by position on the sheet."""
+    source_image_index: int = Field(ge=0)
+    """Index into the uploaded floor-plan images."""
+    rooms: List[ParsedRoom]
+
+
+class ParsedFloorPlan(ContractModel):
+    """Every floor and room parsed from 1..MAX_FLOOR_PLAN_IMAGES floor-plan images. The editor
+    picks one `ParsedRoom.scene` to load."""
+
+    plan_id: str = Field(pattern=ITEM_ID_PATTERN)
+    """Derived from the image bytes, so re-uploading the same plan yields the same ID."""
+    floors: List[ParsedFloor]
+    warnings: List[str] = []
+    """Human-readable notes on anything uncertain (unread labels, rejected scale estimates)."""
+
+
 class CollisionIssue(ContractModel):
     item_a: str
     item_b: str

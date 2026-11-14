@@ -262,5 +262,340 @@
     "seen": 1794672477.9000747,
     "ast_hash": "31a7b97b4d5a08ed238440b7af5c2e9f",
     "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_detect.json": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/package.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "107e4dd399e6e1d636cf1aa01c66d72b",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_ast.json": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_cached.json": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/__init__.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/media_gen/__init__.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/media_gen/main.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "c249c03efc413381c0e4b9ebf8d06780",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/__init__.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/main.py": {
+    "mtime": 1794682027.099492,
+    "ast_hash": "1a45188fdede2e12d96e3061cbab1146",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/__init__.py": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/models.py": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "405a76001552686e36dbdf63a7569bee",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/fixtures/evidence.json": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/openings.py": {
+    "mtime": 1794681358.7285595,
+    "ast_hash": "4fa39099cea1fb31b6c23d5454b2d863",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/parse.py": {
+    "mtime": 1794682029.1161616,
+    "ast_hash": "4d99839763ac173728f90a54371c975c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/routes.py": {
+    "mtime": 1794682027.1034925,
+    "ast_hash": "386bbe4c271b007c94ea34c61b757c2a",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/annotate.py": {
+    "mtime": 1794681358.7205431,
+    "ast_hash": "dc4d1b5751ffbef8d256dd031a500a21",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/polygon.py": {
+    "mtime": 1794681358.7285595,
+    "ast_hash": "d4793d29dd65925a6e9bc00cdec0213c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/__init__.py": {
+    "mtime": 1794681358.7165349,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/raster.py": {
+    "mtime": 1794682029.1161616,
+    "ast_hash": "fdb224a685cedf40c8b0c2081fc8893c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/regions.py": {
+    "mtime": 1794681358.7285595,
+    "ast_hash": "c8b693355b3c6bc0935a8b554b60df27",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/__main__.py": {
+    "mtime": 1794682027.099492,
+    "ast_hash": "89aeae2becfcc0bd385f31bff69dfcd0",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/fixtures/one_floor.annotations.json": {
+    "mtime": 1794681358.7205431,
+    "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/fixtures/three_floor.annotations.json": {
+    "mtime": 1794681358.7205431,
+    "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/spatial_engine/__init__.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/spatial_engine/main.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "a61c83d67865113ecea1878a0b63cab0",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_routes.py": {
+    "mtime": 1794682029.1161616,
+    "ast_hash": "f1d63a37bd40686d73bf696c85a393b8",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_parse.py": {
+    "mtime": 1794682029.1161616,
+    "ast_hash": "d19561d5ed06dc8fe473438088c22858",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_contract_occupancy.py": {
+    "mtime": 1794674684.1386242,
+    "ast_hash": "6fcf3ae6c5184a62ce01f2deb831bd95",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_fixture_scene.py": {
+    "mtime": 1794674684.1386242,
+    "ast_hash": "9a2631fde7374ee6090eed14ffab00dc",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_contracts.py": {
+    "mtime": 1794674684.1386242,
+    "ast_hash": "6d15d39c482e4d9e5cc03da965d56639",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_health.py": {
+    "mtime": 1794668461.971696,
+    "ast_hash": "fc1a2ef946d4b40ca17a42a0d42f5a80",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/vite.config.ts": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "f6d7e1f482853174ff7e805203b5633e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/.oxlintrc.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "029f4905006c1fffd96bc863e2d98d3e",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/tsconfig.app.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "bd8ea9a4e769387a390e3cfb7700bbbe",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/package.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "aaea4496dc9b9182a36ebccee5d46260",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/tsconfig.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/tsconfig.node.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "f9cb81ddcea69ffdab672fc8c48dca66",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/.prettierrc.json": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "cc24ea51edff69d96b6cdc39b55cc647",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/src/App.tsx": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "0e99c1912a79e4b4c9b2cde654f057c8",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/src/main.tsx": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "787e5a07efeb2bf6209d5937195f2f68",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/scripts/generate_mock_glbs.py": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "db840357dd089cf3270e344245c81471",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/schema.ts": {
+    "mtime": 1794681357.405931,
+    "ast_hash": "6369cdc062e59bbc95284316ea06d538",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/schema.py": {
+    "mtime": 1794681357.405931,
+    "ast_hash": "705042100c56d67b2352efc077f48a82",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/contracts/mock_room/mock_scene.json": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/AGENTS.md": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "c12e6f2d240680d22dcfa89dcfb73abe",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/README.md": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "c50268189b7e84eb50eeb0bc2ebdcd9c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/FIGMA_DESIGN_SPEC.md": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "0829ae7d186f27816e0db38ea2eba9d9",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/ARCHITECTURE_DAG.md": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "3f941209bea9b4fb289fdd6e8fcfeaad",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.graphify_uncached.txt": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "c313f37f2b3c5e6b6db9b6bd8e54b087",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/CLAUDE.md": {
+    "mtime": 1794674684.1265805,
+    "ast_hash": "e493cb3e304555dc393b35be1acd55df",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/architecture.md": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "041d14ba20102d3553f4a3874fde2ba7",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/decisions.md": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "a5a1b2e636810fdf58dfd1e029b126ce",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/superpowers/specs/2026-11-14-3d-representation-design.md": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "a713907efee6fa60a327c85b3cf28f22",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/docs/superpowers/plans/2026-11-14-asset-handoff-and-collision-parts.md": {
+    "mtime": 1794674684.130595,
+    "ast_hash": "ebea73ae0aa3080b1af5d06441cf19e1",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/README.md": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "20d354419993962d5265e4d5d5a01c30",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/assets/fixtures/README.md": {
+    "mtime": 1794674684.1346097,
+    "ast_hash": "f64f31e17bf62b0b743fdd209d5bad53",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/README.md": {
+    "mtime": 1794682027.099492,
+    "ast_hash": "d414574d510afee9c7a8c90c758b1484",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/.claude/skills/XUAN_INK_SCROLL_DESIGN.md": {
+    "mtime": 1794668461.9637072,
+    "ast_hash": "be7465ee75f4768c5c378cb16b9a21f5",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/frontend/index.html": {
+    "mtime": 1794668461.9677014,
+    "ast_hash": "36d5d9a093d4afbe9f677586d0078653",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/one_floor.jpg": {
+    "mtime": 1794681357.405931,
+    "ast_hash": "2d23fc62a098fd37775ac3a97745e278",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor.png": {
+    "mtime": 1794681357.4139464,
+    "ast_hash": "b228360dda07089a5092965f3fb76184",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/services/reconstruction/room/shell.py": {
+    "mtime": 1794682983.5169737,
+    "ast_hash": "cb39601d52d3afbcadd062a4ca99804d",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/tests/test_room_shell.py": {
+    "mtime": 1794682835.304763,
+    "ast_hash": "9e4c16044a8eb7c0db57bf23596680f9",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_2.mp4": {
+    "mtime": 1794681357.99105,
+    "ast_hash": "9cfcabf309c992e7fbeb19c4c6cc1c9c",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_1.mp4": {
+    "mtime": 1794681357.7666209,
+    "ast_hash": "934887046327128df480c09c8a64cfce",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_3.mp4": {
+    "mtime": 1794681358.32373,
+    "ast_hash": "45fa7a5e45e001a7f1f19001375023f9",
+    "semantic_hash": ""
+  },
+  "/home/leo/projects/AI_HACKATHON_PROJECT/examples/three_floor_4.mp4": {
+    "mtime": 1794681358.7005022,
+    "ast_hash": "f85edfafaf2e4f9c6cced624641c3ad4",
+    "semantic_hash": ""
   }
 }
