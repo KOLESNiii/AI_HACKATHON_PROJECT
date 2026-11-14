@@ -54,6 +54,8 @@ def test_errors(client: TestClient) -> None:
     assert client.get("/floor-plans/plan-unknown").status_code == 404
     bad = client.post("/floor-plans", files=[("files", ("x.png", b"not an image", "image/png"))])
     assert bad.status_code == 422
+    empty = client.post("/floor-plans", files=[("files", ("x.png", b"", "image/png"))])
+    assert empty.status_code == 422
     many = [("files", (f"{i}.png", b"x", "image/png")) for i in range(6)]
     assert client.post("/floor-plans", files=many).status_code == 422
 

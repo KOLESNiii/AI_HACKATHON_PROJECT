@@ -22,7 +22,8 @@ from services.reconstruction.room.annotate import (  # noqa: E402
     RoomLabel,
     _extract_json,
 )
-from services.reconstruction.room.parse import parse_floor_plan  # noqa: E402
+from services.reconstruction.room.parse import _consensus, parse_floor_plan  # noqa: E402
+from services.reconstruction.room.raster import UnreadableImage, decode  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EXAMPLES = ROOT / "examples"
@@ -183,6 +184,28 @@ def two_rooms() -> np.ndarray:
     return img
 
 
+def test_conflicting_labels_are_not_trusted_as_measured() -> None:
+    """Two identical rooms printed as 3 x 3 m and 6 x 6 m: no scale satisfies both, so the
+    floor must not come back as measured (review on #39)."""
+    ann = PlanAnnotations(
+        rooms=[_label("Left", 350, 350, 3.0, 3.0), _label("Right", 670, 350, 6.0, 6.0)]
+    )
+    plan = _parse(two_rooms(), ann)
+    rooms = _rooms(plan)
+    assert len(rooms) == 2
+    for r in rooms:
+        assert r.dimension_source == "estimated"
+        assert "dimensions" in r.correction_needed
+    assert any("conflicting scales" in w for w in plan.warnings)
+
+
+def test_scale_consensus_needs_a_majority() -> None:
+    agree = _consensus([100.0, 101.0, 99.0, 200.0])
+    assert agree.consistent and abs(agree.px_per_m - 100.0) < 1.0
+    assert not _consensus([100.0, 200.0]).consistent
+    assert _consensus([150.0]).consistent
+
+
 def test_interior_door_is_shared_by_both_rooms() -> None:
     ann = PlanAnnotations(
         rooms=[_label("Left", 350, 350, 3.0, 3.0), _label("Right", 670, 350, 3.0, 3.0)]
@@ -321,6 +344,17 @@ def test_three_floor_example() -> None:
         assert len({r.room_id for r in f.rooms}) == len(f.rooms)
         for r in f.rooms:
             RoomScene.model_validate(r.scene.model_dump())
+    # A traced size that disagrees with the printed label is flagged in the structured field,
+    # not only in the warning text (review on #39).
+    (bedroom2,) = [r for r in _rooms(plan) if r.name == "Bedroom (2)"]
+    assert "dimensions" in bedroom2.correction_needed
+    assert any(w.startswith("Bedroom (2): traced") for w in plan.warnings)
+
+
+def test_empty_or_corrupt_image_is_unreadable() -> None:
+    for data in (b"", b"not an image"):
+        with pytest.raises(UnreadableImage):
+            decode(data)
 
 
 # --- annotator --------------------------------------------------------------------------------
