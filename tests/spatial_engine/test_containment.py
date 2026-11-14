@@ -3,9 +3,11 @@
 import math
 
 import pytest
+from pydantic import ValidationError
 
 from contracts.schema import BBoxM, FurnitureItem, Pose2D, RoomScene, Vec2
 from services.spatial_engine.audit import detect_out_of_bounds
+from services.spatial_engine.geometry import room_floor_polygon
 
 
 def item(item_id: str = "desk", x: float = 2, z: float = 2, yaw: float = 0) -> FurnitureItem:
@@ -63,10 +65,15 @@ def test_l_shaped_floor() -> None:
     assert detect_out_of_bounds(scene) == ["outside"]
 
 
-def test_winding_and_explicit_closure_do_not_change_result() -> None:
+def test_clockwise_floor_and_explicit_closure_are_accepted() -> None:
     points = [(0, 0), (4, 0), (4, 4), (0, 4)]
-    for ring in (points, list(reversed(points)), [*points, points[0]]):
+    for ring in (points, [*points, points[0]]):
         assert detect_out_of_bounds(room([item()], ring)) == []
+
+
+def test_scene_rejects_reversed_floor_winding() -> None:
+    with pytest.raises(ValidationError, match="clockwise"):
+        room([], [(0, 0), (0, 4), (4, 4), (4, 0)])
 
 
 def test_noise_tolerance_is_not_a_clearance_requirement() -> None:
@@ -100,7 +107,14 @@ def test_empty_furniture_in_valid_room() -> None:
 )
 def test_invalid_floor_rejected_even_without_furniture(points: list[tuple[float, float]]) -> None:
     with pytest.raises(ValueError, match="Room floor"):
-        detect_out_of_bounds(room([], points))
+        room_floor_polygon([Vec2(x=x, z=z) for x, z in points])
+
+
+def test_containment_rejects_floor_corrupted_after_validation() -> None:
+    scene = room([])
+    scene.floor_polygon = [Vec2(x=0, z=0)]
+    with pytest.raises(ValueError, match="Room floor"):
+        detect_out_of_bounds(scene)
 
 
 @pytest.mark.parametrize("tolerance", [-1, math.nan, math.inf])
