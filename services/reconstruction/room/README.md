@@ -105,7 +105,8 @@ uv run python -m services.reconstruction.room align --demo g-reception --out /tm
 Writes `<scene_id>.json` (the aligned room) and `<scene_id>.png` per room, and `records.json`.
 
 Fixtures: `reception.assets.json` is the four demo reception items with Dev 2's reviewed boxes
-(frames 0-150 of `three_floor_3.mp4`) as evidence, without masks. `reception.hints.json` was
+(frames 0-150 of `three_floor_3.mp4`) as evidence, without masks, and the served demo model
+URLs (`/api/reconstruction/mock-room/assets/...`). `reception.hints.json` was
 reviewed by the coding agent against those frames, not measured and not human-verified.
 
 Limits found in the live check (`fal-ai/any-llm/vision`, 10-20 s with `gemini-2.5-flash`,

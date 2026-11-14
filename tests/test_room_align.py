@@ -358,10 +358,30 @@ def test_uncertain_hints_are_flagged_for_correction() -> None:
     assert no_front.pose.yaw_deg == pytest.approx(180.0)  # back to wall `s`, as a best guess
 
 
-def test_a_corner_hint_keeps_the_item_on_its_wall() -> None:
+def test_a_corner_hint_keeps_the_item_on_its_wall_and_counts_the_move() -> None:
+    # `along_frac` is the item's centre: at 0, half of a 1 m item would be past the corner.
     result = align_assets(_room(), [_box("a")], FixedObserver([_hint("a", "n", 0.0)]))
     assert (result.items[0].pose.x, result.items[0].pose.z) == pytest.approx((0.5, 0.25))
-    assert result.records["a"].moved_m == 0 and result.items[0].correction_needed == ["orientation"]
+    assert result.records["a"].moved_m == pytest.approx(0.5)
+    assert result.items[0].correction_needed == ["placement", "orientation"]
+
+
+def test_a_large_corner_clamp_is_reported_not_hidden() -> None:
+    """PR #47 review: a 2 m item hinted at the corner of a 4 m wall lands 1 m along it."""
+    hint = _hint("a", "n", 0.0, facing="into_room")
+    result = align_assets(_room(), [_box("a", width=2.0)], FixedObserver([hint]))
+    assert result.items[0].pose.x == pytest.approx(1.0)
+    assert result.records["a"].moved_m == pytest.approx(1.0)
+    assert result.items[0].correction_needed == ["placement"]
+    assert "moved 1.00 m from the hinted spot to fit" in result.records["a"].notes
+
+
+def test_a_small_corner_clamp_is_reported_without_a_flag() -> None:
+    hint = _hint("a", "n", 0.075, facing="into_room")  # centre 0.3 m along, item needs 0.5 m
+    result = align_assets(_room(), [_box("a")], FixedObserver([hint]))
+    assert result.items[0].pose.x == pytest.approx(0.5)
+    assert result.records["a"].moved_m == pytest.approx(0.2)
+    assert result.items[0].correction_needed == []
 
 
 def test_clashing_hints_are_separated_and_the_moved_item_is_flagged() -> None:
@@ -416,6 +436,35 @@ def test_seated_at_an_item_placed_in_the_same_run() -> None:
     assert placed_chair.pose.yaw_deg == pytest.approx(180.0)
     assert placed_chair.pose.x == pytest.approx(placed_desk.pose.x)
     assert _collisions(result.items) == [] and _inside(room, placed_chair)
+    # A confidently placed desk passes no uncertainty on.
+    assert placed_desk.correction_needed == [] and placed_chair.correction_needed == []
+
+
+@pytest.mark.parametrize(
+    "desk_hint, desk_flags",
+    [
+        (None, ["placement", "orientation"]),  # default layout: a guess
+        (_hint("desk", "n", 0.5, facing="into_room", confidence=0.5), ["placement", "orientation"]),
+        (_hint("desk", "n", 0.5, facing=None), ["orientation"]),
+    ],
+    ids=["default-desk", "low-confidence-desk", "desk-front-unknown"],
+)
+def test_a_seated_chair_inherits_its_desks_uncertainty(
+    desk_hint: PlacementHint | None, desk_flags: list[str]
+) -> None:
+    """PR #47 review: a chair placed relative to a guessed desk is a guess too."""
+    desk = _box("desk", width=1.2, depth=0.6, category="desk")
+    chair = _box("chair", width=0.5, depth=0.5, category="chair")
+    hints = [_hint("chair", "n", 0.5, seated_at="desk", facing="toward_wall", confidence=0.95)]
+    if desk_hint is not None:
+        hints.append(desk_hint)
+    result = align_assets(_room(), [desk, chair], FixedObserver(hints))
+    placed_desk, placed_chair = result.items
+    assert placed_desk.correction_needed == desk_flags
+    assert placed_chair.correction_needed == desk_flags
+    record = result.records["chair"]
+    assert "pushed in at desk" in record.notes
+    assert f"inherits {', '.join(desk_flags)} from desk" in record.notes
 
 
 def test_bad_hints_are_ignored_with_a_warning() -> None:
@@ -525,6 +574,15 @@ def test_wall_relative_hints_reproduce_the_reference_poses(room: RoomScene) -> N
 
 def _reception() -> RoomScene:
     return demo_room_scene("g-reception")
+
+
+def test_reception_fixture_assets_use_the_served_model_urls() -> None:
+    """The fixture is a Dev 2 handoff: its `glb_url`s must be fetchable by the browser, the same
+    URLs the editor's reception room uses for these items."""
+    assets = [FurnitureAsset.model_validate(a) for a in json.loads(RECEPTION_ASSETS.read_text())]
+    room = {f.id: f.glb_url for f in demo_room_scene("g-reception").furniture}
+    assert {a.id: a.glb_url for a in assets} == {a.id: room[a.id] for a in assets}
+    assert all(a.glb_url.startswith(f"{BROWSER_ROOT}/assets/") for a in assets)
 
 
 def test_recorded_reception_hints_place_the_video_furniture() -> None:

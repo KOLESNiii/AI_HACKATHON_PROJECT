@@ -4,7 +4,7 @@
     "name": "Dark two-seat sofa",
     "category": "sofa",
     "source": "extracted_video",
-    "glb_url": "/assets/g-reception-o01-bfd76ffa68.glb",
+    "glb_url": "/api/reconstruction/mock-room/assets/g-reception-o01-bfd76ffa68.glb",
     "product_url": null,
     "price_gbp": null,
     "bbox_m": {
@@ -84,7 +84,7 @@
     "name": "Brown two-seat sofa",
     "category": "sofa",
     "source": "extracted_video",
-    "glb_url": "/assets/g-reception-o02-624e270492.glb",
+    "glb_url": "/api/reconstruction/mock-room/assets/g-reception-o02-624e270492.glb",
     "product_url": null,
     "price_gbp": null,
     "bbox_m": {
@@ -180,7 +180,7 @@
     "name": "White rectangular table",
     "category": "table",
     "source": "extracted_video",
-    "glb_url": "/assets/g-reception-o03-b325551aca.glb",
+    "glb_url": "/api/reconstruction/mock-room/assets/g-reception-o03-b325551aca.glb",
     "product_url": null,
     "price_gbp": null,
     "bbox_m": {
@@ -301,7 +301,7 @@
     "name": "Brown office chair",
     "category": "chair",
     "source": "extracted_video",
-    "glb_url": "/assets/g-reception-o04-b587afaaa0.glb",
+    "glb_url": "/api/reconstruction/mock-room/assets/g-reception-o04-b587afaaa0.glb",
     "product_url": null,
     "price_gbp": null,
     "bbox_m": {

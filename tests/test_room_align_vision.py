@@ -15,6 +15,7 @@ import numpy as np  # noqa: E402
 
 from contracts.schema import RoomScene  # noqa: E402
 from services.reconstruction.assets.models import EvidenceFrame, FurnitureAsset  # noqa: E402
+from services.reconstruction.assets.selection import object_evidence  # noqa: E402
 from services.reconstruction.assets.selection_models import (  # noqa: E402
     SegmentationResult,
     SelectionResult,
@@ -377,6 +378,82 @@ def test_selection_frames_reads_the_selector_output(tmp_path: Path) -> None:
 # --- debug CLI --------------------------------------------------------------------------------
 
 
+def _frame_record(source_id: str, index: int, image_path: str) -> dict[str, object]:
+    return {
+        "key": f"{source_id}:0:{index}",
+        "source_id": source_id,
+        "frame_index": index,
+        "pts": index,
+        "timestamp_s": index / 30,
+        "image_size_px": [120, 160],
+        "image_path": image_path,
+        "quality": 0.9,
+    }
+
+
+def test_selection_frames_keep_each_video_apart(tmp_path: Path) -> None:
+    """PR #47 review: two videos both have a frame 30 of the same sofa. Evidence made for
+    video B must be read from B's frame, never A's."""
+    video_a, video_b = "a" * 64, "b" * 64
+    (tmp_path / "frames").mkdir()
+    (tmp_path / "frames/a30.png").write_bytes(b"video-a-30")
+    (tmp_path / "frames/b30.png").write_bytes(b"video-b-30")
+    box = {"x": 0.1, "y": 0.1, "width": 0.5, "height": 0.5}
+    result = SelectionResult.model_validate(
+        {
+            "scene_id": "s",
+            "registry_revision": 1,
+            "sources": [],
+            "frames": [
+                _frame_record(video_a, 30, "frames/a30.png"),
+                _frame_record(video_b, 30, "frames/b30.png"),
+            ],
+            "objects": [
+                {
+                    "id": "vid-sofa-01",
+                    "name": "Sofa",
+                    "category": "sofa",
+                    "appearance": "brown",
+                    "sightings": [
+                        {"frame_key": f"{video_a}:0:30", "box": box, "quality": 0.9},
+                        {"frame_key": f"{video_b}:0:30", "box": box, "quality": 0.5},
+                    ],
+                }
+            ],
+            "geometry_frame_keys": [],
+            "unresolved": [],
+            "warnings": [],
+            "complete": True,
+        }
+    )
+    frame_30 = EvidenceFrame(frame_index=30, timestamp_s=1.0)
+
+    # Without a chosen source the frame is ambiguous: nothing, rather than a guess.
+    assert ov.selection_frames(result, tmp_path)("vid-sofa-01", frame_30) is None
+
+    # With the source the evidence was made from, that video's pixels.
+    evidence = object_evidence(result, "vid-sofa-01", source_id=video_b)
+    source = ov.selection_frames(result, tmp_path, {"vid-sofa-01": video_b})
+    assert [source("vid-sofa-01", f) for f in evidence.frames] == [b"video-b-30"]
+    assert (
+        ov.selection_frames(result, tmp_path, {"vid-sofa-01": video_a})("vid-sofa-01", frame_30)
+        == b"video-a-30"
+    )
+
+    with pytest.raises(ValueError, match="not sighted"):
+        ov.selection_frames(result, tmp_path, {"vid-sofa-01": "c" * 64})
+
+
+def _served(url: str) -> int:
+    """Status of a browser URL from the reconstruction app (the proxy strips the prefix)."""
+    from fastapi.testclient import TestClient
+
+    from services.reconstruction.main import app
+
+    assert url.startswith("/api/reconstruction/"), url
+    return TestClient(app).get(url.removeprefix("/api/reconstruction")).status_code
+
+
 def test_cli_places_the_reception_assets_from_recorded_hints(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -406,6 +483,9 @@ def test_cli_places_the_reception_assets_from_recorded_hints(
         (FIXTURES / "reception.hints.json").read_text()
     )
     assert (tmp_path / "g-reception.png").stat().st_size > 1000
+    # PR #47 review: the exported scene must load in the editor, models and shell included.
+    urls = [aligned.shell_glb_url, *(item.glb_url for item in aligned.furniture)]
+    assert {url: _served(url) for url in urls} == {url: 200 for url in urls}
 
 
 def test_cli_default_layout_for_a_floor(tmp_path: Path) -> None:

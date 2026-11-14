@@ -281,14 +281,14 @@ def _place_hinted(room: _Room, asset: FurnitureAsset, hint: PlacementHint) -> _C
     exact = _wall_pose(frame, asset.bbox_m, t, hint.offset_m, facing)
     if room.possible(asset, exact):
         return _Choice(exact, hint.wall_id)
-    # "In the corner" arrives as a fraction near 0 or 1: keep the whole item on the wall.
+    # Search from the nearest spot that keeps the whole item on the wall. That clamp moves the
+    # item too, so movement is measured from the hinted spot itself.
     if frame.length >= span:
         t = min(max(t, span / 2), frame.length - span / 2)
-    origin = _wall_pose(frame, asset.bbox_m, t, hint.offset_m, facing)
     for near_t, near_offset in _nearby(frame, t, hint.offset_m):
         pose = _wall_pose(frame, asset.bbox_m, near_t, near_offset, facing)
         if room.possible(asset, pose):
-            moved = math.hypot(pose.x - origin.x, pose.z - origin.z)
+            moved = math.hypot(pose.x - exact.x, pose.z - exact.z)
             return _Choice(pose, hint.wall_id, moved_m=moved)
     return None
 
@@ -463,6 +463,16 @@ def align_assets(
                 choice = _place_seated(room, asset, parent.item)
                 if choice is not None:
                     record.notes.append(f"pushed in at {parent.item.id}")
+                    # The pose is derived from the parent's, so it is no surer than the parent.
+                    inherited: list[Correction] = [
+                        c
+                        for c in parent.item.correction_needed
+                        if c in ("placement", "orientation")
+                    ]
+                    if inherited:
+                        flags.update(inherited)
+                        names = ", ".join(c for c in _CORRECTION_ORDER if c in inherited)
+                        record.notes.append(f"inherits {names} from {parent.item.id}")
                 else:
                     record.notes.append(f"no room at {parent.item.id}; placed from the wall hint")
             elif hint.seated_at:

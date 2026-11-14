@@ -17,7 +17,7 @@ import json
 import logging
 import math
 import os
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -116,17 +116,38 @@ def directory_frames(directory: Path) -> FrameSource:
     return source
 
 
-def selection_frames(result: SelectionResult | SegmentationResult, data_dir: Path) -> FrameSource:
+def selection_frames(
+    result: SelectionResult | SegmentationResult,
+    data_dir: Path,
+    source_ids: Mapping[str, str] | None = None,
+) -> FrameSource:
     """The upright frames Dev 2's pipeline stored, for evidence made by
     `assets.selection.object_evidence` from the same selection (#14) or segmentation (#15)
-    result."""
+    result.
+
+    Frame ordinals repeat across videos, so each object is read from one source, by the rule
+    `object_evidence` uses: `source_ids[object_id]` when given, else the object's only source.
+    An object sighted in several videos without a chosen source gets no frames, never another
+    video's frame with the same ordinal. Raises ValueError for a chosen source the object was
+    not sighted in.
+    """
     root = data_dir.resolve()
     by_key = {frame.key: frame for frame in result.frames}
+    chosen = source_ids or {}
     paths: dict[tuple[str, int], Path] = {}
     for obj in result.objects:
+        sources = {by_key[s.frame_key].source_id for s in obj.sightings}
+        source_id = chosen.get(obj.id)
+        if source_id is None:
+            if len(sources) != 1:
+                continue  # ambiguous: which video the evidence came from is unknown
+            source_id = next(iter(sources))
+        elif source_id not in sources:
+            raise ValueError(f"{obj.id} was not sighted in the chosen source")
         for sighting in obj.sightings:
             frame = by_key[sighting.frame_key]
-            paths.setdefault((obj.id, frame.frame_index), root / frame.image_path)
+            if frame.source_id == source_id:
+                paths[(obj.id, frame.frame_index)] = root / frame.image_path
 
     def source(asset_id: str, frame: EvidenceFrame) -> bytes | None:
         path = paths.get((asset_id, frame.frame_index))
