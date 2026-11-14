@@ -56,6 +56,8 @@ Competitor research across **IKEA Kreativ, Decato, PromptDecor, RoomCraft, Stage
 ## 4. Quickstart (Local Development)
 
 Install Bun 1.3.2+ and uv. uv provisions Python 3.11 from `.python-version`.
+Video reconstruction also requires FFmpeg and FFprobe on `PATH` (verified with FFmpeg 8).
+Video-dependent tests skip when those executables are absent; other checks still run.
 Run all commands from the repository root.
 
 ```bash
@@ -99,3 +101,8 @@ for frontend libraries and `uv add` for Python libraries, coordinating shared ma
 
 See [architecture](docs/architecture.md) for ownership and API boundaries and
 [decisions](docs/decisions.md) for bootstrap trade-offs.
+
+Dev 2's [furniture frame selector](services/reconstruction/assets/README.md#implemented-frame-selection-and-identity-14)
+can now sample walkthroughs, persist furniture identities and produce a local evidence report.
+It requires FFmpeg/FFprobe. Offline reviewed replay needs no keys; live fal vision proposals
+require inventory review. Masks, reconstructed meshes and final room placement remain later stages.

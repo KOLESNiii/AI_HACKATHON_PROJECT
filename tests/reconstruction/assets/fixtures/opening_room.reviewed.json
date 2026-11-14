@@ -1,0 +1,160 @@
+{
+  "objects": [
+    {
+      "name": "Rear sofa",
+      "category": "sofa",
+      "appearance": "Brown two-seat sofa against rear blue wall beside the fridge",
+      "sightings": [
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:0",
+          "box": {
+            "x": 0.25,
+            "y": 0.41,
+            "width": 0.41,
+            "height": 0.14
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:30",
+          "box": {
+            "x": 0.54,
+            "y": 0.47,
+            "width": 0.46,
+            "height": 0.15
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:59",
+          "box": {
+            "x": 0.61,
+            "y": 0.41,
+            "width": 0.39,
+            "height": 0.21
+          }
+        }
+      ]
+    },
+    {
+      "name": "Right sofa",
+      "category": "sofa",
+      "appearance": "Separate brown sofa along the right blue wall, next to the office chair",
+      "sightings": [
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:0",
+          "box": {
+            "x": 0.71,
+            "y": 0.42,
+            "width": 0.2,
+            "height": 0.25
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:105",
+          "box": {
+            "x": 0,
+            "y": 0.29,
+            "width": 0.81,
+            "height": 0.56
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:134",
+          "box": {
+            "x": 0,
+            "y": 0.5,
+            "width": 0.4,
+            "height": 0.5
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:150",
+          "box": {
+            "x": 0,
+            "y": 0.42,
+            "width": 0.35,
+            "height": 0.58
+          }
+        }
+      ]
+    },
+    {
+      "name": "White coffee table",
+      "category": "table",
+      "appearance": "White rectangular tabletop and metal legs",
+      "sightings": [
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:0",
+          "box": {
+            "x": 0.03,
+            "y": 0.46,
+            "width": 0.48,
+            "height": 0.18
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:30",
+          "box": {
+            "x": 0.32,
+            "y": 0.52,
+            "width": 0.48,
+            "height": 0.21
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:59",
+          "box": {
+            "x": 0.24,
+            "y": 0.46,
+            "width": 0.55,
+            "height": 0.25
+          }
+        }
+      ]
+    },
+    {
+      "name": "Office chair",
+      "category": "chair",
+      "appearance": "One tan padded office chair: round seat, separate backrest, black wheeled base",
+      "sightings": [
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:0",
+          "box": {
+            "x": 0.77,
+            "y": 0.58,
+            "width": 0.15,
+            "height": 0.13
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:105",
+          "box": {
+            "x": 0.59,
+            "y": 0.6,
+            "width": 0.41,
+            "height": 0.4
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:134",
+          "box": {
+            "x": 0.18,
+            "y": 0.55,
+            "width": 0.75,
+            "height": 0.45
+          }
+        },
+        {
+          "frame_key": "ca4b73c2c5979831c80217f2bed26f5f51c1f847803d6de4011e34d858429f9c:0:150",
+          "box": {
+            "x": 0.15,
+            "y": 0.53,
+            "width": 0.8,
+            "height": 0.47
+          }
+        }
+      ]
+    }
+  ],
+  "empty_frames": [],
+  "warnings": []
+}

@@ -147,3 +147,98 @@ a desk with a tucked chair and a table over a fixed radiator. See `fixtures/READ
 ## Still open
 
 - The collision check itself and shared collision test vectors are Dev 4's (#29–#30).
+
+## Implemented: frame selection and identity (#14)
+
+`selection.select_furniture_frames(videos, scene_id, *, data_dir, provider=None, options=None)`
+returns an internal `SelectionResult`, not a finished mesh or `FurnitureAsset`. The agreed
+`extract_furniture(Path, scene_id)` façade remains for #15–#16. Neither the shared contracts
+nor the existing evidence types change.
+
+Requirements: the reconstruction Python extra and FFmpeg/FFprobe on `PATH` (verified with
+FFmpeg 8). Tests generate small VFR/rotation clips and need a build supporting
+`-display_rotation` and `-fps_mode` (both verified with FFmpeg 8). No additional Python dependencies, database server or ORM are needed.
+The standard-library SQLite registry and frame images live under `data_dir`; keep that
+directory between retries. Removing it loses ID history. The default CLI data directory is
+`artifacts/furniture`, already ignored by Git.
+
+Offline sampling (no network or credentials):
+
+```bash
+uv run --extra reconstruction python -m services.reconstruction.assets.select_frames \
+  examples/three_floor_3.mp4 --scene-id opening-room --start 0 --end 6 --max-frames 8 \
+  --data-dir artifacts/furniture --out /tmp/furniture-report
+```
+
+The report includes upright frame contact sheets, per-item labelled views, full original
+image references, actual source frame ordinals/PTS, and JSON evidence. Exit codes: `0` for
+complete reviewed sampled discovery, `2` for incomplete/review-required discovery (report
+still written), `1` for invalid options/media/storage. Completeness concerns requested sampled
+frames, not an exhaustive inventory of a house.
+
+For live proposals, add `--live` and supply `FAL_KEY` server-side. For example, add
+`--env-file .env` to `uv run`. Configuration reuses `FAL_VISION_ENDPOINT` (default
+`fal-ai/any-llm/vision`) and `FAL_VISION_MODEL` (default `google/gemini-2.5-flash`). Individual
+full-resolution images and reference crops are uploaded only in live mode. Source PNGs are
+retained without relighting or texture edits for later material reconstruction.
+
+Live testing exposed missed/merged objects and chair-part splitting in vision proposals,
+including a stronger model. **AI proposals always carry a review warning and return code 2.**
+They are not certified furniture identities. Inspect `selection.json`/the labelled images,
+correct a `Discovery` JSON recording, and use `--recorded <file>` for reviewed results. A
+recording groups sightings of one physical item, with full source frame keys and normalised
+upright boxes; `RecordedProvider` maps the group across batches. Use a separate scene ID
+for the reviewed inventory when replacing a faulty initial proposal: this issue never
+silently deletes existing IDs. Editing/merging established identities remains explicit work.
+
+Reproducible reviewed acceptance case, without provider calls:
+
+```bash
+uv run --extra reconstruction python -m services.reconstruction.assets.select_frames \
+  examples/three_floor_3.mp4 --scene-id reviewed-opening-room --start 0 --end 6 --max-frames 8 \
+  --data-dir artifacts/furniture --out /tmp/reviewed-furniture \
+  --recorded tests/reconstruction/assets/fixtures/opening_room.reviewed.json
+```
+
+The coding agent visually reviewed the supplied **coarse visible boxes**; they are not
+independently human-verified, SAM masks, or raw provider output. They cover four target items
+in six frames: two separate sofas, a table
+and one office chair. Automated tests repeat the run with reordered observations and require
+the same IDs and evidence. No private images or generated assets are added by this issue.
+
+`--batch-size` is 1–8, `--max-frames` caps sampling per video, and `--max-requests` bounds
+new inference submission attempts per run. Cached results, saved-handle recovery and recorded
+replays are free, so repeated runs advance past previously completed batches. A zero budget
+still allows those free operations. Capped sampling/budget exhaustion is explicit.
+Provider handles/results are cached by scene, ordered frame keys, model and prompt. A retry
+recovers a saved request instead of resubmitting. A local wait deadline leaves the remote job
+running so a later run can collect its result; it does not cancel the handle it saves.
+Preparation/encoding/upload failures release their reservation and retry normally. Only a
+failure after submission starts is uncertain and blocked to avoid duplicate charges.
+`--refresh <new-label>` deliberately starts a new detection cache and can
+incur new charges. Failed/partial outputs do not erase known inventory. Runtime errors are
+sanitised; keys/provider HTTP bodies are not included in reports.
+
+Review issues are scoped to source frames: successfully reprocessing a batch replaces those
+frames' issues and preserves issues on other frames. Recognised reflections are excluded
+with an informational warning and do not prevent completion. Existing unscoped registry
+issues migrate conservatively onto their stored frames and clear as those frames are reviewed.
+This clears diagnostics, not established IDs or unwanted initial proposal objects.
+
+New live requests choose at most 16 nearby references from a larger registry and report any
+omitted context; cache hits/recovery retain the original reference mapping. Additional
+sightings do not silently overwrite established names, categories or appearance. Conflicting
+categories require review; metadata corrections remain explicit work.
+
+For multiple videos, source hashes distinguish equal frame ordinals. Each provider batch
+belongs to one source. Cross-video reference matching requires `--room-key` identifying a
+caller-confirmed physical room; filenames never establish storey/room identity. Unregistered
+camera groups are not compared. Choose one continuous room segment for the first integration;
+automatic room/storey assignment and long-occlusion re-identification are not established.
+
+`selection.object_evidence(result, object_id, source_id=...)` adapts one source's sightings to
+the existing `AssetEvidence`, with real ordinals/timestamps and pixel `(x,y,w,h)` boxes.
+Multi-source items require explicit `source_id`; `provider_pose` and masks remain null for
+#15/#16 to populate. `geometry_frame_keys` is an ordered subset of original wide frames for
+later camera estimation, not a grounded camera solution. Dev 1's #8 owns metric plan fitting
+and final poses; no route or multi-video extraction façade is wired here.

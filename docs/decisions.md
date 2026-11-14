@@ -41,6 +41,21 @@
 - Full reasoning: `docs/superpowers/specs/2026-11-14-3d-representation-design.md`. The agreed
   Dev 2 → Dev 1 handoff: `services/reconstruction/assets/README.md`.
 
+## Frame selection and identity (#14)
+
+- Reuse FFmpeg/FFprobe, OpenCV/NumPy, Pydantic and fal-client; use Python's built-in SQLite
+  transactions for local identity/request persistence. No dependency manifests change.
+- Keep additional source identity and selected-image references in internal selection records.
+  Adapt a single source into the existing handoff; keep the locked contracts unchanged.
+- Live vision is a proposal source: tests exposed merged furniture and split chair parts.
+  Mark it review-required rather than certify a false inventory. Support corrected offline
+  recordings and verify ID stability on manually reviewed real-room sightings.
+- Use conservative evidence/reference matching; do not add a custom assignment solver or
+  silently depend on SciPy's spatial extra. Uncertain associations remain visible.
+- Preserve full upright source pixels for later appearance reconstruction. Camera estimation
+  was probed, but plan fitting, instance masks, material generation and normalisation remain
+  the subsequent owners/issues. There is no claim of recovering original shaders from video.
+  
 ## Spatial audit without speculative scores
 
 - Expose implemented checks through `POST /audit`, with existing scene/revision

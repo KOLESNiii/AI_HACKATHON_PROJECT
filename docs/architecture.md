@@ -45,6 +45,19 @@ Dev 2's asset normalisation pipeline. Existing directories, ports and contracts
 are unchanged. Photoreal integration is assigned after the validated-layout
 milestone; generated video is stretch scope.
 
+## Furniture evidence selection (#14)
+
+`services/reconstruction/assets/selection.py` selects upright frames with decoded source
+ordinals/PTS and uses an injected live or recorded discovery provider. `registry.py` uses
+local SQLite transactions to retain IDs and cache recoverable provider requests; original
+frames and local reports live in a configured runtime directory. No new HTTP route or
+shared schema is introduced. The CLI defaults to offline sampling; live vision proposals
+are explicitly review-required. A reviewed real-room recording provides reproducible replay.
+
+`SelectionResult` retains multiple source identities; `object_evidence` adapts one source to
+the fixed `AssetEvidence` without changing ordinal semantics or overloading `provider_pose`.
+Masks/meshes remain #15–#17, and Dev 1 still owns video-to-plan alignment and final placement.
+
 ## Spatial audit API
 
 `POST /audit` on port 8002 accepts `RoomScene` directly and returns `AuditReport`.
