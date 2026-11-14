@@ -1,4 +1,4 @@
-"""Internal #14 records. Source evidence is deliberately separate from RoomScene."""
+"""Internal #14/#15 records. Source evidence is deliberately separate from RoomScene."""
 
 from __future__ import annotations
 
@@ -91,6 +91,32 @@ class Discovery(Record):
             raise ValueError("provider must account for exactly the requested frames")
 
 
+LOW_MASK_SCORE = 0.8
+"""Live SAM 3 run: clean masks scored 0.92-0.98; ragged ones on blurred close-ups 0.57-0.71."""
+
+
+class MaskRecord(Record):
+    """One stored instance mask (#15) for one sighting of one item."""
+
+    frame_key: str
+    box: Box
+    """The sighting box used as the prompt. A mask is current only while this still matches."""
+    method: Literal["sam3", "grabcut"]
+    mask_path: str
+    """8-bit PNG, 255 = item, in upright source-frame pixels. Relative to the data directory."""
+    crop_path: str
+    """RGBA cut-out of the original pixels, cropped to `bbox_px`. Relative to the data directory."""
+    bbox_px: tuple[int, int, int, int]
+    """Tight (x, y, w, h) of the mask in upright source-frame pixels."""
+    area_px: int = Field(gt=0)
+    score: float | None = Field(default=None, ge=0, le=1)
+    """The provider's own confidence when it reports one (SAM 3); None for GrabCut."""
+
+    @property
+    def low_confidence(self) -> bool:
+        return self.score is not None and self.score < LOW_MASK_SCORE
+
+
 class SelectedObject(Record):
     id: str = Field(pattern=ITEM_ID_PATTERN)
     name: str
@@ -99,13 +125,22 @@ class SelectedObject(Record):
     room_key: str | None = None
     sightings: list[Sighting] = Field(min_length=1)
     selected_views: list[str] = Field(default_factory=list, max_length=4)
+    masks: list[MaskRecord] = []
 
     @model_validator(mode="after")
     def _views(self) -> SelectedObject:
         keys = [s.frame_key for s in self.sightings]
         if len(keys) != len(set(keys)) or not set(self.selected_views).issubset(keys):
             raise ValueError("object views must refer to unique sightings")
+        masked = [m.frame_key for m in self.masks]
+        if len(masked) != len(set(masked)) or not set(masked).issubset(keys):
+            raise ValueError("object masks must refer to unique sightings")
         return self
+
+    def mask_for(self, frame_key: str) -> MaskRecord | None:
+        """The stored mask for a sighting, unless its box has changed since."""
+        box = next((s.box for s in self.sightings if s.frame_key == frame_key), None)
+        return next((m for m in self.masks if m.frame_key == frame_key and m.box == box), None)
 
 
 class RegistryState(Record):
@@ -148,6 +183,24 @@ class SelectionResult(Record):
     warnings: list[str]
     complete: bool
     """All sampled frames processed without unresolved identities, not an exhaustive inventory."""
+
+
+class MissingMask(Record):
+    object_id: str
+    frame_key: str
+    reason: str
+
+
+class SegmentationResult(Record):
+    scene_id: str
+    registry_revision: int
+    frames: list[Frame]
+    """Every frame the returned objects were sighted in."""
+    objects: list[SelectedObject]
+    missing: list[MissingMask]
+    warnings: list[str]
+    complete: bool
+    """Every selected view of every requested item has a stored mask; not a quality claim."""
 
 
 class SelectionOptions(Record):

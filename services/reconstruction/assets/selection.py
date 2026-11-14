@@ -1,4 +1,4 @@
-"""Frame discovery -> permanent scene IDs. No masks, meshes or final room poses (#15+)."""
+"""Frame discovery -> permanent scene IDs. Masks are segmentation.py (#15); no meshes/poses."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from .selection_models import (
     Discovery,
     Frame,
     RegistryState,
+    SegmentationResult,
     SelectedObject,
     SelectionOptions,
     SelectionResult,
@@ -285,12 +286,14 @@ def select_furniture_frames(
 
 
 def object_evidence(
-    result: SelectionResult, object_id: str, *, source_id: str | None = None
+    result: SelectionResult | SegmentationResult, object_id: str, *, source_id: str | None = None
 ) -> AssetEvidence:
     """Adapt one source to the fixed evidence shape without inventing global frame indices.
 
-    Full multi-source identity/images remain in SelectionResult. Masks are added in #15;
-    provider_pose remains reserved for raw SAM 3D metadata.
+    Full multi-source identity/images remain in the result. A sighting with a current #15 mask
+    carries `mask_url` (relative to the data directory; read with `segmentation.read_mask`)
+    and the mask's tight box; the others keep their coarse sighting box. provider_pose remains
+    reserved for raw SAM 3D metadata.
     """
     obj = next((obj for obj in result.objects if obj.id == object_id), None)
     if obj is None:
@@ -304,18 +307,26 @@ def object_evidence(
     sightings = [s for s in obj.sightings if frames[s.frame_key].source_id == source_id]
     if not sightings:
         raise ValueError("object has no sightings in the requested source")
-    primary = max(sightings, key=lambda s: s.quality)
+
+    def rank(sighting: Sighting) -> tuple[bool, float]:
+        # Prefer a view whose mask is usable; without masks this is the #14 quality order.
+        mask = obj.mask_for(sighting.frame_key)
+        return mask is not None and not mask.low_confidence, sighting.quality
+
+    primary = max(sightings, key=rank)
     evidence = []
     for sighting in sightings:
         frame = frames[sighting.frame_key]
         w, h = frame.image_size_px
         b = sighting.box
+        mask = obj.mask_for(sighting.frame_key)
         evidence.append(
             EvidenceFrame(
                 frame_index=frame.frame_index,
                 timestamp_s=frame.timestamp_s,
                 image_size_px=(w, h),
-                bbox_px=(b.x * w, b.y * h, b.width * w, b.height * h),
+                mask_url=mask.mask_path if mask else None,
+                bbox_px=mask.bbox_px if mask else (b.x * w, b.y * h, b.width * w, b.height * h),
             )
         )
     return AssetEvidence(frames=evidence, primary_frame_index=frames[primary.frame_key].frame_index)

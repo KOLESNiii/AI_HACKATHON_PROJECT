@@ -120,4 +120,6 @@ See [architecture](docs/architecture.md) for ownership and API boundaries and
 Dev 2's [furniture frame selector](services/reconstruction/assets/README.md#implemented-frame-selection-and-identity-14)
 can now sample walkthroughs, persist furniture identities and produce a local evidence report.
 It requires FFmpeg/FFprobe. Offline reviewed replay needs no keys; live fal vision proposals
-require inventory review. Masks, reconstructed meshes and final room placement remain later stages.
+require inventory review. Its [mask stage](services/reconstruction/assets/README.md#implemented-masks-and-placement-evidence-15)
+then stores an instance mask and cut-out per item view, offline with GrabCut or through fal SAM 3.
+Reconstructed meshes and final room placement remain later stages.

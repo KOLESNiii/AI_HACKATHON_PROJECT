@@ -55,6 +55,18 @@
 - Preserve full upright source pixels for later appearance reconstruction. Camera estimation
   was probed, but plan fitting, instance masks, material generation and normalisation remain
   the subsequent owners/issues. There is no claim of recovering original shaders from video.
+
+## Furniture masks (#15)
+
+- Prompt SAM 3 with each item's reviewed box, all boxes of a frame in one request. A live
+  probe showed the masks map back to their boxes through `metadata.index`; the text-prompted
+  video endpoint probed in #14 merged items and is not used.
+- Keep local GrabCut as the offline default so the stage runs without keys or spend. It is
+  labelled approximate and is never a silent substitute for a failed live call.
+- Store masks on the item in the existing registry and keep `mask_url` relative to the data
+  directory. Evidence stays inside the reconstruction service; serving it is a route decision.
+- Report coverage and quality separately: `complete` means every selected view has a mask;
+  overlaps and low SAM scores are warnings. Masks are not edited or merged automatically.
   
 ## Spatial audit without speculative scores
 
