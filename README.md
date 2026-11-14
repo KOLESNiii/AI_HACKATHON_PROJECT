@@ -122,4 +122,6 @@ can now sample walkthroughs, persist furniture identities and produce a local ev
 It requires FFmpeg/FFprobe. Offline reviewed replay needs no keys; live fal vision proposals
 require inventory review. Its [mask stage](services/reconstruction/assets/README.md#implemented-masks-and-placement-evidence-15)
 then stores an instance mask and cut-out per item view, offline with GrabCut or through fal SAM 3.
-Reconstructed meshes and final room placement remain later stages.
+The [mesh stage](services/reconstruction/assets/README.md#implemented-individual-raw-meshes-and-proxy-fallback-16)
+now reconstructs individual raw meshes with explicit proxy fallback. Mesh normalisation
+and final room placement remain later stages.

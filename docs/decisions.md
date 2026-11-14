@@ -122,6 +122,21 @@
 - Keep the first version inside one level room with the current lighting. Doorway
   exits, character animation, jumping and time-of-day controls remain separate work.
 
+## Individual furniture reconstruction (#16)
+
+- Use the operator-selected fal SAM 3D Objects endpoint with one #15 frame/mask pair per
+  item. Keep failures isolated and run items concurrently; the live probe took 170 seconds.
+- Persist raw meshes separately from servable assets. SAM 3D shapes are approximately
+  unit-scaled; interpreting metadata and producing the metric mesh profile belong to #17.
+- Always supply an honest proxy: known dimensions keep their provenance, category guesses
+  are estimates requiring correction. Failed replacements keep a current previous mesh and
+  report the failed attempt alongside it. Never silently treat a proxy as a reconstruction.
+- Reuse the existing request registry and make its shared budget thread-safe. Recover saved
+  handles for free after a timeout; uncertain submissions require investigation or an
+  explicit paid refresh. Do not resubmit automatically.
+- Add an opt-in content-addressed asset router for Dev 1 to mount, preserving entry-point
+  ownership and the existing frontend proxy and shared contracts.
+
 ## Backend-owned mock meshes
 
 - Serve existing furniture fixtures directly from the reconstruction backend; keep

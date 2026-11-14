@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
 
@@ -54,14 +55,16 @@ class RequestBudget:
 
     limit: int
     used: int = 0
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def check(self) -> None:
         if self.used >= self.limit:
             raise DiscoveryError("request budget exhausted; uncached batch deferred")
 
     def claim(self) -> None:
-        self.check()
-        self.used += 1
+        with self._lock:  # #16 reconstructs items concurrently against one budget.
+            self.check()
+            self.used += 1
 
 
 class DiscoveryProvider(Protocol):

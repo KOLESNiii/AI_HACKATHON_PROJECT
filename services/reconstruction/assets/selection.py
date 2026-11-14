@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from .models import AssetEvidence, EvidenceFrame
@@ -290,15 +290,24 @@ def object_evidence(
 ) -> AssetEvidence:
     """Adapt one source to the fixed evidence shape without inventing global frame indices.
 
-    Full multi-source identity/images remain in the result. A sighting with a current #15 mask
-    carries `mask_url` (relative to the data directory; read with `segmentation.read_mask`)
-    and the mask's tight box; the others keep their coarse sighting box. provider_pose remains
-    reserved for raw SAM 3D metadata.
+    Full multi-source identity/images remain in the result. See `evidence_for`.
     """
     obj = next((obj for obj in result.objects if obj.id == object_id), None)
     if obj is None:
         raise ValueError("unknown object ID")
-    frames = {frame.key: frame for frame in result.frames}
+    return evidence_for(obj, {frame.key: frame for frame in result.frames}, source_id=source_id)
+
+
+def evidence_for(
+    obj: SelectedObject, frames: Mapping[str, Frame], *, source_id: str | None = None
+) -> AssetEvidence:
+    """One item's sightings in one source, in the fixed evidence shape.
+
+    A sighting with a current #15 mask carries `mask_url` (relative to the data directory; read
+    with `segmentation.read_mask`) and the mask's tight box; the others keep their coarse
+    sighting box. The frame a current #16 mesh was made from carries the provider's raw
+    per-object metadata as `provider_pose`.
+    """
     sources = {frames[s.frame_key].source_id for s in obj.sightings}
     if source_id is None:
         if len(sources) != 1:
@@ -314,6 +323,7 @@ def object_evidence(
         return mask is not None and not mask.low_confidence, sighting.quality
 
     primary = max(sightings, key=rank)
+    mesh = obj.current_mesh()
     evidence = []
     for sighting in sightings:
         frame = frames[sighting.frame_key]
@@ -327,6 +337,7 @@ def object_evidence(
                 image_size_px=(w, h),
                 mask_url=mask.mask_path if mask else None,
                 bbox_px=mask.bbox_px if mask else (b.x * w, b.y * h, b.width * w, b.height * h),
+                provider_pose=mesh.pose if mesh and mesh.frame_key == sighting.frame_key else None,
             )
         )
     return AssetEvidence(frames=evidence, primary_frame_index=frames[primary.frame_key].frame_index)

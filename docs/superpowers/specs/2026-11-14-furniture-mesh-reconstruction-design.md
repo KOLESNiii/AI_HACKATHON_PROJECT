@@ -1,6 +1,6 @@
 # Individual furniture meshes with proxy fallback — issue #16
 
-Status: design, with the live probe findings below. Builds on the #14 selector and the #15
+Status: implemented, with verification recorded in the asset README and PR. Builds on the #14 selector and the #15
 masks (`2026-11-14-furniture-segmentation-design.md`). Branch:
 `feat/dev2-reconstruct-individual-meshes-with-proxy-fallback-16`.
 
@@ -70,8 +70,9 @@ axis convention and accuracy are unverified: interpreting it is #17's job. #16 r
   dimensions=None, replace=False, max_requests=8, concurrency=4, url_base=…) ->
   ReconstructionResult`. Provider calls run concurrently, outside the registry transaction;
   storing and attaching run one at a time and re-check the item and its mask. Each item of the
-  result has `mesh` or `failure` (exactly one) and always a `proxy`. `complete` means every
-  requested item has a current raw mesh.
+  result has `mesh` or `failure` and always a `proxy`; a failed replacement retains both
+  its current stored mesh and the failed attempt. `complete` means every requested item
+  has a current raw mesh and no attempt failed in this run.
 - **Live requests.** Cached and recoverable through the registry's request table as in #15:
   only the reservation winner submits, the request ID is saved, a retry or `replace` re-reads
   the saved request for free, an uncertain submission is never repeated, `refresh`

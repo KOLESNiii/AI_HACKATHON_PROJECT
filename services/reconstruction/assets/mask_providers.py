@@ -104,18 +104,37 @@ MAX_BOXES_PER_REQUEST = 32
 """`max_masks` limit of fal-ai/sam-3/image."""
 
 
-def _fetch(url: str) -> bytes:
-    with httpx.stream("GET", url, timeout=30, follow_redirects=False) as response:
+class ArtifactTooLarge(Exception):
+    """A provider artifact exceeded its size cap; nothing was kept."""
+
+
+def fal_media_url(url: str) -> bool:
+    """Provider artifacts are fetched over HTTPS from fal's media hosts only."""
+    target = urlsplit(url)
+    host = target.hostname or ""
+    return target.scheme == "https" and (host == "fal.media" or host.endswith(".fal.media"))
+
+
+def fetch_bounded(url: str, limit: int, *, timeout_s: float = 30) -> bytes:
+    """Stream a provider artifact without redirects, enforcing `limit` while reading."""
+    with httpx.stream("GET", url, timeout=timeout_s, follow_redirects=False) as response:
         response.raise_for_status()
         length = response.headers.get("Content-Length")
-        if length is not None and int(length) > MAX_MASK_BYTES:
-            raise MaskError("mask artifact too large")
+        if length is not None and int(length) > limit:
+            raise ArtifactTooLarge
         data = bytearray()
         for chunk in response.iter_bytes():
-            if len(data) + len(chunk) > MAX_MASK_BYTES:
-                raise MaskError("mask artifact too large")
+            if len(data) + len(chunk) > limit:
+                raise ArtifactTooLarge
             data.extend(chunk)
         return bytes(data)
+
+
+def _fetch(url: str) -> bytes:
+    try:
+        return fetch_bounded(url, MAX_MASK_BYTES)
+    except ArtifactTooLarge as exc:
+        raise MaskError("mask artifact too large") from exc
 
 
 class FalSamProvider:
@@ -263,9 +282,7 @@ class FalSamProvider:
                 raise ValueError("mask index")
             if masks[index] is not None:
                 continue  # Best score first: keep the first usable mask for each box.
-            target = urlsplit(url)
-            host = target.hostname or ""
-            if target.scheme != "https" or not (host == "fal.media" or host.endswith(".fal.media")):
+            if not fal_media_url(url):
                 raise MaskError("mask artifact location not allowed")
             data = self.fetch(url)
             if len(data) > MAX_MASK_BYTES:

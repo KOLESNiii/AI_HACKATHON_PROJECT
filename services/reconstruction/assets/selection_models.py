@@ -250,14 +250,17 @@ class ItemReconstruction(Record):
 
     object_id: str = Field(pattern=ITEM_ID_PATTERN)
     mesh: MeshRecord | None
+    """The item's current stored raw mesh, from this run or an earlier one."""
     failure: MeshFailure | None
+    """Why this run produced no mesh. Set together with `mesh` when a replacement failed and
+    the stored mesh was kept."""
     proxy: FurnitureAsset
     """A labelled box (`is_proxy`). The only servable asset until #17 normalises the raw mesh."""
 
     @model_validator(mode="after")
-    def _one_outcome(self) -> ItemReconstruction:
-        if (self.mesh is None) == (self.failure is None):
-            raise ValueError("an item has either a mesh or a failure")
+    def _outcome(self) -> ItemReconstruction:
+        if self.mesh is None and self.failure is None:
+            raise ValueError("an item without a mesh must say why")
         return self
 
 
@@ -267,7 +270,8 @@ class ReconstructionResult(Record):
     items: list[ItemReconstruction]
     warnings: list[str]
     complete: bool
-    """Every requested item has a current raw mesh; not a quality claim."""
+    """Every requested item has a current raw mesh and nothing failed in this run; not a
+    quality claim."""
 
 
 class SelectionOptions(Record):
