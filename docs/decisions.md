@@ -27,3 +27,16 @@
   audit owner. Integrate a real editable room and live audit at the first milestone.
 - Defer photoreal integration ownership until the validated-layout milestone;
   generated walkthroughs are stretch scope rather than a dedicated core workstream.
+
+
+## 3D representation and asset handoff
+
+- The scene JSON is the only geometric truth. `.glb` files are derived visuals fitted to
+  `bbox_m`; the audit and solver never read a mesh.
+- Furniture that nests is described by box collision parts on each item, so a chair under a
+  desk or a table over a radiator audits correctly. An empty list means one solid box.
+- Item IDs are permanent and opaque; mesh URLs are immutable, so upgrading a proxy to a real
+  mesh changes the URL and never the ID.
+- Source evidence stays inside the reconstruction service and out of `RoomScene`.
+- Full reasoning: `docs/superpowers/specs/2026-11-14-3d-representation-design.md`. The agreed
+  Dev 2 → Dev 1 handoff: `services/reconstruction/assets/README.md`.

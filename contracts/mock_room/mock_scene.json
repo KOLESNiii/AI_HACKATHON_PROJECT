@@ -34,6 +34,7 @@
       "wall_id": "w_north",
       "hinge_pos": { "x": 0.4, "z": 0.0 },
       "width_m": 0.85,
+      "head_height_m": 2.05,
       "swing_angle_deg": 90.0,
       "swing_clockwise": true,
       "swings_into_room": true
@@ -53,22 +54,95 @@
       "wall_flush_preferred": true,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "needs_correction": false
+      "correction_needed": [],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
     },
     {
-      "id": "item_desk",
-      "name": "Work Desk + Monitor",
+      "id": "vid-desk-01",
+      "name": "Work Desk + Monitor (proxy)",
       "category": "desk",
       "source": "extracted_video",
-      "glb_url": "/mock_room/desk.glb",
+      "glb_url": "/mock_room/vid-desk-01.glb",
       "bbox_m": { "width": 1.4, "height": 0.75, "depth": 0.7 },
-      "pose": { "x": 2.1, "z": 2.6, "yaw_deg": 0 },
+      "pose": { "x": 2.1, "z": 2.5, "yaw_deg": 0 },
       "has_screen": true,
       "requires_front_clear_m": 0.75,
       "wall_flush_preferred": false,
-      "is_proxy": false,
+      "is_proxy": true,
       "dimension_source": "estimated",
-      "needs_correction": false
+      "correction_needed": [],
+      "collision_parts": [
+        { "x": 0, "z": 0, "width": 1.4, "depth": 0.7, "y_min": 0.71, "y_max": 0.75 },
+        { "x": -0.68, "z": 0, "width": 0.04, "depth": 0.7, "y_min": 0, "y_max": 0.71 },
+        { "x": 0.68, "z": 0, "width": 0.04, "depth": 0.7, "y_min": 0, "y_max": 0.71 }
+      ],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "vid-chair-01",
+      "name": "Desk Chair (proxy)",
+      "category": "chair",
+      "source": "extracted_video",
+      "glb_url": "/mock_room/vid-chair-01.glb",
+      "bbox_m": { "width": 0.52, "height": 0.95, "depth": 0.55 },
+      "pose": { "x": 2.1, "z": 2.7, "yaw_deg": 180 },
+      "has_screen": false,
+      "requires_front_clear_m": 0.6,
+      "wall_flush_preferred": false,
+      "is_proxy": true,
+      "dimension_source": "estimated",
+      "correction_needed": [],
+      "collision_parts": [
+        { "x": 0, "z": 0.04125, "width": 0.52, "depth": 0.4675, "y_min": 0, "y_max": 0.475 },
+        { "x": 0, "z": -0.23375, "width": 0.52, "depth": 0.0825, "y_min": 0, "y_max": 0.95 }
+      ],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "vid-table-01",
+      "name": "Side Table (proxy)",
+      "category": "table",
+      "source": "extracted_video",
+      "glb_url": "/mock_room/vid-table-01.glb",
+      "bbox_m": { "width": 1.2, "height": 0.75, "depth": 0.6 },
+      "pose": { "x": 0.3, "z": 2.3, "yaw_deg": 90 },
+      "has_screen": false,
+      "requires_front_clear_m": 0.6,
+      "wall_flush_preferred": true,
+      "is_proxy": true,
+      "dimension_source": "estimated",
+      "correction_needed": [],
+      "collision_parts": [
+        { "x": 0, "z": 0, "width": 1.2, "depth": 0.6, "y_min": 0.71, "y_max": 0.75 },
+        { "x": -0.57, "z": -0.27, "width": 0.06, "depth": 0.06, "y_min": 0, "y_max": 0.71 },
+        { "x": -0.57, "z": 0.27, "width": 0.06, "depth": 0.06, "y_min": 0, "y_max": 0.71 },
+        { "x": 0.57, "z": -0.27, "width": 0.06, "depth": 0.06, "y_min": 0, "y_max": 0.71 },
+        { "x": 0.57, "z": 0.27, "width": 0.06, "depth": 0.06, "y_min": 0, "y_max": 0.71 }
+      ],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "fix-radiator-01",
+      "name": "Radiator (proxy)",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/mock_room/fix-radiator-01.glb",
+      "bbox_m": { "width": 1.0, "height": 0.6, "depth": 0.1 },
+      "pose": { "x": 0.05, "z": 2.3, "yaw_deg": 90 },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": true,
+      "dimension_source": "estimated",
+      "correction_needed": [],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
     },
     {
       "id": "item_wardrobe",
@@ -83,7 +157,10 @@
       "wall_flush_preferred": true,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "needs_correction": false
+      "correction_needed": [],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
     }
   ]
 }
