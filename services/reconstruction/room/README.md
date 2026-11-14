@@ -59,6 +59,16 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
 - Door hinge and swing are inferred from the drawn leaf. When no leaf is found, the room gets
   `"openings"` in `correction_needed`.
 
+## Scene assembly (#9)
+
+`assemble.assemble_scene(room, source)` returns one room with its furniture placed, for
+`GET /scenes/{scene_id}` (`services/reconstruction/scenes.py`). It conforms the doors to their
+walls (`openings.conform_openings`, also applied by the parser), asks a `FurnitureSource` for
+pose-less assets and an observer, places them with `align_assets`, and keeps the room's scene
+ID, shell URL and openings. A failing source still gives the room, with a warning.
+`NoFurniture` is the default for uploaded rooms until #16; the demo home's source reuses its
+fixture furniture. See [architecture](../../../docs/architecture.md#scene-assembly-route-9).
+
 ## Furniture alignment (#8)
 
 `align.align_assets(scene, assets, observer, frames=None)` places Dev 2's pose-less

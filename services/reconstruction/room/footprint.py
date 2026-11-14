@@ -271,7 +271,7 @@ def front_zone(bbox: BBoxM, pose: Pose2D, clear_m: float, headroom_m: float) -> 
 # --- openings ---------------------------------------------------------------------------------
 
 
-def _closed_leaf(door: DoorOpening, frame: WallFrame) -> tuple[Point, Point]:
+def closed_leaf(door: DoorOpening, frame: WallFrame) -> tuple[Point, Point]:
     """(direction of the closed leaf from the hinge, side the leaf opens towards)."""
     n = frame.inward
     side = n if door.swings_into_room else (-n[0], -n[1])
@@ -290,7 +290,7 @@ def door_sweep(door: DoorOpening, frame: WallFrame) -> Prism | None:
     angle = min(max(door.swing_angle_deg, 0.0), 180.0)
     if angle == 0 or door.width_m <= 0:
         return None
-    leaf, side = _closed_leaf(door, frame)
+    leaf, side = closed_leaf(door, frame)
     hx, hz = door.hinge_pos.x, door.hinge_pos.z
     w = door.width_m
 
@@ -315,7 +315,7 @@ def _strip(frame: WallFrame, t0: float, t1: float, depth: float) -> tuple[Point,
 
 def door_approach(door: DoorOpening, frame: WallFrame, depth_m: float) -> Prism:
     """The floor just inside a doorway, which a default layout keeps free."""
-    leaf, _ = _closed_leaf(door, frame)
+    leaf, _ = closed_leaf(door, frame)
     t_hinge, _ = frame.locate((door.hinge_pos.x, door.hinge_pos.z))
     direction = leaf[0] * frame.along[0] + leaf[1] * frame.along[1]
     t_end = t_hinge + direction * door.width_m

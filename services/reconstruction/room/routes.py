@@ -77,7 +77,8 @@ _shells: dict[str, bytes] = {}
 SHELL_CACHE_CONTROL = "public, max-age=31536000, immutable"
 
 
-def _find_scene(scene_id: str) -> RoomScene | None:
+def find_parsed_scene(scene_id: str) -> RoomScene | None:
+    """A room of an uploaded plan by its `scene_id`, or None (plans are kept in memory)."""
     for plan in _plans.values():
         for floor in plan.floors:
             for room in floor.rooms:
@@ -97,7 +98,7 @@ async def get_shell(scene_id: str) -> Response:
     plan's image bytes and the shell is generated deterministically from the scene."""
     data = _shells.get(scene_id)
     if data is None:
-        scene = _find_scene(scene_id)
+        scene = find_parsed_scene(scene_id)
         if scene is None:
             raise HTTPException(404, "unknown scene_id (plans are kept in memory; upload again)")
         try:

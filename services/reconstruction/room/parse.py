@@ -580,10 +580,13 @@ def parse_floor_plan(images: list[tuple[bytes, str]], annotator: PlanAnnotator) 
             except ValueError as exc:
                 warnings.append(f"{name}: geometry rejected by the contract ({exc})")
                 continue
+            # Rounding to the millimetre moves hinges off their walls; the audit needs them on.
+            scene, door_warnings = op.conform_openings(scene)
+            warnings += [f"{name}: {w}" for w in door_warnings]
             correction: list[str] = []
             if not fl.scale.measured:
                 correction.append("dimensions")
-            if any(leaf is not None and not leaf.found for _, _, _, leaf in ops):
+            if door_warnings or any(leaf is not None and not leaf.found for _, _, _, leaf in ops):
                 correction.append("openings")
             if fl.north is None:
                 correction.append("orientation")

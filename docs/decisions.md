@@ -152,3 +152,18 @@
 - Use #15 masks where they exist: the vision observer traces each item's mask instead of its
   box, so overlapping items in one frame stay distinguishable. Masks do not change geometry;
   without a camera solution they carry no metric position.
+
+## Scene assembly route (#9)
+
+- One read-only route, `GET /scenes/{scene_id}`, over rooms the service already knows (uploaded
+  plans and the demo home), returning a contract `RoomScene`. Warnings travel in a response
+  header so the body stays a contract model; alignment records stay internal.
+- Uploaded rooms come back without furniture, with a warning, until Dev 2's extraction (#16)
+  produces assets. Dev 1 does not build its own proxy furniture from #14/#15 output.
+- Demo rooms go through the same assembly path as video furniture: pose-less assets plus hints
+  read off the fixture poses, which reproduces those poses.
+- Conform doors to their walls during parsing and assembly. Millimetre rounding left hinges up
+  to 0.9 mm off their walls and leaves up to 1 mm past them; the audit's 1e-8 m tolerance then
+  rejected 23 of 25 demo rooms and 13 of 30 parsed example rooms. Errors over 5 mm are left as
+  they are and reported, since they are real geometry errors, not rounding.
+- Backend only: the editor still assembles rooms locally; switching it is Dev 3's change.
