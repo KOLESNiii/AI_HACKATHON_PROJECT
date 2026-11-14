@@ -167,3 +167,7 @@
   rejected 23 of 25 demo rooms and 13 of 30 parsed example rooms. Errors over 5 mm are left as
   they are and reported, since they are real geometry errors, not rounding.
 - Backend only: the editor still assembles rooms locally; switching it is Dev 3's change.
+- Keep only complete assemblies. A furniture source or placement observer that fails (a provider
+  timeout) yields the room with a warning, but caching that would make the failure permanent for
+  the process, so the next request retries. Retrying is safe for paid providers: Dev 2's registry
+  re-reads saved requests instead of resubmitting them.

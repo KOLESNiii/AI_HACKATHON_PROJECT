@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import math
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 
 import pytest
 
@@ -16,6 +16,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from contracts.schema import DoorOpening, Pose2D, RoomScene, Vec2  # noqa: E402
 from services.reconstruction import scenes  # noqa: E402
+from services.reconstruction.assets.models import FurnitureAsset  # noqa: E402
 from services.reconstruction.demo_assets import demo_room_scene, demo_rooms  # noqa: E402
 from services.reconstruction.main import app  # noqa: E402
 from services.reconstruction.room import footprint as fp  # noqa: E402
@@ -26,7 +27,12 @@ from services.reconstruction.room.assemble import (  # noqa: E402
     SceneFurniture,
     assemble_scene,
 )
-from services.reconstruction.room.observe import FixedObserver  # noqa: E402
+from services.reconstruction.room.observe import (  # noqa: E402
+    FixedObserver,
+    FrameSource,
+    PlacementHint,
+    PlacementObserver,
+)
 from services.reconstruction.room.openings import conform_openings  # noqa: E402
 from services.reconstruction.room.routes import get_annotator  # noqa: E402
 from services.spatial_engine.main import app as spatial_app  # noqa: E402
@@ -178,6 +184,66 @@ def test_a_failing_source_still_returns_the_room(client: TestClient) -> None:
     assert scene.furniture == [] and warnings == ["furniture unavailable (RuntimeError)"]
 
 
+def test_a_scene_recovers_after_its_furniture_source_fails(client: TestClient) -> None:
+    """PR #51 review: a transient source failure must not be cached as the room's scene."""
+    scene_id = _upload(client)
+    calls = 0
+
+    class Flaky:
+        def furniture_for(self, room: RoomScene) -> SceneFurniture:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise TimeoutError("provider timed out")
+            return SceneFurniture(assets=[_box("vid-sofa-01", category="sofa")])
+
+    source = Flaky()
+    app.dependency_overrides[scenes.get_furniture_source] = lambda: source
+    failed, warnings = _scene(client, scene_id)
+    assert failed.furniture == [] and warnings == ["furniture unavailable (TimeoutError)"]
+    assert calls == 1
+
+    recovered, warnings = _scene(client, scene_id)  # retried, not served from the cache
+    assert [f.id for f in recovered.furniture] == ["vid-sofa-01"] and warnings == []
+    assert calls == 2
+
+    again, _ = _scene(client, scene_id)  # a complete assembly is kept
+    assert again == recovered and calls == 2
+
+
+def test_a_scene_recovers_after_its_placement_observer_fails(client: TestClient) -> None:
+    scene_id = _upload(client)
+    sofa = _box("vid-sofa-01", width=1.6, depth=0.8, category="sofa")
+    calls = 0
+
+    class FlakyObserver:
+        def observe(
+            self, scene: RoomScene, assets: Sequence[FurnitureAsset], frames: FrameSource
+        ) -> list[PlacementHint]:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise TimeoutError("vision timed out")
+            frames_ = [f for w in scene.walls if (f := fp.wall_frame(w)) is not None]
+            west = max(frames_, key=lambda f: f.inward[0]).wall
+            return [_hint(sofa.id, west.id, 0.5, facing="into_room")]
+
+    observer = FlakyObserver()
+
+    class Video:
+        def furniture_for(self, room: RoomScene) -> SceneFurniture:
+            return SceneFurniture(assets=[sofa], observer=observer)
+
+    app.dependency_overrides[scenes.get_furniture_source] = Video
+    failed, warnings = _scene(client, scene_id)
+    assert warnings == ["placement observer failed (TimeoutError); default layout"]
+    assert failed.furniture[0].correction_needed == ["placement", "orientation"]
+
+    recovered, warnings = _scene(client, scene_id)
+    assert warnings == [] and recovered.furniture[0].correction_needed == []
+    assert calls == 2
+
+
 def test_scenes_are_assembled_once_and_cached(client: TestClient) -> None:
     scene_id = _upload(client)
     calls = 0
@@ -210,6 +276,30 @@ def test_assembly_keeps_the_rooms_identity_and_furniture() -> None:
     assert assembly.scene.revision == 0
     assert assembly.scene.furniture == [kept] and assembly.records == {}
     assert assembly.warnings == [NO_FURNITURE_YET]
+    assert assembly.complete  # an empty room is a result, not a failure
+
+
+def test_an_assembly_is_incomplete_when_its_source_or_observer_fails() -> None:
+    class Broken:
+        def furniture_for(self, room: RoomScene) -> SceneFurniture:
+            raise TimeoutError
+
+    class BrokenObserver:
+        def observe(
+            self, scene: RoomScene, assets: Sequence[FurnitureAsset], frames: FrameSource
+        ) -> list[PlacementHint]:
+            raise TimeoutError
+
+    class Seen:
+        def __init__(self, observer: PlacementObserver) -> None:
+            self.observer = observer
+
+        def furniture_for(self, room: RoomScene) -> SceneFurniture:
+            return SceneFurniture(assets=[_box("a")], observer=self.observer)
+
+    assert not assemble_scene(_room(), Broken()).complete
+    assert not assemble_scene(_room(), Seen(BrokenObserver())).complete
+    assert assemble_scene(_room(), Seen(FixedObserver([]))).complete
 
 
 def _door(x: float, z: float, width: float = 0.8, clockwise: bool = True) -> DoorOpening:

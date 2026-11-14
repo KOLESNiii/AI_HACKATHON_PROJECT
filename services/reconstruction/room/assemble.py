@@ -58,16 +58,20 @@ class Assembly:
     records: dict[str, AlignmentRecord]
     """How each pose was decided, by asset ID. Stays inside the service."""
     warnings: list[str]
+    complete: bool = True
+    """False when the furniture source or the placement observer failed: the room came back
+    with less than it should have, and a retry may give more, so callers should not keep it."""
 
 
 def assemble_scene(room: RoomScene, source: FurnitureSource) -> Assembly:
     """The room with its furniture placed. Never drops the room: a source that fails gives the
-    room without furniture and a warning.
+    room without furniture and a warning, and `complete = False`.
 
     Keeps the room's `scene_id`, shell and openings (doors conformed to their walls) and starts
     at revision 0. Furniture the room already has stays where it is.
     """
     room, warnings = conform_openings(room)
+    source_failed = False
     try:
         furniture = source.furniture_for(room)
     except Exception as exc:  # a provider failure must not lose the room
@@ -75,11 +79,17 @@ def assemble_scene(room: RoomScene, source: FurnitureSource) -> Assembly:
         furniture = SceneFurniture(
             assets=[], warnings=[f"furniture unavailable ({type(exc).__name__})"]
         )
+        source_failed = True
     warnings += furniture.warnings
     result = align_assets(room, furniture.assets, furniture.observer, furniture.frames)
     warnings += result.warnings
     scene = RoomScene.model_validate(result.place_in(room).model_dump() | {"revision": 0})
-    return Assembly(scene=scene, records=result.records, warnings=warnings)
+    return Assembly(
+        scene=scene,
+        records=result.records,
+        warnings=warnings,
+        complete=not (source_failed or result.observer_failed),
+    )
 
 
 def assets_of(scene: RoomScene) -> list[FurnitureAsset]:

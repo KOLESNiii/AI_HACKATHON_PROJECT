@@ -65,7 +65,9 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
 `GET /scenes/{scene_id}` (`services/reconstruction/scenes.py`). It conforms the doors to their
 walls (`openings.conform_openings`, also applied by the parser), asks a `FurnitureSource` for
 pose-less assets and an observer, places them with `align_assets`, and keeps the room's scene
-ID, shell URL and openings. A failing source still gives the room, with a warning.
+ID, shell URL and openings. A failing source still gives the room, with a warning and
+`Assembly.complete = False` (also set when the placement observer fails); the route does not
+keep incomplete assemblies, so the next request retries.
 `NoFurniture` is the default for uploaded rooms until #16; the demo home's source reuses its
 fixture furniture. See [architecture](../../../docs/architecture.md#scene-assembly-route-9).
 

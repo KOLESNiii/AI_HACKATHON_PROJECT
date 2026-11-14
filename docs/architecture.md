@@ -168,8 +168,10 @@ contract `RoomScene`, ready for the editor and `POST /audit`:
   response header (a JSON list, exposed to CORS); the body stays a contract model. How each
   pose was decided is not exposed.
 - Failure: unknown scene IDs return 404; a failing furniture source gives the room without
-  furniture and a warning. Scenes are assembled once and kept in memory with their plan
-  (`Cache-Control: no-cache`, because furniture changes as meshes arrive). No keys needed.
+  furniture and a warning, and a failing placement observer gives the default layout and a
+  warning. Such a scene is not kept: the next request retries. Complete scenes are assembled
+  once and kept in memory with their plan (`Cache-Control: no-cache`, because furniture
+  changes as meshes arrive). No keys needed.
 
 **Handoff to Dev 3.** The editor can load rooms from the backend instead of assembling them in
 `frontend/src/data/demoHome.ts`. A sketch of the swap, keeping the local fixture as a fallback:

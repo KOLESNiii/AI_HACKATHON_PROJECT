@@ -72,7 +72,8 @@ def get_scene(
     """One room with its furniture placed, ready for the editor and `POST /audit`.
 
     Assembled on first request and kept in memory. Uploaded rooms are kept only while their
-    plan is (upload it again after a restart).
+    plan is (upload it again after a restart). An assembly that a furniture-source or observer
+    failure degraded is returned (room plus warning) but not kept, so the next request retries.
     """
     assembly = _scenes.get(scene_id)
     if assembly is None:
@@ -85,7 +86,8 @@ def get_scene(
             assembly = assemble_scene(room, DemoFurniture(furnished))
         else:
             raise HTTPException(404, "unknown scene_id (upload the floor plan first)")
-        _scenes[scene_id] = assembly
+        if assembly.complete:
+            _scenes[scene_id] = assembly
     response.headers.update(SCENE_HEADERS)
     response.headers[WARNINGS_HEADER] = json.dumps(assembly.warnings)
     return assembly.scene
