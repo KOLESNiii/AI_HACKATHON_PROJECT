@@ -4,8 +4,52 @@ from collections.abc import Sequence
 from itertools import combinations
 from math import isfinite
 
-from contracts.schema import CollisionIssue, FurnitureItem, RoomScene
-from services.spatial_engine.geometry import furniture_footprint, room_floor_polygon
+from contracts.schema import BlockedDoorIssue, CollisionIssue, FurnitureItem, RoomScene
+from services.spatial_engine.geometry import (
+    door_swing_sector,
+    furniture_footprint,
+    room_floor_polygon,
+)
+
+
+def detect_blocked_doors(
+    scene: RoomScene, *, area_tolerance_m2: float = 1e-9
+) -> list[BlockedDoorIssue]:
+    """Report furniture intersecting door sweeps, sorted by door and item ID.
+
+    Uses full furniture footprints, irrespective of height/parts. This checks
+    leaf obstruction, not walking access through the doorway. Boundary-only
+    contact is allowed; positive overlap above the numerical tolerance is blocked.
+    Outward sweeps are not clipped to the room, so outside items can block them.
+    Invalid geometry/references and duplicate IDs raise ValueError, even when no
+    furniture is present. Does not modify the scene.
+    """
+    if not isfinite(area_tolerance_m2) or area_tolerance_m2 < 0:
+        raise ValueError("Door overlap tolerance must be finite and non-negative")
+    room_floor_polygon(scene.floor_polygon)
+    for entries, label in (
+        (scene.walls, "Wall"),
+        (scene.doors, "Door"),
+        (scene.furniture, "Furniture"),
+    ):
+        if len({entry.id for entry in entries}) != len(entries):
+            raise ValueError(f"{label} IDs must be unique for door checks")
+    walls = {wall.id: wall for wall in scene.walls}
+    footprints = [
+        (item.id, furniture_footprint(item)) for item in sorted(scene.furniture, key=lambda i: i.id)
+    ]
+    issues = []
+    for door in sorted(scene.doors, key=lambda d: d.id):
+        if door.wall_id not in walls:
+            raise ValueError(f"Door {door.id} references an unknown wall")
+        sweep = door_swing_sector(door, walls[door.wall_id], scene.floor_polygon)
+        for item_id, footprint in footprints:
+            area = float(sweep.intersection(footprint).area)
+            if not isfinite(area):
+                raise ValueError("Door overlap area must be finite")
+            if area > area_tolerance_m2:
+                issues.append(BlockedDoorIssue(door_id=door.id, blocked_by_item_id=item_id))
+    return issues
 
 
 def detect_out_of_bounds(scene: RoomScene, *, boundary_tolerance_m: float = 1e-9) -> list[str]:
