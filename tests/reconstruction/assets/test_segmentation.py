@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import shutil
 from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import Mock
@@ -15,17 +17,23 @@ from services.reconstruction.assets.mask_providers import (
     FalSamProvider,
     GrabCutProvider,
     MaskError,
+    Segment,
 )
-from services.reconstruction.assets.providers import RequestBudget
+from services.reconstruction.assets.models import AssetEvidence
+from services.reconstruction.assets.providers import RecordedProvider, RequestBudget
 from services.reconstruction.assets.registry import Registry
+from services.reconstruction.assets.segment_items import main
 from services.reconstruction.assets.segmentation import read_mask, segment_furniture
-from services.reconstruction.assets.selection import object_evidence
+from services.reconstruction.assets.selection import object_evidence, select_furniture_frames
 from services.reconstruction.assets.selection_models import (
     Box,
+    Discovery,
     Frame,
     MaskRecord,
     RegistryState,
+    SegmentationResult,
     SelectedObject,
+    SelectionOptions,
     Sighting,
 )
 
@@ -110,6 +118,7 @@ class FakeProvider:
     def __init__(self, reply: Callable[[list[Box]], list[Mask | None]] | None = None) -> None:
         self.reply = reply or (lambda boxes: [box_mask(box) for box in boxes])
         self.calls: list[list[Box]] = []
+        self.score: float | None = 0.95
 
     def segment(
         self,
@@ -119,9 +128,9 @@ class FakeProvider:
         registry: Registry,
         *,
         budget: RequestBudget | None = None,
-    ) -> list[Mask | None]:
+    ) -> list[Segment | None]:
         self.calls.append(list(boxes))
-        return self.reply(boxes)
+        return [None if mask is None else Segment(mask, self.score) for mask in self.reply(boxes)]
 
 
 def box_mask(box: Box) -> Mask:
@@ -210,7 +219,7 @@ def test_each_item_gets_its_own_mask_and_cutout_linked_to_the_source_frame(tmp_p
     assert [f.key for f in result.frames] == [frame.key]
     for obj, rect in zip(result.objects, (RED, BLUE), strict=True):
         (mask,) = obj.masks
-        assert mask.frame_key == frame.key and mask.method == "grabcut"
+        assert mask.frame_key == frame.key and mask.method == "grabcut" and mask.score is None
         assert mask.box == loose_box(rect)
         pixels = read_mask(tmp_path, mask.mask_path)
         assert pixels.shape == (H, W) and iou(pixels, rect_mask(rect)) >= 0.9
@@ -336,6 +345,9 @@ def test_only_requested_items_are_segmented_and_unknown_inputs_are_rejected(tmp_
         segment_furniture("other-scene", data_dir=tmp_path, provider=provider)
     with pytest.raises(ValueError, match="scene_id"):
         segment_furniture(" ", data_dir=tmp_path, provider=provider)
+    with pytest.raises(ValueError, match="no furniture registry"):
+        segment_furniture("scene", data_dir=tmp_path / "mistyped", provider=provider)
+    assert not (tmp_path / "mistyped").exists()
 
 
 def test_read_mask_refuses_paths_outside_the_data_directory(tmp_path: Path) -> None:
@@ -386,7 +398,8 @@ def sam(files: dict[str, bytes], order: list[int]) -> FalSamProvider:
     urls = list(files)
     handle.get.return_value = {
         "masks": [{"url": urls[i]} for i in range(len(order))],
-        "metadata": [{"index": index, "score": 0.9} for index in order],
+        # Best score first, as the live endpoint orders them.
+        "metadata": [{"index": index, "score": 0.9 - 0.2 * i} for i, index in enumerate(order)],
     }
     provider.client.get_handle.return_value = handle
     return provider
@@ -410,7 +423,8 @@ def test_sam_masks_are_matched_to_items_by_prompt_index_not_by_position(tmp_path
     provider = sam(BLUE_FIRST, [1, 0])
     red, blue = provider.segment(frame, image, boxes, registry)
     assert red is not None and blue is not None
-    assert np.array_equal(red, rect_mask(RED)) and np.array_equal(blue, rect_mask(BLUE))
+    assert np.array_equal(red.pixels, rect_mask(RED)) and red.score == 0.7
+    assert np.array_equal(blue.pixels, rect_mask(BLUE)) and blue.score == 0.9
     arguments = provider.client.submit.call_args.kwargs["arguments"]
     assert provider.client.submit.call_args.args == ("fal-ai/sam-3/image",)
     assert arguments["box_prompts"] == [
@@ -427,7 +441,7 @@ def test_sam_item_without_a_returned_mask_is_none(tmp_path: Path) -> None:
     frame, image, boxes, registry = sam_scene(tmp_path)
     only_blue = {"https://v3b.fal.media/files/blue.png": png(rect_mask(BLUE))}
     red, blue = sam(only_blue, [1]).segment(frame, image, boxes, registry)
-    assert red is None and blue is not None and np.array_equal(blue, rect_mask(BLUE))
+    assert red is None and blue is not None and np.array_equal(blue.pixels, rect_mask(BLUE))
 
 
 def test_sam_rerun_rereads_the_saved_request_and_refresh_pays_again(tmp_path: Path) -> None:
@@ -437,7 +451,7 @@ def test_sam_rerun_rereads_the_saved_request_and_refresh_pays_again(tmp_path: Pa
     first.segment(frame, image, boxes, registry, budget=budget)
     again = sam(BLUE_FIRST, [1, 0])
     red, _ = again.segment(frame, image, boxes, registry, budget=budget)
-    assert red is not None and np.array_equal(red, rect_mask(RED))
+    assert red is not None and np.array_equal(red.pixels, rect_mask(RED))
     assert again.client.submit.call_count == 0 and again.client.upload.call_count == 0
     again.client.get_handle.assert_called_once_with("fal-ai/sam-3/image", "request-one")
     assert budget.used == 1
@@ -499,8 +513,94 @@ def test_live_masks_flow_through_the_pipeline_with_their_provenance(tmp_path: Pa
     make_scene(tmp_path, {"vid-000001": RED, "vid-000002": BLUE})
     provider = sam(BLUE_FIRST, [1, 0])
     result = segment_furniture("scene", data_dir=tmp_path, provider=provider)
-    assert result.complete and result.warnings == []
-    for obj, rect in zip(result.objects, (RED, BLUE), strict=True):
+    assert result.complete
+    for obj, rect, score in zip(result.objects, (RED, BLUE), (0.7, 0.9), strict=True):
         (mask,) = obj.masks
-        assert mask.method == "sam3"
+        assert mask.method == "sam3" and mask.score == score
         assert np.array_equal(read_mask(tmp_path, mask.mask_path), rect_mask(rect))
+    # The provider's own confidence singles out the mask a person should look at.
+    (warning,) = result.warnings
+    assert "low-confidence" in warning and "vid-000001" in warning and "0.70" in warning
+
+
+def test_cli_writes_masks_evidence_and_review_images_offline(tmp_path: Path) -> None:
+    data, out = tmp_path / "data", tmp_path / "report"
+    data.mkdir()
+    make_scene(data, {"vid-000001": RED, "vid-000002": BLUE})
+    assert main(["--scene-id", "scene", "--data-dir", str(data), "--out", str(out)]) == 0
+    result = SegmentationResult.model_validate_json((out / "segmentation.json").read_text())
+    assert result.complete and len(result.objects) == 2
+    evidence = json.loads((out / "evidence.json").read_text())
+    assert sorted(evidence) == ["vid-000001", "vid-000002"]
+    for object_id, raw in evidence.items():
+        (frame,) = AssetEvidence.model_validate(raw).frames
+        assert frame.mask_url is not None and read_mask(data, frame.mask_url).any()
+        assert (out / f"{object_id}-0-mask.jpg").is_file()
+        assert (
+            cv2.imread(str(out / f"{object_id}-0-cutout.png"), cv2.IMREAD_UNCHANGED).shape[2] == 4
+        )
+    report = (out / "report.md").read_text()
+    assert "vid-000001" in report and "grabcut" in report
+
+
+def test_cli_exit_codes_for_incomplete_and_invalid_runs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data, out = tmp_path / "data", tmp_path / "report"
+    data.mkdir()
+    make_scene(data, {"vid-000001": RED})
+    lost = make_scene(data, {"vid-000001": RED}, index=1)
+    (data / lost.image_path).unlink()
+    base = ["--data-dir", str(data), "--out", str(out)]
+    assert main(["--scene-id", "scene", *base]) == 2
+    assert "unavailable" in (out / "report.md").read_text()
+    assert (out / "vid-000001-0-mask.jpg").is_file()
+    assert main(["--scene-id", "scene", "--object-id", "vid-9", *base]) == 1
+    assert main(["--scene-id", "absent", *base]) == 1
+    monkeypatch.delenv("FAL_KEY", raising=False)
+    assert main(["--scene-id", "scene", "--live", *base]) == 1
+
+
+def test_reviewed_real_room_items_all_get_masks_offline(tmp_path: Path) -> None:
+    video = Path(__file__).resolve().parents[3] / "examples/three_floor_3.mp4"
+    if shutil.which("ffmpeg") is None or shutil.which("ffprobe") is None or not video.exists():
+        pytest.skip("needs FFmpeg/FFprobe and the optional repository example video")
+    discovery = Discovery.model_validate_json(
+        (Path(__file__).parent / "fixtures/opening_room.reviewed.json").read_text()
+    )
+    selection = select_furniture_frames(
+        [video],
+        "reviewed-room",
+        data_dir=tmp_path,
+        provider=RecordedProvider(discovery),
+        options=SelectionOptions(end_s=6, max_frames_per_video=8, batch_size=3),
+    )
+    first = segment_furniture("reviewed-room", data_dir=tmp_path)
+    assert first.complete and [obj.id for obj in first.objects] == [o.id for o in selection.objects]
+    for obj in first.objects:
+        assert len(obj.selected_views) >= 3
+        assert [m.frame_key for m in obj.masks] == sorted(obj.selected_views)
+        evidence = object_evidence(first, obj.id)
+        primary = next(f for f in evidence.frames if f.frame_index == evidence.primary_frame_index)
+        assert primary.mask_url is not None and read_mask(tmp_path, primary.mask_url).any()
+    assert segment_furniture("reviewed-room", data_dir=tmp_path).objects == first.objects
+
+
+def test_primary_evidence_frame_avoids_a_low_confidence_mask(tmp_path: Path) -> None:
+    sharp = make_scene(tmp_path, {"vid-000001": RED})
+    other = make_scene(tmp_path, {"vid-000001": RED}, index=1)
+    registry = Registry(tmp_path, namespace="scene")
+
+    def prefer_first(state: RegistryState) -> None:
+        state.objects["vid-000001"].sightings[0].quality = 0.9
+
+    registry.update("scene", prefer_first)
+    result = segment_furniture("scene", data_dir=tmp_path, provider=FakeProvider())
+    assert object_evidence(result, "vid-000001").primary_frame_index == sharp.frame_index
+
+    def doubt_first(state: RegistryState) -> None:
+        state.objects["vid-000001"].masks[0].score = 0.5
+
+    registry.update("scene", doubt_first)
+    result = segment_furniture("scene", data_dir=tmp_path, provider=FakeProvider())
+    assert object_evidence(result, "vid-000001").primary_frame_index == other.frame_index

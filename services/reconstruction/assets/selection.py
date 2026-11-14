@@ -307,7 +307,13 @@ def object_evidence(
     sightings = [s for s in obj.sightings if frames[s.frame_key].source_id == source_id]
     if not sightings:
         raise ValueError("object has no sightings in the requested source")
-    primary = max(sightings, key=lambda s: s.quality)
+
+    def rank(sighting: Sighting) -> tuple[bool, float]:
+        # Prefer a view whose mask is usable; without masks this is the #14 quality order.
+        mask = obj.mask_for(sighting.frame_key)
+        return mask is not None and not mask.low_confidence, sighting.quality
+
+    primary = max(sightings, key=rank)
     evidence = []
     for sighting in sightings:
         frame = frames[sighting.frame_key]

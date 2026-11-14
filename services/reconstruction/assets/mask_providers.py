@@ -6,6 +6,7 @@ import hashlib
 import json
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, Protocol
 from urllib.parse import urlsplit
 
@@ -23,6 +24,14 @@ Mask = NDArray[np.bool_]
 
 class MaskError(Exception):
     """Safe user-facing provider diagnostic; never reflects credentials or raw HTTP bodies."""
+
+
+@dataclass(frozen=True)
+class Segment:
+    pixels: Mask
+    """Frame-sized; True = item."""
+    score: float | None = None
+    """The provider's confidence in 0..1, when it reports one."""
 
 
 def box_pixels(box: Box, width: int, height: int) -> tuple[int, int, int, int]:
@@ -45,8 +54,8 @@ class MaskProvider(Protocol):
         registry: Registry,
         *,
         budget: RequestBudget | None = None,
-    ) -> list[Mask | None]:
-        """One frame-sized mask per box, in order; None where none was produced.
+    ) -> list[Segment | None]:
+        """One segment per box, in order; None where none was produced.
 
         Raises MaskError when the whole frame failed.
         """
@@ -66,9 +75,9 @@ class GrabCutProvider:
         registry: Registry,
         *,
         budget: RequestBudget | None = None,
-    ) -> list[Mask | None]:
+    ) -> list[Segment | None]:
         height, width = image.shape[:2]
-        masks: list[Mask | None] = []
+        masks: list[Segment | None] = []
         for box in boxes:
             x0, y0, x1, y1 = box_pixels(box, width, height)
             labels = np.zeros((height, width), np.uint8)
@@ -86,7 +95,7 @@ class GrabCutProvider:
             except cv2.error:
                 masks.append(None)
                 continue
-            masks.append((labels == cv2.GC_FGD) | (labels == cv2.GC_PR_FGD))
+            masks.append(Segment((labels == cv2.GC_FGD) | (labels == cv2.GC_PR_FGD)))
         return masks
 
 
@@ -137,7 +146,7 @@ class FalSamProvider:
         registry: Registry,
         *,
         budget: RequestBudget | None = None,
-    ) -> list[Mask | None]:
+    ) -> list[Segment | None]:
         if not 1 <= len(boxes) <= MAX_BOXES_PER_REQUEST:
             raise MaskError(f"a frame needs 1..{MAX_BOXES_PER_REQUEST} item boxes per request")
         height, width = image.shape[:2]
@@ -226,7 +235,7 @@ class FalSamProvider:
             if winner and not submit_started:
                 registry.release_reservation(cache_key)
 
-    def _masks(self, result: Any, count: int, shape: tuple[int, int]) -> list[Mask | None]:
+    def _masks(self, result: Any, count: int, shape: tuple[int, int]) -> list[Segment | None]:
         files = result["masks"]
         if not isinstance(files, list):
             raise TypeError("masks")
@@ -235,11 +244,13 @@ class FalSamProvider:
             metadata = [{"index": 0}]
         if not isinstance(metadata, list) or len(metadata) != len(files):
             raise ValueError("metadata")
-        masks: list[Mask | None] = [None] * count
+        masks: list[Segment | None] = [None] * count
         for file, meta in zip(files, metadata, strict=True):
-            index, url = meta["index"], file["url"]
+            index, url, score = meta["index"], file["url"], meta.get("score")
             if not isinstance(index, int) or not isinstance(url, str):
                 raise TypeError("mask entry")
+            if not isinstance(score, int | float) or not 0 <= score <= 1:
+                score = None
             if not 0 <= index < count or masks[index] is not None:
                 raise ValueError("mask index")
             target = urlsplit(url)
@@ -254,5 +265,8 @@ class FalSamProvider:
                 continue  # Reported per item as "no mask returned".
             if pixels.ndim == 3:
                 pixels = pixels[..., :3].max(axis=2)
-            masks[index] = np.asarray(pixels > np.iinfo(pixels.dtype).max // 2)
+            masks[index] = Segment(
+                np.asarray(pixels > np.iinfo(pixels.dtype).max // 2),
+                None if score is None else float(score),
+            )
         return masks

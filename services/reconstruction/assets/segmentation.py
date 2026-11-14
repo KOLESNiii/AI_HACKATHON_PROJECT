@@ -12,7 +12,14 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from .mask_providers import GrabCutProvider, Mask, MaskError, MaskProvider, box_pixels
+from .mask_providers import (
+    GrabCutProvider,
+    Mask,
+    MaskError,
+    MaskProvider,
+    Segment,
+    box_pixels,
+)
 from .providers import RequestBudget
 from .registry import Registry
 from .selection_models import (
@@ -50,9 +57,10 @@ def _bounds(mask: Mask) -> tuple[int, int, int, int]:
     return int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
 
 
-def _check(mask: Mask | None, box: Box, width: int, height: int) -> Mask:
-    if mask is None:
+def _check(segment: Segment | None, box: Box, width: int, height: int) -> Segment:
+    if segment is None:
         raise MaskError("no mask returned")
+    mask = segment.pixels
     if mask.shape != (height, width):
         raise MaskError("mask size differs from its source frame")
     if int(mask.sum()) < MIN_MASK_AREA_PX:
@@ -63,7 +71,7 @@ def _check(mask: Mask | None, box: Box, width: int, height: int) -> Mask:
     union = (mx1 - mx0) * (my1 - my0) + (bx1 - bx0) * (by1 - by0) - shared
     if shared / union < MIN_BOX_AGREEMENT:
         raise MaskError("mask disagrees with the item's box")
-    return mask
+    return segment
 
 
 def _write(path: Path, image: NDArray[np.uint8]) -> None:
@@ -83,10 +91,11 @@ def _store(
     folder: str,
     frame: Frame,
     image: NDArray[np.uint8],
-    mask: Mask,
+    segment: Segment,
     box: Box,
     method: str,
 ) -> MaskRecord:
+    mask = segment.pixels
     x0, y0, x1, y1 = _bounds(mask)
     pixels = mask.astype(np.uint8) * 255
     source, stream, ordinal = frame.key.rsplit(":", 2)
@@ -104,6 +113,7 @@ def _store(
             "crop_path": f"{stem}.crop.png",
             "bbox_px": (x0, y0, x1 - x0, y1 - y0),
             "area_px": int(mask.sum()),
+            "score": segment.score,
         }
     )
 
@@ -128,6 +138,8 @@ def segment_furniture(
         raise ValueError("scene_id must contain 1..200 non-blank characters")
     provider = provider or GrabCutProvider()
     data_dir = data_dir.resolve()
+    if not (data_dir / "registry.sqlite3").is_file():  # Never create one in a mistyped folder.
+        raise ValueError("no furniture registry in the data directory; run frame selection first")
     registry = Registry(data_dir, namespace=scene_id)
     state = registry.load(scene_id)
     if not state.objects:
@@ -205,6 +217,14 @@ def segment_furniture(
     state = registry.load(scene_id)
     objects = [state.objects[i] for i in wanted if i in state.objects]
     warnings = _overlaps(data_dir, state, wanted)
+    for obj in objects:
+        for record in obj.masks:
+            if record.low_confidence:
+                frame = state.frames[record.frame_key]
+                warnings.append(
+                    f"low-confidence mask ({record.score:.2f}) for {obj.id} in source "
+                    f"{frame.source_id[:12]} frame {frame.frame_index}; review its overlay"
+                )
     if any(m.method == "grabcut" for obj in objects for m in obj.masks):
         warnings.append(
             "local GrabCut masks are approximate and can include floor or an occluder; "

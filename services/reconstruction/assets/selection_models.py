@@ -91,6 +91,10 @@ class Discovery(Record):
             raise ValueError("provider must account for exactly the requested frames")
 
 
+LOW_MASK_SCORE = 0.8
+"""Live SAM 3 run: clean masks scored 0.92-0.98; ragged ones on blurred close-ups 0.57-0.71."""
+
+
 class MaskRecord(Record):
     """One stored instance mask (#15) for one sighting of one item."""
 
@@ -105,6 +109,12 @@ class MaskRecord(Record):
     bbox_px: tuple[int, int, int, int]
     """Tight (x, y, w, h) of the mask in upright source-frame pixels."""
     area_px: int = Field(gt=0)
+    score: float | None = Field(default=None, ge=0, le=1)
+    """The provider's own confidence when it reports one (SAM 3); None for GrabCut."""
+
+    @property
+    def low_confidence(self) -> bool:
+        return self.score is not None and self.score < LOW_MASK_SCORE
 
 
 class SelectedObject(Record):
