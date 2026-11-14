@@ -4,7 +4,7 @@ import { FloorPlanScreen } from './components/intake/FloorPlanScreen'
 import { ProgressScreen } from './components/intake/ProgressScreen'
 import { UploadScreen } from './components/intake/UploadScreen'
 import { Toasts } from './components/ui'
-import { mockSegments } from './data/segments'
+import { findRoom } from './data/demoHome'
 import { useStore } from './store'
 
 /** Flow: upload → read floor plan → pick a room → build that room → editor. */
@@ -16,7 +16,7 @@ export default function App() {
   const dismissToast = useStore((s) => s.dismissToast)
   const toFloorPlan = useCallback(() => setScreen('floorplan'), [setScreen])
   const toEditor = useCallback(() => setScreen('editor'), [setScreen])
-  const roomLabel = mockSegments.find((s) => s.room_id === segmentId)?.label
+  const roomLabel = findRoom(segmentId)?.label
 
   return (
     <div className="h-full">

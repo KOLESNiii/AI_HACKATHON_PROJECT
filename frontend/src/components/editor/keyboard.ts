@@ -27,9 +27,9 @@ export function editorKey(event: KeyboardEvent): string | null {
 /** Positive yaw turns counterclockwise when viewed from above. */
 export function handleItemKey(event: KeyboardEvent): void {
   const key = editorKey(event)
-  const { selectedId, interacting, rotateItem, deleteItem } =
+  const { selectedId, interacting, mode, rotateItem, deleteItem } =
     useStore.getState()
-  if (!key || !selectedId || interacting) return
+  if (!key || !selectedId || interacting || mode !== 'edit') return
   const degrees = rotationDegrees[key]
   if (degrees !== undefined) {
     event.preventDefault()

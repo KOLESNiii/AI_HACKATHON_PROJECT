@@ -1,7 +1,7 @@
 """Generate mock .glb assets for contracts/mock_room/mock_scene.json.
 
 Run: uv run --extra reconstruction python scripts/generate_mock_glbs.py
-Writes to frontend/public/mock_room/ (served by Vite at /mock_room/).
+Writes to services/reconstruction/fixtures/mock_room/ (served by the reconstruction API).
 
 - Furniture boxes follow the asset invariant: bottom-centre at the origin, front faces +Z. Each box
   has a dark strip on the top-front edge so yaw is visible. The strip is inside the bounds, so
@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT))
 from contracts.schema import RoomScene  # noqa: E402
 
 SCENE_PATH = ROOT / "contracts" / "mock_room" / "mock_scene.json"
-OUT_DIR = ROOT / "frontend" / "public" / "mock_room"
+OUT_DIR = ROOT / "services" / "reconstruction" / "fixtures" / "mock_room"
 
 COLOURS = {
     "item_bed": [110, 140, 190, 255],

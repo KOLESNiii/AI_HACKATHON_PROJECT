@@ -110,7 +110,7 @@ def test_dev1_consumes_fixtures_through_the_asset_interface() -> None:
 def test_generated_meshes_match_bbox() -> None:
     trimesh = pytest.importorskip("trimesh")
     for it in SCENE.furniture:
-        path = ROOT / "frontend/public" / it.glb_url.lstrip("/")
+        path = ROOT / "services/reconstruction/fixtures/mock_room" / Path(it.glb_url).name
         if not path.exists():
             pytest.skip("run scripts/generate_mock_glbs.py first")
         lo, hi = trimesh.load(path, force="mesh").bounds

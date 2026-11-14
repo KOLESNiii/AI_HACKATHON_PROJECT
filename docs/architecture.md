@@ -85,3 +85,45 @@ It is rebuilt after each request and is never retained across scene revisions.
 
 Scoring/optimisation, persistence and live editor wiring are separate work. No
 `POST /solve` route exists yet. See the spatial README and Dev 3 handoff for examples.
+
+## Editor play mode
+
+`frontend/src/components/play/` owns human placement, the mannequin, first-person
+camera and pointer-lock lifecycle. The editor supplies a ref with floor projection
+and Play actions; DOM pointer capture supports dragging from the launcher into the
+canvas. A valid drop places or relocates one human. Invalid/cancelled drops retain
+the previous pose. The local Zustand mode, human pose and placement preview are
+separate from `RoomScene`, never sent to services, and never bump scene revisions.
+
+`frontend/src/lib/walk.ts` checks a 0.25 m-radius body against the usable floor
+polygon and the existing collision-part projections below `WALK_HEADROOM_M`.
+Movement uses short steps and axis sliding, with no physics dependency or backend
+requests. The room perimeter remains closed, including at doorways. Placement and
+Play entry share these checks; furniture edits can invalidate an existing placement.
+
+Play switches to a separate camera at 1.6 m eye height and hides editing controls.
+The complete room shell is visible. Escape, pointer-lock loss or window focus loss
+saves the last human position/heading and restores the editor camera and orbit
+target. Pointer-lock denial leaves the editor active with a retry message. Opening
+a room resets the actor; component cleanup releases capture and held keys.
+
+## Backend-provided demo models
+
+`services/reconstruction/demo_assets.py` owns demo binary routes on port 8001:
+
+- `GET /mock-room/assets/<filename>.glb` reads the canonical furniture model directly
+  from `contracts/mock_room/assets/`.
+- `GET /mock-room/shells/<room_id>.glb` extracts the matching wall-prefix room from
+  the shared three-floor JSON fixtures and uses the existing shell generator. Results
+  are cached in memory per process; no shell files are written into the frontend.
+- `GET /mock_room/<filename>.glb` serves the older single-room fixture meshes from
+  `services/reconstruction/fixtures/mock_room/`.
+
+Frontend scene adapters prepend `/api/reconstruction` to these URLs, using the
+existing Vite proxy. Shared fixture JSON and geometry stay unchanged. Production
+hosting must forward this prefix to the reconstruction service, as for its other APIs.
+No provider keys or new configuration are required. Unknown models/rooms and paths
+outside the fixture roots return 404; model-loader failures use the editor's existing
+proxy-box/shell-error fallback. These named demo URLs use `Cache-Control: no-cache`.
+Restart the reconstruction service after changing source fixture geometry to clear
+the in-memory room/shell cache. The frontend's former copy/build script is removed.
