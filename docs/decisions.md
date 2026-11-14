@@ -282,3 +282,12 @@
   the plan deterministic without labels (recorded labels) is left to #12.
 - The asset store is mounted with the same data directory the source reads (#52), so a proxy
   URL in a scene is always servable by the same process.
+
+## Tolerance for reconstructed coordinates
+
+- The shared three-floor demo fixtures round wall coordinates to six decimals, so
+  door hinges sit about 3e-7 m off their wall. The audit required agreement within
+  1e-8 m and rejected 23 of the 25 demo rooms with HTTP 422; the door-entry test
+  had the same margin and reported empty rooms as 0% reachable.
+- Doors, windows and door entries now share `POSITION_TOLERANCE_M` (1 mm). An
+  opening more than 1 mm off its wall is still rejected as invalid input.
