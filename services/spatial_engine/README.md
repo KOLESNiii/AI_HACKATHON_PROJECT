@@ -3,6 +3,59 @@
 Pure checks live in `audit.py`; `report.py` composes them for `POST /audit`.
 Geometry comes from shared scene JSON, never from mesh downloads.
 
+## Internal layout comparison (issue #33)
+
+`objective.compare_layouts(original, candidate)` returns baseline/candidate
+evaluations, an outcome (`better`, `equal`, `worse`), its `deciding_metric`, and
+`skipped_unknown_metrics`. It does not generate poses, run Sonnet, implement a
+solver endpoint, or set `AuditReport.overall_score`. Both reports keep that score
+null. `evaluate_layout(original, candidate)` exposes the individual measurements.
+Pass `baseline=current_best_draft` to compare two drafts while retaining the same
+original reference for both movement costs; otherwise the baseline is original.
+
+Comparison uses this priority order, not a weighted public score:
+
+1. Fewer critical issues: overlapping furniture pairs + outside-room items +
+   blocked doors. Several items blocking one door count as one blocked door.
+2. Smaller critical violation area when counts tie: sum collision areas per pair,
+   outside area per offending bbox, and union obstruction area per door. This
+   grades invalid intermediate drafts; it is not unique occupied floor area.
+3. Smaller missing front-clearance proportion, summed once per target item using
+   its nearest blocker. For 0.6 m required/0.2 m available the deficit is 2/3,
+   regardless of how many further blockers exist. Existing chair rules apply.
+4. More reachable walking area using the existing 50 cm metric.
+5. Only with `prefer_brightness=True`: more area-weighted window openness.
+6. Less movement from the original: total translation plus shortest rotation arc
+   at half each item's plan bbox diagonal, expressed in equivalent metres.
+
+Counts are exact; floating comparisons use 1e-9 absolute/relative tolerance. Tied
+metrics advance to the next priority; no ranking is hidden in the public score.
+Any unavailable metric is skipped and reported as such, never replaced by zero.
+Known zero walking access differs from unknown entry. Default comparison does
+not measure brightness; `prefer_brightness=True` measures and ranks it after
+access, before movement. `evaluate_layout(..., measure_brightness=True)` can
+measure the proxy without choosing a ranking policy.
+
+Examples: removing a collision beats brighter windows; reducing a wardrobe's
+access shortfall beats avoiding a move. Moving furniture without improving a
+higher-priority metric loses to the original. A smaller collision is progress
+but remains infeasible: `passes_critical_checks` explicitly tracks the known
+collision/boundary/door checks. It does not certify unknown assessments or that
+all access preferences are met. The eventual final-proposal validator must still
+reject critical violations; this comparator is not an acceptance gate.
+
+Comparisons must retain the same room, IDs, dimensions, assets and non-pose item
+metadata; item order and revision may differ. Fixed poses must remain identical.
+Changed/removal/shrinkage attempts and invalid geometry raise `SpatialInputError`.
+The next draft-tool increment will additionally enforce request-specific locks.
+Inputs are not modified; each candidate's movement is measured from the same
+original, never from the preceding attempt. Scene geometry is prepared once for
+each evaluated layout and reused in its audit/optional brightness calculation.
+
+```bash
+uv run --extra spatial pytest tests/spatial_engine/test_objective.py
+```
+
 ## Brightness approximation for layout comparison
 
 `brightness.calculate_brightness_approximation(scene)` returns a local
