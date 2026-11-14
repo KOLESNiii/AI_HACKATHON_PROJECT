@@ -263,42 +263,6 @@
     "ast_hash": "405a76001552686e36dbdf63a7569bee",
     "semantic_hash": ""
   },
-  "services/reconstruction/assets/providers.py": {
-    "mtime": 1794687061.6377532,
-    "seen": 1794687195.9111311,
-    "ast_hash": "a8d97e588ff32f2a8362a85478092ec6",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/registry.py": {
-    "mtime": 1794687061.6378193,
-    "seen": 1794687195.9111326,
-    "ast_hash": "0ebe704c6999799b6a85755301cc203b",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/select_frames.py": {
-    "mtime": 1794687061.637906,
-    "seen": 1794687195.911134,
-    "ast_hash": "289ee96ded36def5701a9f825224c791",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/selection.py": {
-    "mtime": 1794687061.6380308,
-    "seen": 1794687195.911136,
-    "ast_hash": "89e03659b2dd45ad5e11775ab0aec034",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/selection_models.py": {
-    "mtime": 1794687061.6381102,
-    "seen": 1794687195.9111376,
-    "ast_hash": "fd607de04b1617dfc78b25b2f60c33bd",
-    "semantic_hash": ""
-  },
-  "services/reconstruction/assets/video.py": {
-    "mtime": 1794687061.638202,
-    "seen": 1794687195.9111395,
-    "ast_hash": "246e41b36bd909529a0896b983e61710",
-    "semantic_hash": ""
-  },
   "services/reconstruction/main.py": {
     "mtime": 1794687116.690454,
     "seen": 1794687195.9111412,
@@ -399,12 +363,6 @@
     "mtime": 1794687116.6917026,
     "seen": 1794687195.9111686,
     "ast_hash": "fe82eee7c650b9d671cdda1d798b2c6b",
-    "semantic_hash": ""
-  },
-  "tests/reconstruction/assets/test_selection.py": {
-    "mtime": 1794687061.6387968,
-    "seen": 1794687195.9111698,
-    "ast_hash": "dc8a6d18b1a50a41ad251e5f3f47ef0c",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_api.py": {
@@ -552,9 +510,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794687116.6722183,
-    "seen": 1794687195.9112098,
-    "ast_hash": "987642ce31c56f156deae00845d657f4",
+    "mtime": 1794688793.6145966,
+    "seen": 1794688965.2445955,
+    "ast_hash": "16a1fb9d5b28397b6417674ebcd01940",
     "semantic_hash": ""
   },
   "contracts/mock_room/README.txt": {
@@ -564,15 +522,15 @@
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794687143.534907,
-    "seen": 1794687195.9112122,
-    "ast_hash": "1f1fd2faecc69f9ed005778f0d892060",
+    "mtime": 1794688793.614352,
+    "seen": 1794688965.2445984,
+    "ast_hash": "bedba64f6395347c1496e9e1b81ee220",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794687157.5930767,
-    "seen": 1794687195.9112139,
-    "ast_hash": "9f0006089e3c477c3ebc632a4e248923",
+    "mtime": 1794688793.6144733,
+    "seen": 1794688965.2445998,
+    "ast_hash": "480ebd7a0aa7f36fbce3279fae3a0c1f",
     "semantic_hash": ""
   },
   "docs/dev3-spatial-handoff.md": {
@@ -593,22 +551,10 @@
     "ast_hash": "ebea73ae0aa3080b1af5d06441cf19e1",
     "semantic_hash": ""
   },
-  "docs/superpowers/plans/2026-11-14-video-frame-selection.md": {
-    "mtime": 1794687061.6331444,
-    "seen": 1794687195.9112194,
-    "ast_hash": "83d8e0c0ef89c7afcf6a5fd356049b34",
-    "semantic_hash": ""
-  },
   "docs/superpowers/specs/2026-11-14-3d-representation-design.md": {
     "mtime": 1794674703.9614265,
     "seen": 1794687195.9112213,
     "ast_hash": "a713907efee6fa60a327c85b3cf28f22",
-    "semantic_hash": ""
-  },
-  "docs/superpowers/specs/2026-11-14-video-frame-selection-design.md": {
-    "mtime": 1794687061.633417,
-    "seen": 1794687195.9112225,
-    "ast_hash": "c8d21afa1135dee609eedba9d8d1a9ac",
     "semantic_hash": ""
   },
   "frontend/index.html": {
@@ -618,9 +564,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/README.md": {
-    "mtime": 1794687061.6376173,
-    "seen": 1794687195.9112253,
-    "ast_hash": "029b024c1eae642b1bb84ed6f5fe5ee5",
+    "mtime": 1794688793.6141968,
+    "seen": 1794688965.244618,
+    "ast_hash": "abbfa50dfe68cbac46418423d69eac7a",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/README.md": {
@@ -679,56 +625,170 @@
   },
   ".graphify_ast.json": {
     "mtime": 1794644052.0582492,
-    "seen": 1794687213.8068125,
+    "seen": 1794688143.3078518,
     "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
     "semantic_hash": ""
   },
   ".graphify_cached.json": {
     "mtime": 1794644029.234256,
-    "seen": 1794687213.8068225,
+    "seen": 1794688143.3078618,
     "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
     "semantic_hash": ""
   },
   ".graphify_detect.json": {
     "mtime": 1794644020.845635,
-    "seen": 1794687213.806827,
+    "seen": 1794688143.3078663,
     "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
     "semantic_hash": ""
   },
   "contracts/mock_room/mock_scene.json": {
     "mtime": 1794674703.9606164,
-    "seen": 1794687213.8068302,
+    "seen": 1794688143.307869,
     "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/evidence.json": {
     "mtime": 1794674703.9634907,
-    "seen": 1794687213.8087797,
+    "seen": 1794688143.3079555,
     "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/one_floor.annotations.json": {
     "mtime": 1794682055.4256458,
-    "seen": 1794687213.8090906,
+    "seen": 1794688143.3079724,
     "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/three_floor.annotations.json": {
     "mtime": 1794682055.4259014,
-    "seen": 1794687213.8090923,
+    "seen": 1794688143.3079736,
     "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
     "semantic_hash": ""
   },
   "services/spatial_engine/fixtures/audit_cases.json": {
     "mtime": 1794682055.4266927,
-    "seen": 1794687213.809344,
+    "seen": 1794688143.307988,
     "ast_hash": "288a075b44b0c604498a9fd1baafdf22",
     "semantic_hash": ""
   },
+  "contracts/mock_room/one_floor_scene.json": {
+    "mtime": 1794687116.680454,
+    "seen": 1794688143.3078713,
+    "ast_hash": "5cf9ad89b04d8864803c10445203191e",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/three_floor_first_scene.json": {
+    "mtime": 1794687116.6806648,
+    "seen": 1794688143.307873,
+    "ast_hash": "0a4c182b4e46d4e9d4286470cb053411",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/three_floor_ground_scene.json": {
+    "mtime": 1794687116.680888,
+    "seen": 1794688143.3078742,
+    "ast_hash": "93e97084b7ca2f957d1cba386cc3f91a",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/three_floor_second_scene.json": {
+    "mtime": 1794687116.680888,
+    "seen": 1794688143.3078759,
+    "ast_hash": "355cebd0f0b1cf9d07b96ec085fb9f47",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/providers.py": {
+    "mtime": 1794687676.6247442,
+    "seen": 1794688143.3079588,
+    "ast_hash": "a8d97e588ff32f2a8362a85478092ec6",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/registry.py": {
+    "mtime": 1794687676.6247442,
+    "seen": 1794688143.3079605,
+    "ast_hash": "0ebe704c6999799b6a85755301cc203b",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/select_frames.py": {
+    "mtime": 1794687676.6249087,
+    "seen": 1794688143.3079617,
+    "ast_hash": "289ee96ded36def5701a9f825224c791",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/selection.py": {
+    "mtime": 1794688687.6968803,
+    "seen": 1794688757.77935,
+    "ast_hash": "ed9d30c8ca0cd7607228f166d9b2b163",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/selection_models.py": {
+    "mtime": 1794688687.696567,
+    "seen": 1794688757.7793524,
+    "ast_hash": "bc0fe6b8835f9a7219d7b0f09e797540",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/video.py": {
+    "mtime": 1794687676.6252723,
+    "seen": 1794688143.3079646,
+    "ast_hash": "246e41b36bd909529a0896b983e61710",
+    "semantic_hash": ""
+  },
   "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
-    "mtime": 1794687061.6387968,
-    "seen": 1794687213.8094492,
+    "mtime": 1794687676.6252723,
+    "seen": 1794688143.3079948,
     "ast_hash": "7d500ae57af354b3d9d569dfc0be1d6d",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/test_selection.py": {
+    "mtime": 1794687676.62536,
+    "seen": 1794688143.3079958,
+    "ast_hash": "dc8a6d18b1a50a41ad251e5f3f47ef0c",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-11-14-furniture-segmentation.md": {
+    "mtime": 1794688793.614812,
+    "seen": 1794688965.2446065,
+    "ast_hash": "99257f4deeaae9b778cdb3df45a3b18c",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-11-14-video-frame-selection.md": {
+    "mtime": 1794687676.6179392,
+    "seen": 1794688143.3080428,
+    "ast_hash": "83d8e0c0ef89c7afcf6a5fd356049b34",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-11-14-furniture-segmentation-design.md": {
+    "mtime": 1794688793.6147268,
+    "seen": 1794688965.244612,
+    "ast_hash": "5631f3926d148306af28028bf93deea6",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-11-14-video-frame-selection-design.md": {
+    "mtime": 1794687676.618256,
+    "seen": 1794688143.3080463,
+    "ast_hash": "c8d21afa1135dee609eedba9d8d1a9ac",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/mask_providers.py": {
+    "mtime": 1794688592.9245465,
+    "seen": 1794688757.7793286,
+    "ast_hash": "b61d2638cb4860518aaa4f3e79204875",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/segmentation.py": {
+    "mtime": 1794688909.210557,
+    "seen": 1794688965.2444463,
+    "ast_hash": "da4478e5fd85f76196e8f4117f9dc38c",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/test_segmentation.py": {
+    "mtime": 1794688908.248034,
+    "seen": 1794688965.2445495,
+    "ast_hash": "394601ffafd2b42a65f00715e8896e69",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/segment_items.py": {
+    "mtime": 1794688592.924824,
+    "seen": 1794688757.7793412,
+    "ast_hash": "45e92fa34d616be3757c7fb0becbd65f",
     "semantic_hash": ""
   }
 }
