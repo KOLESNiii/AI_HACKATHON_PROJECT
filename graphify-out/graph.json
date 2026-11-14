@@ -1246,6 +1246,18 @@
       "source_location": "L1"
     },
     {
+      "id": "docs_architecture_workstream_ownership",
+      "label": "Workstream ownership",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SpaceShift \u2014 Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "workstream ownership",
+      "source_file": "docs/architecture.md",
+      "source_location": "L36"
+    },
+    {
       "id": "docs_decisions",
       "label": "decisions.md",
       "_origin": "ast",
@@ -1280,6 +1292,18 @@
       "norm_label": "decisions",
       "source_file": "docs/decisions.md",
       "source_location": "L1"
+    },
+    {
+      "id": "docs_decisions_revised_execution_plan",
+      "label": "Revised execution plan",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "SpaceShift \u2014 Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "revised execution plan",
+      "source_file": "docs/decisions.md",
+      "source_location": "L19"
     },
     {
       "id": "readme",
@@ -1519,16 +1543,52 @@
       "source_location": "L1"
     },
     {
-      "id": "architecture_dag_1_monorepo_isolation_rules",
-      "label": "1. Monorepo Isolation Rules",
+      "id": "architecture_dag_1_ownership_and_implementation_boundaries",
+      "label": "1. Ownership and implementation boundaries",
       "_origin": "ast",
       "community": 4,
       "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
       "file_type": "document",
       "node_kind": "heading",
-      "norm_label": "1. monorepo isolation rules",
+      "norm_label": "1. ownership and implementation boundaries",
       "source_file": "ARCHITECTURE_DAG.md",
       "source_location": "L3"
+    },
+    {
+      "id": "architecture_dag_2_handoffs_to_agree_at_kickoff",
+      "label": "2. Handoffs to agree at kickoff",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "2. handoffs to agree at kickoff",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L41"
+    },
+    {
+      "id": "architecture_dag_3_execution_dag",
+      "label": "3. Execution DAG",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "3. execution dag",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L64"
+    },
+    {
+      "id": "architecture_dag_4_acceptance_and_scope_priorities",
+      "label": "4. Acceptance and scope priorities",
+      "_origin": "ast",
+      "community": 4,
+      "community_name": "SpaceShift \u2014 System Architecture & 4-Developer Execution DAG",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "4. acceptance and scope priorities",
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L113"
     },
     {
       "id": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
@@ -2740,13 +2800,46 @@
     },
     {
       "source": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
-      "target": "architecture_dag_1_monorepo_isolation_rules",
+      "target": "architecture_dag_4_acceptance_and_scope_priorities",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L113",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
+      "target": "architecture_dag_1_ownership_and_implementation_boundaries",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "ARCHITECTURE_DAG.md",
       "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
+      "target": "architecture_dag_2_handoffs_to_agree_at_kickoff",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "architecture_dag_spaceshift_system_architecture_4_developer_execution_dag",
+      "target": "architecture_dag_3_execution_dag",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ARCHITECTURE_DAG.md",
+      "source_location": "L64",
       "weight": 1.0
     },
     {
@@ -3025,6 +3118,17 @@
       "weight": 1.0
     },
     {
+      "source": "docs_architecture_architecture",
+      "target": "docs_architecture_workstream_ownership",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/architecture.md",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
       "source": "docs_decisions",
       "target": "docs_decisions_decisions",
       "relation": "contains",
@@ -3033,6 +3137,17 @@
       "confidence_score": 1.0,
       "source_file": "docs/decisions.md",
       "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_decisions_decisions",
+      "target": "docs_decisions_revised_execution_plan",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/decisions.md",
+      "source_location": "L19",
       "weight": 1.0
     },
     {
@@ -4434,5 +4549,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4f007287b6304fa11b264b2ba9ad5cdc8f126b20"
+  "built_at_commit": "67f7c4a82bc5cc5bc3812e5028f87b2c9a37e1f6"
 }

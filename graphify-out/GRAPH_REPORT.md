@@ -1,16 +1,16 @@
 # Graph Report - hackathon-project  (2026-11-14)
 
 ## Corpus Check
-- 33 files · ~5,006 words
+- 34 files · ~7,113 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 200 nodes · 192 edges · 26 communities (20 shown, 6 thin omitted)
+- 205 nodes · 197 edges · 26 communities (21 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4f007287`
+- Built from commit: `67f7c4a8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -41,12 +41,12 @@
 2. `compilerOptions` - 15 edges
 3. `scripts` - 8 edges
 4. `scripts` - 8 edges
-5. `SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin` - 5 edges
-6. `3. Full Tech Stack` - 4 edges
+5. `SpaceShift — System Architecture & 4-Developer Execution DAG` - 5 edges
+6. `SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin` - 5 edges
 7. `plugins` - 4 edges
-8. `react` - 3 edges
-9. `rules` - 3 edges
-10. `lib` - 3 edges
+8. `3. Full Tech Stack` - 4 edges
+9. `Decisions` - 3 edges
+10. `health()` - 3 edges
 
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
@@ -54,7 +54,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (26 total, 6 thin omitted)
+## Communities (26 total, 5 thin omitted)
 
 ### Community 0 - "BaseModel"
 Cohesion: 0.22
@@ -65,12 +65,16 @@ Cohesion: 0.22
 Nodes (8): AuditReport, DoorOpening, FurnitureItem, RoomScene, Vec2, Vec3, WallSegment, WindowOpening
 
 ### Community 2 - "SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin"
-Cohesion: 0.14
-Nodes (11): Architecture, Bootstrap, Decisions, 1. The Core Differentiator (Why We Beat Existing Tools), 2. What We Stole (And Improved) From Competitors, 3. Full Tech Stack, 4. Quickstart (Local Development), **AI & Generative Media (`services/reconstruction` & `services/media_gen`)** (+3 more)
+Cohesion: 0.12
+Nodes (13): Architecture, Workstream ownership, Bootstrap, Decisions, Revised execution plan, 1. The Core Differentiator (Why We Beat Existing Tools), 2. What We Stole (And Improved) From Competitors, 3. Full Tech Stack (+5 more)
 
 ### Community 3 - "SpaceShift — Figma Design System & Spatial UI Spec"
 Cohesion: 0.50
 Nodes (3): 1. Aesthetic Direction: "Architectural CAD meets Spatial Glass", 2. Screen Choreography (Zero Clutter), SpaceShift — Figma Design System & Spatial UI Spec
+
+### Community 4 - "SpaceShift — System Architecture & 4-Developer Execution DAG"
+Cohesion: 0.33
+Nodes (5): 1. Ownership and implementation boundaries, 2. Handoffs to agree at kickoff, 3. Execution DAG, 4. Acceptance and scope priorities, SpaceShift — System Architecture & 4-Developer Execution DAG
 
 ### Community 7 - "compilerOptions"
 Cohesion: 0.08
@@ -113,21 +117,21 @@ Cohesion: 0.50
 Nodes (3): health(), get, Process liveness only; does not probe external providers.
 
 ## Knowledge Gaps
-- **105 isolated node(s):** `1. The Core Differentiator (Why We Beat Existing Tools)`, `2. What We Stole (And Improved) From Competitors`, `**Design & Frontend (`frontend/`)**`, `**AI & Generative Media (`services/reconstruction` & `services/media_gen`)**`, `**Spatial Audit & Solver Engine (`services/spatial_engine`)**` (+100 more)
+- **109 isolated node(s):** `1. Ownership and implementation boundaries`, `2. Handoffs to agree at kickoff`, `3. Execution DAG`, `4. Acceptance and scope priorities`, `Workstream ownership` (+104 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **6 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `dependencies` connect `dependencies` to `scripts`?**
-  _High betweenness centrality (0.037) - this node is a cross-community bridge._
 - **Why does `devDependencies` connect `devDependencies` to `scripts`?**
-  _High betweenness centrality (0.037) - this node is a cross-community bridge._
-- **What connects `1. The Core Differentiator (Why We Beat Existing Tools)`, `2. What We Stole (And Improved) From Competitors`, `**Design & Frontend (`frontend/`)**` to the rest of the system?**
-  _105 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `dependencies` to `scripts`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
+- **What connects `1. Ownership and implementation boundaries`, `2. Handoffs to agree at kickoff`, `3. Execution DAG` to the rest of the system?**
+  _109 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin` be split into smaller, more focused modules?**
-  _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.125 - nodes in this community are weakly interconnected._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
   _Cohesion score 0.08 - nodes in this community are weakly interconnected._
 - **Should `compilerOptions` be split into smaller, more focused modules?**
