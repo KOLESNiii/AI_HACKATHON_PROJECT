@@ -314,6 +314,9 @@ def test_three_floor_example() -> None:
     ]
     labelled = [r for r in _rooms(plan) if r.labelled_width_m or "/" in r.name]
     assert len(labelled) >= 10
+    # The recorded model output reads the (partly cut-off) north arrow, so rooms are grounded.
+    assert all(r.scene.north_compass_deg is not None for r in _rooms(plan))
+    assert all("orientation" not in r.correction_needed for r in _rooms(plan))
     for f in plan.floors:
         assert len({r.room_id for r in f.rooms}) == len(f.rooms)
         for r in f.rooms:

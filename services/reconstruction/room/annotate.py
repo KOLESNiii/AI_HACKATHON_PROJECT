@@ -16,13 +16,20 @@ import re
 from pathlib import Path
 from typing import Protocol
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 log = logging.getLogger(__name__)
 
 
+def _tidy_name(name: str) -> str:
+    """Plans print labels in capitals ("BEDROOM (4)"); show them in title case."""
+    name = " ".join(name.split())
+    return name.title() if name.isupper() else name
+
+
 class RoomLabel(BaseModel):
     name: str
+    _tidy = field_validator("name")(_tidy_name)
     x: float = Field(ge=0, le=1)
     """Centre of the label text, as a fraction of image width."""
     y: float = Field(ge=0, le=1)
@@ -35,6 +42,7 @@ class RoomLabel(BaseModel):
 
 class FloorCaption(BaseModel):
     name: str
+    _tidy = field_validator("name")(_tidy_name)
     level: int | None = None
     """0 = ground floor, 1 = first floor, -1 = basement."""
     x: float = Field(ge=0, le=1)

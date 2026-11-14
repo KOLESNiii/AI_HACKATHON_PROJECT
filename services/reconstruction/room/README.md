@@ -42,9 +42,10 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
 
 ## Status and limits
 
-- **The fal call has not been run live yet** (no key during development). Its request and
-  response shape follows fal's any-llm vision API and is unverified. The fixtures in
-  `fixtures/` are hand-transcribed from the two example plans, not recorded model output.
+- The fal call was verified live (`google/gemini-2.5-flash` via `fal-ai/any-llm/vision`,
+  about 5-9 s per image). `fixtures/*.annotations.json` are its recorded output for the two
+  example plans, so tests stay offline. Label positions are approximate (within the right
+  room); geometry never depends on them beyond picking the room.
 - `shell_glb_url` points to `/api/reconstruction/shells/<scene_id>.glb`. The shell generator
   that serves it is the next step.
 - Open archways wider than a door, with no glazing, are not split, so both rooms come out as
