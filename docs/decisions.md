@@ -291,3 +291,11 @@
   had the same margin and reported empty rooms as 0% reachable.
 - Doors, windows and door entries now share `POSITION_TOLERANCE_M` (1 mm). An
   opening more than 1 mm off its wall is still rejected as invalid input.
+
+## Acceptable layout proposals
+
+- Operator decision (2026-11-14): a proposal may keep a door-swing problem that
+  already existed, but never overlapping furniture or items outside the room, and
+  it may not block a door that was clear. This replaced the all-or-nothing rule,
+  under which a room with a fixed item in a door swing could never get a suggestion.
+- Operator decision (2026-11-14): no cached demo answers. Requests are always live.

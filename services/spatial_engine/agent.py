@@ -29,6 +29,7 @@ from services.spatial_engine.objective import (
     LayoutEvaluation,
     compare_evaluations,
     evaluate_layout,
+    is_acceptable_proposal,
 )
 
 logger = logging.getLogger(__name__)
@@ -168,9 +169,12 @@ _INTERPRET_TOOL: dict[str, Any] = {
     "description": (
         "Record what the person asked for. goal: " + _GOALS_TEXT + " locked_item_ids: items "
         "they want kept exactly where they are. near_window_item_ids: items they want placed "
-        "near a window. unsupported: short phrases for anything else they asked for that these "
-        "settings cannot express, such as adding furniture, more storage, or keeping an item "
-        "against a particular wall. Use only item IDs from the furniture list."
+        "near a window. unsupported: short phrases only for wishes that none of the three "
+        "settings above can express at all, such as adding or removing furniture, more "
+        "storage, or keeping an item against a particular wall. Anything you expressed through "
+        "the goal, a lock or a near-window item is handled, so do not list it; leave the list "
+        "empty when the settings cover the whole request. Use only item IDs from the "
+        "furniture list."
     ),
     "input_schema": {
         "type": "object",
@@ -193,8 +197,10 @@ _EXPLORE_SYSTEM = (
     "the position and rotation of items marked movable, by calling evaluate_moves. The server "
     "audits every draft and keeps the best valid one itself, so the recommendation is decided "
     "by the measured results, not by what you say.\n\n"
-    "A draft can only be recommended when passes_critical_checks is true: no overlapping "
-    "furniture, nothing outside the room, no blocked door swing. After that, drafts are ranked "
+    "A draft can only be recommended when can_be_recommended is true: no overlapping "
+    "furniture, nothing outside the room, and no door swing blocked that was clear in the "
+    "original. A door that a fixed item already blocks may stay blocked; clear the others "
+    "where you can. After that, drafts are ranked "
     "by the request shown in the layout (near-window items first, then the goal). Each result "
     "tells you how the draft ranks against the original and the best so far, and which metric "
     "decided it. window_openness is a geometric measure of how unobstructed the windows are, "
@@ -349,8 +355,11 @@ def _explain_result(
     else:
         parts.append(f"Moved {len(moved)} item(s): {', '.join(moved)}.")
         a, b = before.metrics, after.metrics
-        if a.critical_issue_count:
-            parts.append(f"Fixed {a.critical_issue_count} fit or door problem(s).")
+        if a.critical_issue_count > b.critical_issue_count:
+            fixed = a.critical_issue_count - b.critical_issue_count
+            parts.append(f"Fixed {fixed} fit or door problem(s).")
+        if b.blocked_door_count:
+            parts.append(f"{b.blocked_door_count} door swing(s) are still blocked, as before.")
         issues_before = len(before.report.clearance_issues)
         issues_after = len(after.report.clearance_issues)
         if issues_before != issues_after:
@@ -365,10 +374,12 @@ def _explain_result(
             a.brightness_openness,
             b.brightness_openness,
         ):
+            was, now = _percent(a.brightness_openness or 0), _percent(b.brightness_openness or 0)
             parts.append(
-                f"Unobstructed window area (a geometric estimate, not measured light): "
-                f"{_percent(a.brightness_openness or 0)} before, "
-                f"{_percent(b.brightness_openness or 0)} now."
+                f"The windows were already {now} unobstructed, so there was nothing to gain there."
+                if was == now
+                else f"Unobstructed window area (a geometric estimate, not measured light): "
+                f"{was} before, {now} now."
             )
         if preferences.near_window_item_ids and b.near_window_shortfall_m is not None:
             parts.append(
@@ -422,7 +433,7 @@ def propose_layout(
         max_evaluations=max_evaluations,
     )
 
-    if model is not None and instruction:
+    if model is not None and instruction and known - immovable:
         reading, usable = _interpret(request, interpreter or model, budget)
         if reading is None:
             notes.append("Your written request could not be interpreted, so it was not applied.")
@@ -447,7 +458,11 @@ def propose_layout(
             max_evaluations=max_evaluations,
         )
     finished = failed = False
-    if model is not None and usable:
+    if not known - immovable:
+        # Nothing can change, so no model call can help: an honest, free answer.
+        finished = True
+        notes.insert(0, "Nothing in this room can be moved.")
+    elif model is not None and usable:
         finished, failed = _explore(toolbox, model, budget, limits.stop_at_first_valid_draft)
     else:
         failed = True
@@ -467,7 +482,7 @@ def propose_layout(
             near_window_item_ids=near_window,
         )
         if (
-            checked.metrics.passes_critical_checks
+            is_acceptable_proposal(before, checked)
             and compare_evaluations(before, checked, goal).outcome == "better"
         ):
             after = checked

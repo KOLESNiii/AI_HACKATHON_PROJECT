@@ -312,3 +312,21 @@ def compare_layouts(
         original, candidate, measure_brightness=measure, near_window_item_ids=near_window_item_ids
     )
     return compare_evaluations(baseline_evaluation, proposed, goal)
+
+
+def is_acceptable_proposal(original: LayoutEvaluation, candidate: LayoutEvaluation) -> bool:
+    """Whether a layout may be recommended at all, before it is ranked.
+
+    Never with overlapping furniture or anything outside the room: those are physically
+    impossible. A blocked door swing is tolerated only when that same door was already
+    blocked in the original, so a room with a problem no move can fix (a fixed item in a
+    door's swing) can still receive suggestions. Blocking a previously clear door is refused.
+    """
+    blocked_before = {issue.door_id for issue in original.report.blocked_doors}
+    blocked_after = {issue.door_id for issue in candidate.report.blocked_doors}
+    metrics = candidate.metrics
+    return (
+        metrics.collision_count == 0
+        and metrics.out_of_bounds_count == 0
+        and blocked_after <= blocked_before
+    )

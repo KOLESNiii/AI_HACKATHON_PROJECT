@@ -25,6 +25,7 @@ from services.spatial_engine.objective import (
     LayoutComparison,
     LayoutEvaluation,
     compare_evaluations,
+    is_acceptable_proposal,
 )
 
 DEFAULT_MAX_EVALUATIONS = 24
@@ -64,7 +65,7 @@ TOOL_DEFINITIONS: tuple[dict[str, Any], ...] = (
             "draft so far. Items not listed keep their pose from the base draft. Only items "
             "marked movable may be listed, each at most once. A draft with collisions is still "
             "created and can be repaired in a later call, but only a draft whose "
-            "passes_critical_checks is true can become the recommendation. Each new draft uses "
+            "can_be_recommended is true can become the recommendation. Each new draft uses "
             "one evaluation from the shared budget. " + _CONVENTIONS
         ),
         "input_schema": {
@@ -335,10 +336,15 @@ class LayoutToolbox:
             "doors": doors,
         }
 
+    def _acceptable(self, draft: LayoutDraft) -> bool:
+        original = self.session.draft(self.session.original_draft_id)
+        return is_acceptable_proposal(original.evaluation, draft.evaluation)
+
     def _describe_draft(self, draft: LayoutDraft) -> dict[str, Any]:
         return {
             "draft_id": draft.draft_id,
             "is_original": draft.draft_id == self.session.original_draft_id,
+            "can_be_recommended": self._acceptable(draft),
             "findings": _findings(draft.evaluation),
             "metrics": _metrics(draft.evaluation),
         }
@@ -376,7 +382,7 @@ class LayoutToolbox:
         original = self.session.draft(self.session.original_draft_id)
         versus_original = compare_evaluations(original.evaluation, draft.evaluation, goal)
         versus_best = compare_evaluations(self.best_draft.evaluation, draft.evaluation, goal)
-        if draft.evaluation.metrics.passes_critical_checks and versus_best.outcome == "better":
+        if self._acceptable(draft) and versus_best.outcome == "better":
             self.best_draft_id = draft.draft_id
         return {
             **self._describe_draft(draft),

@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from contracts.schema import (
     BBoxM,
+    DoorOpening,
     FurnitureItem,
     LayoutProposal,
     OptimiseRequest,
@@ -483,3 +484,34 @@ def test_non_brightness_goals_accept_audit_valid_windows(goal: str) -> None:
     audit_scene(original)
     result = propose_layout(OptimiseRequest(scene=original, goal=goal), Scripted(GOOD))
     assert result.improved
+
+
+def test_a_room_where_nothing_can_move_is_answered_without_calling_the_model() -> None:
+    model = Scripted(GOOD)
+    request = OptimiseRequest(
+        scene=scene(), locked_item_ids=["wardrobe", "box"], instruction="make it nicer"
+    )
+    for proposal in (propose_layout(request, model), propose_layout(request, None)):
+        assert (proposal.improved, proposal.outcome) == (False, "completed")
+        assert "Nothing in this room can be moved." in proposal.explanation
+    assert model.requests == []
+
+
+def test_a_door_blocked_by_a_fixed_item_does_not_prevent_suggestions() -> None:
+    room = scene()
+    room.doors = [DoorOpening(id="door", wall_id="north", hinge_pos=Vec2(x=5, z=0), width_m=1)]
+    room.furniture[2].pose = Pose2D(x=5.5, z=0.5)  # the fixed radiator sits in the door swing
+    assert [issue.door_id for issue in audit_scene(room).blocked_doors] == ["door"]
+
+    proposal = propose_layout(OptimiseRequest(scene=room), Scripted(GOOD))
+    assert proposal.improved and proposal.poses == {"box": Pose2D(x=5, z=5.5)}
+    assert [issue.door_id for issue in proposal.report.blocked_doors] == ["door"]
+    assert "1 door swing(s) are still blocked, as before." in proposal.explanation
+
+
+def test_blocking_a_clear_door_or_overlapping_furniture_is_never_accepted() -> None:
+    room = scene()
+    room.doors = [DoorOpening(id="door", wall_id="north", hinge_pos=Vec2(x=5, z=0), width_m=1)]
+    for bad in (move("box", 5.5, 0.5), move("box", 7.5, 4.5)):  # into the swing; onto the radiator
+        proposal = propose_layout(OptimiseRequest(scene=room), Scripted(bad, END))
+        assert not proposal.improved and proposal.poses == {}
