@@ -133,3 +133,22 @@
 - Move the original single-room GLBs into backend fixtures and adapt their browser
   URLs through `/api/reconstruction`. Preserve the shared JSON's original geometry
   and paths for the audit, asset handoff and existing fixture consumers.
+
+## Furniture alignment (#8)
+
+- Place furniture from coarse wall-relative hints plus deterministic geometry, the same split
+  as the floor-plan parser. `provider_pose` registration waits until Dev 2 produces it.
+- Keep plan geometry in plain Python inside `room/`; no manifest change. Tests cross-check it
+  against the spatial audit.
+- A hinted item is moved only when its spot is impossible (outside the room or inside another
+  item). An item in a door swing stays where it was seen and is flagged; the audit reports it.
+- Vision placement is a proposal: its confidence is capped below the level that clears the
+  `placement` and `orientation` flags. Live runs misplaced both reception sofas.
+- Alignment records and hints stay inside the reconstruction service, out of `RoomScene`.
+- Align per room, using the editor's room convention for the demo home
+  (`demo_assets.demo_room_scene`: rooms by wall prefix, furniture by position) rather than a
+  second geometric splitter with its own room IDs. Both gave identical rooms; only the IDs
+  and shell URLs differed, and the editor's IDs are the ones a scene route (#9) must return.
+- Use #15 masks where they exist: the vision observer traces each item's mask instead of its
+  box, so overlapping items in one frame stay distinguishable. Masks do not change geometry;
+  without a camera solution they carry no metric position.
