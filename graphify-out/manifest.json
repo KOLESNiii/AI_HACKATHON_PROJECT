@@ -18,21 +18,21 @@
     "semantic_hash": ""
   },
   "contracts/schema.py": {
-    "mtime": 1794665882.7059245,
-    "seen": 1794666065.4296925,
-    "ast_hash": "a29e21340e7de454f138029031e932a3",
+    "mtime": 1794672572.6438665,
+    "seen": 1794672577.26367,
+    "ast_hash": "6801cbbdbf3f6c758968d6b8d0e677f8",
     "semantic_hash": ""
   },
   "contracts/schema.ts": {
-    "mtime": 1794665869.0079105,
-    "seen": 1794666065.4296935,
-    "ast_hash": "5bc22ba7e6699331074d1c8655e44626",
+    "mtime": 1794672343.4647274,
+    "seen": 1794672391.0433595,
+    "ast_hash": "43854ff32ecfbc7aedf5b1ff1ed3e5f1",
     "semantic_hash": ""
   },
   "scripts/generate_mock_glbs.py": {
-    "mtime": 1794666047.8368258,
-    "seen": 1794666065.4296947,
-    "ast_hash": "54bbe5b0be3f6ef5f68a05de866e6b1e",
+    "mtime": 1794672212.914319,
+    "seen": 1794672391.0436265,
+    "ast_hash": "db840357dd089cf3270e344245c81471",
     "semantic_hash": ""
   },
   ".graphify_uncached.txt": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1794665896.7081842,
-    "seen": 1794666065.4297,
-    "ast_hash": "62c34c966ea55ab19aad2de02e49263f",
+    "mtime": 1794672212.9131558,
+    "seen": 1794672391.043951,
+    "ast_hash": "e493cb3e304555dc393b35be1acd55df",
     "semantic_hash": ""
   },
   "FIGMA_DESIGN_SPEC.md": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "contracts/mock_room/mock_scene.json": {
-    "mtime": 1794665937.3199441,
-    "seen": 1794666779.2227492,
-    "ast_hash": "990a075d20fe3117fa5931934806d6a2",
+    "mtime": 1794672450.156865,
+    "seen": 1794672528.1907294,
+    "ast_hash": "9688f70dc2647c40b0eda87f8cb737f1",
     "semantic_hash": ""
   },
   "frontend/.oxlintrc.json": {
@@ -198,9 +198,9 @@
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794667086.4051106,
-    "seen": 1794667158.3994427,
-    "ast_hash": "22d5b5fb327ede4e30fe73316855dfac",
+    "mtime": 1794672514.7033143,
+    "seen": 1794672528.190797,
+    "ast_hash": "a5a1b2e636810fdf58dfd1e029b126ce",
     "semantic_hash": ""
   },
   "frontend/index.html": {
@@ -213,6 +213,54 @@
     "mtime": 1794666820.0880492,
     "seen": 1794667158.3994284,
     "ast_hash": "be7465ee75f4768c5c378cb16b9a21f5",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/README.md": {
+    "mtime": 1794672514.37476,
+    "seen": 1794672528.190804,
+    "ast_hash": "f17ab081ce79f17187ff4c96258cb06f",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/fixtures/README.md": {
+    "mtime": 1794672464.4480112,
+    "seen": 1794672477.9004025,
+    "ast_hash": "f64f31e17bf62b0b743fdd209d5bad53",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/fixtures/evidence.json": {
+    "mtime": 1794672450.157057,
+    "seen": 1794672528.1907673,
+    "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
+    "semantic_hash": ""
+  },
+  "tests/test_contract_occupancy.py": {
+    "mtime": 1794672556.398344,
+    "seen": 1794672577.2637134,
+    "ast_hash": "f876e0de17389d42dc78db2d61371179",
+    "semantic_hash": ""
+  },
+  "tests/test_contracts.py": {
+    "mtime": 1794672463.5246537,
+    "seen": 1794672477.9000635,
+    "ast_hash": "6d15d39c482e4d9e5cc03da965d56639",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-11-14-asset-handoff-and-collision-parts.md": {
+    "mtime": 1794672572.6441586,
+    "seen": 1794672577.2637358,
+    "ast_hash": "ebea73ae0aa3080b1af5d06441cf19e1",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-11-14-3d-representation-design.md": {
+    "mtime": 1794672514.7030373,
+    "seen": 1794672528.1908007,
+    "ast_hash": "a713907efee6fa60a327c85b3cf28f22",
+    "semantic_hash": ""
+  },
+  "tests/test_fixture_scene.py": {
+    "mtime": 1794672411.050138,
+    "seen": 1794672477.9000747,
+    "ast_hash": "31a7b97b4d5a08ed238440b7af5c2e9f",
     "semantic_hash": ""
   }
 }

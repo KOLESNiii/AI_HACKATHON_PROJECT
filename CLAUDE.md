@@ -4,7 +4,7 @@
 2. **Coordinate System Invariant (Strict):**
    - Units are **meters** (`1.0` = 1m).
    - Right-handed 3D: `X` = width, `Y` = vertical height (`Y=0` is floor), `Z` = depth.
-   - Every `.glb` mesh MUST have its bounding-box bottom-center normalized to `(0, 0, 0)` and its logical "front" facing `+Z` (`yaw_deg = 0`).
+   - Every furniture `.glb` mesh MUST have its bounding-box bottom-center normalized to `(0, 0, 0)` and its logical "front" facing `+Z` (`yaw_deg = 0`). The room shell `.glb` is the exception: it is authored in room coordinates (see `contracts/schema.py`).
 3. **Optional Compass Rule:**
    - `RoomScene.north_compass_deg` and `WindowOpening.compass_azimuth_deg` are optional (`None` / `null`).
    - Never crash when `north_compass_deg` is `null`; fall back to `plan_normal_deg` assuming `-Z` is North (`0°`) and set `AuditReport.glare_orientation_grounded = False`.
