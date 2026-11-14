@@ -2,14 +2,20 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from unittest.mock import Mock
 
 import cv2
+import fal_client
 import numpy as np
 import pytest
 from numpy.typing import NDArray
 from pydantic import ValidationError
 
-from services.reconstruction.assets.mask_providers import GrabCutProvider, MaskError
+from services.reconstruction.assets.mask_providers import (
+    FalSamProvider,
+    GrabCutProvider,
+    MaskError,
+)
 from services.reconstruction.assets.providers import RequestBudget
 from services.reconstruction.assets.registry import Registry
 from services.reconstruction.assets.segmentation import read_mask, segment_furniture
@@ -361,3 +367,140 @@ def test_evidence_carries_the_mask_reference_and_its_tight_box(tmp_path: Path) -
     box = loose_box(RED)
     assert plain.frame_index == other.frame_index and plain.mask_url is None
     assert plain.bbox_px == (box.x * W, box.y * H, box.width * W, box.height * H)
+
+
+def png(mask: Mask) -> bytes:
+    ok, encoded = cv2.imencode(".png", mask.astype(np.uint8) * 255)
+    assert ok
+    return bytes(encoded.tobytes())
+
+
+def sam(files: dict[str, bytes], order: list[int]) -> FalSamProvider:
+    """A live provider whose network edges are replaced: `order[i]` is mask i's prompt index."""
+    provider = FalSamProvider(key="test-never-sent", fetch=files.__getitem__)
+    provider.client = Mock()
+    provider.client.upload.return_value = "https://v3b.fal.media/files/frame.png"
+    handle = provider.client.submit.return_value
+    handle.request_id = "request-one"
+    handle.status.return_value = fal_client.Completed(metrics={}, logs=[])
+    urls = list(files)
+    handle.get.return_value = {
+        "masks": [{"url": urls[i]} for i in range(len(order))],
+        "metadata": [{"index": index, "score": 0.9} for index in order],
+    }
+    provider.client.get_handle.return_value = handle
+    return provider
+
+
+def sam_scene(tmp_path: Path) -> tuple[Frame, NDArray[np.uint8], list[Box], Registry]:
+    frame = make_scene(tmp_path, {"vid-000001": RED, "vid-000002": BLUE})
+    image = cv2.imread(str(tmp_path / frame.image_path)).astype(np.uint8)
+    return frame, image, [loose_box(RED), loose_box(BLUE)], Registry(tmp_path, namespace="scene")
+
+
+# The provider returns masks best-score first, so BLUE (prompt 1) can precede RED (prompt 0).
+BLUE_FIRST = {
+    "https://v3b.fal.media/files/blue.png": png(rect_mask(BLUE)),
+    "https://v3b.fal.media/files/red.png": png(rect_mask(RED)),
+}
+
+
+def test_sam_masks_are_matched_to_items_by_prompt_index_not_by_position(tmp_path: Path) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    provider = sam(BLUE_FIRST, [1, 0])
+    red, blue = provider.segment(frame, image, boxes, registry)
+    assert red is not None and blue is not None
+    assert np.array_equal(red, rect_mask(RED)) and np.array_equal(blue, rect_mask(BLUE))
+    arguments = provider.client.submit.call_args.kwargs["arguments"]
+    assert provider.client.submit.call_args.args == ("fal-ai/sam-3/image",)
+    assert arguments["box_prompts"] == [
+        {"x_min": 24, "y_min": 34, "x_max": 106, "y_max": 116, "object_id": 1},
+        {"x_min": 134, "y_min": 24, "x_max": 216, "y_max": 96, "object_id": 2},
+    ]
+    assert arguments["prompt"] == "" and arguments["apply_mask"] is False
+    assert arguments["return_multiple_masks"] is True and arguments["max_masks"] == 2
+    assert arguments["image_url"] == "https://v3b.fal.media/files/frame.png"
+    assert provider.client.upload.call_args.args[1] == "image/png"
+
+
+def test_sam_item_without_a_returned_mask_is_none(tmp_path: Path) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    only_blue = {"https://v3b.fal.media/files/blue.png": png(rect_mask(BLUE))}
+    red, blue = sam(only_blue, [1]).segment(frame, image, boxes, registry)
+    assert red is None and blue is not None and np.array_equal(blue, rect_mask(BLUE))
+
+
+def test_sam_rerun_rereads_the_saved_request_and_refresh_pays_again(tmp_path: Path) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    budget = RequestBudget(5)
+    first = sam(BLUE_FIRST, [1, 0])
+    first.segment(frame, image, boxes, registry, budget=budget)
+    again = sam(BLUE_FIRST, [1, 0])
+    red, _ = again.segment(frame, image, boxes, registry, budget=budget)
+    assert red is not None and np.array_equal(red, rect_mask(RED))
+    assert again.client.submit.call_count == 0 and again.client.upload.call_count == 0
+    again.client.get_handle.assert_called_once_with("fal-ai/sam-3/image", "request-one")
+    assert budget.used == 1
+    again.refresh = "second-opinion"
+    again.segment(frame, image, boxes, registry, budget=budget)
+    assert again.client.submit.call_count == 1 and budget.used == 2
+
+
+def test_sam_exhausted_budget_submits_nothing_and_stays_retryable(tmp_path: Path) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    provider = sam(BLUE_FIRST, [1, 0])
+    with pytest.raises(MaskError, match="budget"):
+        provider.segment(frame, image, boxes, registry, budget=RequestBudget(0))
+    assert provider.client.upload.call_count == 0 and provider.client.submit.call_count == 0
+    red, _ = provider.segment(frame, image, boxes, registry, budget=RequestBudget(1))
+    assert red is not None and provider.client.submit.call_count == 1
+
+
+def test_sam_uncertain_submission_and_malformed_result_are_never_repeated(tmp_path: Path) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    provider = sam(BLUE_FIRST, [1, 0])
+    provider.client.submit.side_effect = RuntimeError("secret body: submit result lost")
+    with pytest.raises(MaskError, match="request state retained") as raised:
+        provider.segment(frame, image, boxes, registry)
+    assert "secret" not in str(raised.value)
+    with pytest.raises(MaskError, match="duplicate charge"):
+        provider.segment(frame, image, boxes, registry)
+    assert provider.client.submit.call_count == 1
+    malformed = sam(BLUE_FIRST, [1, 0])
+    malformed.refresh = "malformed"
+    malformed.client.submit.return_value.get.return_value = {"masks": "not a list"}
+    with pytest.raises(MaskError, match="malformed"):
+        malformed.segment(frame, image, boxes, registry)
+    with pytest.raises(MaskError, match="previous request failed"):
+        malformed.segment(frame, image, boxes, registry)
+    assert malformed.client.submit.call_count == 1
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://v3b.fal.media/files/red.png",
+        "https://evil.example/red.png",
+        "https://fal.media.evil.example/red.png",
+        "file:///etc/passwd",
+    ],
+)
+def test_sam_downloads_masks_only_over_https_from_fal_media(tmp_path: Path, url: str) -> None:
+    frame, image, boxes, registry = sam_scene(tmp_path)
+    fetched: list[str] = []
+    provider = sam({url: png(rect_mask(RED))}, [0])
+    provider.fetch = lambda target: fetched.append(target) or b""
+    with pytest.raises(MaskError, match="not allowed"):
+        provider.segment(frame, image, boxes, registry)
+    assert fetched == []
+
+
+def test_live_masks_flow_through_the_pipeline_with_their_provenance(tmp_path: Path) -> None:
+    make_scene(tmp_path, {"vid-000001": RED, "vid-000002": BLUE})
+    provider = sam(BLUE_FIRST, [1, 0])
+    result = segment_furniture("scene", data_dir=tmp_path, provider=provider)
+    assert result.complete and result.warnings == []
+    for obj, rect in zip(result.objects, (RED, BLUE), strict=True):
+        (mask,) = obj.masks
+        assert mask.method == "sam3"
+        assert np.array_equal(read_mask(tmp_path, mask.mask_path), rect_mask(rect))
