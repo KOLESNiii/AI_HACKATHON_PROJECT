@@ -2,7 +2,8 @@ import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useEffect, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { bounds, overlappingIds } from '../../lib/geometry'
+import { bounds } from '../../lib/geometry'
+import { flaggedItemIds, spatialPreview } from '../../lib/spatialPreview'
 import { useStore } from '../../store'
 import { DoorSwings } from './DoorSwings'
 import { Furniture, MeshBoundary } from './Furniture'
@@ -18,9 +19,16 @@ export function RoomView() {
   const floor = useStore((s) => s.scene.floor_polygon)
   const doors = useStore((s) => s.scene.doors)
   const ids = useStore(useShallow((s) => s.scene.furniture.map((i) => i.id)))
-  // Re-renders this view only when the set of overlapping items changes.
-  const overlapping = useStore(
-    useShallow((s) => overlappingIds(s.scene.furniture)),
+  // Live preview of the spatial engine's checks. Re-renders this view only when the
+  // set of flagged items or blocked doors changes.
+  const flagged = useStore(
+    useShallow((s) => {
+      const p = spatialPreview(s.scene)
+      return [
+        ...flaggedItemIds(p),
+        ...p.blocked_doors.map((d) => `door:${d.door_id}`),
+      ]
+    }),
   )
   const select = useStore((s) => s.select)
   const toast = useStore((s) => s.toast)
@@ -63,9 +71,15 @@ export function RoomView() {
           <Shell url={shellUrl} walls={walls} />
         </Suspense>
       </MeshBoundary>
-      <DoorSwings doors={doors} walls={walls} />
+      <DoorSwings
+        doors={doors}
+        walls={walls}
+        blocked={flagged
+          .filter((f) => f.startsWith('door:'))
+          .map((f) => f.slice(5))}
+      />
       {ids.map((id) => (
-        <Furniture key={id} id={id} overlapping={overlapping.includes(id)} />
+        <Furniture key={id} id={id} flagged={flagged.includes(id)} />
       ))}
       <SelectionTools />
       <OrbitControls

@@ -110,7 +110,7 @@ export class MeshBoundary extends Component<
   }
 }
 
-/** Red glow drawn over an item whose bounding box intersects another item's. */
+/** Red glow over an item the spatial preview flags (collision, outside the floor, blocking a door). */
 function OverlapGlow({ item }: { item: FurnitureItem }) {
   const { width, height, depth } = item.bbox_m
   const edges = useMemo(() => {
@@ -142,11 +142,11 @@ function OverlapGlow({ item }: { item: FurnitureItem }) {
 /** One furniture item (selected by id so a drag only re-renders that item). */
 export const Furniture = memo(function Furniture({
   id,
-  overlapping,
+  flagged,
 }: {
   id: string
-  /** Its bounding box intersects another item's: draw it glowing red. */
-  overlapping: boolean
+  /** Flagged by the spatial preview (lib/spatialPreview.ts): draw it glowing red. */
+  flagged: boolean
 }) {
   const item = useStore((s) => s.scene.furniture.find((i) => i.id === id))
   const selected = useStore((s) => s.selectedId === id)
@@ -240,11 +240,11 @@ export const Furniture = memo(function Furniture({
           <ProxyBox item={item} />
         )}
       </group>
-      {overlapping && <OverlapGlow item={item} />}
-      {(selected || overlapping) && (
+      {flagged && <OverlapGlow item={item} />}
+      {(selected || flagged) && (
         <Line
           points={outline}
-          color={overlapping ? '#c43a31' : '#1c1a17'}
+          color={flagged ? '#c43a31' : '#1c1a17'}
           lineWidth={selected ? 2.5 : 1.5}
         />
       )}

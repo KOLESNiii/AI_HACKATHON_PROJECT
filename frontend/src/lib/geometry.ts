@@ -1,7 +1,7 @@
 /**
  * Plan-view placement helpers for the editor (metres, +X right, +Z down the page).
- * Overlap and door-swing shapes here are editor hints only; the spatial engine's
- * AuditReport stays the source of truth for collisions, clearance and walkable floor.
+ * Door sweeps mirror services/spatial_engine/geometry.py so the editor and the audit agree;
+ * see lib/spatialPreview.ts for the checks themselves.
  */
 import type { DoorOpening, FurnitureItem, Vec2, WallSegment } from './contracts'
 
@@ -130,84 +130,47 @@ export function fitsRoom(floor: Pt[], width: number, depth: number): boolean {
   return fitYaw(floor, width, depth) != null
 }
 
-const EPS = 1e-3
-
 /**
- * True when two plan polygons (convex, e.g. footprints) overlap by more than a hair.
- * Separating-axis test; items that merely touch (snapped flush) don't count.
- */
-export function polygonsOverlap(a: Pt[], b: Pt[]): boolean {
-  for (const poly of [a, b]) {
-    for (let i = 0; i < poly.length; i++) {
-      const p = poly[i]
-      const q = poly[(i + 1) % poly.length]
-      const ax = -(q.z - p.z)
-      const az = q.x - p.x
-      const l = Math.hypot(ax, az) || 1
-      let aMin = Infinity
-      let aMax = -Infinity
-      let bMin = Infinity
-      let bMax = -Infinity
-      for (const v of a) {
-        const d = (v.x * ax + v.z * az) / l
-        aMin = Math.min(aMin, d)
-        aMax = Math.max(aMax, d)
-      }
-      for (const v of b) {
-        const d = (v.x * ax + v.z * az) / l
-        bMin = Math.min(bMin, d)
-        bMax = Math.max(bMax, d)
-      }
-      if (aMax - bMin <= EPS || bMax - aMin <= EPS) return false
-    }
-  }
-  return true
-}
-
-/**
- * Ids of items whose bounding-box footprints overlap another item's (all items stand
- * on the floor, so footprint overlap means the boxes intersect). Visual hint only; the
- * spatial engine's audit stays the source of truth.
- */
-export function overlappingIds(items: FurnitureItem[]): string[] {
-  const fps = items.map(footprint)
-  const hit = new Set<string>()
-  for (let i = 0; i < items.length; i++)
-    for (let j = i + 1; j < items.length; j++)
-      if (polygonsOverlap(fps[i], fps[j])) {
-        hit.add(items[i].id)
-        hit.add(items[j].id)
-      }
-  return items.filter((i) => hit.has(i.id)).map((i) => i.id)
-}
-
-/**
- * Floor area a door leaf sweeps, as a fan [hinge, ...arc] in plan coordinates, or null
- * when the door doesn't swing. Follows the DoorOpening contract: the closed leaf lies
- * along the wall, and turning it 90° in the swing direction points it to the swing side.
+ * Floor area a door leaf sweeps, in plan coordinates, or null when it doesn't swing.
+ * A port of `door_swing_sector` in services/spatial_engine/geometry.py: the same
+ * conservative polygon [hinge, closed-leaf end, arc tangent points..., open-leaf end],
+ * so the editor and the audit agree on what blocks a door. Convex for 0..180 degrees.
  */
 export function doorSwing(
   door: DoorOpening,
   walls: WallSegment[],
 ): Pt[] | null {
   const wall = walls.find((w) => w.id === door.wall_id)
-  if (!wall || door.swing_angle_deg <= 0 || door.width_m <= 0) return null
+  if (!wall || door.width_m <= 0) return null
+  if (!(door.swing_angle_deg > 0 && door.swing_angle_deg <= 180)) return null
   const n = inwardNormal(wall)
-  const s = door.swings_into_room ? n : { x: -n.x, z: -n.z }
-  // Plan view has +Z down the page, so clockwise (from above) turns (x, z) into (-z, x).
-  const leaf = door.swing_clockwise ? { x: s.z, z: -s.x } : { x: -s.z, z: s.x }
-  const steps = Math.max(8, Math.ceil(door.swing_angle_deg / 3))
-  const pts: Pt[] = [door.hinge_pos]
-  for (let k = 0; k <= steps; k++) {
-    const t = (door.swing_angle_deg * DEG * k) / steps
+  const side = door.swings_into_room ? n : { x: -n.x, z: -n.z }
+  // In X/Z plan coordinates, clockwise on screen is positive mathematical rotation,
+  // and turning the closed leaf 90 degrees in the swing direction points it to `side`.
+  const swingSign = door.swing_clockwise ? 1 : -1
+  const leaf = door.swing_clockwise
+    ? { x: side.z, z: -side.x }
+    : { x: -side.z, z: side.x }
+  const h = door.hinge_pos
+  const start = Math.atan2(leaf.z, leaf.x)
+  const steps = Math.ceil(door.swing_angle_deg)
+  const step = (swingSign * door.swing_angle_deg * DEG) / steps
+  const tangentRadius = door.width_m / Math.cos(Math.abs(step) / 2)
+  const pts: Pt[] = [
+    h,
+    { x: h.x + door.width_m * leaf.x, z: h.z + door.width_m * leaf.z },
+  ]
+  for (let i = 0; i < steps; i++) {
+    const a = start + (i + 0.5) * step
     pts.push({
-      x:
-        door.hinge_pos.x +
-        door.width_m * (Math.cos(t) * leaf.x + Math.sin(t) * s.x),
-      z:
-        door.hinge_pos.z +
-        door.width_m * (Math.cos(t) * leaf.z + Math.sin(t) * s.z),
+      x: h.x + tangentRadius * Math.cos(a),
+      z: h.z + tangentRadius * Math.sin(a),
     })
   }
+  const end = start + steps * step
+  pts.push({
+    x: h.x + door.width_m * Math.cos(end),
+    z: h.z + door.width_m * Math.sin(end),
+  })
   return pts
 }

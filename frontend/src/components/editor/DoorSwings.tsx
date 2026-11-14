@@ -6,8 +6,11 @@ import { doorSwing, type Pt } from '../../lib/geometry'
 
 const Y = 0.008
 
-/** Floor area swept by one door leaf: an ochre wash, the ink arc and the open leaf. */
-function DoorSwing({ fan }: { fan: Pt[] }) {
+/**
+ * Floor area swept by one door leaf: an ochre wash (vermilion when furniture blocks it),
+ * the ink arc and the open leaf. `fan` is [hinge, ...outline] from `doorSwing`.
+ */
+function DoorSwing({ fan, blocked }: { fan: Pt[]; blocked: boolean }) {
   const geometry = useMemo(() => {
     const [h, ...arc] = fan
     const pos: number[] = []
@@ -35,9 +38,9 @@ function DoorSwing({ fan }: { fan: Pt[] }) {
     <group>
       <mesh geometry={geometry} raycast={() => null}>
         <meshBasicMaterial
-          color="#a67c52"
+          color={blocked ? '#c43a31' : '#a67c52'}
           transparent
-          opacity={0.22}
+          opacity={blocked ? 0.32 : 0.22}
           side={DoubleSide}
           depthWrite={false}
         />
@@ -67,9 +70,12 @@ function DoorSwing({ fan }: { fan: Pt[] }) {
 export function DoorSwings({
   doors,
   walls,
+  blocked,
 }: {
   doors: DoorOpening[]
   walls: WallSegment[]
+  /** Door ids the spatial preview reports as blocked. */
+  blocked: string[]
 }) {
   const fans = useMemo(
     () =>
@@ -82,7 +88,7 @@ export function DoorSwings({
   return (
     <>
       {fans.map(({ id, fan }) => (
-        <DoorSwing key={id} fan={fan} />
+        <DoorSwing key={id} fan={fan} blocked={blocked.includes(id)} />
       ))}
     </>
   )
