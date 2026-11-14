@@ -1,0 +1,291 @@
+
+# ============================================================
+# Secrets and local configuration
+# ============================================================
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.local
+*.secret
+*.secrets
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+
+# ============================================================
+# Operating systems and editors
+# ============================================================
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
+*.orig
+*.rej
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+*.iml
+.history/
+*.code-workspace
+
+# ============================================================
+# Logs, temporary files and caches
+# ============================================================
+*.log
+logs/
+tmp/
+temp/
+.cache/
+.cache-*/
+*.tmp
+*.bak
+*.backup
+*.pid
+*.seed
+coverage/
+htmlcov/
+.nyc_output/
+lcov.info
+*.lcov
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyright/
+.tox/
+.nox/
+.hypothesis/
+.pyre/
+.pytype/
+.dmypy.json
+.pytest_cache/
+*.egg-info/
+*.egg
+.eggs/
+pip-wheel-metadata/
+.python-version.local
+.ipynb_checkpoints/
+.pybuilder/
+site/
+wheels/
+
+# ============================================================
+# JavaScript / TypeScript / Node
+# ============================================================
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+.angular/
+.parcel-cache/
+.turbo/
+.vercel/
+.netlify/
+.vite/
+.eslintcache
+*.tsbuildinfo
+storybook-static/
+playwright-report/
+test-results/
+
+# ============================================================
+# Build outputs (general)
+# ============================================================
+dist/
+build/
+out/
+target/
+bin/
+obj/
+Debug/
+Release/
+[Bb]uild/
+[Bb]uilds/
+[Cc]make[Ff]iles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.exe
+*.class
+*.pyc
+
+# ============================================================
+# Rust / Go
+# ============================================================
+*.prof
+*.test
+coverage.out
+vendor/.cache/
+
+# ============================================================
+# Java / Kotlin / Gradle
+# ============================================================
+.gradle/
+.kotlin/
+.settings/
+.project
+.classpath
+.factorypath
+hs_err_pid*
+replay_pid*
+
+# ============================================================
+# Android / iOS
+# ============================================================
+local.properties
+.cxx/
+.externalNativeBuild/
+captures/
+*.apk
+*.aab
+*.ipa
+Pods/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+.swiftpm/xcode/package.xcworkspace/
+.android/
+
+# ============================================================
+# C# / .NET
+# ============================================================
+.vs/
+TestResults/
+packages/
+*.user
+*.suo
+*.cachefile
+*.nupkg
+*.snupkg
+
+# ============================================================
+# Infrastructure / Cloud / Terraform
+# ============================================================
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+*.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+cdk.out/
+.serverless/
+.aws-sam/
+pulumi.*.yaml.local
+
+# ============================================================
+# Databases and local storage
+# ============================================================
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.rdb
+dump.rdb
+
+# ============================================================
+# Machine learning / Data science
+# ============================================================
+wandb/
+mlruns/
+lightning_logs/
+tensorboard/
+runs/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.h5
+*.hdf5
+*.tflite
+*.gguf
+*.npy
+*.npz
+*.parquet
+*.arrow
+*.feather
+data/raw/
+data/processed/
+datasets/
+models/
+artifacts/
+
+# ============================================================
+# Graphify - share queryable graph, ignore local outputs
+# ============================================================
+graphify-out/*
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/manifest.json
+graphify-out/cache/
+graphify-out/cost.json
+
+# ============================================================
+# Local agent state (not shared instructions)
+# ============================================================
+.claude/settings.local.json
+.codex/
+.cursor/cache/
+.cursor/index/
+.aider.chat.history.md
+.aider.input.history
+.aider.tags.cache.v3/
+
+# ============================================================
+# Miscellaneous
+# ============================================================
+*.stackdump
+*.core
+core
+core.*
+.DS_Store?
+._*
+.Trashes
+.Spotlight-V100
