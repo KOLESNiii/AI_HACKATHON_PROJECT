@@ -1,0 +1,395 @@
+[
+  {
+    "id": "g-reception-o01",
+    "name": "Dark two-seat sofa",
+    "category": "sofa",
+    "source": "extracted_video",
+    "glb_url": "/assets/g-reception-o01-bfd76ffa68.glb",
+    "product_url": null,
+    "price_gbp": null,
+    "bbox_m": {
+      "width": 1.58,
+      "height": 0.86,
+      "depth": 0.76
+    },
+    "has_screen": false,
+    "requires_front_clear_m": 0.5,
+    "wall_flush_preferred": true,
+    "is_proxy": false,
+    "dimension_source": "estimated",
+    "correction_needed": [
+      "dimensions",
+      "placement",
+      "orientation"
+    ],
+    "collision_parts": [],
+    "collision_source": "template",
+    "is_fixed": false,
+    "evidence": {
+      "frames": [
+        {
+          "frame_index": 0,
+          "timestamp_s": 0.0,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            120.0,
+            347.7,
+            196.8,
+            118.7
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 30,
+          "timestamp_s": 1.001,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            259.2,
+            398.6,
+            220.8,
+            127.2
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 59,
+          "timestamp_s": 1.969,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            292.8,
+            347.7,
+            187.2,
+            178.1
+          ],
+          "provider_pose": null
+        }
+      ],
+      "primary_frame_index": 0
+    }
+  },
+  {
+    "id": "g-reception-o02",
+    "name": "Brown two-seat sofa",
+    "category": "sofa",
+    "source": "extracted_video",
+    "glb_url": "/assets/g-reception-o02-624e270492.glb",
+    "product_url": null,
+    "price_gbp": null,
+    "bbox_m": {
+      "width": 1.55,
+      "height": 0.85,
+      "depth": 0.76
+    },
+    "has_screen": false,
+    "requires_front_clear_m": 0.5,
+    "wall_flush_preferred": true,
+    "is_proxy": false,
+    "dimension_source": "estimated",
+    "correction_needed": [
+      "dimensions",
+      "placement",
+      "orientation"
+    ],
+    "collision_parts": [],
+    "collision_source": "template",
+    "is_fixed": false,
+    "evidence": {
+      "frames": [
+        {
+          "frame_index": 0,
+          "timestamp_s": 0.0,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            340.8,
+            356.2,
+            96.0,
+            212.0
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 105,
+          "timestamp_s": 3.505,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            0.0,
+            245.9,
+            388.8,
+            474.9
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 134,
+          "timestamp_s": 4.473,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            0.0,
+            424.0,
+            192.0,
+            424.0
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 150,
+          "timestamp_s": 5.007,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            0.0,
+            356.2,
+            168.0,
+            491.8
+          ],
+          "provider_pose": null
+        }
+      ],
+      "primary_frame_index": 0
+    }
+  },
+  {
+    "id": "g-reception-o03",
+    "name": "White rectangular table",
+    "category": "table",
+    "source": "extracted_video",
+    "glb_url": "/assets/g-reception-o03-b325551aca.glb",
+    "product_url": null,
+    "price_gbp": null,
+    "bbox_m": {
+      "width": 1.12,
+      "height": 0.73,
+      "depth": 0.66
+    },
+    "has_screen": false,
+    "requires_front_clear_m": 0.5,
+    "wall_flush_preferred": true,
+    "is_proxy": false,
+    "dimension_source": "estimated",
+    "correction_needed": [
+      "dimensions",
+      "placement",
+      "orientation"
+    ],
+    "collision_parts": [
+      {
+        "x": 0.0,
+        "z": 0.0,
+        "width": 1.12,
+        "depth": 0.66,
+        "y_min": 0.6849999999999999,
+        "y_max": 0.73
+      },
+      {
+        "x": -0.525,
+        "z": -0.29500000000000004,
+        "width": 0.045,
+        "depth": 0.045,
+        "y_min": 0.0,
+        "y_max": 0.6849999999999999
+      },
+      {
+        "x": -0.525,
+        "z": 0.29500000000000004,
+        "width": 0.045,
+        "depth": 0.045,
+        "y_min": 0.0,
+        "y_max": 0.6849999999999999
+      },
+      {
+        "x": 0.525,
+        "z": -0.29500000000000004,
+        "width": 0.045,
+        "depth": 0.045,
+        "y_min": 0.0,
+        "y_max": 0.6849999999999999
+      },
+      {
+        "x": 0.525,
+        "z": 0.29500000000000004,
+        "width": 0.045,
+        "depth": 0.045,
+        "y_min": 0.0,
+        "y_max": 0.6849999999999999
+      }
+    ],
+    "collision_source": "template",
+    "is_fixed": false,
+    "evidence": {
+      "frames": [
+        {
+          "frame_index": 0,
+          "timestamp_s": 0.0,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            14.4,
+            390.1,
+            230.4,
+            152.6
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 30,
+          "timestamp_s": 1.001,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            153.6,
+            441.0,
+            230.4,
+            178.1
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 59,
+          "timestamp_s": 1.969,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            115.2,
+            390.1,
+            264.0,
+            212.0
+          ],
+          "provider_pose": null
+        }
+      ],
+      "primary_frame_index": 0
+    }
+  },
+  {
+    "id": "g-reception-o04",
+    "name": "Brown office chair",
+    "category": "chair",
+    "source": "extracted_video",
+    "glb_url": "/assets/g-reception-o04-b587afaaa0.glb",
+    "product_url": null,
+    "price_gbp": null,
+    "bbox_m": {
+      "width": 0.55,
+      "height": 0.96,
+      "depth": 0.58
+    },
+    "has_screen": false,
+    "requires_front_clear_m": 0.5,
+    "wall_flush_preferred": true,
+    "is_proxy": false,
+    "dimension_source": "estimated",
+    "correction_needed": [
+      "dimensions",
+      "placement",
+      "orientation"
+    ],
+    "collision_parts": [],
+    "collision_source": "template",
+    "is_fixed": false,
+    "evidence": {
+      "frames": [
+        {
+          "frame_index": 0,
+          "timestamp_s": 0.0,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            369.6,
+            491.8,
+            72.0,
+            110.2
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 105,
+          "timestamp_s": 3.505,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            283.2,
+            508.8,
+            196.8,
+            339.2
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 134,
+          "timestamp_s": 4.473,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            86.4,
+            466.4,
+            360.0,
+            381.6
+          ],
+          "provider_pose": null
+        },
+        {
+          "frame_index": 150,
+          "timestamp_s": 5.007,
+          "image_size_px": [
+            480,
+            848
+          ],
+          "mask_url": null,
+          "bbox_px": [
+            72.0,
+            449.4,
+            384.0,
+            398.6
+          ],
+          "provider_pose": null
+        }
+      ],
+      "primary_frame_index": 0
+    }
+  }
+]

@@ -58,3 +58,56 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
 - Photographed printouts are not perspective-corrected; mild keystone costs a few percent.
 - Door hinge and swing are inferred from the drawn leaf. When no leaf is found, the room gets
   `"openings"` in `correction_needed`.
+
+## Furniture alignment (#8)
+
+`align.align_assets(scene, assets, observer, frames=None)` places Dev 2's pose-less
+`FurnitureAsset`s in one room and returns `FurnitureItem`s plus an `AlignmentRecord` per asset ID.
+
+| Module | What it does |
+|---|---|
+| `footprint.py` | Plan geometry in plain Python: collision by parts, room containment, door sweeps, `split_rooms` for whole-floor scenes. Agrees with the spatial audit on every mock room. |
+| `observe.py` | `PlacementHint`: where an asset was seen, relative to a wall (`along_frac`, `offset_m`, `facing`, `seated_at`). `NullObserver`, `FixedObserver`. |
+| `observe_vision.py` | `FalVisionObserver`: shows a vision model the lettered plan and the evidence frames with numbered boxes. `selection_frames` / `directory_frames` supply the frame pixels. |
+| `align.py` | Hints to poses. Impossible spots (outside the room, inside another item) move to the nearest possible one. Assets without a hint get a default spot: back to a wall, clear of doors, windows and front access. |
+| `plan_view.py`, `align_debug.py` | Plan rendering and the debug CLI. |
+
+Rules:
+
+- Takes a single-room `RoomScene`. Furniture already in the scene is never moved, and an asset
+  whose ID is already placed keeps its pose, so a re-run changes nothing the user touched.
+- Nothing is dropped. An asset that fits nowhere is returned in the middle with `fits = False`.
+- Uncertainty goes into `correction_needed`: `placement` and `orientation` for a default spot or
+  a hint below 0.75 confidence; `orientation` when the front is unknown; `placement` when the
+  item was moved more than 0.3 m to fit or stands in a door swing.
+- A vision answer is capped at 0.7 confidence, so it is always flagged. Only reviewed hints
+  can settle a pose.
+- Records stay inside the service and link each pose to its `primary_frame_index`.
+
+```bash
+# Default layout for every room of a mock floor, compared with its poses
+uv run python -m services.reconstruction.room align \
+    contracts/mock_room/three_floor_ground_scene.json --out /tmp/align
+
+# The reception room of examples/three_floor_3.mp4 from reviewed hints
+uv run python -m services.reconstruction.room align \
+    contracts/mock_room/three_floor_ground_scene.json --out /tmp/align \
+    --room g-reception-w00 \
+    --assets services/reconstruction/room/fixtures/reception.assets.json \
+    --hints services/reconstruction/room/fixtures/reception.hints.json
+
+# Live (FAL_KEY): replace --hints with  --live --frames DIR [--save-hints FILE]
+```
+
+Fixtures: `reception.assets.json` is the four mock reception items with Dev 2's reviewed boxes
+(frames 0-150 of `three_floor_3.mp4`) as evidence. `reception.hints.json` was reviewed by the
+coding agent against those frames, not measured and not human-verified.
+
+Limits found in the live check (`fal-ai/any-llm/vision`, 10-20 s with `gemini-2.5-flash`,
+about 95 s with `gemini-2.5-pro`):
+
+- Both models misread the reception room: they put the camera at the wrong door, so the sofas
+  land on the wrong walls, at a self-reported 0.9. Hence the confidence cap.
+- The reviewed hints follow the video and disagree with the mock scene for both sofas.
+- `EvidenceFrame` has no image reference, so frame pixels come through a `FrameSource`.
+- Not wired into a route (#9) and not persisted (#12).

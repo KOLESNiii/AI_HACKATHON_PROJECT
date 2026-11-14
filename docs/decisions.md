@@ -96,3 +96,15 @@
 - Preserve full-width front clearance and interior-floor wall semantics. A notch
   obstructing any part of the required strip is a finding even if its centre line
   is clear; wall thickness already extends outward from the usable floor.
+
+## Furniture alignment (#8)
+
+- Place furniture from coarse wall-relative hints plus deterministic geometry, the same split
+  as the floor-plan parser. `provider_pose` registration waits until Dev 2 produces it.
+- Keep plan geometry in plain Python inside `room/`; no manifest change. Tests cross-check it
+  against the spatial audit.
+- A hinted item is moved only when its spot is impossible (outside the room or inside another
+  item). An item in a door swing stays where it was seen and is flagged; the audit reports it.
+- Vision placement is a proposal: its confidence is capped below the level that clears the
+  `placement` and `orientation` flags. Live runs misplaced both reception sofas.
+- Alignment records and hints stay inside the reconstruction service, out of `RoomScene`.
