@@ -676,5 +676,59 @@
     "seen": 1794687195.9112387,
     "ast_hash": "f85edfafaf2e4f9c6cced624641c3ad4",
     "semantic_hash": ""
+  },
+  ".graphify_ast.json": {
+    "mtime": 1794644052.0582492,
+    "seen": 1794687213.8068125,
+    "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
+    "semantic_hash": ""
+  },
+  ".graphify_cached.json": {
+    "mtime": 1794644029.234256,
+    "seen": 1794687213.8068225,
+    "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
+    "semantic_hash": ""
+  },
+  ".graphify_detect.json": {
+    "mtime": 1794644020.845635,
+    "seen": 1794687213.806827,
+    "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/mock_scene.json": {
+    "mtime": 1794674703.9606164,
+    "seen": 1794687213.8068302,
+    "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/fixtures/evidence.json": {
+    "mtime": 1794674703.9634907,
+    "seen": 1794687213.8087797,
+    "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/one_floor.annotations.json": {
+    "mtime": 1794682055.4256458,
+    "seen": 1794687213.8090906,
+    "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/three_floor.annotations.json": {
+    "mtime": 1794682055.4259014,
+    "seen": 1794687213.8090923,
+    "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/fixtures/audit_cases.json": {
+    "mtime": 1794682055.4266927,
+    "seen": 1794687213.809344,
+    "ast_hash": "288a075b44b0c604498a9fd1baafdf22",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
+    "mtime": 1794687061.6387968,
+    "seen": 1794687213.8094492,
+    "ast_hash": "7d500ae57af354b3d9d569dfc0be1d6d",
+    "semantic_hash": ""
   }
 }
