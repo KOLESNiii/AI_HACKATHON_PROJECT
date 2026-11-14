@@ -3,6 +3,39 @@
 Pure checks live in `audit.py`; `report.py` composes them for `POST /audit`.
 Geometry comes from shared scene JSON, never from mesh downloads.
 
+## Brightness approximation for layout comparison
+
+`brightness.calculate_brightness_approximation(scene)` returns a local
+`BrightnessApproximation`, without changing `AuditReport` or the HTTP response.
+It can be used by the future layout objective/agent tools. Inspect
+`openness_ratio` (0..1 or null), `obstruction_depth_m` and per-window `windows`:
+each entry has glass area, obstructed area, openness ratio and blocking item IDs.
+
+The proxy is **window openness**, not predicted illumination. Look within a
+1 m inward strip across each opening (configurable via `obstruction_depth_m`).
+Project occupied furniture parts onto the glass along the wall normal and clip
+their shadows to window width and sill/head height. Union overlapping shadows so
+two objects covering the same area do not double-count. Weight the room ratio by
+window area, not window count. Treat all parts as opaque, including proxies,
+chairs and fixed items. No windows means unknown/null, not zero brightness.
+
+Examples: a desk entirely below the sill has no penalty; a tall wardrobe covering
+half the glass within the strip gives window openness 0.5. Moving it away from
+the window can improve this proxy, but a final layout still needs the ordinary
+fit/access checks. The 1 m cutoff is deliberately a heuristic: furniture just
+beyond it has no effect. This does not model distance falloff, sunlight, compass,
+time, external buildings, glazing, curtains, reflectance or actual lux. A 0.5
+ratio must not be presented as "50% room brightness" or a certified daylight score.
+
+Window geometry is authoritative: use its owning wall, offset, width and sill/head
+heights. Derived compass/normal labels are not required. Invalid window references,
+duplicate IDs, invalid sizes/heights and malformed wall geometry raise
+`SpatialInputError`. Supplied request-local prepared geometry can be reused.
+
+```bash
+uv run --extra spatial pytest tests/spatial_engine/test_brightness.py
+```
+
 ## Audit endpoint
 
 Run `bun run dev:spatial` from the repository root (or the equivalent documented
