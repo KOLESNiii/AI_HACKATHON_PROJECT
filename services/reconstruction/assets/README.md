@@ -52,7 +52,7 @@ Evidence ties an asset to the frames it was seen in, so Dev 1 can align it.
 - For video items, `mask_url` is a reference relative to the asset data directory, read with
   `segmentation.read_mask(data_dir, mask_url)`. It is not a browser URL (see #15 below).
 - `provider_pose` carries the raw per-object rotation, translation, scale and camera pose
-  that fal.ai `sam-3d-objects` returns. Its exact shape is unverified until one live call.
+  that `fal-ai/sam-3/3d-objects` returns. The verified SAM 3D shape is documented under #16 below.
 - Evidence stays inside the reconstruction service. It is never placed in `RoomScene`, which
   the editor sends to the audit on every move. Its types are `EvidenceFrame` and
   `AssetEvidence` in `models.py`.
@@ -317,3 +317,88 @@ close-ups are worse: three masks scored 0.57–0.71 and are flagged, and one 0.9
 right sofa includes a hand at the frame edge without a flag. Masks are machine-generated
 evidence, not verified outlines. Not covered: masks for non-selected sightings, tracking
 between frames, depth or floor contact, and any metric size or room position.
+
+## Implemented: individual raw meshes and proxy fallback (#16)
+
+`reconstruction.reconstruct_furniture(scene_id, *, data_dir, provider=None, object_ids=None,
+dimensions=None, replace=False, max_requests=8, concurrency=4)` reads the #14/#15 registry.
+Each item returns a current `MeshRecord` or an explicit `MeshFailure`, plus a labelled,
+dimensioned `FurnitureAsset` proxy. Failed replacements also return the previous current
+mesh. `complete` means every requested item has a mesh and no attempt failed this run.
+
+The live provider is `FalSam3dProvider(key=...)`, endpoint `fal-ai/sam-3/3d-objects`: it uploads
+one upright frame and one instance mask per item. Requests run concurrently (four workers
+by default) against a shared submission budget. View selection prefers confident masks,
+then an unclipped view at least half the largest mask's area, then the largest mask. Clipped
+and low-confidence views carry warnings. Without an explicit provider there is no network:
+stored meshes are reused and other items return `not_attempted` or `no_view` with proxies.
+
+```bash
+uv run --extra reconstruction --env-file .env python \
+  -m services.reconstruction.assets.reconstruct_items \
+  --scene-id reviewed-opening-room --data-dir artifacts/furniture \
+  --out /tmp/furniture-meshes --live --max-requests 4
+```
+
+Omit `--live` for offline proxies. The CLI writes `reconstruction.json` (raw mesh records,
+failures, warnings), `assets.json` (an array of servable proxy `FurnitureAsset`s), and
+`report.md`. Exit 0 means complete, 2 means partial/proxies, 1 means invalid input or storage.
+Use repeated `--object-id` arguments to select items. `--dimensions file.json` accepts known
+sizes keyed by item ID, for example:
+
+```json
+{"vid-000001": {"bbox_m": {"width": 1.2, "height": 0.7, "depth": 0.6}, "source": "measured"}}
+```
+
+Allowed sources are `measured`, `catalog`, `user_corrected`. Without known dimensions,
+category defaults are explicitly `estimated` and request a `dimensions` correction. Every
+proxy keeps the item's ID/name, has its bottom-centre at the origin, +Y up and a dark front
+marker at +Z. Fixtures remain fixed; collision parts are empty (one solid bounding box).
+
+**Storage and retries.** Raw GLBs live under `meshes/<scene digest>/<item ID>/` and retain
+provider units/orientation. They must pass binary glTF 2.0, declared-length, 20 MB, triangle
+and finite non-zero extent checks. They are not served or represented as normalised assets:
+metric scaling, canonical orientation and the final mesh profile are #17. A missing file or
+changed mask triggers reconstruction. Successful replacements attach transactionally only
+if their mask is still current; failed replacements keep existing records/files.
+
+A rerun reuses stored meshes. `--replace` re-reads a saved fal request without submitting;
+`--refresh label --replace` deliberately starts a paid regeneration. Submitted request IDs
+survive timeouts (420 seconds by default); retry collects the remote result. Uncertain
+submissions are never repeated automatically. Budget-deferred submissions remain retryable.
+Terminal remote errors, disallowed URLs and invalid/oversized GLBs mark the saved request
+failed: reruns stop before polling or downloading again and instruct the operator to use
+`--refresh` with a new namespace for a paid retry. Transient network/download failures keep
+the saved handle recoverable without another inference charge.
+Failure kinds are `not_attempted`, `no_view`, `budget`, `timeout`, `provider`, `invalid_mesh`.
+Downloads permit HTTPS `fal.media` hosts only, without redirects, and enforce the cap while
+streaming. Credentials and raw provider error bodies are excluded from diagnostics.
+
+`selection.object_evidence` / `evidence_for` now fill `provider_pose` on the mesh's frame:
+raw `object_index`, `scale`, `rotation` (x/y/z/w quaternion), `translation`, `camera_pose`.
+Scale and translation are nested arrays; their relationship to room metres is unverified.
+The live single-object response uses `model_glb` and `metadata[0]`.
+
+**Dev 1 handoff ([#52](https://github.com/KOLESNiii/AI_HACKATHON_PROJECT/issues/52)).**
+Mount `asset_store.asset_router(data_dir)` in the reconstruction app to serve `/assets/<sha256>.glb` with immutable caching. Proxy browser URLs already use
+`/api/reconstruction/assets/<sha256>.glb`, matching Vite's existing prefix stripping.
+Raw meshes remain private runtime files. No main entry point, shared contract, dependency
+manifest or room-placement interface changes in this issue.
+
+**Live verification (2026-11-14).** Four new requests returned four separate usable raw GLBs.
+Together with six mask requests and the earlier probe this used 11 of the 15 authorised
+requests. An offline rerun reused all four stored meshes. No private input, masks, meshes or
+provider URLs are committed.
+
+| Item | Triangles | Bytes | Source frame |
+|---|---:|---:|---:|
+| Coffee table | 10,806 | 1,257,384 | 59 |
+| Rear sofa | 9,804 | 1,095,880 | 30 |
+| Right sofa | 10,098 | 1,157,744 | 105 |
+| Office chair | 17,978 | 1,409,988 | 105 |
+
+Geometry projections were compared with source crops: table/sofas are recognisable, but the
+item labelled office chair reconstructs as an upholstered armchair. Frame 105 clips the
+right sofa and chair, both warned. Hidden geometry is inferred; passing structural checks
+is not a visual-accuracy claim. Textures, metric scaling and canonical orientation were not
+visually verified. #17 must normalise meshes before they become servable furniture assets.

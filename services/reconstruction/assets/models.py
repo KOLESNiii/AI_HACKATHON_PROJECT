@@ -31,7 +31,8 @@ class EvidenceFrame(ContractModel):
     bbox_px: tuple[float, float, float, float] | None = None
     """(x, y, w, h) in pixels."""
     provider_pose: dict[str, Any] | None = None
-    """Raw per-object pose from fal.ai `sam-3d-objects`; shape unverified until a live call."""
+    """Raw SAM 3D metadata[0]: object_index, nested scale/rotation/translation, camera_pose.
+    Shape verified live 2026-11-14; metric scale and axes still require interpretation (#17)."""
 
 
 class AssetEvidence(ContractModel):

@@ -151,6 +151,27 @@ proxy-box/shell-error fallback. These named demo URLs use `Cache-Control: no-cac
 Restart the reconstruction service after changing source fixture geometry to clear
 the in-memory room/shell cache. The frontend's former copy/build script is removed.
 
+## Individual furniture meshes and proxies (#16)
+
+`assets/reconstruction.py` consumes the #14 registry and #15 masks, calling an injected
+`MeshProvider` concurrently per item. It validates raw GLBs, writes them under the runtime
+`meshes/` directory and attaches `MeshRecord`s transactionally while their mask is current.
+Each result retains a labelled, dimensioned proxy and explicit typed failures; failed
+replacements preserve a current stored mesh. The offline default never submits inference.
+
+`FalSam3dProvider` uses `fal-ai/sam-3/3d-objects` with `FAL_KEY`, uploading one frame and mask
+per item. It retains request handles in the existing namespaced SQLite request cache;
+timeouts remain recoverable and submission uncertainty blocks duplicate charges. Downloads
+are bounded to 20 MB over HTTPS from fal media hosts. A shared thread-safe request budget
+caps new submissions. Provider pose metadata is attached to the corresponding evidence
+frame. Raw meshes retain provider scale/orientation; canonical normalisation remains #17.
+
+`assets/proxies.py` uses caller-supplied known dimensions or category estimates marked for
+correction. `assets/asset_store.py` stores their GLBs by SHA-256 and supplies `asset_router`
+for Dev 1 to mount at `/assets`; browser URLs include `/api/reconstruction`. This PR does
+not mount the route or change shared schemas/manifests. `reconstruct_items` provides local
+JSON/Markdown reports; see the asset README for configuration and retry commands.
+
 ## Scene assembly route (#9)
 
 `GET /scenes/{scene_id}` on port 8001 (`services/reconstruction/scenes.py`) returns one room as a
