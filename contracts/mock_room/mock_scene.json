@@ -1,5 +1,6 @@
 {
   "scene_id": "demo_studio_01",
+  "revision": 0,
   "shell_glb_url": "/mock_room/shell.glb",
   "north_compass_deg": null,
   "sun_hour": 14.5,
@@ -34,7 +35,8 @@
       "hinge_pos": { "x": 0.4, "z": 0.0 },
       "width_m": 0.85,
       "swing_angle_deg": 90.0,
-      "swing_clockwise": true
+      "swing_clockwise": true,
+      "swings_into_room": true
     }
   ],
   "furniture": [
@@ -48,7 +50,10 @@
       "pose": { "x": 3.1, "z": 1.1, "yaw_deg": 270 },
       "has_screen": false,
       "requires_front_clear_m": 0.5,
-      "wall_flush_preferred": true
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "needs_correction": false
     },
     {
       "id": "item_desk",
@@ -60,7 +65,10 @@
       "pose": { "x": 2.1, "z": 2.6, "yaw_deg": 0 },
       "has_screen": true,
       "requires_front_clear_m": 0.75,
-      "wall_flush_preferred": false
+      "wall_flush_preferred": false,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "needs_correction": false
     },
     {
       "id": "item_wardrobe",
@@ -72,7 +80,10 @@
       "pose": { "x": 1.35, "z": 0.45, "yaw_deg": 0 },
       "has_screen": false,
       "requires_front_clear_m": 0.7,
-      "wall_flush_preferred": true
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "needs_correction": false
     }
   ]
 }
