@@ -2,11 +2,21 @@
 
 from collections.abc import Sequence
 from itertools import combinations
-from math import isfinite
+from math import isclose, isfinite
 
-from contracts.schema import BlockedDoorIssue, CollisionIssue, FurnitureItem, RoomScene
+from shapely.ops import unary_union  # type: ignore[import-untyped]
+
+from contracts.schema import (
+    MIN_HEIGHT_OVERLAP_M,
+    MIN_PLAN_OVERLAP_M2,
+    BlockedDoorIssue,
+    CollisionIssue,
+    FurnitureItem,
+    RoomScene,
+)
 from services.spatial_engine.geometry import (
     door_swing_sector,
+    furniture_collision_volumes,
     furniture_footprint,
     room_floor_polygon,
 )
@@ -77,14 +87,14 @@ def detect_out_of_bounds(scene: RoomScene, *, boundary_tolerance_m: float = 1e-9
 
 
 def detect_collisions(
-    furniture: Sequence[FurnitureItem], *, area_tolerance_m2: float = 1e-9
+    furniture: Sequence[FurnitureItem], *, area_tolerance_m2: float = MIN_PLAN_OVERLAP_M2
 ) -> list[CollisionIssue]:
     """Report each overlapping pair once, in stable item-ID order.
 
-    Uses conservative rectangular floor footprints. Edge/corner contact is
-    allowed; only intersection area strictly above the tolerance is reported.
-    The default tolerance is numerical noise suppression, not a safety margin.
-    Reported areas are the full intersection areas, without subtracting tolerance.
+    Whole bounding footprints provide a broad phase. Occupied parts must overlap
+    in plan above the area tolerance and in height above MIN_HEIGHT_OVERLAP_M.
+    Empty parts fall back to a solid bbox. Report the union area of qualifying
+    part intersections, without double counting. Defaults follow shared contracts.
 
     Raises ValueError for duplicate IDs, invalid footprints, or a non-finite or
     negative tolerance. Input items and their order are never modified.
@@ -94,14 +104,33 @@ def detect_collisions(
     if len({item.id for item in furniture}) != len(furniture):
         raise ValueError("Furniture IDs must be unique for collision detection")
 
-    footprints = [
-        (item.id, furniture_footprint(item)) for item in sorted(furniture, key=lambda i: i.id)
+    geometry = [
+        (item.id, furniture_footprint(item), furniture_collision_volumes(item))
+        for item in sorted(furniture, key=lambda i: i.id)
     ]
     issues = []
-    for (id_a, footprint_a), (id_b, footprint_b) in combinations(footprints, 2):
-        area = float(footprint_a.intersection(footprint_b).area)
-        if not isfinite(area):
-            raise ValueError("Furniture overlap area must be finite")
-        if area > area_tolerance_m2:
+    for (id_a, footprint_a, parts_a), (id_b, footprint_b, parts_b) in combinations(geometry, 2):
+        # Parts may extend up to the contract's bbox tolerance, so broad-phase
+        # rejection must include their actual bounds as well as the nominal box.
+        bounds_a = unary_union([footprint_a, *(p.footprint for p in parts_a)]).envelope
+        bounds_b = unary_union([footprint_b, *(p.footprint for p in parts_b)]).envelope
+        if not bounds_a.intersects(bounds_b):
+            continue
+        intersections = []
+        for part_a in parts_a:
+            for part_b in parts_b:
+                height = min(part_a.y_max, part_b.y_max) - max(part_a.y_min, part_b.y_min)
+                if height <= MIN_HEIGHT_OVERLAP_M or isclose(
+                    height, MIN_HEIGHT_OVERLAP_M, rel_tol=1e-12, abs_tol=1e-12
+                ):
+                    continue
+                intersection = part_a.footprint.intersection(part_b.footprint)
+                area = float(intersection.area)
+                if not isfinite(area):
+                    raise ValueError("Furniture overlap area must be finite")
+                if area > area_tolerance_m2:
+                    intersections.append(intersection)
+        if intersections:
+            area = float(unary_union(intersections).area)
             issues.append(CollisionIssue(item_a=id_a, item_b=id_b, overlap_area_m2=area))
     return issues

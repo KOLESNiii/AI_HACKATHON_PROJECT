@@ -81,7 +81,8 @@ def test_tolerance_is_strict_and_does_not_change_reported_area() -> None:
 
 def test_default_tolerance_suppresses_tiny_overlap() -> None:
     assert detect_collisions([item("a"), item("b", x=2 - 1e-10)]) == []
-    assert len(detect_collisions([item("a"), item("b", x=2 - 1e-6)])) == 1
+    assert detect_collisions([item("a"), item("b", x=2 - 1e-6)]) == []
+    assert len(detect_collisions([item("a"), item("b", x=2 - 1e-3)])) == 1
 
 
 @pytest.mark.parametrize("tolerance", [-1, math.nan, math.inf, -math.inf])

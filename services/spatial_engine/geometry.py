@@ -1,12 +1,51 @@
 """Metric floor geometry using the coordinate conventions in contracts.schema."""
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from math import atan2, ceil, cos, hypot, isfinite, radians, sin
 
 # The existing spatial extra ships Shapely without type stubs.
 from shapely.geometry import LineString, Point, Polygon  # type: ignore[import-untyped]
 
-from contracts.schema import DoorOpening, FurnitureItem, Vec2, WallSegment
+from contracts.schema import CollisionPart, DoorOpening, FurnitureItem, Vec2, WallSegment
+
+
+@dataclass(frozen=True)
+class CollisionVolume:
+    """An item's occupied box transformed into a vertical prism in room space."""
+
+    footprint: Polygon
+    y_min: float
+    y_max: float
+
+
+def furniture_collision_volumes(item: FurnitureItem) -> list[CollisionVolume]:
+    """Transform validated local collision boxes; absent parts mean one solid bbox.
+
+    Revalidate parts because model instances can be mutated after construction.
+    Item placement stays at Y=0; this does not introduce elevated item poses.
+    """
+    furniture_footprint(item)
+    if not isfinite(item.bbox_m.height) or item.bbox_m.height <= 0:
+        raise ValueError("Furniture height must be finite and positive")
+    validated = FurnitureItem.model_validate(item.model_dump())
+    box = validated.bbox_m
+    parts = validated.collision_parts or [
+        CollisionPart(x=0, z=0, width=box.width, depth=box.depth, y_min=0, y_max=box.height)
+    ]
+    angle = radians(item.pose.yaw_deg % 360)
+    c, s = cos(angle), sin(angle)
+    volumes = []
+    for part in parts:
+        points = []
+        for sx, sz in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+            x, z = part.x + sx * part.width / 2, part.z + sz * part.depth / 2
+            points.append((item.pose.x + x * c + z * s, item.pose.z - x * s + z * c))
+        footprint = Polygon(points)
+        if not footprint.is_valid or not isfinite(footprint.area) or footprint.area <= 0:
+            raise ValueError("Collision part must have valid geometry with finite, positive area")
+        volumes.append(CollisionVolume(footprint, part.y_min, part.y_max))
+    return volumes
 
 
 def door_swing_sector(
