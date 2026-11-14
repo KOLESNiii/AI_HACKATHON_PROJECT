@@ -5,9 +5,39 @@ from dataclasses import dataclass
 from math import atan2, ceil, cos, hypot, isfinite, radians, sin
 
 # The existing spatial extra ships Shapely without type stubs.
+from shapely.affinity import rotate, translate  # type: ignore[import-untyped]
 from shapely.geometry import LineString, Point, Polygon  # type: ignore[import-untyped]
 
 from contracts.schema import CollisionPart, DoorOpening, FurnitureItem, Vec2, WallSegment
+
+
+def front_clearance_zone(item: FurnitureItem) -> Polygon:
+    """Full-width rectangle from the bbox front, rotated/placed in room X/Z.
+
+    Zero required clearance returns an empty polygon. Reject invalid dimensions,
+    pose or clearance instead of interpreting them as a clear access zone.
+    """
+    furniture_footprint(item)
+    required = item.requires_front_clear_m
+    if not isfinite(required) or required < 0:
+        raise ValueError("Required front clearance must be finite and non-negative")
+    if required == 0:
+        return Polygon()
+    half_width, front = item.bbox_m.width / 2, item.bbox_m.depth / 2
+    zone = Polygon(
+        [
+            (-half_width, front),
+            (half_width, front),
+            (half_width, front + required),
+            (-half_width, front + required),
+        ]
+    )
+    zone = translate(
+        rotate(zone, -(item.pose.yaw_deg % 360), origin=(0, 0)), xoff=item.pose.x, yoff=item.pose.z
+    )
+    if not zone.is_valid or not isfinite(zone.area) or zone.area <= 0:
+        raise ValueError("Front clearance zone must have valid geometry and finite, positive area")
+    return zone
 
 
 @dataclass(frozen=True)
@@ -48,18 +78,17 @@ def furniture_collision_volumes(item: FurnitureItem) -> list[CollisionVolume]:
     return volumes
 
 
-def door_swing_sector(
-    door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2]
-) -> Polygon:
-    """Return a conservative door sweep in room X/Z, using the stored swing rules.
+@dataclass(frozen=True)
+class _DoorFrame:
+    hinge: tuple[float, float]
+    endpoint: tuple[float, float]
+    inward_normal: tuple[float, float]
+    start_angle: float
+    swing_sign: int
 
-    Infer the interior side from the floor ring, independently of wall/ring winding.
-    Wall and closed leaf must lie on the floor boundary within 1e-8 m. Angles
-    0..180 degrees are supported; zero returns an empty sweep. Arc tangents at
-    intervals of at most one degree bound the true sector from outside (radial
-    excess <= about 0.000039 * door width), avoiding missed arc-edge obstacles.
-    This models an ideal zero-thickness leaf, without handle/clearance margins.
-    """
+
+def _door_frame(door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2]) -> _DoorFrame:
+    """Validate and resolve a door's closed leaf and room side once for all checks."""
     tolerance = 1e-8
     floor = room_floor_polygon(floor_points)
     values = (
@@ -122,11 +151,52 @@ def door_swing_sector(
     endpoint = (hinge[0] + door.width_m * leaf_sign * tx, hinge[1] + door.width_m * leaf_sign * tz)
     if wall_line.distance(Point(endpoint)) > tolerance:
         raise ValueError("Closed door leaf must fit within its wall segment")
+    return _DoorFrame(hinge, endpoint, (-tz * interior_sign, tx * interior_sign), start, swing_sign)
+
+
+def door_entry_segment(
+    door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2], radius_m: float
+) -> LineString:
+    """Possible person-centre entry locations, one radius inside the door opening.
+
+    Trim a radius off both jambs. A tiny inset avoids round-off at exact-width
+    thresholds. The caller checks these locations against obstacle-free space.
+    """
+    if not isfinite(radius_m) or radius_m <= 0:
+        raise ValueError("Entry radius must be finite and positive")
+    frame = _door_frame(door, wall, floor_points)
+    if door.width_m < 2 * radius_m:
+        return LineString()
+    tx = (frame.endpoint[0] - frame.hinge[0]) / door.width_m
+    tz = (frame.endpoint[1] - frame.hinge[1]) / door.width_m
+    inset = radius_m + 1e-9
+    points = [
+        (
+            frame.hinge[0] + along * tx + inset * frame.inward_normal[0],
+            frame.hinge[1] + along * tz + inset * frame.inward_normal[1],
+        )
+        for along in (radius_m, door.width_m - radius_m)
+    ]
+    return LineString(points)
+
+
+def door_swing_sector(
+    door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2]
+) -> Polygon:
+    """Conservative zero-thickness door sweep, using stored opening conventions.
+
+    Validate wall/closed leaf on the floor boundary within 1e-8 m. Support angles
+    0..180 degrees; zero returns an empty sweep. Arc tangents at intervals of at
+    most one degree bound the sector from outside (radial excess <= about
+    0.000039 * door width). No handle or access margin is added.
+    """
+    frame = _door_frame(door, wall, floor_points)
+    hinge, endpoint, start = frame.hinge, frame.endpoint, frame.start_angle
     if door.swing_angle_deg == 0:
         return Polygon()
 
     steps = ceil(door.swing_angle_deg)
-    step = swing_sign * radians(door.swing_angle_deg) / steps
+    step = frame.swing_sign * radians(door.swing_angle_deg) / steps
     tangent_radius = door.width_m / cos(abs(step) / 2)
     points = [hinge, endpoint]
     for index in range(steps):

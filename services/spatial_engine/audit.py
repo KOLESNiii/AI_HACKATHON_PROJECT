@@ -4,22 +4,117 @@ from collections.abc import Sequence
 from itertools import combinations
 from math import isclose, isfinite
 
+from shapely.affinity import rotate  # type: ignore[import-untyped]
+from shapely.geometry import Polygon  # type: ignore[import-untyped]
 from shapely.ops import unary_union  # type: ignore[import-untyped]
 
 from contracts.schema import (
     MIN_HEIGHT_OVERLAP_M,
     MIN_PLAN_OVERLAP_M2,
+    WALK_HEADROOM_M,
     BlockedDoorIssue,
+    ClearanceIssue,
     CollisionIssue,
     FurnitureItem,
     RoomScene,
 )
 from services.spatial_engine.geometry import (
     door_swing_sector,
+    front_clearance_zone,
     furniture_collision_volumes,
     furniture_footprint,
     room_floor_polygon,
 )
+
+
+def detect_front_clearance(scene: RoomScene) -> list[ClearanceIssue]:
+    """Check full-width front access strips, returning one issue per blocker.
+
+    actual_m is the minimum forward distance from the bbox front to the blocker
+    anywhere across that strip, capped to 0..required_m. Boundary incursions use
+    blocked_by_item_id=None. Chairs have no front-access checks and never block
+    another item's access. Self is ignored; other occupied
+    parts below WALK_HEADROOM_M (including fixed items) block access. High parts
+    do not. This is a conservative standing-access check, not an articulated
+    drawer/door simulation or a reachability assessment.
+
+    Ignore area <= 1e-9 m² and distance deficits <= 1e-9 m as numerical noise.
+    Results are ordered by target ID, boundary first, then blocker ID. Invalid
+    geometry, invalid required clearance or duplicate item IDs raise ValueError.
+    Inputs are never modified.
+    """
+    floor = room_floor_polygon(scene.floor_polygon)
+    furniture = sorted(scene.furniture, key=lambda item: item.id)
+    if len({item.id for item in furniture}) != len(furniture):
+        raise ValueError("Furniture IDs must be unique for front-clearance checks")
+    zones = {item.id: front_clearance_zone(item) for item in furniture}
+    volumes = {item.id: furniture_collision_volumes(item) for item in furniture}
+    issues = []
+    for target in furniture:
+        zone = zones[target.id]
+        if target.category == "chair" or zone.is_empty:
+            continue
+        blockers: list[tuple[str | None, Polygon]] = [(None, zone.difference(floor))]
+        for other in furniture:
+            if other.id == target.id or other.category == "chair":
+                continue
+            parts = [part.footprint for part in volumes[other.id] if part.y_min < WALK_HEADROOM_M]
+            if parts:
+                blockers.append((other.id, zone.intersection(unary_union(parts))))
+        for blocker_id, intersection in blockers:
+            if intersection.is_empty or intersection.area <= 1e-9:
+                continue
+            # Undo Three.js yaw around the target; local +Z is forward.
+            local = rotate(
+                intersection, target.pose.yaw_deg % 360, origin=(target.pose.x, target.pose.z)
+            )
+            actual = max(
+                0.0,
+                min(
+                    target.requires_front_clear_m,
+                    float(local.bounds[1]) - target.pose.z - target.bbox_m.depth / 2,
+                ),
+            )
+            if target.requires_front_clear_m - actual > 1e-9:
+                issues.append(
+                    ClearanceIssue(
+                        item_id=target.id,
+                        required_m=target.requires_front_clear_m,
+                        actual_m=actual,
+                        blocked_by_item_id=blocker_id,
+                    )
+                )
+    return issues
+
+
+def calculate_free_floor_ratio(scene: RoomScene) -> float:
+    """Return the usable floor fraction not blocked under the shared headroom rule.
+
+    Project occupied parts with y_min < WALK_HEADROOM_M onto the floor, union
+    them (including fixed items), and clip to the interior floor polygon. Empty
+    parts mean a solid bbox. Parts at or above the headroom threshold do not
+    block floor. Overlapping parts/items never subtract area twice.
+
+    This is geometric free area, not reachable circulation, passage width or
+    accessibility. Door swings and front-clearance reservations are not deducted.
+    No AuditReport field is assigned here. Inputs are not modified; invalid
+    floor/furniture geometry and duplicate furniture IDs raise ValueError.
+    """
+    floor = room_floor_polygon(scene.floor_polygon)
+    if len({item.id for item in scene.furniture}) != len(scene.furniture):
+        raise ValueError("Furniture IDs must be unique for free-floor checks")
+    blockers = [
+        volume.footprint
+        for item in sorted(scene.furniture, key=lambda i: i.id)
+        for volume in furniture_collision_volumes(item)
+        if volume.y_min < WALK_HEADROOM_M
+    ]
+    if not blockers:
+        return 1.0
+    free_area = float(floor.difference(unary_union(blockers)).area)
+    if not isfinite(free_area):
+        raise ValueError("Free floor area must be finite")
+    return max(0.0, min(1.0, free_area / float(floor.area)))
 
 
 def _height_overlaps(bottom_a: float, top_a: float, bottom_b: float, top_b: float) -> bool:
