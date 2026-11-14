@@ -1,9 +1,9 @@
 /**
  * Plan-view placement helpers for the editor (metres, +X right, +Z down the page).
- * Spatial findings (collisions, clearance, doors, walkable floor) come from the
- * spatial engine's AuditReport, not from here.
+ * Overlap and door-swing shapes here are editor hints only; the spatial engine's
+ * AuditReport stays the source of truth for collisions, clearance and walkable floor.
  */
-import type { FurnitureItem, Vec2, WallSegment } from './contracts'
+import type { DoorOpening, FurnitureItem, Vec2, WallSegment } from './contracts'
 
 export type Pt = Vec2
 
@@ -128,4 +128,86 @@ export function fitYaw(
 
 export function fitsRoom(floor: Pt[], width: number, depth: number): boolean {
   return fitYaw(floor, width, depth) != null
+}
+
+const EPS = 1e-3
+
+/**
+ * True when two plan polygons (convex, e.g. footprints) overlap by more than a hair.
+ * Separating-axis test; items that merely touch (snapped flush) don't count.
+ */
+export function polygonsOverlap(a: Pt[], b: Pt[]): boolean {
+  for (const poly of [a, b]) {
+    for (let i = 0; i < poly.length; i++) {
+      const p = poly[i]
+      const q = poly[(i + 1) % poly.length]
+      const ax = -(q.z - p.z)
+      const az = q.x - p.x
+      const l = Math.hypot(ax, az) || 1
+      let aMin = Infinity
+      let aMax = -Infinity
+      let bMin = Infinity
+      let bMax = -Infinity
+      for (const v of a) {
+        const d = (v.x * ax + v.z * az) / l
+        aMin = Math.min(aMin, d)
+        aMax = Math.max(aMax, d)
+      }
+      for (const v of b) {
+        const d = (v.x * ax + v.z * az) / l
+        bMin = Math.min(bMin, d)
+        bMax = Math.max(bMax, d)
+      }
+      if (aMax - bMin <= EPS || bMax - aMin <= EPS) return false
+    }
+  }
+  return true
+}
+
+/**
+ * Ids of items whose bounding-box footprints overlap another item's (all items stand
+ * on the floor, so footprint overlap means the boxes intersect). Visual hint only; the
+ * spatial engine's audit stays the source of truth.
+ */
+export function overlappingIds(items: FurnitureItem[]): string[] {
+  const fps = items.map(footprint)
+  const hit = new Set<string>()
+  for (let i = 0; i < items.length; i++)
+    for (let j = i + 1; j < items.length; j++)
+      if (polygonsOverlap(fps[i], fps[j])) {
+        hit.add(items[i].id)
+        hit.add(items[j].id)
+      }
+  return items.filter((i) => hit.has(i.id)).map((i) => i.id)
+}
+
+/**
+ * Floor area a door leaf sweeps, as a fan [hinge, ...arc] in plan coordinates, or null
+ * when the door doesn't swing. Follows the DoorOpening contract: the closed leaf lies
+ * along the wall, and turning it 90° in the swing direction points it to the swing side.
+ */
+export function doorSwing(
+  door: DoorOpening,
+  walls: WallSegment[],
+): Pt[] | null {
+  const wall = walls.find((w) => w.id === door.wall_id)
+  if (!wall || door.swing_angle_deg <= 0 || door.width_m <= 0) return null
+  const n = inwardNormal(wall)
+  const s = door.swings_into_room ? n : { x: -n.x, z: -n.z }
+  // Plan view has +Z down the page, so clockwise (from above) turns (x, z) into (-z, x).
+  const leaf = door.swing_clockwise ? { x: s.z, z: -s.x } : { x: -s.z, z: s.x }
+  const steps = Math.max(8, Math.ceil(door.swing_angle_deg / 3))
+  const pts: Pt[] = [door.hinge_pos]
+  for (let k = 0; k <= steps; k++) {
+    const t = (door.swing_angle_deg * DEG * k) / steps
+    pts.push({
+      x:
+        door.hinge_pos.x +
+        door.width_m * (Math.cos(t) * leaf.x + Math.sin(t) * s.x),
+      z:
+        door.hinge_pos.z +
+        door.width_m * (Math.cos(t) * leaf.z + Math.sin(t) * s.z),
+    })
+  }
+  return pts
 }

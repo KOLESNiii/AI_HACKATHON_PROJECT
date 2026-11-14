@@ -2,6 +2,7 @@
 export type {
   AuditReport,
   BBoxM,
+  DoorOpening,
   FurnitureItem,
   Pose2D,
   RoomScene,

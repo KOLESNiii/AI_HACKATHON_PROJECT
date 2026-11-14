@@ -119,9 +119,9 @@ function RotationRing({ item }: { item: FurnitureItem }) {
   )
 }
 
-/** Minimal action bar above the selected item: Snap to wall and Delete. */
+/** Minimal action bar above the selected item: Snap to wall, Reset rotation, Delete. */
 function SelectionBar({ item }: { item: FurnitureItem }) {
-  const { snapItem, deleteItem } = useStore.getState()
+  const { snapItem, resetRotation, deleteItem } = useStore.getState()
   if (item.is_fixed) return null
   return (
     <Html
@@ -134,6 +134,12 @@ function SelectionBar({ item }: { item: FurnitureItem }) {
         onPointerDown={(e) => e.stopPropagation()}
       >
         <Button onClick={() => snapItem(item.id)}>Snap to wall</Button>
+        <Button
+          onClick={() => resetRotation(item.id)}
+          disabled={item.pose.yaw_deg === 0}
+        >
+          Reset rotation
+        </Button>
         <Button onClick={() => deleteItem(item.id)}>Delete</Button>
       </div>
     </Html>

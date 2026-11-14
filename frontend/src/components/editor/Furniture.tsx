@@ -9,7 +9,14 @@ import {
   useRef,
   type ReactNode,
 } from 'react'
-import { Box3, BoxGeometry, EdgesGeometry, Plane, Vector3 } from 'three'
+import {
+  AdditiveBlending,
+  Box3,
+  BoxGeometry,
+  EdgesGeometry,
+  Plane,
+  Vector3,
+} from 'three'
 import type { FurnitureItem } from '../../lib/contracts'
 import { clampToFloor, DEG, footprint } from '../../lib/geometry'
 import { useStore } from '../../store'
@@ -103,8 +110,44 @@ export class MeshBoundary extends Component<
   }
 }
 
+/** Red glow drawn over an item whose bounding box intersects another item's. */
+function OverlapGlow({ item }: { item: FurnitureItem }) {
+  const { width, height, depth } = item.bbox_m
+  const edges = useMemo(() => {
+    const box = new BoxGeometry(width + 0.04, height + 0.04, depth + 0.04)
+    const e = new EdgesGeometry(box)
+    box.dispose()
+    return e
+  }, [width, height, depth])
+  useEffect(() => () => edges.dispose(), [edges])
+  return (
+    <group position={[0, height / 2, 0]} raycast={() => null}>
+      <mesh raycast={() => null} renderOrder={2}>
+        <boxGeometry args={[width + 0.04, height + 0.04, depth + 0.04]} />
+        <meshBasicMaterial
+          color="#c43a31"
+          transparent
+          opacity={0.28}
+          depthWrite={false}
+          blending={AdditiveBlending}
+        />
+      </mesh>
+      <lineSegments geometry={edges} raycast={() => null} renderOrder={3}>
+        <lineBasicMaterial color="#c43a31" transparent opacity={0.95} />
+      </lineSegments>
+    </group>
+  )
+}
+
 /** One furniture item (selected by id so a drag only re-renders that item). */
-export const Furniture = memo(function Furniture({ id }: { id: string }) {
+export const Furniture = memo(function Furniture({
+  id,
+  overlapping,
+}: {
+  id: string
+  /** Its bounding box intersects another item's: draw it glowing red. */
+  overlapping: boolean
+}) {
   const item = useStore((s) => s.scene.furniture.find((i) => i.id === id))
   const selected = useStore((s) => s.selectedId === id)
   const { select, setPose, commitEdit, setInteracting } = useStore.getState()
@@ -197,7 +240,14 @@ export const Furniture = memo(function Furniture({ id }: { id: string }) {
           <ProxyBox item={item} />
         )}
       </group>
-      {selected && <Line points={outline} color="#1c1a17" lineWidth={2.5} />}
+      {overlapping && <OverlapGlow item={item} />}
+      {(selected || overlapping) && (
+        <Line
+          points={outline}
+          color={overlapping ? '#c43a31' : '#1c1a17'}
+          lineWidth={selected ? 2.5 : 1.5}
+        />
+      )}
     </group>
   )
 })

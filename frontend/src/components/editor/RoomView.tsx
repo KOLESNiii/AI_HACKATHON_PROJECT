@@ -2,8 +2,9 @@ import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useEffect, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { bounds } from '../../lib/geometry'
+import { bounds, overlappingIds } from '../../lib/geometry'
 import { useStore } from '../../store'
+import { DoorSwings } from './DoorSwings'
 import { Furniture, MeshBoundary } from './Furniture'
 import { SelectionTools } from './SelectionTools'
 import { Shell } from './Shell'
@@ -15,7 +16,12 @@ export function RoomView() {
   const shellUrl = useStore((s) => s.scene.shell_glb_url)
   const walls = useStore((s) => s.scene.walls)
   const floor = useStore((s) => s.scene.floor_polygon)
+  const doors = useStore((s) => s.scene.doors)
   const ids = useStore(useShallow((s) => s.scene.furniture.map((i) => i.id)))
+  // Re-renders this view only when the set of overlapping items changes.
+  const overlapping = useStore(
+    useShallow((s) => overlappingIds(s.scene.furniture)),
+  )
   const select = useStore((s) => s.select)
   const toast = useStore((s) => s.toast)
 
@@ -57,8 +63,9 @@ export function RoomView() {
           <Shell url={shellUrl} walls={walls} />
         </Suspense>
       </MeshBoundary>
+      <DoorSwings doors={doors} walls={walls} />
       {ids.map((id) => (
-        <Furniture key={id} id={id} />
+        <Furniture key={id} id={id} overlapping={overlapping.includes(id)} />
       ))}
       <SelectionTools />
       <OrbitControls
