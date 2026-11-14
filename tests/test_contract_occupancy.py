@@ -80,3 +80,10 @@ def test_new_literals() -> None:
     assert item(id="vid-table-01", category="table").category == "table"
     assert item(category="fixture", is_fixed=True).is_fixed
     assert item(collision_source="mesh").collision_source == "mesh"
+
+
+@pytest.mark.parametrize("field", ["x", "z", "width", "depth", "y_min", "y_max"])
+@pytest.mark.parametrize("value", [float("nan"), float("inf")])
+def test_part_values_must_be_finite(field: str, value: float) -> None:
+    with pytest.raises(ValidationError):
+        item(collision_parts=[part(**{field: value})])

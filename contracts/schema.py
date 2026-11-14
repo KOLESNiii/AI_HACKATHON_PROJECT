@@ -166,6 +166,9 @@ class CollisionPart(ContractModel):
     """One box of an item's occupied volume, in the item's local frame (the .glb frame):
     origin at the bounding-box bottom-centre, +Y up, front facing +Z. See module doc."""
 
+    # A NaN would pass every bounds comparison and make the part never collide.
+    model_config = ConfigDict(allow_inf_nan=False)
+
     x: float
     """Centre along X."""
     z: float

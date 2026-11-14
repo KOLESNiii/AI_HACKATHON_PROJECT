@@ -10,6 +10,21 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-14-3d-representation-design.md`
 
+## Execution notes (2026-11-14)
+
+Executed as written, with these deviations:
+
+- PR #38 had moved on by the time of the merge: it already added `"catalog"`, the 1 mm
+  tolerance as `GLB_BBOX_TOLERANCE_M`, and a `correction_needed` list in place of the
+  `needs_correction` flag. The code uses those names; where the tasks below say
+  `BBOX_TOLERANCE_M` or `needs_correction: false`, read `GLB_BBOX_TOLERANCE_M` and
+  `correction_needed: []`.
+- `tests/test_dev2_fixture_assets.py` was deleted in Task 1, not Task 2, because the merged
+  `glb_url` pattern made it fail.
+- The TypeScript check needs `--ignoreConfig` on TypeScript 7.
+- Review added one rule the tasks did not list: collision part values must be finite.
+- A decision-log entry was added to `docs/decisions.md`.
+
 ## Global Constraints
 
 - Units are metres; right-handed, Y-up; floor at Y=0; furniture `.glb` bottom-centre at the origin, front facing +Z.
