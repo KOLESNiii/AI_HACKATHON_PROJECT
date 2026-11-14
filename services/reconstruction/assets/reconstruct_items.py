@@ -61,7 +61,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--object-id", action="append")
     parser.add_argument("--dimensions", type=Path, help="JSON object: item ID to {bbox_m, source}")
-    parser.add_argument("--replace", action="store_true")
+    parser.add_argument(
+        "--replace",
+        action="store_true",
+        help="rebuild from the current mask; reuses the paid result unless --refresh is given",
+    )
     parser.add_argument("--live", action="store_true", help="upload frames and masks to fal.ai")
     parser.add_argument("--refresh", default="", help="explicit namespace for paid regeneration")
     parser.add_argument("--max-requests", type=int, default=8)

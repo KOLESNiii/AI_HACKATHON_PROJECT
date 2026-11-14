@@ -7,7 +7,10 @@ attempted and keeps its proxy.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
+import math
+import struct
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -15,6 +18,7 @@ from typing import Any, Protocol
 
 import cv2
 import numpy as np
+import trimesh
 from numpy.typing import NDArray
 
 from .mask_providers import ArtifactTooLarge, Mask, fal_media_url, fetch_bounded
@@ -75,6 +79,32 @@ SAM3D_ARGUMENTS = {"export_textured_glb": True, "seed": 0}
 POSE_FIELDS = ("object_index", "scale", "rotation", "translation", "camera_pose")
 
 
+def inspect_mesh(glb: bytes) -> tuple[int, tuple[float, float, float]]:
+    """(triangles, extents) of a usable glTF 2.0 binary; MeshError("invalid_mesh") otherwise."""
+    if len(glb) > MAX_MESH_BYTES:
+        raise MeshError("mesh artifact too large", kind="invalid_mesh")
+    if len(glb) < 20 or glb[:4] != b"glTF" or struct.unpack("<II", glb[4:12]) != (2, len(glb)):
+        raise MeshError("provider did not return a complete glTF 2.0 binary", kind="invalid_mesh")
+    try:
+        scene = trimesh.load_scene(io.BytesIO(glb), file_type="glb")
+        triangles = sum(
+            len(geometry.faces)
+            for geometry in scene.geometry.values()
+            if isinstance(geometry, trimesh.Trimesh)
+        )
+        extents = None if scene.extents is None else [float(side) for side in scene.extents]
+    except Exception as exc:  # An untrusted file: any parser failure means the same thing.
+        raise MeshError("provider mesh could not be parsed", kind="invalid_mesh") from exc
+    if (
+        triangles < 1
+        or extents is None
+        or len(extents) != 3
+        or not all(math.isfinite(side) and side > 1e-6 for side in extents)
+    ):
+        raise MeshError("provider mesh has no usable geometry", kind="invalid_mesh")
+    return triangles, (extents[0], extents[1], extents[2])
+
+
 class FalSam3dProvider:
     """fal SAM 3D Objects: one frame and one item mask per request (verified live 2026-11-14).
 
@@ -133,7 +163,9 @@ class FalSam3dProvider:
         ).hexdigest()
         winner, entry = registry.reserve_request(cache_key)
         if entry["status"] == "failed":
-            raise MeshError("previous request failed; inspect it before an explicit refresh")
+            raise MeshError(
+                "previous request failed; use --refresh with a new namespace for a paid retry"
+            )
         if not winner and entry["status"] == "reserved":
             raise MeshError("submission pending/uncertain; will not risk a duplicate charge")
         import fal_client
@@ -159,7 +191,10 @@ class FalSam3dProvider:
                 # A retry, or a replace, re-reads the paid result instead of submitting again.
                 handle = self.client.get_handle(self.endpoint, entry["request_id"])
             deadline = time.monotonic() + self.timeout_s
-            while not isinstance(handle.status(), fal_client.Completed):
+            while True:
+                status = handle.status()
+                if isinstance(status, fal_client.Completed):
+                    break
                 if time.monotonic() >= deadline:
                     raise MeshError(
                         "reconstruction deadline exceeded; remote request still active and "
@@ -167,15 +202,29 @@ class FalSam3dProvider:
                         kind="timeout",
                     )
                 time.sleep(min(2, self.timeout_s))
+            if status.error is not None:
+                registry.save_request(cache_key, {"status": "failed"})
+                raise MeshError(
+                    "remote reconstruction failed; use --refresh with a new namespace "
+                    "for a paid retry"
+                )
             result = handle.get()
             try:
                 url, pose = self._parse(result)
-            except (KeyError, TypeError, ValueError, AttributeError, IndexError) as exc:
+                glb = self.fetch(url)
+                inspect_mesh(glb)
+            except (MeshError, KeyError, TypeError, ValueError, AttributeError, IndexError) as exc:
                 registry.save_request(cache_key, {"status": "failed"})
+                reason = (
+                    str(exc)
+                    if isinstance(exc, MeshError)
+                    else "reconstruction returned a malformed result"
+                )
                 raise MeshError(
-                    "reconstruction returned a malformed result", kind="invalid_mesh"
+                    f"{reason}; use --refresh with a new namespace for a paid retry",
+                    kind=exc.kind if isinstance(exc, MeshError) else "invalid_mesh",
                 ) from exc
-            return RawMesh(self.fetch(url), pose)
+            return RawMesh(glb, pose)
         except MeshError:
             raise
         except DiscoveryError as exc:  # The shared request budget's own safe message.

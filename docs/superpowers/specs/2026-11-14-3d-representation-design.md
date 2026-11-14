@@ -237,13 +237,13 @@ compass → Dev 1's deterministic shell generator → shell `.glb`. The model em
 
 ```text
 video → keyframes → detect and deduplicate objects → mask per object per frame
-      → fal.ai mesh (trellis-2 on the crop, or sam-3d-objects on frame + masks)
+      → fal.ai mesh (trellis-2 on the crop, or fal-ai/sam-3/3d-objects on frame + masks)
       → download raw .glb → normalise → store → FurnitureAsset
       (any provider failure → proxy box with the same ID)
 ```
 
-`sam-3d-objects` returns, per object, a rotation, translation, scale and a camera pose. That
-is placement evidence for Dev 1, so it is carried in the evidence layer.
+`fal-ai/sam-3/3d-objects` returns per-object rotation, translation, scale and camera pose
+metadata. That is placement evidence for Dev 1, so it is carried in the evidence layer.
 
 ### 8.3 Normalisation (one path for video and catalog)
 
@@ -281,7 +281,7 @@ class FrameObservation(BaseModel):
     image_size_px: tuple[int, int] | None
     mask_url: str | None             # None on fixtures
     bbox_px: tuple[int, int, int, int] | None
-    provider_pose: dict | None       # raw sam-3d-objects metadata; shape unverified
+    provider_pose: dict | None       # raw SAM 3D metadata[0]; shape verified in #16
 
 class AssetEvidence(BaseModel):
     frames: list[FrameObservation]   # at least one
@@ -378,9 +378,10 @@ All additive and defaulted. Items 1 and 4–7 are already raised as review comme
 
 ## 13. Left to the builder
 
-- **Verify with one live call each before freezing the evidence type and the orient step:**
-  the axis convention and scale of `trellis-2` output; the actual shape of `sam-3d-objects`
-  metadata (its documented types disagree with its descriptions); latency and file sizes.
+- Verify the axis convention and scale of `trellis-2` output before freezing the orient
+  step. SAM 3D metadata shape, latency and file sizes were verified live in #16 (see
+  `2026-11-14-furniture-mesh-reconstruction-design.md`); metric scale and axes still need
+  interpretation.
 - How the front direction is chosen in normalisation step 2.
 - How a finished mesh reaches an open editor after the scene was first returned with a
   proxy (re-fetching the scene, polling, or a push). Dev 1 owns the routes. Because a mesh

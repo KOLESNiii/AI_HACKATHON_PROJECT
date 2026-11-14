@@ -6,18 +6,13 @@ Raw meshes are in the provider's frame and scale: normalising and serving them i
 from __future__ import annotations
 
 import hashlib
-import io
-import math
-import struct
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-import trimesh
-
 from .asset_store import ASSET_URL_BASE, write_atomic
-from .mesh_providers import MAX_MESH_BYTES, MeshError, MeshProvider, RawMesh
+from .mesh_providers import MeshError, MeshProvider, RawMesh, inspect_mesh
 from .providers import RequestBudget
 from .proxies import KnownDimensions, proxy_asset
 from .registry import Registry
@@ -68,32 +63,6 @@ def choose_view(
     return max(whole, key=lambda m: (m.area_px, m.frame_key)) if whole else largest
 
 
-def inspect_mesh(glb: bytes) -> tuple[int, tuple[float, float, float]]:
-    """(triangles, extents) of a usable glTF 2.0 binary; MeshError("invalid_mesh") otherwise."""
-    if len(glb) > MAX_MESH_BYTES:
-        raise MeshError("mesh artifact too large", kind="invalid_mesh")
-    if len(glb) < 20 or glb[:4] != b"glTF" or struct.unpack("<II", glb[4:12]) != (2, len(glb)):
-        raise MeshError("provider did not return a complete glTF 2.0 binary", kind="invalid_mesh")
-    try:
-        scene = trimesh.load_scene(io.BytesIO(glb), file_type="glb")
-        triangles = sum(
-            len(geometry.faces)
-            for geometry in scene.geometry.values()
-            if isinstance(geometry, trimesh.Trimesh)
-        )
-        extents = None if scene.extents is None else [float(side) for side in scene.extents]
-    except Exception as exc:  # An untrusted file: any parser failure means the same thing.
-        raise MeshError("provider mesh could not be parsed", kind="invalid_mesh") from exc
-    if (
-        triangles < 1
-        or extents is None
-        or len(extents) != 3
-        or not all(math.isfinite(side) and side > 1e-6 for side in extents)
-    ):
-        raise MeshError("provider mesh has no usable geometry", kind="invalid_mesh")
-    return triangles, (extents[0], extents[1], extents[2])
-
-
 @dataclass(frozen=True)
 class _Job:
     object_id: str
@@ -121,6 +90,8 @@ def reconstruct_furniture(
     on the item as a `failure`; it never raises, never removes an item and never discards a
     stored mesh. Every item carries a labelled proxy sized from `dimensions[id]` when given,
     otherwise from a category default marked as an estimate needing correction.
+    `replace` rebuilds from the current mask but reuses the paid provider result unless
+    the provider is configured with a fresh `refresh` namespace.
     Unknown scenes/items raise ValueError.
     """
     if not scene_id.strip() or len(scene_id) > 200:

@@ -378,10 +378,14 @@ def test_sam_budget_is_retryable_and_timeout_retains_request(tmp_path, monkeypat
     "url", ["http://fal.media/a", "https://evil.test/a", "https://fal.media.evil.test/a"]
 )
 def test_sam_refuses_untrusted_artifacts(tmp_path, monkeypatch, url):
-    provider, _, fetch, args = sam_setup(tmp_path, monkeypatch, {"model_glb": {"url": url}})
+    provider, client, fetch, args = sam_setup(tmp_path, monkeypatch, {"model_glb": {"url": url}})
     with pytest.raises(MeshError, match="location not allowed"):
         provider.reconstruct(*args)
     fetch.assert_not_called()
+    with pytest.raises(MeshError, match="previous request failed.*--refresh"):
+        provider.reconstruct(*args, budget=RequestBudget(0))
+    assert client.submit.call_count == 1
+    client.get_handle.assert_not_called()
 
 
 def test_sam_malformed_result_is_explicit(tmp_path, monkeypatch):
@@ -421,17 +425,55 @@ def test_uncertain_submission_is_never_automatically_repeated(tmp_path, monkeypa
     assert client.submit.call_count == 1
 
 
-def test_mesh_download_limit_is_explicit_and_saved_request_remains_recoverable(
-    tmp_path, monkeypatch
-):
+@pytest.mark.parametrize("invalid", ["oversized", "bad_header", "empty_geometry"])
+def test_permanent_mesh_failure_is_not_downloaded_again(tmp_path, monkeypatch, invalid):
     provider, client, fetch, args = sam_setup(tmp_path, monkeypatch)
-    fetch.side_effect = MeshError("mesh artifact too large", kind="invalid_mesh")
-    with pytest.raises(MeshError) as failure:
+    if invalid == "oversized":
+        fetch.side_effect = MeshError("mesh artifact too large", kind="invalid_mesh")
+    elif invalid == "bad_header":
+        fetch.return_value = b"invalid glb"
+    else:
+        fetch.return_value = trimesh.exchange.gltf.export_glb(trimesh.Scene())
+    with pytest.raises(MeshError, match="--refresh") as failure:
         provider.reconstruct(*args)
     assert failure.value.kind == "invalid_mesh"
+    with pytest.raises(MeshError, match="previous request failed.*--refresh"):
+        provider.reconstruct(*args, budget=RequestBudget(0))
+    assert client.submit.call_count == fetch.call_count == 1
+    client.get_handle.assert_not_called()
+
+
+def test_remote_failure_is_terminal_and_explicit_refresh_can_retry(tmp_path, monkeypatch):
+    provider, client, fetch, args = sam_setup(tmp_path, monkeypatch)
+    handle = client.submit.return_value
+    handle.status.return_value = fal_client.Completed(
+        logs=[], metrics={}, error="private provider details"
+    )
+    with pytest.raises(MeshError, match="remote reconstruction failed.*--refresh") as failure:
+        provider.reconstruct(*args)
+    assert "private" not in str(failure.value)
+    with pytest.raises(MeshError, match="previous request failed.*--refresh"):
+        provider.reconstruct(*args, budget=RequestBudget(0))
+    handle.get.assert_not_called()
+    fetch.assert_not_called()
+    client.get_handle.assert_not_called()
+    assert client.submit.call_count == 1
+    provider.refresh = "operator-approved-retry"
+    client.upload.side_effect = ["https://upload/frame", "https://upload/mask"]
+    handle.status.return_value = fal_client.Completed(logs=[], metrics={})
+    budget = RequestBudget(1)
+    assert provider.reconstruct(*args, budget=budget).glb
+    assert client.submit.call_count == 2 and budget.used == 1
+
+
+def test_transient_mesh_download_failure_recovers_without_new_submission(tmp_path, monkeypatch):
+    provider, client, fetch, args = sam_setup(tmp_path, monkeypatch)
+    fetch.side_effect = RuntimeError("private HTTP failure")
+    with pytest.raises(MeshError, match="request state retained"):
+        provider.reconstruct(*args)
     fetch.side_effect = None
     assert provider.reconstruct(*args, budget=RequestBudget(0)).glb
-    assert client.submit.call_count == 1
+    assert client.submit.call_count == 1 and fetch.call_count == 2
 
 
 def test_shared_budget_allows_only_one_concurrent_submission():

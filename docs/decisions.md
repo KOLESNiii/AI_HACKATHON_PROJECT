@@ -133,7 +133,9 @@
   report the failed attempt alongside it. Never silently treat a proxy as a reconstruction.
 - Reuse the existing request registry and make its shared budget thread-safe. Recover saved
   handles for free after a timeout; uncertain submissions require investigation or an
-  explicit paid refresh. Do not resubmit automatically.
+  explicit paid refresh. Do not resubmit automatically. Terminal remote errors, disallowed
+  artifact URLs and invalid meshes mark the request failed and require a new `--refresh`
+  namespace; transient network failures retain the recoverable handle.
 - Add an opt-in content-addressed asset router for Dev 1 to mount, preserving entry-point
   ownership and the existing frontend proxy and shared contracts.
 

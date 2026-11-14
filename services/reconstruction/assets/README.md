@@ -52,7 +52,7 @@ Evidence ties an asset to the frames it was seen in, so Dev 1 can align it.
 - For video items, `mask_url` is a reference relative to the asset data directory, read with
   `segmentation.read_mask(data_dir, mask_url)`. It is not a browser URL (see #15 below).
 - `provider_pose` carries the raw per-object rotation, translation, scale and camera pose
-  that fal.ai `sam-3d-objects` returns. The verified SAM 3D shape is documented under #16 below.
+  that `fal-ai/sam-3/3d-objects` returns. The verified SAM 3D shape is documented under #16 below.
 - Evidence stays inside the reconstruction service. It is never placed in `RoomScene`, which
   the editor sends to the audit on every move. Its types are `EvidenceFrame` and
   `AssetEvidence` in `models.py`.
@@ -366,6 +366,10 @@ A rerun reuses stored meshes. `--replace` re-reads a saved fal request without s
 `--refresh label --replace` deliberately starts a paid regeneration. Submitted request IDs
 survive timeouts (420 seconds by default); retry collects the remote result. Uncertain
 submissions are never repeated automatically. Budget-deferred submissions remain retryable.
+Terminal remote errors, disallowed URLs and invalid/oversized GLBs mark the saved request
+failed: reruns stop before polling or downloading again and instruct the operator to use
+`--refresh` with a new namespace for a paid retry. Transient network/download failures keep
+the saved handle recoverable without another inference charge.
 Failure kinds are `not_attempted`, `no_view`, `budget`, `timeout`, `provider`, `invalid_mesh`.
 Downloads permit HTTPS `fal.media` hosts only, without redirects, and enforce the cap while
 streaming. Credentials and raw provider error bodies are excluded from diagnostics.
@@ -375,8 +379,8 @@ raw `object_index`, `scale`, `rotation` (x/y/z/w quaternion), `translation`, `ca
 Scale and translation are nested arrays; their relationship to room metres is unverified.
 The live single-object response uses `model_glb` and `metadata[0]`.
 
-**Dev 1 handoff.** Mount `asset_store.asset_router(data_dir)` in the reconstruction app to
-serve `/assets/<sha256>.glb` with immutable caching. Proxy browser URLs already use
+**Dev 1 handoff ([#52](https://github.com/KOLESNiii/AI_HACKATHON_PROJECT/issues/52)).**
+Mount `asset_store.asset_router(data_dir)` in the reconstruction app to serve `/assets/<sha256>.glb` with immutable caching. Proxy browser URLs already use
 `/api/reconstruction/assets/<sha256>.glb`, matching Vite's existing prefix stripping.
 Raw meshes remain private runtime files. No main entry point, shared contract, dependency
 manifest or room-placement interface changes in this issue.
