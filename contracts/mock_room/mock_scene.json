@@ -54,7 +54,10 @@
       "wall_flush_preferred": true,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "correction_needed": []
+      "correction_needed": [],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
     },
     {
       "id": "item_desk",
@@ -69,7 +72,10 @@
       "wall_flush_preferred": false,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "correction_needed": []
+      "correction_needed": [],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
     },
     {
       "id": "item_wardrobe",
@@ -84,7 +90,10 @@
       "wall_flush_preferred": true,
       "is_proxy": false,
       "dimension_source": "estimated",
-      "correction_needed": []
+      "correction_needed": [],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
     }
   ]
 }

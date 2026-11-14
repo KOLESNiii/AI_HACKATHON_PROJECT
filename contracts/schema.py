@@ -34,6 +34,21 @@ Coordinate conventions (all services and the editor MUST agree on these):
   from `floor_polygon`/`walls`/`windows`/`doors`, which stay authoritative; the audit never reads
   it. It contains one node per element, named `floor`, `ceiling` and `wall_<wall_id>`. Viewers
   hide `ceiling` whenever the camera is above it (plan and orbit views, renders from above).
+
+Occupied volume and collision (the editor preview and the audit MUST agree on these):
+
+- `FurnitureItem.collision_parts` lists boxes in the item's local frame. An empty list means
+  one solid box filling `bbox_m`. Every part lies inside `bbox_m` (tolerance
+  GLB_BBOX_TOLERANCE_M).
+- Parts rotate with the item's yaw, so each stays a vertical prism: a rotated rectangle in
+  plan with a height range [y_min, y_max].
+- Two items collide when some part of one and some part of the other overlap in plan by more
+  than MIN_PLAN_OVERLAP_M2 and in height by more than MIN_HEIGHT_OVERLAP_M. Touching is not a
+  collision. Test `bbox_m` footprints first as a broad phase.
+- `CollisionIssue.overlap_area_m2` is the plan area of the union of overlapping part pairs.
+- Walkable floor is blocked by any part whose y_min is below WALK_HEADROOM_M.
+- A door leaf and a sun ray test against the parts in their height range.
+- `is_fixed` items take part in every check but are never moved by the editor or the solver.
 """
 
 from typing import Dict, List, Literal, Optional
@@ -45,6 +60,18 @@ GLB_BBOX_TOLERANCE_M = 0.001
 
 # An absolute http(s) URL or a site-root path; rejects relative and protocol-relative ("//") paths.
 GLB_URL_PATTERN = r"^(https?://|/[^/])"
+
+# Opaque and URL-safe. No code may parse meaning out of an item ID.
+ITEM_ID_PATTERN = r"^[a-z0-9][a-z0-9_-]{0,63}$"
+
+MAX_COLLISION_PARTS = 12
+MIN_PART_DIMENSION_M = 0.01
+MIN_PLAN_OVERLAP_M2 = 0.0001
+"""Two parts overlap in plan only when their intersection exceeds this area (1 cm^2)."""
+MIN_HEIGHT_OVERLAP_M = 0.005
+"""Two parts overlap in height only when their ranges share more than this."""
+WALK_HEADROOM_M = 2.0
+"""A part whose y_min is below this blocks the floor beneath it for walking."""
 
 
 class ContractModel(BaseModel):
@@ -135,11 +162,33 @@ class Pose2D(ContractModel):
     """Counter-clockwise about +Y viewed from above. Equals Three.js rotation.y (in degrees)."""
 
 
+class CollisionPart(ContractModel):
+    """One box of an item's occupied volume, in the item's local frame (the .glb frame):
+    origin at the bounding-box bottom-centre, +Y up, front facing +Z. See module doc."""
+
+    x: float
+    """Centre along X."""
+    z: float
+    """Centre along Z."""
+    width: float
+    """Extent along X."""
+    depth: float
+    """Extent along Z."""
+    y_min: float
+    """Bottom, metres above the floor."""
+    y_max: float
+    """Top, metres above the floor."""
+
+
 class FurnitureItem(ContractModel):
-    id: str
-    """Stable across reconstruction, editing, audit and proposals. Never reassigned."""
+    id: str = Field(pattern=ITEM_ID_PATTERN)
+    """Stable across reconstruction, editing, audit and proposals. Never reassigned. Opaque:
+    category and source are fields, never parsed out of the ID."""
     name: str
-    category: Literal["bed", "desk", "chair", "wardrobe", "sofa", "storage", "other"]
+    category: Literal[
+        "bed", "desk", "chair", "table", "wardrobe", "sofa", "storage", "fixture", "other"
+    ]
+    """`fixture` is part of the room (e.g. a radiator); see `is_fixed`."""
     source: Literal["extracted_video", "catalog_search", "url_import"]
     glb_url: str = Field(pattern=GLB_URL_PATTERN)
     """An absolute http(s) URL or a site-root path (e.g. `/mock_room/bed.glb`) that the frontend
@@ -165,6 +214,32 @@ class FurnitureItem(ContractModel):
     dimensions, `user_corrected` by the user, or `estimated`. All but `estimated` are trusted."""
     correction_needed: List[Literal["dimensions", "placement", "orientation"]] = []
     """What is uncertain and should be confirmed by the user; the editor prompts for each entry."""
+    collision_parts: List[CollisionPart] = []
+    """Occupied volume as boxes inside `bbox_m`, so items can nest (a chair under a desk).
+    Empty means one solid box filling `bbox_m`. See module doc for the collision rule."""
+    collision_source: Literal["template", "mesh", "user_corrected"] = "template"
+    """Where `collision_parts` came from: a category template fitted to `bbox_m`, the mesh, or the
+    user. A nested fit that relies on `template` parts is an estimate. Ignored when empty."""
+    is_fixed: bool = False
+    """True when the item is part of the room. The editor does not drag it and the solver does
+    not move it; it still takes part in every check."""
+
+    @model_validator(mode="after")
+    def _check_collision_parts(self) -> "FurnitureItem":
+        if len(self.collision_parts) > MAX_COLLISION_PARTS:
+            raise ValueError(f"at most {MAX_COLLISION_PARTS} collision parts per item")
+        tol, box = GLB_BBOX_TOLERANCE_M, self.bbox_m
+        for i, part in enumerate(self.collision_parts):
+            if min(part.width, part.depth, part.y_max - part.y_min) < MIN_PART_DIMENSION_M:
+                raise ValueError(f"collision part {i} is thinner than {MIN_PART_DIMENSION_M} m")
+            if (
+                abs(part.x) + part.width / 2 > box.width / 2 + tol
+                or abs(part.z) + part.depth / 2 > box.depth / 2 + tol
+                or part.y_min < -tol
+                or part.y_max > box.height + tol
+            ):
+                raise ValueError(f"collision part {i} lies outside bbox_m")
+        return self
 
 
 class RoomScene(ContractModel):
