@@ -1,0 +1,22 @@
+{
+  "rooms": [
+    {"name": "Master Bedroom", "x": 0.156, "y": 0.262, "width_m": 4.67, "depth_m": 4.06},
+    {"name": "Reception Room", "x": 0.141, "y": 0.454, "width_m": 4.22, "depth_m": 3.30},
+    {"name": "Kitchen (1)", "x": 0.124, "y": 0.608, "width_m": 2.90, "depth_m": 2.67},
+    {"name": "Bedroom (2)", "x": 0.286, "y": 0.603, "width_m": 3.20, "depth_m": 2.69},
+    {"name": "Bedroom (3)", "x": 0.439, "y": 0.351, "width_m": 4.90, "depth_m": 2.13},
+    {"name": "Utility Room", "x": 0.442, "y": 0.482, "width_m": 2.13, "depth_m": 1.62},
+    {"name": "Bedroom (4)", "x": 0.703, "y": 0.145, "width_m": 4.52, "depth_m": 3.68},
+    {"name": "Bedroom (6)", "x": 0.863, "y": 0.131, "width_m": 2.67, "depth_m": 2.41},
+    {"name": "Bedroom (5)", "x": 0.692, "y": 0.327, "width_m": 4.24, "depth_m": 3.68},
+    {"name": "Kitchen (2)", "x": 0.886, "y": 0.374, "width_m": 2.44, "depth_m": 2.31},
+    {"name": "Bedroom (7)", "x": 0.719, "y": 0.641, "width_m": 4.60, "depth_m": 2.87},
+    {"name": "Bedroom (8)", "x": 0.722, "y": 0.767, "width_m": 4.57, "depth_m": 2.80}
+  ],
+  "floors": [
+    {"name": "Ground Floor", "level": 0, "x": 0.25, "y": 0.921},
+    {"name": "First Floor", "level": 1, "x": 0.803, "y": 0.463},
+    {"name": "Second Floor", "level": 2, "x": 0.811, "y": 0.884}
+  ],
+  "compass": null
+}
