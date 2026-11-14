@@ -342,3 +342,53 @@ Run the focused tests from the repository root:
 uv run --extra spatial pytest tests/spatial_engine/test_free_floor.py
 uv run --extra spatial pytest tests/spatial_engine/test_reachability.py
 ```
+
+## Layout suggestions: `POST /solve` (issues #33, #34)
+
+`POST /solve` accepts `OptimiseRequest` and returns `LayoutProposal`. Sonnet reads
+the optional `instruction`, then proposes poses through the tools above; our
+code audits every draft. The submitted scene is never modified and nothing is
+applied to the editor. Development URL: `/api/spatial_engine/solve`.
+
+Configuration (server-side, root `.env`): `ANTHROPIC_API_KEY`, and optionally
+`SPACESHIFT_LAYOUT_MODEL` (default `claude-sonnet-5-5`). Calls cost money.
+
+How a request runs (`agent.propose_layout`):
+
+1. If there is an instruction, one model call turns it into a goal, extra locked
+   items, items wanted near a window, and a list of things it cannot express
+   ("more storage"). An explicit `goal` wins; the model can add locks but never
+   remove the caller's or unlock fixed items; unknown IDs are dropped.
+2. A tool loop explores drafts. Tool errors go back to the model as error results.
+3. The best draft is rebuilt and audited again from scratch. It is returned only
+   if it passes the critical checks and still ranks better than the original.
+
+Limits per request (`AgentLimits`): 8 model calls including the interpretation
+call and retries, 24 layout evaluations (or `max_candidates` if lower), 200k
+tokens, 90 seconds, 60 furniture items. One retry is allowed for rate limits,
+timeouts and server errors. A truncated or declined model turn is never executed.
+
+Read `improved` and `outcome` together:
+
+| `improved` | `outcome` | Meaning |
+| --- | --- | --- |
+| true | `completed` | Verified better layout in `poses`; `report` audits it |
+| true | `stopped_early` | Verified better layout, but a limit or assistant error cut the search short |
+| false | `completed` | The assistant finished and found nothing better |
+| false | `stopped_early` | A limit was reached before anything better was found |
+| false | `assistant_unavailable` | No API key, or the assistant failed; not a verdict on the room |
+
+When `improved` is false, `poses` is empty and `report` audits the unchanged
+scene. `report.scene_id`/`scene_revision` always identify the submitted scene.
+`explanation` is written by the server from measured results, not by the model,
+and lists unhandled parts of the instruction. `goal` is the goal applied.
+Bad scenes, unknown `locked_item_ids`, more than 60 items or an instruction over
+500 characters return HTTP 422 before any model call. Only outcome, counts and
+error kinds are logged; never the key, the prompt or the reply.
+
+Not verified yet: a live call to the model. Tests use scripted replies and the
+real SDK over a mock HTTP transport.
+
+```bash
+uv run --extra spatial pytest tests/spatial_engine/test_agent.py
+```

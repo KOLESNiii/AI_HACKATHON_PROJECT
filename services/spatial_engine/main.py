@@ -1,11 +1,21 @@
-from fastapi import FastAPI, HTTPException, Request
+import os
+from collections.abc import Iterator
+from contextlib import contextmanager
+
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
-from contracts.schema import AuditReport, RoomScene
+from contracts.schema import AuditReport, LayoutProposal, OptimiseRequest, RoomScene
+from services.spatial_engine.agent import (
+    DEFAULT_MODEL,
+    AnthropicLayoutModel,
+    LayoutModel,
+    propose_layout,
+)
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.report import audit_scene
 
@@ -38,11 +48,11 @@ async def invalid_request(_request: Request, exc: RequestValidationError) -> JSO
     )
 
 
-@app.post("/audit", response_model=AuditReport)
-def audit(scene: RoomScene) -> AuditReport:
-    """Return current spatial findings; scoring, glare and Feng Shui are not assessed."""
+@contextmanager
+def _input_errors() -> Iterator[None]:
+    """Report bad scenes and geometry as 422 without echoing input; other errors stay 500s."""
     try:
-        return audit_scene(scene)
+        yield
     except ValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -66,6 +76,35 @@ def audit(scene: RoomScene) -> AuditReport:
                 }
             ],
         ) from exc
+
+
+@app.post("/audit", response_model=AuditReport)
+def audit(scene: RoomScene) -> AuditReport:
+    """Return current spatial findings; scoring, glare and Feng Shui are not assessed."""
+    with _input_errors():
+        return audit_scene(scene)
+
+
+def get_layout_model() -> LayoutModel | None:
+    """The configured assistant, or None when no API key is set. The key is never logged."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return None
+    model = os.environ.get("SPACESHIFT_LAYOUT_MODEL", "").strip() or DEFAULT_MODEL
+    return AnthropicLayoutModel(api_key, model)
+
+
+@app.post("/solve", response_model=LayoutProposal)
+def solve(
+    request: OptimiseRequest, model: LayoutModel | None = Depends(get_layout_model)
+) -> LayoutProposal:
+    """Suggest furniture poses for the request; never modifies the submitted scene.
+
+    Always inspect `improved` and `outcome`: assistant failures and limits are reported
+    in a 200 response, not as a clean or successful proposal.
+    """
+    with _input_errors():
+        return propose_layout(request, model)
 
 
 @app.exception_handler(Exception)
