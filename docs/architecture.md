@@ -31,3 +31,15 @@ no provider calls are made yet. Never place secrets in frontend `VITE_` variable
 
 Frontend and service directories can be developed independently. Coordinate
 changes to root manifests, lockfiles, proxy routing, and shared contracts.
+
+
+## Workstream ownership
+
+`ARCHITECTURE_DAG.md` defines the revised four-person execution plan: Dev 1 owns
+room geometry and scene assembly, Dev 2 owns furniture extraction and catalog
+assets, Dev 3 owns the editor and render maps, and Dev 4 owns audit/optimisation.
+Dev 1 and Dev 2 share the reconstruction service through planned `room/` and
+`assets/` module boundaries; Dev 1 owns its entry point. Catalog imports reuse
+Dev 2's asset normalisation pipeline. Existing directories, ports and contracts
+are unchanged. Photoreal integration is assigned after the validated-layout
+milestone; generated video is stretch scope.
