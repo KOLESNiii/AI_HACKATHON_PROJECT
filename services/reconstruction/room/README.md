@@ -15,6 +15,7 @@ Hybrid: OpenCV does all the geometry; a vision LLM only reads text.
 | 4 | `parse.py` | Scale per floor from labelled rooms whose two printed dimensions agree (median); second gap pass with metric door/window limits; merge slivers (stair treads, wardrobes, partitions); assign captions to floors. |
 | 5 | `polygon.py` | Room contour → straightened polygon (snapped to 45° multiples), contract winding. |
 | 6 | `openings.py` | Bridges → walls. Glazed exterior gap = window; anything else = door. Hinge and swing side come from the drawn leaf. |
+| 7 | `shell.py` | `RoomScene` → shell `.glb`: floor slab (top at Y=0), ceiling, one `wall_<id>` node per wall with door/window openings cut. Walls stand on the interior face and extend outward; corners are mitred so 45° bays, reflex corners and mixed thicknesses close cleanly. |
 
 Each floor has its own frame: metres, origin at the floor's top-left wall bound, +X right,
 +Z down the image. All rooms on a floor share it.
@@ -26,11 +27,15 @@ Each floor has its own frame: metres, origin at the floor's top-left wall bound,
 curl -F files=@examples/one_floor.jpg localhost:8001/floor-plans
 curl localhost:8001/floor-plans/<plan_id>
 curl localhost:8001/floor-plans/<plan_id>/rooms/<room_id>     # -> RoomScene
+curl -o room.glb localhost:8001/shells/<scene_id>.glb         # the scene's shell_glb_url
 
 # Debug CLI: plan.json plus a render of the returned geometry per floor
 uv run python -m services.reconstruction.room examples/three_floor.png --out /tmp/plan \
-    --annotations services/reconstruction/room/fixtures/three_floor.annotations.json
+    --annotations services/reconstruction/room/fixtures/three_floor.annotations.json [--shells]
 ```
+
+`--shells` also writes each room's `.glb` and a per-floor section of the shells cut at 1 m
+(walls as outlines, openings as gaps).
 
 Plans are cached in memory by `plan_id`, which is a hash of the image bytes.
 
@@ -46,8 +51,8 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
   about 5-9 s per image). `fixtures/*.annotations.json` are its recorded output for the two
   example plans, so tests stay offline. Label positions are approximate (within the right
   room); geometry never depends on them beyond picking the room.
-- `shell_glb_url` points to `/api/reconstruction/shells/<scene_id>.glb`. The shell generator
-  that serves it is the next step.
+- Shells are built on first request and cached in memory with the plans (immutable: the
+  scene ID comes from the image bytes). The ceiling sits at the tallest wall's height.
 - Open archways wider than a door, with no glazing, are not split, so both rooms come out as
   one region (named `A / B`, with a warning). Stairs and landings can fragment.
 - Photographed printouts are not perspective-corrected; mild keystone costs a few percent.

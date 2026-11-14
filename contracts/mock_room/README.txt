@@ -1,0 +1,1 @@
+Scene JSON files are at the root. Their /assets/... and /models/... URLs resolve against this folder when served as the application asset root. Files named *-shell.glb are the shells referenced by the JSON; the other files in models/ are assembled floors and the complete house. These are simplified reconstructions with estimated furniture dimensions and poses.

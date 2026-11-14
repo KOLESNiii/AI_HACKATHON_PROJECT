@@ -15,7 +15,8 @@ Coordinate conventions (all services and the editor MUST agree on these):
   Convert between them with: bearing = (180 - yaw) mod 360.
 - True compass azimuth of any plan bearing b: azimuth = (b - north) mod 360, where
   north = `RoomScene.north_compass_deg`, or 0 when it is None (fallback: -Z is North, and
-  `AuditReport.glare_orientation_grounded` is False).
+  `AuditReport.glare_orientation_grounded` is False when that fallback is assessed;
+  it is None when glare is not assessed).
 - Every furniture .glb has its bounding-box bottom-centre at the origin and its front facing +Z.
   `Pose2D.x/z` is where that bottom-centre sits in room coordinates; Y is currently always 0
   (on the floor).
@@ -414,16 +415,24 @@ class AuditReport(ContractModel):
     """Echo of the audited RoomScene.scene_id. Required so an un-echoed report fails validation."""
     scene_revision: int = Field(ge=0)
     """Echo of the audited RoomScene.revision. Consumers ignore reports older than their scene."""
-    overall_score: int
-    walkable_floor_ratio: float
-    glare_orientation_grounded: bool
+    overall_score: Optional[int] = None
+    """None means scoring is not implemented/assessed; never interpret it as zero."""
+    walkable_floor_ratio: Optional[float] = None
+    """Reachable floor fraction for a 0.5 m wide standing person, unioned across all doors.
+    None means no entry doors are known. Known but blocked entries produce zero.
+    This is distinct from raw unoccupied floor area; see the spatial service README."""
+    glare_orientation_grounded: Optional[bool] = None
+    """None when glare is not assessed; True for grounded orientation, False only for an
+    assessment that used the plan-normal/-Z fallback."""
     collisions: List[CollisionIssue]
     blocked_doors: List[BlockedDoorIssue]
     out_of_bounds_item_ids: List[str] = []
     """Items whose footprint leaves the floor polygon or intersects a wall."""
     clearance_issues: List[ClearanceIssue] = []
-    glare_alerts: List[GlareAlert]
-    feng_shui: FengShuiReport
+    glare_alerts: Optional[List[GlareAlert]] = None
+    """None means not assessed; an empty list means assessed with no alerts."""
+    feng_shui: Optional[FengShuiReport] = None
+    """None means not assessed. Do not manufacture a score for an unavailable assessment."""
 
 
 class OptimiseRequest(ContractModel):

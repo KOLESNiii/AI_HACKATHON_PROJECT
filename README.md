@@ -74,14 +74,24 @@ bun run dev:media          # http://localhost:8003/docs
 bun run dev               # http://localhost:5173
 ```
 
-The frontend displays live service connection status. Only health endpoints are
-implemented; room reconstruction, auditing, search, and media generation remain
-work for their respective contributors. No provider credentials are needed for health checks.
+The frontend displays live service connection status. The spatial service also
+implements `POST /audit`: send a `RoomScene` to receive collision, boundary, door,
+front-clearance and 50 cm walking-reachability results. Scores, glare and Feng Shui
+are not assessed and return `null`. No provider credentials are needed for auditing
+or health checks. Reconstruction, search, generated media and editor integration
+remain planned work. See the [spatial service guide](services/spatial_engine/README.md)
+and [frontend handoff](docs/dev3-spatial-handoff.md).
 
 ```bash
 bun run build             # TypeScript check + production frontend bundle
 bun run check             # Frontend lint/format/types + Python lint/format/types/tests
 ```
+
+In the room editor, select furniture and use the ↶ / ↷ buttons or Q / E to
+rotate it 90° counterclockwise / clockwise. Left / right arrows rotate it 5°
+at a time (hold to repeat). Hold WASD to pan the camera relative to its current
+view. Shortcuts are inactive while typing or dragging furniture; fixed fixtures
+cannot be rotated. Run editor control tests with `bun test ./frontend/tests`.
 
 For smaller Python installs, use `uv sync --extra spatial`, `--extra reconstruction`,
 or `--extra media` instead of `--all-extras`. `uv sync` installs the common API and

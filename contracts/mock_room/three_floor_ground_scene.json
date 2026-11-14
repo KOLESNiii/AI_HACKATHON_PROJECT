@@ -1,0 +1,2308 @@
+{
+  "scene_id": "three_floor_ground",
+  "revision": 0,
+  "shell_glb_url": "/models/ground-shell.glb",
+  "floor_polygon": [
+    {
+      "x": 0.074975,
+      "z": 4.780076
+    },
+    {
+      "x": 0.0,
+      "z": 0.588292
+    },
+    {
+      "x": 0.351241,
+      "z": 0.588292
+    },
+    {
+      "x": 1.017661,
+      "z": 0.0
+    },
+    {
+      "x": 3.176898,
+      "z": 0.060175
+    },
+    {
+      "x": 3.666171,
+      "z": 0.648456
+    },
+    {
+      "x": 4.17,
+      "z": 0.668553
+    },
+    {
+      "x": 6.362696,
+      "z": 0.728694
+    },
+    {
+      "x": 6.362696,
+      "z": 1.825533
+    },
+    {
+      "x": 8.582378,
+      "z": 1.825533
+    },
+    {
+      "x": 8.623056,
+      "z": 6.835533
+    },
+    {
+      "x": 8.643416,
+      "z": 8.565533
+    },
+    {
+      "x": 6.403416,
+      "z": 8.565533
+    },
+    {
+      "x": 6.403416,
+      "z": 9.09
+    },
+    {
+      "x": 6.466882,
+      "z": 9.09
+    },
+    {
+      "x": 6.466882,
+      "z": 11.89
+    },
+    {
+      "x": 0.146882,
+      "z": 11.89
+    },
+    {
+      "x": 0.146882,
+      "z": 9.11
+    }
+  ],
+  "walls": [
+    {
+      "id": "g-master-w00",
+      "start": {
+        "x": 0.372044,
+        "z": 0.643292
+      },
+      "end": {
+        "x": 1.037804,
+        "z": 0.055583
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-master-w01",
+      "start": {
+        "x": 1.037804,
+        "z": 0.055583
+      },
+      "end": {
+        "x": 3.150511,
+        "z": 0.114461
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-master-w02",
+      "start": {
+        "x": 3.150511,
+        "z": 0.114461
+      },
+      "end": {
+        "x": 3.639531,
+        "z": 0.702437
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-master-w03",
+      "start": {
+        "x": 3.639531,
+        "z": 0.702437
+      },
+      "end": {
+        "x": 4.115,
+        "z": 0.721403
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-master-w04",
+      "start": {
+        "x": 4.115,
+        "z": 0.721403
+      },
+      "end": {
+        "x": 4.115,
+        "z": 4.725
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-master-w05",
+      "start": {
+        "x": 4.115,
+        "z": 4.725
+      },
+      "end": {
+        "x": 0.128999,
+        "z": 4.725
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-master-w06",
+      "start": {
+        "x": 0.128999,
+        "z": 4.725
+      },
+      "end": {
+        "x": 0.055993,
+        "z": 0.643292
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-master-w07",
+      "start": {
+        "x": 0.055993,
+        "z": 0.643292
+      },
+      "end": {
+        "x": 0.372044,
+        "z": 0.643292
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-reception-w00",
+      "start": {
+        "x": 3.429974,
+        "z": 4.835
+      },
+      "end": {
+        "x": 3.429974,
+        "z": 9.055
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-reception-w01",
+      "start": {
+        "x": 3.429974,
+        "z": 9.055
+      },
+      "end": {
+        "x": 0.200976,
+        "z": 9.055
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-reception-w02",
+      "start": {
+        "x": 0.200976,
+        "z": 9.055
+      },
+      "end": {
+        "x": 0.130895,
+        "z": 4.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-reception-w03",
+      "start": {
+        "x": 0.130895,
+        "z": 4.835
+      },
+      "end": {
+        "x": 3.429974,
+        "z": 4.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-kitchen-w00",
+      "start": {
+        "x": 3.101882,
+        "z": 9.165
+      },
+      "end": {
+        "x": 3.101882,
+        "z": 11.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-kitchen-w01",
+      "start": {
+        "x": 3.101882,
+        "z": 11.835
+      },
+      "end": {
+        "x": 0.201882,
+        "z": 11.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-kitchen-w02",
+      "start": {
+        "x": 0.201882,
+        "z": 11.835
+      },
+      "end": {
+        "x": 0.201882,
+        "z": 9.165
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-kitchen-w03",
+      "start": {
+        "x": 0.201882,
+        "z": 9.165
+      },
+      "end": {
+        "x": 3.101882,
+        "z": 9.165
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w00",
+      "start": {
+        "x": 4.544032,
+        "z": 8.740665
+      },
+      "end": {
+        "x": 4.544032,
+        "z": 9.145
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w01",
+      "start": {
+        "x": 4.544032,
+        "z": 9.145
+      },
+      "end": {
+        "x": 6.411882,
+        "z": 9.145
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w02",
+      "start": {
+        "x": 6.411882,
+        "z": 9.145
+      },
+      "end": {
+        "x": 6.411882,
+        "z": 11.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w03",
+      "start": {
+        "x": 6.411882,
+        "z": 11.835
+      },
+      "end": {
+        "x": 3.211882,
+        "z": 11.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w04",
+      "start": {
+        "x": 3.211882,
+        "z": 11.835
+      },
+      "end": {
+        "x": 3.211882,
+        "z": 9.165
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w05",
+      "start": {
+        "x": 3.211882,
+        "z": 9.165
+      },
+      "end": {
+        "x": 3.539974,
+        "z": 9.165
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w06",
+      "start": {
+        "x": 3.539974,
+        "z": 9.165
+      },
+      "end": {
+        "x": 3.539974,
+        "z": 8.740665
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed2-w07",
+      "start": {
+        "x": 3.539974,
+        "z": 8.740665
+      },
+      "end": {
+        "x": 4.544032,
+        "z": 8.740665
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed3-w00",
+      "start": {
+        "x": 8.527823,
+        "z": 1.880533
+      },
+      "end": {
+        "x": 8.567607,
+        "z": 6.780533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed3-w01",
+      "start": {
+        "x": 8.567607,
+        "z": 6.780533
+      },
+      "end": {
+        "x": 6.458193,
+        "z": 6.780533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed3-w02",
+      "start": {
+        "x": 6.458193,
+        "z": 6.780533
+      },
+      "end": {
+        "x": 6.438279,
+        "z": 1.880533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bed3-w03",
+      "start": {
+        "x": 6.438279,
+        "z": 1.880533
+      },
+      "end": {
+        "x": 8.527823,
+        "z": 1.880533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-utility-w00",
+      "start": {
+        "x": 8.568699,
+        "z": 6.890533
+      },
+      "end": {
+        "x": 8.587765,
+        "z": 8.510533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-utility-w01",
+      "start": {
+        "x": 8.587765,
+        "z": 8.510533
+      },
+      "end": {
+        "x": 6.458416,
+        "z": 8.510533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-utility-w02",
+      "start": {
+        "x": 6.458416,
+        "z": 8.510533
+      },
+      "end": {
+        "x": 6.458416,
+        "z": 6.890533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-utility-w03",
+      "start": {
+        "x": 6.458416,
+        "z": 6.890533
+      },
+      "end": {
+        "x": 8.568699,
+        "z": 6.890533
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-shower-w00",
+      "start": {
+        "x": 6.348416,
+        "z": 6.087812
+      },
+      "end": {
+        "x": 6.348416,
+        "z": 7.574157
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-shower-w01",
+      "start": {
+        "x": 6.348416,
+        "z": 7.574157
+      },
+      "end": {
+        "x": 4.654032,
+        "z": 7.574157
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-shower-w02",
+      "start": {
+        "x": 4.654032,
+        "z": 7.574157
+      },
+      "end": {
+        "x": 4.654032,
+        "z": 6.087812
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-shower-w03",
+      "start": {
+        "x": 4.654032,
+        "z": 6.087812
+      },
+      "end": {
+        "x": 6.348416,
+        "z": 6.087812
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bath-w00",
+      "start": {
+        "x": 6.348416,
+        "z": 7.684157
+      },
+      "end": {
+        "x": 6.348416,
+        "z": 9.035
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bath-w01",
+      "start": {
+        "x": 6.348416,
+        "z": 9.035
+      },
+      "end": {
+        "x": 4.654032,
+        "z": 9.035
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bath-w02",
+      "start": {
+        "x": 4.654032,
+        "z": 9.035
+      },
+      "end": {
+        "x": 4.654032,
+        "z": 7.684157
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-bath-w03",
+      "start": {
+        "x": 4.654032,
+        "z": 7.684157
+      },
+      "end": {
+        "x": 6.348416,
+        "z": 7.684157
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-entry2-w00",
+      "start": {
+        "x": 4.544032,
+        "z": 8.383863
+      },
+      "end": {
+        "x": 4.544032,
+        "z": 8.630665
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-entry2-w01",
+      "start": {
+        "x": 4.544032,
+        "z": 8.630665
+      },
+      "end": {
+        "x": 3.539974,
+        "z": 8.630665
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-entry2-w02",
+      "start": {
+        "x": 3.539974,
+        "z": 8.630665
+      },
+      "end": {
+        "x": 3.539974,
+        "z": 8.383863
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-entry2-w03",
+      "start": {
+        "x": 3.539974,
+        "z": 8.383863
+      },
+      "end": {
+        "x": 4.544032,
+        "z": 8.383863
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-stair-w00",
+      "start": {
+        "x": 6.307696,
+        "z": 2.993615
+      },
+      "end": {
+        "x": 6.307696,
+        "z": 5.152738
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-stair-w01",
+      "start": {
+        "x": 6.307696,
+        "z": 5.152738
+      },
+      "end": {
+        "x": 5.276402,
+        "z": 5.152738
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-stair-w02",
+      "start": {
+        "x": 5.276402,
+        "z": 5.152738
+      },
+      "end": {
+        "x": 5.276402,
+        "z": 2.993615
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-stair-w03",
+      "start": {
+        "x": 5.276402,
+        "z": 2.993615
+      },
+      "end": {
+        "x": 6.307696,
+        "z": 2.993615
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w00",
+      "start": {
+        "x": 6.307696,
+        "z": 0.782206
+      },
+      "end": {
+        "x": 6.307696,
+        "z": 2.883615
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w01",
+      "start": {
+        "x": 6.307696,
+        "z": 2.883615
+      },
+      "end": {
+        "x": 5.166402,
+        "z": 2.883615
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w02",
+      "start": {
+        "x": 5.166402,
+        "z": 2.883615
+      },
+      "end": {
+        "x": 5.166402,
+        "z": 5.262738
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w03",
+      "start": {
+        "x": 5.166402,
+        "z": 5.262738
+      },
+      "end": {
+        "x": 6.329429,
+        "z": 5.262738
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w04",
+      "start": {
+        "x": 6.329429,
+        "z": 5.262738
+      },
+      "end": {
+        "x": 6.347007,
+        "z": 5.957709
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w05",
+      "start": {
+        "x": 6.347007,
+        "z": 5.957709
+      },
+      "end": {
+        "x": 4.544032,
+        "z": 5.957709
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w06",
+      "start": {
+        "x": 4.544032,
+        "z": 5.957709
+      },
+      "end": {
+        "x": 4.544032,
+        "z": 8.273863
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w07",
+      "start": {
+        "x": 4.544032,
+        "z": 8.273863
+      },
+      "end": {
+        "x": 3.539974,
+        "z": 8.273863
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w08",
+      "start": {
+        "x": 3.539974,
+        "z": 8.273863
+      },
+      "end": {
+        "x": 3.539974,
+        "z": 4.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w09",
+      "start": {
+        "x": 3.539974,
+        "z": 4.835
+      },
+      "end": {
+        "x": 4.225,
+        "z": 4.835
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w10",
+      "start": {
+        "x": 4.225,
+        "z": 4.835
+      },
+      "end": {
+        "x": 4.225,
+        "z": 0.725082
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    },
+    {
+      "id": "g-hall-w11",
+      "start": {
+        "x": 4.225,
+        "z": 0.725082
+      },
+      "end": {
+        "x": 6.307696,
+        "z": 0.782206
+      },
+      "height_m": 2.65,
+      "thickness_m": 0.055
+    }
+  ],
+  "windows": [
+    {
+      "id": "g-master-win0",
+      "wall_id": "g-master-w00",
+      "offset_along_wall_m": 0.091918,
+      "width_m": 0.746704,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 318.5630720359412,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "g-master-win1",
+      "wall_id": "g-master-w01",
+      "offset_along_wall_m": 0.194324,
+      "width_m": 1.72806,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 1.5963515802162176,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "g-master-win2",
+      "wall_id": "g-master-w02",
+      "offset_along_wall_m": 0.036348,
+      "width_m": 0.64273,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 50.249643246466945,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "g-kitchen-win0",
+      "wall_id": "g-kitchen-w01",
+      "offset_along_wall_m": 1.45,
+      "width_m": 0.9632,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 180.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "g-bed2-win0",
+      "wall_id": "g-bed2-w03",
+      "offset_along_wall_m": 0.607,
+      "width_m": 1.7212,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 180.0,
+      "compass_azimuth_deg": null
+    },
+    {
+      "id": "g-bed3-win0",
+      "wall_id": "g-bed3-w03",
+      "offset_along_wall_m": 0.120722,
+      "width_m": 1.913411,
+      "sill_height_m": 0.83,
+      "head_height_m": 2.13,
+      "plan_normal_deg": 0.0,
+      "compass_azimuth_deg": null
+    }
+  ],
+  "doors": [
+    {
+      "id": "g-master-opening-07",
+      "wall_id": "g-master-w04",
+      "hinge_pos": {
+        "x": 4.115,
+        "z": 3.3989615096971857
+      },
+      "width_m": 0.87685,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-reception-opening-08",
+      "wall_id": "g-reception-w00",
+      "hinge_pos": {
+        "x": 3.429973700383912,
+        "z": 4.916098440058272
+      },
+      "width_m": 0.789955,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-reception-opening-09",
+      "wall_id": "g-reception-w01",
+      "hinge_pos": {
+        "x": 0.976009567483624,
+        "z": 9.055000000000001
+      },
+      "width_m": 1.364881,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-kitchen-opening-10",
+      "wall_id": "g-kitchen-w01",
+      "hinge_pos": {
+        "x": 1.5910601990632631,
+        "z": 11.835
+      },
+      "width_m": 0.771884,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-kitchen-opening-09",
+      "wall_id": "g-kitchen-w03",
+      "hinge_pos": {
+        "x": 0.976009567483624,
+        "z": 9.165000000000001
+      },
+      "width_m": 1.364881,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-bed2-opening-11",
+      "wall_id": "g-bed2-w07",
+      "hinge_pos": {
+        "x": 3.5549737003839126,
+        "z": 8.740664744367947
+      },
+      "width_m": 0.700833,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-bed3-opening-15",
+      "wall_id": "g-bed3-w02",
+      "hinge_pos": {
+        "x": 6.452189191688912,
+        "z": 5.303286870200302
+      },
+      "width_m": 0.632472,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-utility-opening-16",
+      "wall_id": "g-utility-w01",
+      "hinge_pos": {
+        "x": 7.164995476360377,
+        "z": 8.510532757551832
+      },
+      "width_m": 0.719269,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-shower-opening-14",
+      "wall_id": "g-shower-w02",
+      "hinge_pos": {
+        "x": 4.6540315663692935,
+        "z": 6.102811594311877
+      },
+      "width_m": 0.654407,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-bath-opening-13",
+      "wall_id": "g-bath-w02",
+      "hinge_pos": {
+        "x": 4.6540315663692935,
+        "z": 7.699157174496886
+      },
+      "width_m": 0.606383,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-entry2-opening-11",
+      "wall_id": "g-entry2-w01",
+      "hinge_pos": {
+        "x": 3.5549737003839126,
+        "z": 8.630664744367948
+      },
+      "width_m": 0.700833,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-entry2-opening-12",
+      "wall_id": "g-entry2-w03",
+      "hinge_pos": {
+        "x": 3.5549737003839126,
+        "z": 8.383863301657264
+      },
+      "width_m": 0.974058,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-stair-opening-18",
+      "wall_id": "g-stair-w01",
+      "hinge_pos": {
+        "x": 5.318533607508074,
+        "z": 5.152737954468854
+      },
+      "width_m": 0.947031,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-hall-opening-18",
+      "wall_id": "g-hall-w03",
+      "hinge_pos": {
+        "x": 5.318533607508074,
+        "z": 5.262737954468854
+      },
+      "width_m": 0.947031,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-hall-opening-15",
+      "wall_id": "g-hall-w04",
+      "hinge_pos": {
+        "x": 6.3304823410067765,
+        "z": 5.304382595889722
+      },
+      "width_m": 0.632275,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-hall-opening-13",
+      "wall_id": "g-hall-w06",
+      "hinge_pos": {
+        "x": 4.544031566369294,
+        "z": 7.6291571744968865
+      },
+      "width_m": 0.629706,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-hall-opening-14",
+      "wall_id": "g-hall-w06",
+      "hinge_pos": {
+        "x": 4.544031566369294,
+        "z": 6.05239015926895
+      },
+      "width_m": 0.704828,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-hall-opening-12",
+      "wall_id": "g-hall-w07",
+      "hinge_pos": {
+        "x": 3.5549737003839126,
+        "z": 8.273863301657265
+      },
+      "width_m": 0.974058,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": false,
+      "swings_into_room": true
+    },
+    {
+      "id": "g-hall-opening-08",
+      "wall_id": "g-hall-w08",
+      "hinge_pos": {
+        "x": 3.5399737003839125,
+        "z": 4.916098440058272
+      },
+      "width_m": 0.789955,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-hall-opening-07",
+      "wall_id": "g-hall-w10",
+      "hinge_pos": {
+        "x": 4.225,
+        "z": 3.3989615096971852
+      },
+      "width_m": 0.87685,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": false
+    },
+    {
+      "id": "g-hall-opening-17",
+      "wall_id": "g-hall-w11",
+      "hinge_pos": {
+        "x": 4.7754370518171685,
+        "z": 0.7401794272829366
+      },
+      "width_m": 0.808489,
+      "head_height_m": 2.04,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true,
+      "swings_into_room": true
+    }
+  ],
+  "furniture": [
+    {
+      "id": "g-master-o01",
+      "name": "Black upholstered double bed",
+      "category": "bed",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-master-o01-6c1443f003.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.45,
+        "height": 1.02,
+        "depth": 2.08
+      },
+      "pose": {
+        "x": 0.934358,
+        "z": 1.911154,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-master-o02",
+      "name": "White two-door wardrobe",
+      "category": "wardrobe",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-master-o02-1bd31cada1.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.97,
+        "height": 1.95,
+        "depth": 0.55
+      },
+      "pose": {
+        "x": 3.616171,
+        "z": 4.42926,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-master-o03",
+      "name": "White corner basin cabinet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-master-o03-730a1f2607.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.48,
+        "height": 0.84,
+        "depth": 0.43
+      },
+      "pose": {
+        "x": 3.883009,
+        "z": 1.379361,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-master-o04",
+      "name": "White panel radiator",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-master-o04-06cee7ec23.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.0,
+        "height": 0.68,
+        "depth": 0.1
+      },
+      "pose": {
+        "x": 2.142406,
+        "z": 0.314454,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-reception-o01",
+      "name": "Dark two-seat sofa",
+      "category": "sofa",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-reception-o01-bfd76ffa68.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.58,
+        "height": 0.86,
+        "depth": 0.76
+      },
+      "pose": {
+        "x": 2.91429,
+        "z": 6.404804,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-reception-o02",
+      "name": "Brown two-seat sofa",
+      "category": "sofa",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-reception-o02-624e270492.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.55,
+        "height": 0.85,
+        "depth": 0.76
+      },
+      "pose": {
+        "x": 2.870182,
+        "z": 8.235569,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-reception-o03",
+      "name": "White rectangular table",
+      "category": "table",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-reception-o03-b325551aca.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.12,
+        "height": 0.73,
+        "depth": 0.66
+      },
+      "pose": {
+        "x": 1.789545,
+        "z": 6.581011,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [
+        {
+          "x": 0.0,
+          "z": 0.0,
+          "width": 1.12,
+          "depth": 0.66,
+          "y_min": 0.6849999999999999,
+          "y_max": 0.73
+        },
+        {
+          "x": -0.525,
+          "z": -0.29500000000000004,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.6849999999999999
+        },
+        {
+          "x": -0.525,
+          "z": 0.29500000000000004,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.6849999999999999
+        },
+        {
+          "x": 0.525,
+          "z": -0.29500000000000004,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.6849999999999999
+        },
+        {
+          "x": 0.525,
+          "z": 0.29500000000000004,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.6849999999999999
+        }
+      ],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-reception-o04",
+      "name": "Brown office chair",
+      "category": "chair",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-reception-o04-b587afaaa0.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.55,
+        "height": 0.96,
+        "depth": 0.58
+      },
+      "pose": {
+        "x": 2.715805,
+        "z": 5.303568,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-reception-o05",
+      "name": "Silver fridge freezer",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-reception-o05-6ac8abbd8c.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.6,
+        "height": 1.84,
+        "depth": 0.64
+      },
+      "pose": {
+        "x": 0.530369,
+        "z": 8.625599,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-reception-o06",
+      "name": "White upright freezer",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-reception-o06-d7c0585732.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.58,
+        "height": 1.4,
+        "depth": 0.61
+      },
+      "pose": {
+        "x": 0.538672,
+        "z": 7.745775,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-reception-o07",
+      "name": "White panel radiator",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-reception-o07-06cee7ec23.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.0,
+        "height": 0.68,
+        "depth": 0.1
+      },
+      "pose": {
+        "x": 0.249061,
+        "z": 5.840215,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-kitchen-o01",
+      "name": "Gas cooker and oven",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-kitchen-o01-ff633d1bdd.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.6,
+        "height": 0.91,
+        "depth": 0.62
+      },
+      "pose": {
+        "x": 0.52202,
+        "z": 9.876142,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-kitchen-o02",
+      "name": "White base cabinet",
+      "category": "storage",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-kitchen-o02-cad0957c55.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.6,
+        "height": 0.86,
+        "depth": 0.61
+      },
+      "pose": {
+        "x": 0.52202,
+        "z": 10.554724,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-kitchen-o03",
+      "name": "Stainless sink base cabinet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-kitchen-o03-63b2fb22c7.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.12,
+        "height": 0.92,
+        "depth": 0.6
+      },
+      "pose": {
+        "x": 2.252675,
+        "z": 11.474094,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-kitchen-o04",
+      "name": "Right base cabinet",
+      "category": "storage",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-kitchen-o04-71636c64aa.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.62,
+        "height": 0.86,
+        "depth": 0.6
+      },
+      "pose": {
+        "x": 2.781967,
+        "z": 10.313937,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed2-o01",
+      "name": "Black upholstered double bed",
+      "category": "bed",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed2-o01-008e7fa2c2.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.38,
+        "height": 1.0,
+        "depth": 2.04
+      },
+      "pose": {
+        "x": 4.710169,
+        "z": 10.357717,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed2-o02",
+      "name": "Pine two-door wardrobe",
+      "category": "wardrobe",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed2-o02-4190d74f17.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.92,
+        "height": 1.95,
+        "depth": 0.54
+      },
+      "pose": {
+        "x": 4.008775,
+        "z": 9.2025,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed2-o03",
+      "name": "Pine chest of drawers",
+      "category": "storage",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed2-o03-6286740cdf.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.75,
+        "height": 0.77,
+        "depth": 0.41
+      },
+      "pose": {
+        "x": 5.852756,
+        "z": 9.373483,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed2-o04",
+      "name": "Pine basin cabinet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed2-o04-973fb18019.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.5,
+        "height": 0.84,
+        "depth": 0.44
+      },
+      "pose": {
+        "x": 6.168433,
+        "z": 11.364646,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-bed2-o05",
+      "name": "White radiator below window",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed2-o05-0900cefab2.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.02,
+        "height": 0.68,
+        "depth": 0.1
+      },
+      "pose": {
+        "x": 4.621259,
+        "z": 11.692992,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-bed3-o01",
+      "name": "Black upholstered double bed",
+      "category": "bed",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed3-o01-1e01787cb8.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.38,
+        "height": 0.99,
+        "depth": 2.04
+      },
+      "pose": {
+        "x": 7.799644,
+        "z": 4.056599,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed3-o02",
+      "name": "White wardrobe",
+      "category": "wardrobe",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed3-o02-f5e8c9d355.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.92,
+        "height": 1.94,
+        "depth": 0.54
+      },
+      "pose": {
+        "x": 6.763051,
+        "z": 2.745966,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed3-o03",
+      "name": "White bedside drawers",
+      "category": "storage",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed3-o03-5c082bfc0a.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.42,
+        "height": 0.49,
+        "depth": 0.4
+      },
+      "pose": {
+        "x": 6.699586,
+        "z": 4.056599,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed3-o04",
+      "name": "White work table",
+      "category": "desk",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed3-o04-11114df012.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.95,
+        "height": 0.74,
+        "depth": 0.49
+      },
+      "pose": {
+        "x": 7.905419,
+        "z": 2.296452,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [
+        {
+          "x": 0.0,
+          "z": 0.0,
+          "width": 0.95,
+          "depth": 0.49,
+          "y_min": 0.695,
+          "y_max": 0.74
+        },
+        {
+          "x": -0.43999999999999995,
+          "z": -0.21,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": -0.43999999999999995,
+          "z": 0.21,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": 0.43999999999999995,
+          "z": -0.21,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        },
+        {
+          "x": 0.43999999999999995,
+          "z": 0.21,
+          "width": 0.045,
+          "depth": 0.045,
+          "y_min": 0.0,
+          "y_max": 0.695
+        }
+      ],
+      "collision_source": "template",
+      "is_fixed": false
+    },
+    {
+      "id": "g-bed3-o05",
+      "name": "White basin cabinet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed3-o05-f6099e3386.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.49,
+        "height": 0.84,
+        "depth": 0.43
+      },
+      "pose": {
+        "x": 6.699586,
+        "z": 6.32649,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-bed3-o06",
+      "name": "White radiator",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-bed3-o06-a8839192df.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.9,
+        "height": 0.67,
+        "depth": 0.1
+      },
+      "pose": {
+        "x": 7.3977,
+        "z": 1.996776,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-utility-o01",
+      "name": "Front-loading washing machine",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-utility-o01-1f6eb69189.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.6,
+        "height": 0.85,
+        "depth": 0.6
+      },
+      "pose": {
+        "x": 6.784206,
+        "z": 7.722451,
+        "yaw_deg": 0.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-utility-o02",
+      "name": "Hot water cylinder",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-utility-o02-de51839e42.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.49,
+        "height": 1.25,
+        "depth": 0.49
+      },
+      "pose": {
+        "x": 8.116969,
+        "z": 7.605815,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-shower-o01",
+      "name": "Quadrant shower enclosure",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-shower-o01-d832b7ce6a.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.78,
+        "height": 1.96,
+        "depth": 0.78
+      },
+      "pose": {
+        "x": 5.80419,
+        "z": 6.975584,
+        "yaw_deg": 180.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-shower-o02",
+      "name": "White toilet",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-shower-o02-1d28e31dfd.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.38,
+        "height": 0.78,
+        "depth": 0.66
+      },
+      "pose": {
+        "x": 5.97417,
+        "z": 6.32649,
+        "yaw_deg": 270.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-shower-o03",
+      "name": "Small white basin",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-shower-o03-40deade997.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 0.42,
+        "height": 0.84,
+        "depth": 0.36
+      },
+      "pose": {
+        "x": 4.865762,
+        "z": 7.092294,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    },
+    {
+      "id": "g-hall-o01",
+      "name": "Entrance hall radiator",
+      "category": "fixture",
+      "source": "extracted_video",
+      "glb_url": "/assets/g-hall-o01-1cd60cf89e.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.0,
+        "height": 0.7,
+        "depth": 0.1
+      },
+      "pose": {
+        "x": 4.280806,
+        "z": 1.769761,
+        "yaw_deg": 90.0
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.0,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions",
+        "placement",
+        "orientation"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": true
+    }
+  ],
+  "north_compass_deg": null,
+  "sun_hour": 14.5
+}
