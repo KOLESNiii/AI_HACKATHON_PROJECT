@@ -1,0 +1,78 @@
+{
+  "scene_id": "demo_studio_01",
+  "shell_glb_url": "/mock_room/shell.glb",
+  "north_compass_deg": null,
+  "sun_hour": 14.5,
+  "floor_polygon": [
+    { "x": 0.0, "z": 0.0 },
+    { "x": 4.2, "z": 0.0 },
+    { "x": 4.2, "z": 3.6 },
+    { "x": 0.0, "z": 3.6 }
+  ],
+  "walls": [
+    { "id": "w_north", "start": { "x": 0.0, "z": 0.0 }, "end": { "x": 4.2, "z": 0.0 }, "height_m": 2.6, "thickness_m": 0.15 },
+    { "id": "w_east",  "start": { "x": 4.2, "z": 0.0 }, "end": { "x": 4.2, "z": 3.6 }, "height_m": 2.6, "thickness_m": 0.15 },
+    { "id": "w_south", "start": { "x": 4.2, "z": 3.6 }, "end": { "x": 0.0, "z": 3.6 }, "height_m": 2.6, "thickness_m": 0.15 },
+    { "id": "w_west",  "start": { "x": 0.0, "z": 3.6 }, "end": { "x": 0.0, "z": 0.0 }, "height_m": 2.6, "thickness_m": 0.15 }
+  ],
+  "windows": [
+    {
+      "id": "win_1",
+      "wall_id": "w_south",
+      "offset_along_wall_m": 1.1,
+      "width_m": 1.8,
+      "sill_height_m": 0.9,
+      "head_height_m": 2.1,
+      "plan_normal_deg": 180.0,
+      "compass_azimuth_deg": null
+    }
+  ],
+  "doors": [
+    {
+      "id": "door_1",
+      "wall_id": "w_north",
+      "hinge_pos": { "x": 0.4, "z": 0.0 },
+      "width_m": 0.85,
+      "swing_angle_deg": 90.0,
+      "swing_clockwise": true
+    }
+  ],
+  "furniture": [
+    {
+      "id": "item_bed",
+      "name": "Double Bed",
+      "category": "bed",
+      "source": "extracted_video",
+      "glb_url": "/mock_room/bed.glb",
+      "bbox_m": { "width": 1.45, "height": 0.55, "depth": 2.0 },
+      "pose": { "x": 3.1, "z": 1.1, "yaw_deg": 270 },
+      "has_screen": false,
+      "requires_front_clear_m": 0.5,
+      "wall_flush_preferred": true
+    },
+    {
+      "id": "item_desk",
+      "name": "Work Desk + Monitor",
+      "category": "desk",
+      "source": "extracted_video",
+      "glb_url": "/mock_room/desk.glb",
+      "bbox_m": { "width": 1.4, "height": 0.75, "depth": 0.7 },
+      "pose": { "x": 2.1, "z": 2.6, "yaw_deg": 0 },
+      "has_screen": true,
+      "requires_front_clear_m": 0.75,
+      "wall_flush_preferred": false
+    },
+    {
+      "id": "item_wardrobe",
+      "name": "2-Door Wardrobe",
+      "category": "wardrobe",
+      "source": "extracted_video",
+      "glb_url": "/mock_room/wardrobe.glb",
+      "bbox_m": { "width": 1.0, "height": 2.0, "depth": 0.6 },
+      "pose": { "x": 1.35, "z": 0.45, "yaw_deg": 0 },
+      "has_screen": false,
+      "requires_front_clear_m": 0.7,
+      "wall_flush_preferred": true
+    }
+  ]
+}
