@@ -1,29 +1,17 @@
-# Dev 2.1 fixture furniture
+# Dev 2 fixture furniture
 
-Two independently movable fixture assets so Dev 1, Dev 3 and Dev 4 can integrate before
-real video extraction works. Regenerate the meshes with:
+The fixture assets live in the shared fixture scene, `contracts/mock_room/mock_scene.json`,
+so Devs 1, 3 and 4 integrate against one room:
 
-```
-.venv/bin/python -I services/reconstruction/assets/fixtures/make_fixtures.py
-```
-
-| file | what it is |
+| item | what it shows |
 |---|---|
-| `vid-desk-01.glb` / `vid-chair-01.glb` | normalised proxy boxes — bottom-centre at origin, front `+Z`, metres |
-| `manifest.json` | two `contracts.schema.FurnitureItem` records, validated in `tests/` |
-| `evidence.json` | **proposed** evidence/provenance sidecar (see `../README.md` §2, §5) |
+| `vid-desk-01`, `vid-chair-01` | a chair tucked under a desk without colliding |
+| `vid-table-01`, `fix-radiator-01` | a table standing over a fixed radiator |
 
-## Present
+All four are labelled proxy boxes (`is_proxy: true`) with template collision parts, not
+reconstructed meshes. Their `.glb` files are generated from the scene by
+`scripts/generate_mock_glbs.py` into `frontend/public/mock_room/`.
 
-- Exact metric `bbox_m` matching the mesh bounds.
-- Stable IDs following the agreed-pending format.
-- Normalisation guarantee verified by assertion in the generator and by test.
-
-## Deliberately not present
-
-- Real geometry. These are labelled proxy boxes, the documented failure fallback — not
-  reconstructed meshes.
-- Real mask/frame evidence. `mask_url` and `bbox_px` are `null`; there is no source video
-  for a fixture. Dev 1's alignment must tolerate null evidence on fixtures.
-- Hosted `glb_url`s. Paths are repo-relative; swap for served URLs once reconstruction
-  routes exist.
+`evidence.json` here is their source evidence in the agreed shape (see `../README.md`).
+There is no source video for a fixture, so `mask_url`, `bbox_px` and the other optional
+fields are `null`. Dev 1's alignment must tolerate that.

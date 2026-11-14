@@ -28,8 +28,9 @@ def test_mock_scene_validates_with_defaults() -> None:
     scene = load_mock()
     assert scene.revision == 0
     assert len({item.id for item in scene.furniture}) == len(scene.furniture)
+    proxies = {item.id for item in scene.furniture if item.is_proxy}
+    assert proxies == {"vid-desk-01", "vid-chair-01", "vid-table-01", "fix-radiator-01"}
     for item in scene.furniture:
-        assert item.is_proxy is False
         assert item.dimension_source == "estimated"
         assert item.correction_needed == []
     assert all(door.swings_into_room for door in scene.doors)
