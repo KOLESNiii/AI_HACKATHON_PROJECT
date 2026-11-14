@@ -223,22 +223,76 @@ def test_l_shape_reflex_corner_matches_mock_rule() -> None:
 
 
 def invalid_footprints(scene: RoomScene) -> list[str]:
-    """Every wall section's footprint must be a simple, convex polygon with positive area."""
+    """Every wall section's footprint must be a strictly convex polygon with positive area: no
+    repeated vertices, zero-length edges or collinear (zero-turn) vertices, any of which makes
+    the footprint degenerate even when its area is positive."""
     bad = []
     for frame, o_start, o_end in wall_ends(scene):
         for sec in wall_sections(scene, frame, o_start, o_end):
             q = sec.poly
             n = len(q)
+            edges = [q[(i + 1) % n] - q[i] for i in range(n)]
             turns = [
-                (q[(i + 1) % n][0] - q[i][0]) * (q[(i + 2) % n][1] - q[(i + 1) % n][1])
-                - (q[(i + 1) % n][1] - q[i][1]) * (q[(i + 2) % n][0] - q[(i + 1) % n][0])
+                edges[i][0] * edges[(i + 1) % n][1] - edges[i][1] * edges[(i + 1) % n][0]
                 for i in range(n)
             ]
-            convex = all(t > -1e-12 for t in turns) or all(t < 1e-12 for t in turns)
+            strictly_convex = all(t > 1e-12 for t in turns) or all(t < -1e-12 for t in turns)
+            min_edge = min(float(np.hypot(*e)) for e in edges) if n else 0.0
             area = abs(sum(q[i - 1][0] * q[i][1] - q[i][0] * q[i - 1][1] for i in range(n))) / 2
-            if n < 3 or not convex or area <= 1e-8 or sec.y1 <= sec.y0:
+            if n < 3 or not strictly_convex or min_edge <= 1e-9 or area <= 1e-8 or sec.y1 <= sec.y0:
                 bad.append(f"{frame.wall.id}: {q.round(3).tolist()} y {sec.y0}..{sec.y1}")
     return bad
+
+
+def _l_door(hinge_z: float) -> RoomScene:
+    """The L-shape with 0.2 m walls and a 0.8 m clockwise inward door on w3 (x = 2, running +Z
+    from the reflex corner (2, 2)). The miter at that corner reaches t = 0.2 along w3."""
+    return make_scene(
+        [(0, 0), (4, 0), (4, 2), (2, 2), (2, 4), (0, 4)],
+        doors=[
+            {
+                "id": "d0",
+                "wall_id": "w3",
+                "hinge_pos": {"x": 2.0, "z": hinge_z},
+                "width_m": 0.8,
+                "swing_clockwise": True,
+                "swings_into_room": True,
+            }
+        ],
+    )
+
+
+def test_opening_boundary_on_a_miter_vertex() -> None:
+    """Reviewer's follow-up: hinge at (2, 2.2) puts the door edge exactly on the miter vertex
+    (2.2, 2.2), which used to duplicate it and make the shell fail to build."""
+    scene = _l_door(2.2)
+    assert invalid_footprints(scene) == []
+    assert shell_glb(scene).startswith(b"glTF")
+    shell = build_shell(scene)
+    assert not solid(shell, 2.1, 1.0, 2.6)  # door gap (w3 t 0.2..1.0)
+    assert solid(shell, 2.1, 2.3, 2.6)  # lintel
+    assert solid(shell, 2.15, 1.0, 2.05)  # corner block closed
+    assert not solid(shell, 1.97, 1.0, 2.05)  # nothing inside the reflex corner
+
+
+@pytest.mark.parametrize("hinge_z", [round(2.0 + 0.05 * i, 2) for i in range(9)])
+def test_door_edge_swept_across_a_reflex_miter(hinge_z: float) -> None:
+    scene = _l_door(hinge_z)
+    assert invalid_footprints(scene) == []
+    assert shell_glb(scene).startswith(b"glTF")
+
+
+@pytest.mark.parametrize("offset", [round(0.05 * i, 2) for i in range(9)])
+def test_window_edge_swept_across_a_bay_miter(offset: float) -> None:
+    """A 0.6 m window on the 45° chamfer of the bay room (w2, (4, 2) -> (3, 3), 1.414 m long),
+    starting at every offset from its start corner up to 0.4 m: the convex miters at both ends
+    of the chamfer reach past them."""
+    scene = make_scene(
+        [(0, 0), (4, 0), (4, 2), (3, 3), (0, 3)],
+        windows=[_window("w2", offset, 0.6, 0.9)],
+    )
+    assert invalid_footprints(scene) == []
+    assert shell_glb(scene).startswith(b"glTF")
 
 
 def test_short_section_at_reflex_corner_is_a_valid_footprint() -> None:

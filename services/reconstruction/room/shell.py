@@ -217,27 +217,48 @@ class Section:
     y1: float
 
 
+EPS = 1e-9
+"""Metres. Points closer than this coincide; a vertex this close to a cut lies on it."""
+
+
 def _clip(poly: Vec, frame: WallFrame, ta: float, tb: float) -> Vec:
     """Sutherland-Hodgman: keep the part of a convex polygon with ta <= t <= tb, where t is the
-    distance along the wall."""
+    distance along the wall. A vertex within EPS of a cut counts as on it and is kept once; an
+    intersection is added only for an edge that strictly crosses the cut."""
     pts = [np.asarray(p, dtype=np.float64) for p in poly]
-    for bound, keep_above in ((ta, True), (tb, False)):
+    for bound, sign in ((ta, 1.0), (tb, -1.0)):
         out: list[Vec] = []
         n = len(pts)
         for i in range(n):
             p, q = pts[i], pts[(i + 1) % n]
-            tp = float(np.dot(p - frame.start, frame.d))
-            tq = float(np.dot(q - frame.start, frame.d))
-            p_in = tp >= bound if keep_above else tp <= bound
-            q_in = tq >= bound if keep_above else tq <= bound
-            if p_in:
+            dp = sign * (float(np.dot(p - frame.start, frame.d)) - bound)
+            dq = sign * (float(np.dot(q - frame.start, frame.d)) - bound)
+            if dp >= -EPS:
                 out.append(p)
-            if p_in != q_in:
-                out.append(p + (q - p) * ((bound - tp) / (tq - tp)))
+            if (dp > EPS and dq < -EPS) or (dp < -EPS and dq > EPS):
+                out.append(p + (q - p) * (dp / (dp - dq)))
         pts = out
         if len(pts) < 3:
             return np.zeros((0, 2))
-    return np.array(pts)
+    return _clean(np.array(pts))
+
+
+def _clean(poly: Vec) -> Vec:
+    """Drop repeated vertices (including a last vertex equal to the first) and collinear ones,
+    which would leave a zero-area ear that `triangulate()` rejects."""
+    pts = [p for p in poly]
+    changed = True
+    while changed and len(pts) >= 3:
+        changed = False
+        n = len(pts)
+        for i in range(n):
+            a, b, c = pts[i - 1], pts[i], pts[(i + 1) % n]
+            ab, bc = float(np.linalg.norm(b - a)), float(np.linalg.norm(c - b))
+            if ab <= EPS or (bc > EPS and abs(_cross(b - a, c - b)) <= EPS * max(ab, bc)):
+                del pts[i]
+                changed = True
+                break
+    return np.array(pts) if len(pts) >= 3 else np.zeros((0, 2))
 
 
 def _is_simple_quad(q: Vec) -> bool:
