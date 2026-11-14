@@ -6,7 +6,6 @@ from shapely.geometry import LineString, Polygon  # type: ignore[import-untyped]
 from shapely.ops import unary_union  # type: ignore[import-untyped]
 
 from contracts.schema import WALK_HEADROOM_M, RoomScene
-from services.spatial_engine.audit import detect_blocked_doors
 from services.spatial_engine.geometry import (
     SceneGeometry,
     SpatialInputError,
@@ -20,7 +19,6 @@ def calculate_reachable_floor_ratio(
     *,
     passage_width_m: float = 0.5,
     _prepared: SceneGeometry | None = None,
-    _blocked_door_ids: set[str] | None = None,
 ) -> float | None:
     """Fraction of room floor coverable by a person entering through any door.
 
@@ -30,7 +28,8 @@ def calculate_reachable_floor_ratio(
     to free floor. Union all doors, never sum overlapping reachable areas.
 
     Uses the same below-headroom part projections as free-floor calculation.
-    Blocked door swings are excluded as entries (a conservative full-opening rule).
+    Door-leaf obstruction is a separate finding, not an entry veto. Obstacles at
+    the entry segment or in free floor determine physical passage independently.
     Doors below headroom or narrower than the person cannot seed a component.
     No doors returns None: unknown entry must not suppress other audit findings.
     No fitting/reachable entry returns zero. Fixed items and chairs block walking.
@@ -46,11 +45,6 @@ def calculate_reachable_floor_ratio(
     floor = prepared.floor
     if not scene.doors:
         return None
-    blocked_ids = (
-        _blocked_door_ids
-        if _blocked_door_ids is not None
-        else {issue.door_id for issue in detect_blocked_doors(scene, _prepared=prepared)}
-    )
     radius = passage_width_m / 2 - 1e-9
     walls = {wall.id: wall for wall in scene.walls}
     entry_segments: list[LineString] = []
@@ -58,11 +52,7 @@ def calculate_reachable_floor_ratio(
         if door.wall_id not in walls:
             raise SpatialInputError(f"Door {door.id} references an unknown wall")
         entry = door_entry_segment(door, walls[door.wall_id], scene.floor_polygon, radius)
-        if (
-            door.id not in blocked_ids
-            and door.head_height_m >= WALK_HEADROOM_M
-            and not entry.is_empty
-        ):
+        if door.head_height_m >= WALK_HEADROOM_M and not entry.is_empty:
             entry_segments.append(entry)
 
     free_floor = prepared.free_floor

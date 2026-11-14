@@ -222,3 +222,30 @@ def test_geometry_library_errors_are_safe_422(monkeypatch: pytest.MonkeyPatch) -
     assert response.status_code == 422
     assert "private internal geometry data" not in response.text
     assert response.json()["detail"][0]["msg"] == "Room geometry could not be processed"
+
+
+def test_swing_warning_and_walkability_remain_independent_through_api() -> None:
+    body = payload()
+    body["floor_polygon"] = [{"x": x, "z": z} for x, z in [(0, 0), (6, 0), (6, 6), (0, 6)]]
+    body["walls"] = [{"id": "north", "start": {"x": 0, "z": 0}, "end": {"x": 6, "z": 0}}]
+    body["doors"] = [
+        {"id": "entry", "wall_id": "north", "hinge_pos": {"x": 1, "z": 0}, "width_m": 0.9}
+    ]
+    body["windows"] = []
+    body["furniture"] = [
+        {
+            "id": "plant",
+            "name": "Plant",
+            "category": "other",
+            "source": "extracted_video",
+            "glb_url": "/plant.glb",
+            "bbox_m": {"width": 0.2, "height": 0.8, "depth": 0.2},
+            "pose": {"x": 1.65, "z": 0.65, "yaw_deg": 0},
+        }
+    ]
+    with TestClient(app) as client:
+        result = client.post("/audit", json=body)
+    assert result.status_code == 200
+    report = result.json()
+    assert report["blocked_doors"] == [{"door_id": "entry", "blocked_by_item_id": "plant"}]
+    assert report["walkable_floor_ratio"] > 0.98

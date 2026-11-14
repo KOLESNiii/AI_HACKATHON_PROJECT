@@ -30,7 +30,7 @@ def test_volumes_built_once_per_item_and_not_retained_across_requests() -> None:
         second = audit_scene(room)
         assert build.call_count == 2 * len(room.furniture)
     assert first.blocked_doors
-    assert first.walkable_floor_ratio == 0
+    assert first.walkable_floor_ratio is not None
     assert second.blocked_doors == []
     assert second.walkable_floor_ratio is not None and second.walkable_floor_ratio > 0
     assert second.scene_revision == first.scene_revision + 1

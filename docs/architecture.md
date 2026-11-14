@@ -51,8 +51,9 @@ milestone; generated video is stretch scope.
 The editor uses `/api/spatial_engine/audit` through Vite. The request is read-only,
 has no provider calls, and echoes the submitted scene ID/revision. Results combine
 collisions, room containment, door obstruction, front clearance and a reachable
-floor ratio using a 50 cm person and entry through any suitable unblocked door.
-Door swing obstruction is reported and also excludes that door as a walking entry.
+floor ratio using a 50 cm person and entry through any physically passable door.
+Door swing obstruction is reported separately: clipping the swing arc does not
+exclude an entry unless obstacles actually prevent passage through the doorway.
 
 Scoring, glare and Feng Shui remain unimplemented. `overall_score`, `glare_alerts`
 and `feng_shui` are nullable in both shared schemas. Consumers must display null

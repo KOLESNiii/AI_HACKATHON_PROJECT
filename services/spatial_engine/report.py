@@ -14,7 +14,7 @@ from services.spatial_engine.reachability import calculate_reachable_floor_ratio
 def audit_scene(scene: RoomScene) -> AuditReport:
     """Audit without network access or mutation; unavailable assessments stay null.
 
-    Domain-invalid geometry raises ValueError for the HTTP adapter to map to 422.
+    Domain-invalid geometry raises SpatialInputError for the HTTP adapter to map to 422.
     No known doors leaves reachability null while preserving other findings.
     """
     prepared = prepare_scene(scene)
@@ -26,9 +26,7 @@ def audit_scene(scene: RoomScene) -> AuditReport:
         out_of_bounds_item_ids=detect_out_of_bounds(scene, _prepared=prepared),
         blocked_doors=blocked_doors,
         clearance_issues=detect_front_clearance(scene, _prepared=prepared),
-        walkable_floor_ratio=calculate_reachable_floor_ratio(
-            scene, _prepared=prepared, _blocked_door_ids={issue.door_id for issue in blocked_doors}
-        ),
+        walkable_floor_ratio=calculate_reachable_floor_ratio(scene, _prepared=prepared),
         glare_orientation_grounded=None,
         overall_score=None,
         glare_alerts=None,

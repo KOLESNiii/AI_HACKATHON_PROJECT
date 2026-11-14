@@ -15,8 +15,9 @@ from contracts.schema import (
     Vec2,
     WallSegment,
 )
-from services.spatial_engine.audit import calculate_free_floor_ratio
+from services.spatial_engine.audit import calculate_free_floor_ratio, detect_blocked_doors
 from services.spatial_engine.reachability import calculate_reachable_floor_ratio
+from services.spatial_engine.report import audit_scene
 
 
 def room() -> RoomScene:
@@ -167,15 +168,30 @@ def test_missing_door_is_unknown_not_clear() -> None:
     assert calculate_reachable_floor_ratio(scene) is None
 
 
-def test_swing_obstruction_excludes_entry_even_when_threshold_is_clear() -> None:
+def test_swing_obstruction_does_not_exclude_physically_clear_entry() -> None:
     scene = room()
     # Beyond the entry inset, but within the clockwise inward door sweep.
     scene.furniture = [obstacle("swing-blocker", 1.6, 0.7, 0.1, 0.1)]
-    assert calculate_reachable_floor_ratio(scene) == 0
+    assert detect_blocked_doors(scene)
+    assert calculate_reachable_floor_ratio(scene) > 0.98
     scene.doors.append(
         DoorOpening(id="other", wall_id="north", hinge_pos=Vec2(x=4, z=0), width_m=1)
     )
     assert calculate_reachable_floor_ratio(scene) > 0.98
+
+
+def test_review_plant_case_reports_swing_obstruction_without_zeroing_walkability() -> None:
+    scene = room()
+    scene.doors[0].width_m = 0.9
+    plant = obstacle("plant", 1.65, 0.65, 0.2, 0.2)
+    plant.category, plant.is_fixed, plant.bbox_m.height = "other", False, 0.8
+    scene.furniture = [plant]
+    report = audit_scene(scene)
+    assert [(issue.door_id, issue.blocked_by_item_id) for issue in report.blocked_doors] == [
+        ("entry", "plant")
+    ]
+    assert report.walkable_floor_ratio is not None
+    assert 0.98 < report.walkable_floor_ratio <= calculate_free_floor_ratio(scene)
 
 
 def test_unknown_wall_and_duplicate_ids_rejected() -> None:

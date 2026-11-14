@@ -42,7 +42,10 @@ compass is absent merely because glare was not assessed.
 across all suitable door entries, divided by usable floor area. It is not raw free
 area. With no known doors, the response remains HTTP 200, its walking ratio is
 null, and collision/boundary/clearance findings are retained. Known but unusable
-entries give zero; doors listed in `blocked_doors` cannot seed walking access.
+entries give zero. `blocked_doors` warns about the door leaf's swept area; it does
+not automatically imply zero walking access. Entry geometry independently checks
+whether a 50 cm person can pass. For example, a plant clipping the swing arc may
+produce a door warning while most of the room remains reachable.
 Both nullable-field changes are mirrored in the shared schemas: merge this
 contract revision when updating frontend consumers.
 

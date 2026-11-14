@@ -120,16 +120,17 @@ An empty square room can be slightly below 100%: a round person cannot cover the
 very tips of its corners. This metric is neither raw empty floor nor just the area
 of valid centre positions. It must remain distinguishable from free-floor ratio.
 
-No doors means entry is unknown and returns null. Doors too narrow/short, with a
-blocked swing, or entrances entirely obstructed by furniture contribute no entry; if none reaches
+No doors means entry is unknown and returns null. Doors too narrow/short, or
+entrances entirely obstructed by furniture, contribute no entry; if none reaches
 a region the result is zero. Fixed objects and chairs remain walking obstacles.
 High parts are excluded by the shared headroom rule. Low doorways are not treated
 as crawl-through passages. Inputs, duplicate IDs and geometry are validated.
 
-Any door with a swing obstruction is excluded as an entry, even if a person could
-fit through a partially opened leaf. This conservative full-opening rule avoids
-counting a blocked entrance as usable. Other unblocked doors may still reach the
-same area. We do not simulate a partially open leaf. Circular buffers use 32
+Door-swing obstruction and walking access answer different questions. A plant
+clipping the swing arc still produces `blocked_doors`, but does not make the room
+unreachable if the doorway is physically passable. Entry segments and eroded free
+floor reject entrances that cannot accommodate the person. We do not simulate
+the articulated leaf or infer an achievable opening angle. Circular buffers use 32
 segments per quadrant; a 1e-9 m radius reduction handles exact-width contact.
 These are geometric approximations, not certified accessibility measurements.
 The audit endpoint assigns this result to `AuditReport.walkable_floor_ratio`.

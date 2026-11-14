@@ -65,10 +65,17 @@
 - In response to review items 1 and 3, extend the same null convention to unknown
   walking entry (`walkable_floor_ratio`) and unassessed glare orientation
   (`glare_orientation_grounded`), mirrored in Python/TypeScript. These follow-up
-  semantics are documented for reviewer/consumer acknowledgement, not represented
-  as already reviewed approval of this subsequent patch.
-- Conservatively exclude any door with a reported swing obstruction from walking
-  entry. We do not infer whether a partly blocked leaf can open enough to pass.
+  semantics were subsequently approved by the teammates, as confirmed by the
+  Dev 4 operator in this session. Keep all five fields nullable, display null as
+  unknown/unassessed, and align the compass rule in `CLAUDE.md` with these meanings.
+  This records the operator's confirmation; it does not claim an approval comment
+  has been posted to GitHub.
+- The initial review fix excluded any swing-obstructed door from walking entry.
+  This was superseded after the second review's plant example: swing obstruction
+  and physical doorway passage are now separate checks. Entry segments and
+  obstacle-eroded free space determine whether a person can enter; a small object
+  clipping only the swing arc does not zero the room's reachability. This remains
+  an access approximation, not a simulation of partially opened door leaves.
 - Preserve the shared chair-as-blocker exemption and the operator's chair-target
   exemption. They are front-access product rules, not walking-space exemptions.
 - Preserve full-width front clearance and interior-floor wall semantics. A notch
