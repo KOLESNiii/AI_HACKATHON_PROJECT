@@ -14,6 +14,9 @@ from typing import Literal
 
 import numpy as np
 
+from contracts.schema import RoomScene, Vec2
+
+from . import footprint as fp
 from .raster import Mask
 from .regions import GLAZING_MIN, Bridge
 
@@ -130,3 +133,52 @@ def door_leaf(ink: Mask, structure: Mask, bridge: Bridge) -> Leaf:
         cx, cy = (b[0] - a[0]) / gap, (b[1] - a[1]) / gap
         return Leaf(hinge=a, free_end=b, side=(-cy, cx), found=False)
     return leaf
+
+
+# --- contract geometry the audit accepts --------------------------------------------------------
+
+CONFORM_TOLERANCE_M = 0.005
+"""Largest door error `conform_openings` treats as rounding. Parsed coordinates are rounded to the
+millimetre, so hinges drift up to ~1 mm off their wall line and closed leaves up to ~1 mm past
+the wall's end; the audit allows 1e-8 m."""
+
+
+def conform_openings(
+    scene: RoomScene, tolerance_m: float = CONFORM_TOLERANCE_M
+) -> tuple[RoomScene, list[str]]:
+    """Put every door exactly on its wall, so the spatial audit accepts the room.
+
+    Each hinge is projected onto its wall segment; if the closed leaf then runs past the wall's
+    end, the hinge moves back along the wall by that much (the width is unchanged). A door that is
+    further off than `tolerance_m` is left as it is and reported: that is a geometry error to
+    fix, not rounding. Returns the scene (unchanged if nothing moved) and the warnings.
+    """
+    frames = {w.id: fp.wall_frame(w) for w in scene.walls}
+    doors = []
+    warnings: list[str] = []
+    for door in scene.doors:
+        frame = frames.get(door.wall_id)
+        if frame is None:
+            doors.append(door)
+            continue
+        t, off = frame.locate((door.hinge_pos.x, door.hinge_pos.z))
+        leaf, _ = fp.closed_leaf(door, frame)
+        direction = leaf[0] * frame.along[0] + leaf[1] * frame.along[1]  # +1 or -1 along the wall
+        hinge = min(max(t, 0.0), frame.length)
+        end = hinge + direction * door.width_m
+        hinge -= max(0.0, end - frame.length) - max(0.0, -end)
+        hinge = min(max(hinge, 0.0), frame.length)
+        error = max(abs(off), abs(hinge - t))
+        if error > tolerance_m:
+            warnings.append(
+                f"door {door.id} is {error * 1000:.0f} mm off wall {door.wall_id}; left unchanged"
+            )
+            doors.append(door)
+            continue
+        x, z = frame.point(hinge)
+        if (x, z) != (door.hinge_pos.x, door.hinge_pos.z):
+            door = door.model_copy(update={"hinge_pos": Vec2(x=x, z=z)})
+        doors.append(door)
+    if doors == scene.doors:
+        return scene, warnings
+    return scene.model_copy(update={"doors": doors}), warnings

@@ -3,6 +3,7 @@ the floor-plan routes. No network: labels come from fixed annotations."""
 
 from __future__ import annotations
 
+import functools
 import json
 import math
 from pathlib import Path
@@ -290,6 +291,7 @@ def test_bay_window_on_a_diagonal_wall() -> None:
 # --- the example plans ------------------------------------------------------------------------
 
 
+@functools.cache
 def _example(name: str, fixture: str) -> ParsedFloorPlan:
     ann = PlanAnnotations.model_validate_json((FIXTURES / fixture).read_text())
     data = (EXAMPLES / name).read_bytes()
@@ -349,6 +351,36 @@ def test_three_floor_example() -> None:
     (bedroom2,) = [r for r in _rooms(plan) if r.name == "Bedroom (2)"]
     assert "dimensions" in bedroom2.correction_needed
     assert any(w.startswith("Bedroom (2): traced") for w in plan.warnings)
+
+
+@pytest.mark.parametrize(
+    "name, fixture",
+    [
+        ("one_floor.jpg", "one_floor.annotations.json"),
+        ("three_floor.png", "three_floor.annotations.json"),
+    ],
+)
+def test_every_example_room_is_accepted_by_the_audit(name: str, fixture: str) -> None:
+    """Coordinates are rounded to the millimetre, which left hinges up to 0.9 mm off their walls
+    and leaves up to 1 mm past them: the audit rejected 13 of these 30 rooms (422)."""
+    if not (EXAMPLES / name).exists():
+        pytest.skip("example plan missing")
+    pytest.importorskip("shapely")
+    from fastapi.testclient import TestClient
+
+    from services.spatial_engine.main import app
+
+    plan = _example(name, fixture)
+    client = TestClient(app)
+    rejected = {
+        room.scene.scene_id: res.text
+        for floor in plan.floors
+        for room in floor.rooms
+        if (res := client.post("/audit", json=room.scene.model_dump(mode="json"))).status_code
+        != 200
+    }
+    assert rejected == {}
+    assert not [w for w in plan.warnings if "off wall" in w]
 
 
 def test_empty_or_corrupt_image_is_unreadable() -> None:

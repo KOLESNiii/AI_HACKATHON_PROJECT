@@ -4,6 +4,9 @@
         --annotations services/reconstruction/room/fixtures/one_floor.annotations.json
 
 Without --annotations it calls fal.ai when FAL_KEY is set, otherwise runs unlabelled.
+
+`python -m services.reconstruction.room align ...` places furniture in a room instead; see
+`align_debug.py`.
 """
 
 from __future__ import annotations
@@ -11,6 +14,7 @@ from __future__ import annotations
 import argparse
 import math
 import mimetypes
+import sys
 from pathlib import Path
 
 import cv2
@@ -190,4 +194,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["align"]:
+        from .align_debug import main as align_main
+
+        raise SystemExit(align_main(sys.argv[2:]))
     main()

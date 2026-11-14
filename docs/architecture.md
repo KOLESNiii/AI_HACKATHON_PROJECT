@@ -137,6 +137,11 @@ a room resets the actor; component cleanup releases capture and held keys.
 - `GET /mock_room/<filename>.glb` serves the older single-room fixture meshes from
   `services/reconstruction/fixtures/mock_room/`.
 
+`demo_room_scene(room_id)` (not a route) returns one demo room as the editor's `roomScene`
+builds it: its walls and openings, the furniture standing inside it, and browser URLs for
+the shell and models. Furniture alignment (#8) runs on these rooms so its output carries the
+room IDs the editor uses.
+
 Frontend scene adapters prepend `/api/reconstruction` to these URLs, using the
 existing Vite proxy. Shared fixture JSON and geometry stay unchanged. Production
 hosting must forward this prefix to the reconstruction service, as for its other APIs.
@@ -166,3 +171,43 @@ correction. `assets/asset_store.py` stores their GLBs by SHA-256 and supplies `a
 for Dev 1 to mount at `/assets`; browser URLs include `/api/reconstruction`. This PR does
 not mount the route or change shared schemas/manifests. `reconstruct_items` provides local
 JSON/Markdown reports; see the asset README for configuration and retry commands.
+
+## Scene assembly route (#9)
+
+`GET /scenes/{scene_id}` on port 8001 (`services/reconstruction/scenes.py`) returns one room as a
+contract `RoomScene`, ready for the editor and `POST /audit`:
+
+- Input: a scene ID. Either a room of an uploaded floor plan (`<plan_id>-<room_id>`, the
+  `ParsedRoom.scene.scene_id` from `POST /floor-plans`) or a demo-home room (`g-reception`).
+- Output: the room's walls, openings and shell URL, and its furniture, one item per asset with
+  its own pose and correction flags (`room/assemble.py` → `room/align.py`). Doors are put
+  exactly on their walls first, so the audit accepts every room. `revision` is 0.
+- Furniture: demo rooms place the fixture furniture through the same path as video furniture.
+  Uploaded rooms have none until Dev 2's extraction (#16) exists; `get_furniture_source` is the
+  seam it plugs into.
+- Warnings, such as why a room has no furniture, are in the `X-Reconstruction-Warnings`
+  response header (a JSON list, exposed to CORS); the body stays a contract model. How each
+  pose was decided is not exposed.
+- Failure: unknown scene IDs return 404; a failing furniture source gives the room without
+  furniture and a warning, and a failing placement observer gives the default layout and a
+  warning. Such a scene is not kept: the next request retries. Complete scenes are assembled
+  once and kept in memory with their plan (`Cache-Control: no-cache`, because furniture
+  changes as meshes arrive). No keys needed.
+
+**Handoff to Dev 3.** The editor can load rooms from the backend instead of assembling them in
+`frontend/src/data/demoHome.ts`. A sketch of the swap, keeping the local fixture as a fallback:
+
+```ts
+export async function fetchRoomScene(roomId: string): Promise<RoomScene> {
+  try {
+    const res = await fetch(`/api/reconstruction/scenes/${encodeURIComponent(roomId)}`)
+    if (res.ok) return (await res.json()) as RoomScene
+  } catch {
+    /* backend down: fall through */
+  }
+  return roomScene(roomId)
+}
+```
+
+The response matches `roomScene(roomId)` (same IDs, shell and model URLs, fixture poses) except
+that doors sit exactly on their walls. The editor still owns `revision` after load.

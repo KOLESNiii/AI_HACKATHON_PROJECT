@@ -1,0 +1,40 @@
+{
+  "hints": [
+    {
+      "asset_id": "g-reception-o01",
+      "wall_id": "g-reception-w02",
+      "along_frac": 0.49,
+      "offset_m": 0.0,
+      "facing": "into_room",
+      "seated_at": null,
+      "confidence": 0.7
+    },
+    {
+      "asset_id": "g-reception-o02",
+      "wall_id": "g-reception-w03",
+      "along_frac": 0.45,
+      "offset_m": 0.0,
+      "facing": "into_room",
+      "seated_at": null,
+      "confidence": 0.7
+    },
+    {
+      "asset_id": "g-reception-o03",
+      "wall_id": "g-reception-w02",
+      "along_frac": 0.42,
+      "offset_m": 0.9,
+      "facing": null,
+      "seated_at": null,
+      "confidence": 0.6
+    },
+    {
+      "asset_id": "g-reception-o04",
+      "wall_id": "g-reception-w00",
+      "along_frac": 0.25,
+      "offset_m": 0.5,
+      "facing": null,
+      "seated_at": null,
+      "confidence": 0.6
+    }
+  ]
+}
