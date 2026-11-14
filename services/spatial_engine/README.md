@@ -386,8 +386,15 @@ Bad scenes, unknown `locked_item_ids`, more than 60 items or an instruction over
 500 characters return HTTP 422 before any model call. Only outcome, counts and
 error kinds are logged; never the key, the prompt or the reply.
 
-Not verified yet: a live call to the model. Tests use scripted replies and the
-real SDK over a mock HTTP transport.
+Automated tests use scripted replies and the real SDK over a mock HTTP transport;
+they make no paid calls. One live run on 2026-11-14 with `claude-sonnet-5-5` on
+the shared mock room ("Keep my bed where it is, but move the desk near the
+window") took 28.7 s: 3 model calls of 7-11 s each, 9,730 tokens, 1 layout
+evaluation. It kept the bed, placed the desk within 0.5 m of the window and
+cleared the blocked door and the bed's access issue. Model time dominates; our
+geometry takes a few milliseconds per evaluation. This is one run, not a
+benchmark. Accepting a proposal and re-auditing reproduces `report` apart from
+the revision (covered by a test).
 
 ```bash
 uv run --extra spatial pytest tests/spatial_engine/test_agent.py

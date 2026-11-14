@@ -328,3 +328,22 @@ def test_sdk_adapter_maps_timeouts() -> None:
             system="s", messages=[{"role": "user", "content": "x"}], tools=[], timeout_s=5
         )
     assert (caught.value.kind, caught.value.retryable) == ("timeout", True)
+
+
+def test_accepting_a_proposal_then_reauditing_reproduces_its_report() -> None:
+    """The editor's accept path: copy poses by ID, bump the revision, call /audit."""
+    room = scene()
+    proposal = propose_layout(OptimiseRequest(scene=room), Scripted(GOOD, END))
+    assert proposal.report.scene_revision == room.revision  # still current, so not stale
+
+    accepted = room.model_copy(deep=True)
+    for furniture in accepted.furniture:
+        if furniture.id in proposal.poses:
+            furniture.pose = proposal.poses[furniture.id]
+    accepted.revision += 1
+
+    response = TestClient(app).post("/audit", json=accepted.model_dump(mode="json"))
+    reaudit = response.json()
+    assert response.status_code == 200 and reaudit["scene_revision"] == room.revision + 1
+    expected = proposal.report.model_dump(mode="json")
+    assert {**reaudit, "scene_revision": room.revision} == expected
