@@ -119,7 +119,8 @@ reconstruction routes (#9). The types they use are in `models.py`.
 
 ```python
 async def extract_furniture(video_path: Path, scene_id: str) -> list[FurnitureAsset]   # #14–#16
-async def import_catalog_asset(product_url: str, scene_id: str) -> FurnitureAsset      # #19
+def import_catalog_asset(product_url: str, scene_id: str, *, data_dir: Path,
+                         ...) -> CatalogImport                                         # #19, implemented
 def normalise_mesh(raw_glb: Path, *, category: str, target_bbox: BBoxM | None,
                    data_dir: Path, front: Front | None = None,
                    url_base: str = ASSET_URL_BASE) -> NormalisedMesh                    # #17, implemented
@@ -423,7 +424,7 @@ returns a `NormalisedMesh` whose `glb_url` is stored in the content-addressed as
 | Size, known | With a `target_bbox` each axis is scaled to match it exactly. If that stretches one axis over 15 % more than another (`MAX_DISTORTION`), `"dimensions"` is requested: the shape disagrees with the stated size. |
 | Size, unknown | Without one the mesh is scaled uniformly so its height is the category's typical height (`CATEGORY_SIZE_M`), `bbox_m` is read off the result (rounded to 1 mm) and `"dimensions"` is always requested. Any estimated side over 3 times its corresponding category size is refused; the item keeps its proxy until dimensions are supplied. |
 | Origin | The bounding-box bottom-centre is moved to the origin. |
-| Profile | Textures above 1024 px are downscaled. The written file is re-read: its bounds must equal `bbox_m` within `GLB_BBOX_TOLERANCE_M`. |
+| Profile | Textures above 1024 px are downscaled; a file still over 3 MB is written again at 768 px, then 512 px, before it is refused (#19). The written file is re-read: its bounds must equal `bbox_m` within `GLB_BBOX_TOLERANCE_M`. |
 | Parts | `collision_parts` come from the category template fitted to `bbox_m`; `collision_source` is `"template"`. |
 
 **Measured against estimated.** `normalise_mesh` never calls a size it derived a measurement.
@@ -527,3 +528,118 @@ collision; moving it back cleared it. The editor's store (`frontend/src/store.ts
 with that scene, selected and moved the table and the chair separately with all IDs, bounds
 and mesh URLs unchanged. Not verified: the meshes drawn in a browser. The editor has no
 backend scene loader yet (#22, #25), so nothing was looked at on screen.
+
+## Implemented: retailer import (#19)
+
+`catalog.import_catalog_asset(product_url, scene_id, *, data_dir, category=None,
+source="url_import", dimensions=None, mask_provider=None, mesh_provider=None, ...)` reads a
+retailer product page and returns a `CatalogImport`: the `FurnitureAsset`, its `AssetCheck`,
+and the provenance (`product`, `image`, `mesh_source`, `warnings`). It is synchronous and
+takes `data_dir`, like the other implemented functions; the section 8 signature is updated.
+`catalog.import_product(product, scene_id, ...)` does the same for a `RetailerProduct` that
+is already in hand (a search result). `catalog.imported_assets(scene_id, data_dir=...)`
+lists a scene's stored imports offline. Contracts, routes and dependencies do not change.
+
+**One pipeline.** A product is registered in the #14 registry as an item with one view, its
+product image, under the scene key `catalog:<scene_id>`. It then takes the existing steps:
+`segment_furniture` (#15), `reconstruct_furniture` (#16), `normalise_mesh` (#17) and the
+`deliver_furniture` checks (#18). There is no second generator, normaliser or checker.
+The separate scene key keeps catalog items out of a video delivery; their IDs are
+`cat-<12 hex of the product URL's SHA-256>`, so importing a URL again updates the same item
+and reuses its stored mask and mesh.
+
+**Geometry, first that works.**
+
+| Source | When | `mesh_source` |
+|---|---|---|
+| The retailer's own 3D model | The page publishes a binary glTF: schema.org `3DModel` (IKEA) or a `<model-viewer src>` tag. Free. It enters as the raw mesh through `RetailerModelProvider`, a `MeshProvider` (`MeshRecord.provider: "retailer"`). | `retailer_model` |
+| A mesh generated from the product image | No usable published model and the caller passed `mesh_provider` (SAM 3D, paid). | `generated` |
+| A labelled proxy box | Neither. Also after any failed download, mask, mesh or check. | `proxy` |
+
+A retailer usually publishes several qualities of one model. They are tried best first and
+the first that meets the furniture profile is kept: over 30,000 triangles, or over 3 MB
+after normalisation, moves on to the next. Draco-compressed files are tried last and cannot
+be read (there is no Draco decoder among the dependencies).
+
+**Provenance kept.**
+
+| What | Where |
+|---|---|
+| Source URL and how it was found | `asset.product_url`; `asset.source` is `url_import` or `catalog_search`. |
+| Price | `asset.price_gbp`, only when published in GBP. |
+| Image | `CatalogImport.image`: URL, SHA-256 of the served bytes, stored PNG path, size. The image is the item's evidence frame, with its mask. |
+| Model | `asset.evidence.frames[0].provider_pose.model_url`: the file the mesh was made from. |
+| Dimensions | `product.dimensions`: the size in metres, `found_in` (`structured_data`, `page_text`) and `text`, the published words it was read from. |
+
+**Dimensions.** A complete published size makes `dimension_source: "catalog"` and the mesh
+is fitted to it. Read, in order: schema.org `width`/`height`/`depth` (with units, or
+`QuantitativeValue`, or `additionalProperty`); then, only for sides that leaves out,
+labelled page text (`Width: 120 cm`, `W120 x D60 x H75 cm`). A label must open its line, so
+`Armrest width` and `Seat height` are not the item's size. Unlabelled triples
+(`120 x 60 x 75 cm`), sides without a unit, and sides outside 1 cm to 5 m are not used.
+**A missing or unusable size is never invented:** the asset is `estimated` from its
+category with `"dimensions"` in `correction_needed`, and the CLI exits 2. Passing
+`dimensions=KnownDimensions(..., source="user_corrected")` settles it.
+
+Retailers name a desk's or table's long side "depth" or "length" whichever way it faces
+(IKEA: width 60, depth 140 for a desk). The published width and depth are therefore
+assigned to the delivered shape's own X and Z: the mesh's proportions, or for a proxy the
+category's usual ones. An exchange is reported in `warnings`; `product.dimensions` keeps
+what was published as written. A user's own size is never turned.
+
+**Failures.** `CatalogError` (a `ValueError`) only when there is no product to import: the
+URL is not a public http(s) address, the page cannot be fetched, or it names no product.
+After that nothing raises and the item is never dropped; it is delivered as a proxy with the
+reason in `warnings`. Downloads refuse non-public addresses on every redirect hop and are
+size-capped (page 3 MB, image 15 MB, model 20 MB).
+
+```bash
+uv run --extra reconstruction python -m services.reconstruction.assets.import_product \
+  --url https://www.ikea.com/gb/en/p/micke-desk-white-80213074/ \
+  --scene-id demo-room --data-dir artifacts/furniture --out /tmp/furniture-import
+uv run --extra reconstruction python -m services.reconstruction.assets.import_product \
+  --search "office desk"                      # list IKEA results; add --pick N --scene-id … to import one
+```
+
+`--out` writes `import.json`, `assets.json` and `report.md`. `--category` overrides the
+category read from the product's name; `--dimensions W H D` (metres) is a user correction;
+`--product file.json` imports a stored `RetailerProduct`. `--live` adds fal.ai (`FAL_KEY`):
+SAM 3 masks, and a SAM 3D mesh when no published model is usable. Exit 0: checks pass and no
+correction is asked; 2: a check failed or a correction is asked; 1: nothing to import.
+
+**Search.** `retailer.search_ikea(query, limit=5, market="gb/en")` returns `catalog_search`
+results (URL, name, image, GBP price). It calls the search endpoint the IKEA website itself
+uses: no key, but not a documented API, and it may change. A result has no dimensions or
+model; importing its URL reads both from the product page. `LINKUP_API_KEY` and
+`TAVILY_API_KEY` are not used: any search that yields a product URL can feed
+`import_catalog_asset(url, ..., source="catalog_search")`.
+
+**Dev 1 handoff.** Place `CatalogImport.asset` with `asset.to_item(pose)` like any other
+asset; the asset route already serves its file. A catalog item has no position in the room:
+its evidence is a product photo, so the pose comes from the user or the layout search, not
+from alignment. A route (`POST` a URL, return the item) needs a request model in
+`contracts/schema.py`, which needs team sign-off and is not added here.
+
+**Live verification (2026-11-15), IKEA GB, no fal.ai request.** Eight product pages:
+
+| Product | Delivered | W × H × D (m) | Size from | Triangles | Bytes |
+|---|---|---|---|---:|---:|
+| MICKE desk | IKEA model | 1.05 × 0.75 × 0.5 | `catalog`, structured data | 12,166 | 1,294,244 |
+| BILLY bookcase | IKEA model | 0.8 × 2.02 × 0.28 | `catalog`, structured data | 19,274 | 1,621,388 |
+| BRIMNES wardrobe | IKEA model | 1.17 × 1.9 × 0.5 | `catalog`, structured data | 7,560 | 2,009,472 |
+| MALM bed frame | IKEA model, second quality (the first has 34,161 triangles) | 1.5 × 1 × 1.99 | `catalog`, structured data | 22,592 | 2,477,520 |
+| SKOGSTA dining table | IKEA model, textures reduced to fit 3 MB | 2.35 × 0.74 × 1 (published as width 100, depth 235) | `catalog`, structured data | 13,222 | 2,448,352 |
+| SALTSJÖBADEN 2-seat sofa | proxy: the only published model is Draco | 1.64 × 0.9 × 0.88 | `catalog`, height from page text | | |
+| POÄNG armchair | proxy: no model published | 0.68 × 1 × 0.82 | `catalog`, structured data | | |
+| LAGKAPTEN / ALEX desk | proxy: no model published | 1.4 × 0.73 × 0.6 (published as width 60, depth 140) | `catalog`, structured data | | |
+
+All eight pass `inspect_asset` (bounds error under 0.0001 mm) and are delivered together by
+`deliver_furniture("catalog:demo")`. IKEA's plain GLBs are in metres and within 1 % of the
+published size (MICKE: 1.049 × 0.754 × 0.500 against 105 × 75 × 50 cm), so fitting them
+barely changes their shape. Orientation was measured on the stored files, not looked at:
+the MICKE drawers, the BILLY opening and the foot of the MALM bed are at +Z; the wardrobe
+was inconclusive. A re-import reused the stored mesh, and `http://localhost:8001/health`
+was refused. **Not verified:** the image → SAM 3 → SAM 3D path on a live product (tested
+with provider doubles only; no paid request was made), any retailer other than IKEA, the
+`<model-viewer>` path on a live page, and how the meshes look in the editor. Offline masks
+are GrabCut and approximate; they matter only when a mesh is generated from the image.
