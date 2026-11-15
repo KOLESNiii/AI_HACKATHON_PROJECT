@@ -53,8 +53,10 @@ export function connectEditorServices(debounceMs = 250): () => void {
   })
   // A room resumed from this session keeps its edits: audit it instead of reloading.
   function start() {
-    if (useStore.getState().roomReady) schedule()
-    else void useStore.getState().loadRoom()
+    if (useStore.getState().roomReady) {
+      schedule()
+      useStore.getState().resumeRoomPoll()
+    } else void useStore.getState().loadRoom()
   }
   start()
   return () => {

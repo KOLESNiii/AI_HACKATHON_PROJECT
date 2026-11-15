@@ -453,7 +453,7 @@ test('leaving a room and reopening it later in the session keeps its edits, vers
   expect(back.currentVersionId).toBe('version-2')
   expect(back.hasUnsavedChanges).toBe(true)
   expect(back.chat).toEqual(edited.chat)
-  expect(back.rooms[other.room_id]).toBeDefined()
+  expect(back.rooms[`demo/${other.room_id}`]).toBeDefined()
 })
 
 test('a room still loading when left is not cached and loads again on reopen', () => {
@@ -481,4 +481,35 @@ test('the editor audits a resumed room instead of reloading it from the server',
   expect(paths.some((p) => p.includes('/scenes/'))).toBe(false)
   expect(paths.length).toBeGreaterThan(0)
   expect(useStore.getState().scene).toBe(before)
+})
+
+test('a room left while video furniture extracts reloads unless it was edited', () => {
+  const progress = {
+    step: 1,
+    steps: 3,
+    stage: 'segment',
+    elapsedS: 1,
+    receivedAt: 0,
+  }
+  const open = () => {
+    useStore.setState({ segmentId: DEFAULT_ROOM_ID })
+    useStore.getState().openRoom()
+    useStore.setState({
+      roomReady: true,
+      screen: 'editor',
+      furnitureProgress: progress,
+    })
+  }
+  open()
+  useStore.getState().openRoom()
+  expect(useStore.getState().roomReady).toBe(false)
+  expect(useStore.getState().furnitureProgress).toBeNull()
+
+  useStore.setState({ roomReady: true, furnitureProgress: progress })
+  const s = useStore.getState()
+  s.rotateItem(s.scene.furniture.find((i) => !i.is_fixed)!.id, 90)
+  const edited = useStore.getState().scene
+  open()
+  expect(useStore.getState().scene).toBe(edited)
+  expect(useStore.getState().furnitureProgress).toEqual(progress)
 })

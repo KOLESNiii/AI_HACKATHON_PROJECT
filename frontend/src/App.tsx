@@ -13,7 +13,7 @@ import { ProgressScreen } from './components/intake/ProgressScreen'
 import { UploadScreen } from './components/intake/UploadScreen'
 import { Toasts } from './components/ui'
 import { SoundControls } from './components/SoundControls'
-import { findRoom } from './data/demoHome'
+import { findPlanRoom } from './data/homePlan'
 import { useStore, type Screen } from './store'
 
 const ORDER: Screen[] = [
@@ -51,7 +51,13 @@ export default function App() {
   const dismissToast = useStore((s) => s.dismissToast)
   const toFloorPlan = useCallback(() => setScreen('floorplan'), [setScreen])
   const toEditor = useCallback(() => setScreen('editor'), [setScreen])
-  const roomLabel = findRoom(segmentId)?.label
+  const home = useStore((s) => s.home)
+  const planStatus = useStore((s) => s.planStatus)
+  const planError = useStore((s) => s.planError)
+  const submitUpload = useStore((s) => s.submitUpload)
+  const cancelUpload = useStore((s) => s.cancelUpload)
+  const retryUpload = useCallback(() => void submitUpload(), [submitUpload])
+  const roomLabel = findPlanRoom(home, segmentId)?.label
   const roomSession = useStore((s) => s.roomSession)
   // A different panorama per screen; room builds alternate between two.
   const landscape =
@@ -79,10 +85,20 @@ export default function App() {
       case 'upload':
         return <UploadScreen />
       case 'reading':
-        return (
+        // An upload waits on the service; the demo home only plays the steps.
+        return planStatus === 'idle' ? (
           <ProgressScreen
             steps={['Parsing floor plan', 'Segmenting rooms']}
             onDone={toFloorPlan}
+          />
+        ) : (
+          <ProgressScreen
+            steps={['Sending your files', 'Reading floors and rooms']}
+            onDone={toFloorPlan}
+            pending={planStatus === 'loading'}
+            error={planError}
+            onRetry={retryUpload}
+            onBack={cancelUpload}
           />
         )
       case 'floorplan':
@@ -91,7 +107,11 @@ export default function App() {
         return (
           <ProgressScreen
             title={roomLabel}
-            steps={['Extracting furniture from video', 'Assembling room']}
+            steps={
+              home.planId
+                ? ['Raising walls and openings', 'Placing your furniture']
+                : ['Extracting furniture from video', 'Assembling room']
+            }
             onDone={toEditor}
           />
         )

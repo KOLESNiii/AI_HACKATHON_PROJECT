@@ -92,7 +92,12 @@ export async function fetchAudit(
 export async function fetchRoom(
   sceneId: string,
   signal?: AbortSignal,
-): Promise<{ scene: RoomScene; warnings: string[] }> {
+): Promise<{
+  scene: RoomScene
+  warnings: string[]
+  pending: boolean
+  progress: FurnitureProgress | null
+}> {
   const { data, headers } = await requestJson(
     `/api/reconstruction/scenes/${encodeURIComponent(sceneId)}`,
     undefined,
@@ -140,7 +145,53 @@ export async function fetchRoom(
   } catch {
     /* Warnings never prevent a valid room from opening. */
   }
-  return { scene: data as unknown as RoomScene, warnings }
+  // Furniture is still being extracted from the plan's videos: ask again later.
+  const pending = headers.get('X-Furniture-Pending') === 'true'
+  const progress = pending
+    ? readProgress(headers.get('X-Furniture-Progress'))
+    : null
+  return { scene: data as unknown as RoomScene, warnings, pending, progress }
+}
+
+/** True for the service's "still extracting" warning, which this panel replaces. */
+export const isExtractingWarning = (w: string) =>
+  w.startsWith('Extracting furniture from your videos')
+
+/** Where the extraction of a room's furniture from video is. */
+export interface FurnitureProgress {
+  /** 1..steps once a stage has started; 0 while starting. */
+  step: number
+  steps: number
+  stage: string
+  /** Seconds since the extraction started, as of `receivedAt`. */
+  elapsedS: number
+  /** `Date.now()` when this was read. */
+  receivedAt: number
+}
+
+function readProgress(header: string | null): FurnitureProgress | null {
+  if (!header) return null
+  try {
+    const raw: unknown = JSON.parse(header)
+    if (
+      isRecord(raw) &&
+      isFiniteNumber(raw.step) &&
+      isFiniteNumber(raw.steps) &&
+      raw.steps > 0 &&
+      typeof raw.stage === 'string' &&
+      isFiniteNumber(raw.elapsed_s)
+    )
+      return {
+        step: raw.step,
+        steps: raw.steps,
+        stage: raw.stage,
+        elapsedS: raw.elapsed_s,
+        receivedAt: Date.now(),
+      }
+  } catch {
+    /* Progress is decoration: the room still loads. */
+  }
+  return null
 }
 
 // Compatibility exports for main's JSON clients; the editor uses the validated helpers above.

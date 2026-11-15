@@ -2,6 +2,12 @@ import { create } from 'zustand'
 import { playCue, type SoundCue } from './audio/cues'
 import type { CatalogItem } from './data/catalog'
 import { roomScene } from './data/demoHome'
+import {
+  demoPlan,
+  findPlanRoom,
+  planFromParsed,
+  type HomePlan,
+} from './data/homePlan'
 import type {
   AuditReport,
   FurnitureItem,
@@ -16,8 +22,9 @@ import {
   type EditorProposal,
 } from './lib/agent'
 import { errorMessage } from './lib/api'
+import { uploadFloorPlan } from './lib/floorPlan'
 import { layoutChanges, matchingAudit } from './lib/layoutDiff'
-import { fetchAudit, fetchRoom } from './lib/spatial'
+import { fetchAudit, fetchRoom, type FurnitureProgress } from './lib/spatial'
 import {
   fetchFengShui,
   fetchFengShuiScore,
@@ -80,14 +87,29 @@ export interface SavedRoom {
   human: Pose2D | null
   playLighting: PlayLightingSettings
   roomWarnings: string[]
+  /** Video furniture still being extracted when the room was left. */
+  furnitureProgress: FurnitureProgress | null
 }
 export interface Toast {
   id: number
   text: string
 }
 
+export type PlanStatus = 'idle' | 'loading' | 'ready' | 'error'
+export type UploadKind = 'plans' | 'videos'
+
 interface State {
   screen: Screen
+  /** The home in the room picker: the demo house, or the plan the user uploaded. */
+  home: HomePlan
+  /** Files chosen on the upload screen, kept so Back and Retry don't lose them. */
+  uploadPlans: File[]
+  uploadVideos: File[]
+  /** The floor-plan upload and parse (`POST /floor-plans`). */
+  planStatus: PlanStatus
+  planError: string | null
+  planAbort: AbortController | null
+  /** A room of `home`, by `room_id`. */
   segmentId: string | null
   scene: RoomScene
   /** Incremented when a room is (re)opened; async results from older sessions are dropped. */
@@ -109,9 +131,13 @@ interface State {
   roomLoading: boolean
   /** True once this room's canonical scene was loaded (or the local fallback kept). */
   roomReady: boolean
-  /** Rooms opened this session, keyed by scene_id; restored instead of reloaded. */
+  /** Rooms opened this session, keyed by `roomKey`; restored instead of reloaded. */
   rooms: Record<string, SavedRoom>
+  /** `<planId|demo>/<scene_id>` of the open room; null before any room is opened. */
+  roomKey: string | null
   roomWarnings: string[]
+  /** Furniture being extracted from the plan's videos; null when none is. */
+  furnitureProgress: FurnitureProgress | null
   roomAbort: AbortController | null
   /** Audit of the current committed scene only; candidate reports stay in chat. */
   audit: AuditReport | null
@@ -139,6 +165,13 @@ interface State {
   adding: string[]
 
   setScreen: (s: Screen) => void
+  setUploadFiles: (kind: UploadKind, files: File[]) => void
+  /** Uploads the chosen files and parses the plan; the reading screen waits on it. */
+  submitUpload: () => Promise<void>
+  /** Stops a running upload and returns to the upload screen. */
+  cancelUpload: () => void
+  /** Skips the upload: the room picker shows the demo house. */
+  chooseDemoHome: () => void
   selectSegment: (id: string | null) => void
   openRoom: () => void
   selectVersion: (id: string) => void
@@ -163,6 +196,8 @@ interface State {
   sendChat: (text: string) => Promise<void>
   cancelAgent: () => void
   loadRoom: () => Promise<void>
+  /** Keeps watching for video furniture in a room resumed from this session. */
+  resumeRoomPoll: () => void
   refreshAudit: () => Promise<void>
   refreshFengShuiScore: () => Promise<void>
   assessFengShui: () => Promise<void>
@@ -187,6 +222,10 @@ const sameRevision = (a: RoomScene, b: RoomScene) =>
   a.scene_id === b.scene_id && a.revision === b.revision
 
 let toastSeq = 0
+/** Background re-fetch of a room whose furniture is still being extracted from video. */
+let roomPoll: ReturnType<typeof setTimeout> | undefined
+export const ROOM_POLL_MS = 5_000
+const ROOM_POLL_ATTEMPTS = 240 // 20 minutes: SAM 3D takes minutes per item
 let itemSeq = 0
 
 const bump = (
@@ -256,6 +295,7 @@ function savedRoom(s: State): SavedRoom {
     human: s.human,
     playLighting: { ...s.playLighting },
     roomWarnings: s.roomWarnings,
+    furnitureProgress: s.furnitureProgress,
   }
 }
 
@@ -290,8 +330,67 @@ function withEditCue(cue: SoundCue, change: () => void) {
 
 const initialScene = roomScene(null)
 
+/**
+ * Re-fetches `loaded` until its furniture arrives, without blocking the editor. The room
+ * is replaced only if the user hasn't changed it since; otherwise they're told to reopen it.
+ */
+function pollRoom(session: number, loaded: RoomScene, attempt = 1) {
+  clearTimeout(roomPoll)
+  if (attempt > ROOM_POLL_ATTEMPTS) return
+  roomPoll = setTimeout(async () => {
+    const live = () =>
+      useStore.getState().roomSession === session &&
+      useStore.getState().screen === 'editor'
+    if (!live()) return
+    let result: Awaited<ReturnType<typeof fetchRoom>>
+    try {
+      result = await fetchRoom(loaded.scene_id)
+    } catch {
+      if (live()) pollRoom(session, loaded, attempt + 1)
+      return
+    }
+    if (!live()) return
+    if (result.pending) {
+      useStore.setState({
+        furnitureProgress: result.progress,
+        ...(useStore.getState().scene === loaded
+          ? { roomWarnings: result.warnings }
+          : {}),
+      })
+      pollRoom(session, loaded, attempt + 1)
+    } else if (useStore.getState().scene === loaded) {
+      useStore.setState({
+        scene: result.scene,
+        ...initialRoomHistory(result.scene),
+        roomWarnings: result.warnings,
+        furnitureProgress: null,
+      })
+      useStore
+        .getState()
+        .toast(
+          `Furniture from your videos is in: ${result.scene.furniture.length} items.`,
+        )
+    } else {
+      // Not kept for the session, so reopening loads the furnished room.
+      useStore.setState({
+        furnitureProgress: null,
+        roomReady: false,
+        roomWarnings: [
+          'Furniture from your videos is ready: open this room again to load it (your edits here are not carried over).',
+        ],
+      })
+    }
+  }, ROOM_POLL_MS)
+}
+
 export const useStore = create<State>((set, get) => ({
   screen: 'home',
+  home: demoPlan,
+  uploadPlans: [],
+  uploadVideos: [],
+  planStatus: 'idle',
+  planError: null,
+  planAbort: null,
   segmentId: null,
   scene: initialScene,
   ...initialRoomHistory(initialScene),
@@ -308,7 +407,9 @@ export const useStore = create<State>((set, get) => ({
   roomLoading: false,
   roomReady: false,
   rooms: {},
+  roomKey: null,
   roomWarnings: [],
+  furnitureProgress: null,
   roomAbort: null,
   audit: null,
   auditStatus: 'idle',
@@ -339,6 +440,63 @@ export const useStore = create<State>((set, get) => ({
       humanPreview: null,
       interacting: false,
     }),
+  setUploadFiles: (kind, files) =>
+    set(kind === 'plans' ? { uploadPlans: files } : { uploadVideos: files }),
+  submitUpload: async () => {
+    get().planAbort?.abort()
+    const { uploadPlans, uploadVideos } = get()
+    if (!uploadPlans.length) return
+    const controller = new AbortController()
+    set({
+      screen: 'reading',
+      segmentId: null,
+      planStatus: 'loading',
+      planError: null,
+      planAbort: controller,
+    })
+    try {
+      const parsed = await uploadFloorPlan(
+        uploadPlans,
+        uploadVideos,
+        controller.signal,
+      )
+      if (get().planAbort !== controller) return
+      const home = planFromParsed(parsed)
+      if (!home.floors.some((f) => f.rooms.length))
+        throw new Error(
+          'No rooms were found on this floor plan. Try a clearer image.',
+        )
+      set({ home, planStatus: 'ready', planAbort: null })
+    } catch (error) {
+      // Superseded by another upload, the demo home or a cancel. A timeout is still ours.
+      if (get().planAbort !== controller) return
+      set({
+        planStatus: 'error',
+        planError: errorMessage(error),
+        planAbort: null,
+      })
+    }
+  },
+  cancelUpload: () => {
+    get().planAbort?.abort()
+    set({
+      planStatus: 'idle',
+      planError: null,
+      planAbort: null,
+      screen: 'upload',
+    })
+  },
+  chooseDemoHome: () => {
+    get().planAbort?.abort()
+    set({
+      home: demoPlan,
+      segmentId: null,
+      planStatus: 'idle',
+      planError: null,
+      planAbort: null,
+      screen: 'reading',
+    })
+  },
   selectSegment: (segmentId) => set({ segmentId }),
   openRoom: () => {
     get().agentAbort?.abort()
@@ -347,13 +505,25 @@ export const useStore = create<State>((set, get) => ({
     get().fengShuiAbort?.abort()
     get().fengShuiScoreAbort?.abort()
     set((s) => {
-      // Keep the room being left (only once it finished loading), then resume
-      // the requested room from this session if it was opened before.
-      const rooms = s.roomReady
-        ? { ...s.rooms, [s.scene.scene_id]: savedRoom(s) }
-        : s.rooms
-      const fresh = roomScene(s.segmentId)
-      const saved = rooms[fresh.scene_id]
+      const plan =
+        findPlanRoom(s.home, s.segmentId) ??
+        s.home.floors.flatMap((f) => f.rooms).find((r) => r.selectable)
+      const fresh = plan ? plan.scene() : roomScene(null)
+      const roomKey = `${s.home.planId ?? 'demo'}/${fresh.scene_id}`
+      // Keep the room being left once it finished loading; forget one that didn't.
+      const rooms = { ...s.rooms }
+      if (s.roomKey && s.roomReady) rooms[s.roomKey] = savedRoom(s)
+      else if (s.roomKey) delete rooms[s.roomKey]
+      // An untouched room still waiting on video furniture simply loads again.
+      let saved: SavedRoom | undefined = rooms[roomKey]
+      if (
+        saved?.furnitureProgress &&
+        saved.versions.length === 1 &&
+        !saved.hasUnsavedChanges
+      ) {
+        delete rooms[roomKey]
+        saved = undefined
+      }
       const roomSession = s.roomSession + 1
       const room = saved
         ? {
@@ -372,11 +542,13 @@ export const useStore = create<State>((set, get) => ({
             human: null,
             playLighting: { ...DEFAULT_PLAY_LIGHTING },
             roomWarnings: [],
+            furnitureProgress: null,
             roomReady: false,
           }
       return {
         screen: 'building',
         rooms,
+        roomKey,
         ...room,
         roomSession,
         selectedId: null,
@@ -868,6 +1040,7 @@ export const useStore = create<State>((set, get) => ({
   },
   loadRoom: async () => {
     get().roomAbort?.abort()
+    clearTimeout(roomPoll)
     const { scene, roomSession } = get()
     const controller = new AbortController()
     const current = () =>
@@ -876,25 +1049,40 @@ export const useStore = create<State>((set, get) => ({
       roomLoading: true,
       roomAbort: controller,
       roomWarnings: [],
+      furnitureProgress: null,
       audit: null,
     })
     try {
       const result = await fetchRoom(scene.scene_id, controller.signal)
-      if (current() && get().scene === scene)
+      if (current() && get().scene === scene) {
         set({
           scene: result.scene,
           ...initialRoomHistory(result.scene),
           roomWarnings: result.warnings,
+          furnitureProgress: result.progress,
         })
+        if (result.pending) pollRoom(roomSession, result.scene)
+      }
     } catch (error) {
       if (current() && !controller.signal.aborted)
         set({
-          roomWarnings: [`Using the local demo room. ${errorMessage(error)}`],
+          roomWarnings: [
+            get().home.planId
+              ? `Showing the room as parsed, without furniture. ${errorMessage(error)}`
+              : `Using the local demo room. ${errorMessage(error)}`,
+          ],
         })
     } finally {
       if (current())
         set({ roomLoading: false, roomAbort: null, roomReady: true })
     }
+  },
+  resumeRoomPoll: () => {
+    const s = get()
+    // The saved original never matches the edited scene, so the user is told to
+    // reopen the room rather than having their edits replaced.
+    if (s.roomReady && s.furnitureProgress)
+      pollRoom(s.roomSession, s.versions[0].scene)
   },
   refreshAudit: async () => {
     const { scene, roomSession, interacting, roomLoading } = get()
