@@ -1,9 +1,9 @@
 """HTTP import of one retailer product (#19): a searched or pasted product page -> an item.
 
 The product goes through `catalog.import_catalog_asset`, the same pipeline as video furniture:
-IKEA's own published 3D model when there is one, else SAM 3D on the product image when
-`FAL_KEY` is set, else a labelled proxy box. The returned item is unplaced (pose at the origin):
-the editor asks the spatial engine's `/place` for a spot.
+IKEA's own published 3D model when there is one, else a mesh generated from the product image
+when `FAL_KEY` is set (TRELLIS.2, then SAM 3D), else a labelled proxy box. The returned item is
+unplaced (pose at the origin): the editor asks the spatial engine's `/place` for a spot.
 """
 
 from __future__ import annotations
@@ -22,13 +22,15 @@ from contracts.schema import FurnitureItem, Pose2D
 
 from .catalog import import_catalog_asset
 from .mask_providers import FalSamProvider, MaskProvider
-from .mesh_providers import FalSam3dProvider, MeshProvider
+from .mesh_providers import MeshProvider, catalog_mesh_providers
 from .retailer import CatalogError, Fetch
 from .selection_models import Category
 
 logger = logging.getLogger(__name__)
 
 WARNINGS_HEADER = "X-Reconstruction-Warnings"
+GENERATION_TIMEOUT_S = 300
+"""Per mesh provider. A request still running after it is collected by the next import."""
 
 
 class CatalogImportRequest(BaseModel):
@@ -47,9 +49,11 @@ def catalog_router(data_dir: Path, *, fetch: Fetch | None = None) -> APIRouter:
         """Import a product page and return the delivered item, unplaced. Slow: it downloads
         the page and model, and may generate a mesh. Warnings go in the response header."""
         key = os.environ.get("FAL_KEY", "").strip()
-        # Bounded so the editor's Add button gives up in minutes, not SAM 3D's default seven.
+        # Bounded so the editor's Add button gives up in minutes. TRELLIS.2 took 216 s live.
         masks: MaskProvider | None = FalSamProvider(key=key, timeout_s=60) if key else None
-        meshes: MeshProvider | None = FalSam3dProvider(key=key, timeout_s=150) if key else None
+        meshes: list[MeshProvider] | None = (
+            catalog_mesh_providers(key, timeout_s=GENERATION_TIMEOUT_S) if key else None
+        )
         try:
             result = import_catalog_asset(
                 request.product_url,

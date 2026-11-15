@@ -15,11 +15,14 @@ export interface LibraryEntry {
   item: FurnitureItem
 }
 
-/** Importing downloads the page and model and may generate a mesh with fal.ai. */
-const IMPORT_TIMEOUT_MS = 240_000
+/**
+ * Importing downloads the page and model and may generate a mesh with fal.ai (TRELLIS.2 took
+ * 216 s live; the service gives each generator up to five minutes).
+ */
+const IMPORT_TIMEOUT_MS = 420_000
 const PLACE_TIMEOUT_MS = 20_000
 
-/** Sends a product page through Dev 2's import (IKEA model, SAM 3D, or proxy box). */
+/** Sends a product page through Dev 2's import (IKEA model, TRELLIS.2/SAM 3D, or proxy box). */
 export async function importProduct(
   product: ProductOption,
   sceneId: string,

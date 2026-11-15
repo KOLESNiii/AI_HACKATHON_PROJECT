@@ -40,9 +40,11 @@ MAX_DISTORTION = 0.15
 mesh's shape is taken to disagree with them."""
 MAX_ESTIMATED_SIZE_RATIO = 3.0
 """Refuse height-based estimates with any side over this multiple of its category size."""
-PROVIDER_FRONT: dict[str, Front] = {"sam3d": "+z", "retailer": "+z"}
+PROVIDER_FRONT: dict[str, Front] = {"sam3d": "+z", "trellis2": "+z", "retailer": "+z"}
 """Where each mesh provider puts the front. SAM 3D Objects: observed 2026-11-15 on the four
 reviewed opening-room meshes (+Y up, axis-aligned, both sofas and the armchair facing +Z).
+TRELLIS.2: the side facing the camera is +Z, observed 2026-11-15 on IKEA's TÄRNKULLEN bed
+photo (headboard at -Z, foot of the bed at +Z).
 Retailer models: +Z is glTF's own front, and what IKEA's models showed on 2026-11-15 (MICKE
 desk drawers, BILLY bookcase opening and the foot of the MALM bed at +Z). Another retailer's
 model may differ and is not checked."""

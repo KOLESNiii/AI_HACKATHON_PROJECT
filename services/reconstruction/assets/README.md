@@ -553,8 +553,25 @@ and reuses its stored mask and mesh.
 | Source | When | `mesh_source` |
 |---|---|---|
 | The retailer's own 3D model | The page publishes a binary glTF: schema.org `3DModel` (IKEA) or a `<model-viewer src>` tag. Free. It enters as the raw mesh through `RetailerModelProvider`, a `MeshProvider` (`MeshRecord.provider: "retailer"`). | `retailer_model` |
-| A mesh generated from the product image | No usable published model and the caller passed `mesh_provider` (SAM 3D, paid). | `generated` |
+| A mesh generated from the product image | No usable published model and the caller passed `mesh_provider`: one provider or a list tried in turn. The routes pass `catalog_mesh_providers(key)`: TRELLIS.2 (`fal-ai/trellis-2`), then SAM 3D (paid). | `generated` |
 | A labelled proxy box | Neither. Also after any failed download, mask, mesh or check. | `proxy` |
+
+**Generated meshes (TRELLIS.2 first).** SAM 3D reconstructs an object inside a scene; on a
+retailer's cut-out product shot it sometimes returned an upright card with no depth (IKEA's
+ÄRENDE rug: 0.68 × 1.0 × 0.05 raw). `FalTrellis2Provider` is built for an isolated object:
+it uploads only the masked item on a white square (`item_on_white`) and asks for at most
+12,000 vertices (about 24k triangles, inside the 30k profile) and a 1024 px texture. Its
+front is +Z (`PROVIDER_FRONT`). A generated mesh whose thinner horizontal side is under 10 %
+of its longest (`card_like`) is not accepted for a furniture category while another provider
+is left; `other` and `fixture` may be that thin. A provider that times out ends the chain:
+its paid request is still running and the next import collects it without a new charge.
+Each provider has 300 s in the routes. **Verified live (2026-11-15):** IKEA TÄRNKULLEN bed,
+SAM 3 mask → TRELLIS.2 → 11,423 triangles, a closed bed with headboard at -Z, delivered at
+1.54 × 1.12 × 1.99 m (`catalog`); one request took 216 s, a second 56 s.
+
+**Package sizes.** Page text is read only up to its package section ("Package details"):
+IKEA lists the flat-pack boxes with the same `Width:`/`Height:` labels, which made two beds
+6 cm and 11 cm tall. A bed's overall height is read from "Headboard height".
 
 A retailer usually publishes several qualities of one model. They are tried best first and
 the first that meets the furniture profile is kept: over 30,000 triangles, or over 3 MB

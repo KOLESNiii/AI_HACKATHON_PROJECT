@@ -727,3 +727,69 @@ def test_live_masks_and_generated_mesh_used_without_retailer_model(tmp_path):
     assert result.ok and result.mesh_source == "generated"
     assert len(generator.calls) == 1
     assert result.asset.dimension_source == "catalog"
+
+
+# --- Generated meshes -----------------------------------------------------------------------
+
+
+def card_glb() -> bytes:
+    """What SAM 3D returns for some product shots: an upright cut-out with no depth."""
+    return model_glb((1.0, 0.8, 0.03))
+
+
+def test_generators_are_tried_in_turn_and_a_flat_card_is_not_accepted(tmp_path: Path) -> None:
+    web = Web(page=page(model=False))
+    card, solid = MeshDouble(glb=card_glb()), MeshDouble()
+    card.name, solid.name = "trellis2", "sam3d"
+    result = import_catalog_asset(
+        URL, "room", data_dir=tmp_path, fetch=web, mesh_provider=[card, solid]
+    )
+    assert len(card.calls) == 1 and len(solid.calls) == 1
+    assert result.mesh_source == "generated" and not result.asset.is_proxy
+    assert any("flat card" in note for note in result.warnings)
+    # A good first mesh means no second paid request.
+    first, unused = MeshDouble(), MeshDouble()
+    first.name = "trellis2"
+    import_catalog_asset(
+        URL, "other-room", data_dir=tmp_path, fetch=web, mesh_provider=[first, unused]
+    )
+    assert len(first.calls) == 1 and unused.calls == []
+
+
+def test_a_timed_out_generator_ends_the_chain(tmp_path: Path) -> None:
+    slow = MeshDouble(error=MeshError("deadline exceeded", kind="timeout"))
+    unused = MeshDouble()
+    result = import_catalog_asset(
+        URL, "room", data_dir=tmp_path, fetch=Web(page=page(model=False)),
+        mesh_provider=[slow, unused],
+    )  # fmt: skip
+    assert result.asset.is_proxy and unused.calls == []
+    assert any("deadline exceeded" in note for note in result.warnings)
+
+
+def test_a_failed_generator_falls_back_to_the_next(tmp_path: Path) -> None:
+    failing = MeshDouble(error=MeshError("remote reconstruction failed"))
+    backup = MeshDouble()
+    result = import_catalog_asset(
+        URL, "room", data_dir=tmp_path, fetch=Web(page=page(model=False)),
+        mesh_provider=[failing, backup],
+    )  # fmt: skip
+    assert len(backup.calls) == 1 and result.mesh_source == "generated"
+
+
+def test_package_sizes_are_not_the_items_and_a_beds_headboard_is_its_height() -> None:
+    # IKEA's TÄRNKULLEN bed page, 2026-11-15: the overall height is the headboard's, and the
+    # flat-pack boxes are listed after it with the same labels.
+    body = (
+        "<div>Weight &amp; measurements</div><div>Footboard height</div><div>41 cm</div>"
+        "<div>Headboard height</div><div>112 cm</div><div>Width</div><div>154 cm</div>"
+        "<div>Package details</div><div>Width:</div><div>37 cm</div>"
+        "<div>Height:</div><div>11 cm</div>"
+    )
+    html = page(
+        {"name": "TÄRNKULLEN Bed frame", "width": None, "height": None, "depth": "199 cm"},
+        model=False, body=body,
+    ).decode()  # fmt: skip
+    product = parse_product_page(html, URL)
+    assert product.dimensions is not None
+    assert product.dimensions.bbox_m == BBoxM(width=1.54, height=1.12, depth=1.99)

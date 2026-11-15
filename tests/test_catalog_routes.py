@@ -39,7 +39,7 @@ def test_import_configures_live_providers_when_key_present(monkeypatch):
     monkeypatch.setenv("FAL_KEY", "test-key")
     mask_factory, mesh_factory = Mock(return_value=masks), Mock(return_value=meshes)
     monkeypatch.setattr(catalog_routes, "FalSamProvider", mask_factory)
-    monkeypatch.setattr(catalog_routes, "FalSam3dProvider", mesh_factory)
+    monkeypatch.setattr(catalog_routes, "catalog_mesh_providers", mesh_factory)
 
     def inspect(url, scene_id, **kwargs):
         assert kwargs["mask_provider"] is masks
@@ -53,7 +53,7 @@ def test_import_configures_live_providers_when_key_present(monkeypatch):
     assert response.status_code == 422
     assert response.json()["detail"] == "verified"
     mask_factory.assert_called_once_with(key="test-key")
-    mesh_factory.assert_called_once_with(key="test-key")
+    mesh_factory.assert_called_once_with("test-key", timeout_s=300)
 
 
 def test_import_stays_offline_without_key(monkeypatch):

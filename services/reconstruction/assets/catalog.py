@@ -4,8 +4,9 @@ A product is registered as an item with one view (its product image) in the same
 video furniture, under its own scene key, and then takes the same steps: `segment_furniture`,
 `reconstruct_furniture`, `normalise_mesh` and the `deliver_furniture` checks. There is no
 second generator or normaliser. The raw mesh is the retailer's own published model when there
-is one (IKEA), otherwise the caller's mesh provider (SAM 3D) on the product image, otherwise
-the item is a labelled proxy box.
+is one (IKEA), otherwise the caller's mesh providers on the product image in turn (TRELLIS.2,
+then SAM 3D; see `mesh_providers.catalog_mesh_providers`), otherwise the item is a labelled
+proxy box.
 
 Published dimensions are recorded as `catalog`. A product without them is `estimated` and asks
 for `"dimensions"`: a size is never invented.
@@ -17,6 +18,7 @@ import hashlib
 import io
 import json
 import math
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit, urlunsplit
@@ -292,6 +294,23 @@ def _normalises(item: ItemReconstruction, known: KnownDimensions | None, data_di
     return True
 
 
+CARD_SHARE = 0.1
+"""A generated mesh whose thinner horizontal side is under this share of its longest side is a
+cut-out card, not furniture. Image-to-3D models return one when they cannot infer depth."""
+FLAT_CATEGORIES: frozenset[Category] = frozenset({"other", "fixture"})
+"""Categories that may truly be that thin (a mirror, a picture, a rug stood on edge)."""
+
+
+def card_like(item: ItemReconstruction) -> bool:
+    """Whether the item's generated mesh is a flat card instead of a piece of furniture."""
+    if item.mesh is None or item.mesh.provider == "retailer":
+        return False
+    if item.proxy.category in FLAT_CATEGORIES:
+        return False
+    width, height, depth = item.mesh.extents
+    return min(width, depth) < CARD_SHARE * max(width, height, depth)
+
+
 def _relabel(asset: FurnitureAsset, product: RetailerProduct) -> FurnitureAsset:
     """The pipeline's asset, carrying the product's own source, link and price."""
     return FurnitureAsset.model_validate(
@@ -316,7 +335,7 @@ def import_product(
     data_dir: Path,
     dimensions: KnownDimensions | None = None,
     mask_provider: MaskProvider | None = None,
-    mesh_provider: MeshProvider | None = None,
+    mesh_provider: MeshProvider | Sequence[MeshProvider] | None = None,
     fetch: Fetch | None = None,
     max_requests: int = 2,
     url_base: str = ASSET_URL_BASE,
@@ -328,16 +347,26 @@ def import_product(
     overrides them. Without either, the size is a category estimate that asks for
     `"dimensions"`.
 
-    Geometry, first that works: the retailer's published model; `mesh_provider` on the product
-    image (paid, so only when passed); a labelled proxy box. Masks use `mask_provider`, or local
-    GrabCut offline. A failed download, mask, mesh or check never raises and never drops the
-    item: it is delivered as its proxy, with the reason in `warnings`. The result is also
-    stored, see `imported_assets`. Raises ValueError for an unusable scene ID.
+    Geometry, first that works: the retailer's published model; each `mesh_provider` in turn on
+    the product image (paid, so only when passed; a flat card is not accepted while another
+    provider is left); a labelled proxy box. A provider that timed out ends the chain: its
+    request is still running and the next import collects it without a new charge. Masks use
+    `mask_provider`, or local GrabCut offline. A failed download, mask, mesh or check never
+    raises and never drops the item: it is delivered as its proxy, with the reason in
+    `warnings`. The result is also stored, see `imported_assets`. Raises ValueError for an
+    unusable scene ID.
     """
     scene_key = catalog_scene(scene_id)
     data_dir = data_dir.resolve()
     fetch = fetch or fetch_public
     item_id = catalog_id(product.product_url)
+    generators: list[MeshProvider] = (
+        []
+        if mesh_provider is None
+        else list(mesh_provider)
+        if isinstance(mesh_provider, Sequence)
+        else [mesh_provider]
+    )
     warnings = list(product.warnings)
     known = dimensions or (
         KnownDimensions(bbox_m=product.dimensions.bbox_m, source="catalog")
@@ -440,10 +469,18 @@ def import_product(
         item = reconstruct(published, False)
         while not _normalises(item, known, data_dir) and published.remaining:
             item = reconstruct(published, True)
-        if not _normalises(item, known, data_dir) and mesh_provider is not None:
-            item = reconstruct(mesh_provider, item.mesh is not None)
-        if item.failure is not None and (product.model_urls or mesh_provider is not None):
+        if item.failure is not None and product.model_urls:
             warnings.append(f"mesh: {item.failure.reason}")
+        for provider in generators:
+            if _normalises(item, known, data_dir) and not card_like(item):
+                break
+            item = reconstruct(provider, item.mesh is not None)
+            if item.failure is not None:
+                warnings.append(f"mesh ({provider.name}): {item.failure.reason}")
+                if item.failure.kind == "timeout":
+                    break
+            elif card_like(item):
+                warnings.append(f"mesh ({provider.name}): a flat card, not a 3D shape")
         if item.mesh is None:
             follow(CATEGORY_SIZE_M[product.category], typical)
         size = {item_id: known} if known is not None else None
@@ -487,7 +524,7 @@ def import_catalog_asset(
     source: Literal["url_import", "catalog_search"] = "url_import",
     dimensions: KnownDimensions | None = None,
     mask_provider: MaskProvider | None = None,
-    mesh_provider: MeshProvider | None = None,
+    mesh_provider: MeshProvider | Sequence[MeshProvider] | None = None,
     fetch: Fetch | None = None,
     max_requests: int = 2,
     url_base: str = ASSET_URL_BASE,

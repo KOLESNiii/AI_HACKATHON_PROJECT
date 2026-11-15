@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, HttpUrl
 
 from services.reconstruction.assets.catalog import CatalogImport, import_catalog_asset
 from services.reconstruction.assets.mask_providers import FalSamProvider
-from services.reconstruction.assets.mesh_providers import FalSam3dProvider
+from services.reconstruction.assets.mesh_providers import catalog_mesh_providers
 from services.reconstruction.assets.retailer import CatalogError
 from services.reconstruction.config import furniture_data_dir
 
@@ -28,7 +28,7 @@ def import_url(request: ImportRequest) -> CatalogImport:
     try:
         key = os.environ.get("FAL_KEY", "").strip()
         masks = FalSamProvider(key=key) if key else None
-        meshes = FalSam3dProvider(key=key) if key else None
+        meshes = catalog_mesh_providers(key, timeout_s=300) if key else None
         with _IMPORT_LOCK:
             result = import_catalog_asset(
                 str(request.url),
