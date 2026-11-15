@@ -289,10 +289,40 @@
 - A binding is checked against the room's walls, not just its scene ID: the ID hashes the plan
   image, and the same image parsed without labels is a different room. A mismatch places no
   furniture and says so, rather than putting the reception's furniture in another room (PR #55
-  review). Tolerance 5 % or 5 cm per wall, for small differences in label-derived scale. Making
-  the plan deterministic without labels (recorded labels) is left to #12.
+  review). Tolerance 5 % or 5 cm per wall, after fitting one scale (#11: a corrected scale is
+  the same room). Making the plan deterministic without labels (recorded labels) is left to
+  #12.
 - The asset store is mounted with the same data directory the source reads (#52), so a proxy
   URL in a scene is always servable by the same process.
+
+## Corrections (#11)
+
+- No contract change: `PUT /scenes/{scene_id}` takes and returns a `RoomScene`, and the scale
+  correction takes `wall_id`, `length_m` and `revision` as query parameters.
+- A scale correction rescales the whole floor (one drawing, one scale, one shared frame), from
+  the original parse, so corrections never compound. Furniture sizes are not rescaled.
+- Furniture is carried over by wall, keeping its yaw; the aligner only places again an item
+  the rescale pushes out of the room. Hinted items still stand in door swings (#8).
+- A pose edit may change poses and clear flags, nothing else; moving clears `placement`,
+  turning clears `orientation`. Stale edits are 409, invalid ones 422.
+- Both corrections need the scene the service keeps (409 while furniture is still being
+  extracted), and the scale correction needs the kept revision, so unsaved edits are never
+  dropped. Corrected shells get a new URL, keeping shell files immutable.
+- Kept in memory with the plan and scene; persistence across restarts is #12.
+- PR #59 review: one lock (`routes.STATE_LOCK`) serialises every check-then-write of plans and
+  kept scenes, so an older in-flight save can no longer replace a newer revision; a GET only
+  fills an empty slot and does not keep an assembly whose room was rescaled meanwhile.
+- PR #59 review: an item pushed out by a rescale keeps the user's yaw; only its position gives
+  way (`align.nearest_fit`), and no orientation flag is added.
+- PR #59 review: non-finite poses are refused (422); `Pose2D` itself accepts them, and they
+  would come back as `null`, an invalid scene.
+- Second PR #59 review: rescaled lengths are no longer rounded to the millimetre; rounding
+  endpoints and widths separately made a door wider than its diagonal wall, which the audit
+  refused (its tolerance was 1e-8 m then; 1 mm since main's `POSITION_TOLERANCE_M`). Openings are also clamped to their walls.
+- Second PR #59 review: a factor at which a room of the floor breaks the contract is a 422 that
+  changes nothing (the floor is corrected whole or not at all), never a 500.
+- Second PR #59 review: a GET overtaken by a scale correction assembles the corrected room
+  again rather than returning a retired shell URL; 409 after 3 attempts.
 
 ## Tolerance for reconstructed coordinates
 

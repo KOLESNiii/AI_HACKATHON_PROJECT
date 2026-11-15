@@ -86,16 +86,42 @@ uv run --extra spatial uvicorn services.spatial_engine.main:app --port 8002
 curl -F files=@examples/three_floor.png localhost:8001/floor-plans > /dev/null
 curl -D headers.txt -o scene.json localhost:8001/scenes/plan-83a12322e933-floor-0-room-3
 curl -H 'Content-Type: application/json' -d @scene.json localhost:8002/audit
+
+# 4. Corrections (#11): keep an edited scene (revision + 1), then correct the floor's scale
+curl -X PUT -H 'Content-Type: application/json' -d @edited.json \
+  localhost:8001/scenes/plan-83a12322e933-floor-0-room-3
+curl -X POST 'localhost:8001/scenes/plan-83a12322e933-floor-0-room-3/scale?wall_id=w16&length_m=4.81&revision=1'
 ```
 
 Tests parse the plan with the recorded labels (`fixtures/three_floor.annotations.json`). Live
 labels (`FAL_KEY`) are expected to give the same room. Without labels the image parses into a
 different room under the same scene ID: the binding's wall lengths (`walls_m`) catch that, and
 the room comes back without furniture and a warning saying its geometry does not match. A
-partial inventory (selection still running) is shown but not kept. The hints are the #8 reviewed `g-reception` hints moved onto
+partial inventory (selection still running) is shown but not kept. The wall check is on
+shape, so the room keeps its furniture after a scale correction. The hints are the #8 reviewed `g-reception` hints moved onto
 this room's walls (north-west corners aligned); `tests/test_real_room.py` fails if the parser's
 wall IDs drift from them. The chair's hint lands in the entrance door's swing, which alignment
 flags and the audit reports until the chair is moved.
+
+## Corrections (#11)
+
+`correct.py`, served by `PUT /scenes/{scene_id}` and `POST /scenes/{scene_id}/scale`
+(`services/reconstruction/scenes.py`):
+
+- `apply_pose_edit(kept, edit)`: the kept scene with the edit's poses. Only poses change (and
+  flags the user cleared); moving clears `placement`, turning clears `orientation`.
+  `StaleEdit` (409) for an old revision or other geometry, `InvalidEdit` (422) otherwise.
+- `rescale_floor` / `rescale_room`: a floor at `factor` times its parsed size about its
+  origin, at full precision. Plan lengths scale, heights do not; openings are clamped to their
+  walls and doors conformed again; a changed room gets a new shell URL
+  (`<scene_id>.<digest>.glb`). A room that would break the contract raises `InvalidScale`.
+  `routes.prepare_floor_scale` takes the factor against the original parse
+  (`routes._originals`), so corrections never compound; `routes.publish` serves the result.
+- `carry_furniture(old, room)`: furniture keeps its fraction along its wall, its distance
+  from it and its yaw. An item pushed out of a smaller room moves to the nearest spot where it
+  fits with the same yaw (`align.nearest_fit`).
+
+See [architecture](../../../docs/architecture.md#corrections-11) for the rules and handoffs.
 
 ## Scene assembly (#9)
 

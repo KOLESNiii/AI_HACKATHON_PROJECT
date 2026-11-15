@@ -20,6 +20,7 @@ from services.reconstruction.assets.models import FurnitureAsset  # noqa: E402
 from services.reconstruction.demo_assets import demo_room_scene, demo_rooms  # noqa: E402
 from services.reconstruction.main import app  # noqa: E402
 from services.reconstruction.room import footprint as fp  # noqa: E402
+from services.reconstruction.room import routes  # noqa: E402
 from services.reconstruction.room.annotate import FixedAnnotator, PlanAnnotations  # noqa: E402
 from services.reconstruction.room.assemble import (  # noqa: E402
     NO_FURNITURE_YET,
@@ -47,10 +48,12 @@ def client() -> Iterator[TestClient]:
     ann = PlanAnnotations(rooms=[_label("Studio", 400, 350, 4.0, 3.0)])
     app.dependency_overrides[get_annotator] = lambda: FixedAnnotator(ann)
     scenes.clear_cache()
+    routes.clear_corrections()
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
     scenes.clear_cache()
+    routes.clear_corrections()
 
 
 @pytest.fixture(scope="module")
@@ -258,6 +261,45 @@ def test_scenes_are_assembled_once_and_cached(client: TestClient) -> None:
     first = client.get(f"/scenes/{scene_id}")
     second = client.get(f"/scenes/{scene_id}")
     assert first.json() == second.json() and calls == 1
+
+
+def test_a_demo_rooms_poses_can_be_corrected_but_not_its_scale(client: TestClient) -> None:
+    scene, _ = _scene(client, "g-reception")
+    first = scene.furniture[0]
+    pose = first.pose.model_copy(update={"x": first.pose.x + 0.1})
+    edit = scene.model_copy(
+        update={"furniture": [first.model_copy(update={"pose": pose})], "revision": 1}
+    )
+    res = client.put("/scenes/g-reception", json=edit.model_dump(mode="json"))
+    assert res.status_code == 200, res.text
+    kept, _ = _scene(client, "g-reception")
+    assert kept.furniture[0].pose == pose and kept.revision == 1
+    assert kept.furniture[1:] == scene.furniture[1:]
+    res = client.post(
+        "/scenes/g-reception/scale", params={"wall_id": "w0", "length_m": 4, "revision": 1}
+    )
+    assert res.status_code == 422
+
+
+def test_an_empty_uploaded_room_can_be_rescaled(client: TestClient, auditor: TestClient) -> None:
+    scene_id = _upload(client)
+    scene, _ = _scene(client, scene_id)
+    wall = scene.walls[0]
+    parsed_m = math.dist((wall.start.x, wall.start.z), (wall.end.x, wall.end.z))
+    res = client.post(
+        f"/scenes/{scene_id}/scale",
+        params={"wall_id": wall.id, "length_m": parsed_m * 0.9, "revision": 0},
+    )
+    assert res.status_code == 200, res.text
+    corrected = RoomScene.model_validate(res.json())
+    assert corrected.revision == 1 and corrected.furniture == []
+    assert corrected.floor_polygon[2].x == pytest.approx(scene.floor_polygon[2].x * 0.9, abs=1e-3)
+    assert _served(client, corrected.shell_glb_url) == 200
+    _audit(auditor, corrected)
+    plan = client.get(f"/floor-plans/{scene_id.split('-floor-')[0]}").json()
+    room = plan["floors"][0]["rooms"][0]
+    assert room["dimension_source"] == "user_corrected"
+    assert RoomScene.model_validate(room["scene"]) == corrected.model_copy(update={"revision": 0})
 
 
 def test_unknown_scene_is_404(client: TestClient) -> None:

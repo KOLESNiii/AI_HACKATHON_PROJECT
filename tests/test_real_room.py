@@ -5,8 +5,11 @@ an audit that follows each move."""
 from __future__ import annotations
 
 import json
+import math
 import shutil
 import tempfile
+import threading
+import time
 from collections.abc import Collection, Iterator
 from pathlib import Path
 
@@ -16,9 +19,18 @@ pytest.importorskip("cv2")
 pytest.importorskip("shapely")
 pytest.importorskip("trimesh")
 
+from fastapi import HTTPException  # noqa: E402
+from fastapi import Response as FastAPIResponse  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
+from httpx import Response  # noqa: E402
 
-from contracts.schema import FurnitureItem, RoomScene  # noqa: E402
+from contracts.schema import (  # noqa: E402
+    FurnitureItem,
+    ParsedFloorPlan,
+    RoomScene,
+    Vec2,
+    WallSegment,
+)
 from services.reconstruction import scenes  # noqa: E402
 from services.reconstruction.assets.providers import RecordedProvider  # noqa: E402
 from services.reconstruction.assets.registry import Registry  # noqa: E402
@@ -40,7 +52,8 @@ from services.reconstruction.room.annotate import (  # noqa: E402
     NullAnnotator,
     PlanAnnotations,
 )
-from services.reconstruction.room.assemble import assemble_scene  # noqa: E402
+from services.reconstruction.room.assemble import SceneFurniture, assemble_scene  # noqa: E402
+from services.reconstruction.room.correct import rescale_room  # noqa: E402
 from services.reconstruction.room.routes import get_annotator  # noqa: E402
 from services.reconstruction.room.video_furniture import (  # noqa: E402
     NOT_EXTRACTED,
@@ -134,12 +147,14 @@ def client(data_dir: Path) -> Iterator[TestClient]:
     annotations = PlanAnnotations.model_validate_json(ANNOTATIONS.read_text())
     app.dependency_overrides[get_annotator] = lambda: FixedAnnotator(annotations)
     scenes.clear_cache()
+    routes.clear_corrections()
     with TestClient(app) as c:
         res = c.post("/floor-plans", files=[("files", (PLAN.name, PLAN.read_bytes(), "image/png"))])
         assert res.status_code == 200, res.text
         yield c
     app.dependency_overrides.clear()
     scenes.clear_cache()
+    routes.clear_corrections()
 
 
 @pytest.fixture(scope="module")
@@ -294,6 +309,7 @@ def test_the_plan_parsed_without_its_labels_gets_no_video_furniture(data_dir: Pa
     """Without labels (no FAL_KEY, or the call fails) the same image, and so the same scene
     ID, parses into a different room: the reception furniture must not be put in it."""
     recorded = routes._plans.pop(PLAN_ID, None)
+    original = routes._originals.pop(PLAN_ID, None)
     app.dependency_overrides[get_annotator] = NullAnnotator
     scenes.clear_cache()
     try:
@@ -306,35 +322,41 @@ def test_the_plan_parsed_without_its_labels_gets_no_video_furniture(data_dir: Pa
         assert "does not match" in warnings[0] and "walls, expected 18" in warnings[0]
     finally:
         routes._plans.pop(PLAN_ID, None)
-        if recorded is not None:
-            routes._plans[PLAN_ID] = recorded
+        routes._originals.pop(PLAN_ID, None)
+        if recorded is not None and original is not None:
+            routes._plans[PLAN_ID], routes._originals[PLAN_ID] = recorded, original
         app.dependency_overrides.clear()
         scenes.clear_cache()
 
 
-def test_the_geometry_check_allows_a_small_scale_change_and_names_a_wrong_wall(
-    client: TestClient,
-) -> None:
+def test_the_geometry_check_compares_shape_and_names_a_wrong_wall(client: TestClient) -> None:
+    """The binding names a room by its shape: the user may correct its scale (#11)."""
     room = RoomScene.model_validate(
         client.get(f"/floor-plans/{PLAN_ID}/rooms/{BINDING.room_id}").json()
     )
 
-    def scaled(factor: float) -> RoomScene:
+    def stretched(factor: float, only: str | None = None) -> RoomScene:
+        def at(p: Vec2) -> Vec2:
+            return Vec2(x=p.x * factor, z=p.z * factor)
+
         walls = [
-            w.model_copy(
-                update={
-                    "start": w.start.model_copy(
-                        update={"x": w.start.x * factor, "z": w.start.z * factor}
-                    ),
-                    "end": w.end.model_copy(update={"x": w.end.x * factor, "z": w.end.z * factor}),
-                }
-            )
+            w.model_copy(update={"end": at(w.end)})
+            if only == w.id
+            else w
+            if only
+            else w.model_copy(update={"start": at(w.start), "end": at(w.end)})
             for w in room.walls
         ]
         return room.model_copy(update={"walls": walls})
 
-    assert geometry_mismatch(BINDING, scaled(1.03)) is None  # labels read slightly differently
-    assert geometry_mismatch(BINDING, scaled(1.10)) == "w0 is 1.19 m, expected 1.08 m"
+    assert geometry_mismatch(BINDING, stretched(1.03)) is None
+    assert geometry_mismatch(BINDING, stretched(1.10)) is None  # a corrected scale
+    assert geometry_mismatch(BINDING, stretched(0.5)) is None
+    assert geometry_mismatch(BINDING, rescale_room(room, 1.2)) is None
+    # A single wall out of proportion is another room (it also shifts the fitted scale, so
+    # the first wall checked may be the one named).
+    reason = geometry_mismatch(BINDING, stretched(1.3, only="w16"))
+    assert reason is not None and " m, expected " in reason
 
 
 def test_a_normalised_mesh_is_served_instead_of_its_proxy(
@@ -373,6 +395,411 @@ def test_furniture_files_are_served_only_by_content_hash(
         res = client.get(f"/assets/{name}")
         assert res.status_code == 404, name
         assert str(data_dir) not in res.text and "sqlite" not in res.text
+
+
+# --- corrections (#11) ------------------------------------------------------------------------
+
+
+def _put(client: TestClient, scene: RoomScene) -> RoomScene:
+    res = client.put(f"/scenes/{scene.scene_id}", json=scene.model_dump(mode="json"))
+    assert res.status_code == 200, res.text
+    return RoomScene.model_validate(res.json())
+
+
+def _rescale(client: TestClient, wall_id: str, length_m: float, revision: int) -> Response:
+    params = {"wall_id": wall_id, "length_m": length_m, "revision": revision}
+    return client.post(f"/scenes/{BINDING.scene_id}/scale", params=params)
+
+
+def _length(wall: WallSegment) -> float:
+    return math.dist((wall.start.x, wall.start.z), (wall.end.x, wall.end.z))
+
+
+def _walls(scene: RoomScene) -> dict[str, float]:
+    return {w.id: _length(w) for w in scene.walls}
+
+
+def test_a_placement_correction_is_kept(
+    client: TestClient, data_dir: Path, auditor: TestClient
+) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    assert "placement" in _item(scene, CHAIR).correction_needed
+    saved = _put(client, _moved(scene, CHAIR, 4.0, 8.6))
+    reloaded, _ = _scene(client)
+    assert reloaded == saved and reloaded.revision == 1
+    chair = _item(reloaded, CHAIR)
+    assert (chair.pose.x, chair.pose.z) == (4.0, 8.6)
+    assert "placement" not in chair.correction_needed  # the user put it there
+    assert "orientation" in chair.correction_needed  # not turned, so still to confirm
+    for item_id in (SOFA, OTHER_SOFA, TABLE):
+        assert _item(reloaded, item_id) == _item(scene, item_id)
+    assert _audit(auditor, reloaded)["blocked_doors"] == []
+
+
+def test_a_scale_correction_rescales_the_floor_and_carries_the_furniture(
+    client: TestClient, data_dir: Path, auditor: TestClient
+) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    saved = _put(client, _moved(scene, CHAIR, 4.0, 8.6))
+    factor = 1.1
+    res = _rescale(client, "w16", BINDING.walls_m["w16"] * factor, saved.revision)
+    assert res.status_code == 200, res.text
+    corrected = RoomScene.model_validate(res.json())
+    assert corrected.revision == saved.revision + 1
+    assert _scene(client)[0] == corrected  # kept
+
+    for wall_id, length in _walls(saved).items():
+        assert _walls(corrected)[wall_id] == pytest.approx(length * factor, abs=0.002)
+    assert [w.height_m for w in corrected.walls] == [w.height_m for w in saved.walls]
+    for before, after in zip(saved.doors, corrected.doors):
+        assert after.width_m == pytest.approx(before.width_m * factor, abs=0.001)
+        assert after.head_height_m == before.head_height_m
+
+    # The shell is a new immutable file; the old URL is gone.
+    assert corrected.shell_glb_url != saved.shell_glb_url
+    shell = client.get(corrected.shell_glb_url.removeprefix(PROXY_PREFIX))
+    assert shell.status_code == 200 and shell.content[:4] == b"glTF"
+    assert client.get(saved.shell_glb_url.removeprefix(PROXY_PREFIX)).status_code == 404
+
+    # Same items, meshes and sizes; poses carried; the user's correction survives.
+    for before, after in zip(saved.furniture, corrected.furniture):
+        assert after.model_dump(exclude={"pose"}) == before.model_dump(exclude={"pose"})
+        assert after.pose.yaw_deg == before.pose.yaw_deg
+    report = _audit(auditor, corrected)  # the audit accepts the corrected room
+    assert report["out_of_bounds_item_ids"] == [] and report["collisions"] == []
+    assert report["blocked_doors"] == []  # the moved chair is still clear of the door
+
+    # Every room of the floor is corrected, and stays so on re-upload.
+    upload = client.post(
+        "/floor-plans", files=[("files", (PLAN.name, PLAN.read_bytes(), "image/png"))]
+    )
+    plan = ParsedFloorPlan.model_validate(upload.json())
+    original = routes._originals[PLAN_ID]
+    floor, parsed = plan.floors[0], original.floors[0]
+    assert [r.room_id for r in floor.rooms] == [r.room_id for r in parsed.rooms]
+    for room, before_room in zip(floor.rooms, parsed.rooms):
+        assert room.dimension_source == "user_corrected"
+        assert "dimensions" not in room.correction_needed
+        assert room.area_m2 == pytest.approx(before_room.area_m2 * factor**2, rel=0.01)
+        for wall_id, length in _walls(before_room.scene).items():
+            assert _walls(room.scene)[wall_id] == pytest.approx(length * factor, abs=0.002)
+    assert plan.floors[1:] == original.floors[1:]  # other floors are other drawings
+    assert sum("scale corrected by the user" in w for w in plan.warnings) == 1
+
+
+def test_every_kept_scene_of_the_floor_is_carried_over(client: TestClient, data_dir: Path) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    neighbour_id = f"{PLAN_ID}-floor-0-room-0"
+    res = client.get(f"/scenes/{neighbour_id}")
+    assert res.status_code == 200, res.text
+    neighbour = RoomScene.model_validate(res.json())
+    assert _rescale(client, "w16", 4.8, scene.revision).status_code == 200
+    after = RoomScene.model_validate(client.get(f"/scenes/{neighbour_id}").json())
+    factor = 4.8 / BINDING.walls_m["w16"]
+    assert after.revision == neighbour.revision + 1  # kept, so its editor must reload
+    for wall_id, length in _walls(neighbour).items():
+        assert _walls(after)[wall_id] == pytest.approx(length * factor, abs=0.002)
+    assert after.shell_glb_url != neighbour.shell_glb_url
+
+
+def test_correcting_the_scale_back_restores_the_parsed_room(
+    client: TestClient, data_dir: Path
+) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    parsed = RoomScene.model_validate(
+        client.get(f"/floor-plans/{PLAN_ID}/rooms/{BINDING.room_id}").json()
+    )
+    res = _rescale(client, "w16", 5.0, scene.revision)
+    assert res.status_code == 200, res.text
+    res = _rescale(client, "w16", BINDING.walls_m["w16"], scene.revision + 1)
+    assert res.status_code == 200, res.text  # from the parse, so nothing compounds
+    back = RoomScene.model_validate(res.json())
+    assert back.model_dump(exclude={"furniture", "revision"}) == parsed.model_dump(
+        exclude={"furniture", "revision"}
+    )
+    assert client.get(back.shell_glb_url.removeprefix(PROXY_PREFIX)).status_code == 200
+    plan = client.get(f"/floor-plans/{PLAN_ID}").json()
+    assert sum("scale corrected by the user" in w for w in plan["warnings"]) == 1  # replaced
+
+
+def test_stale_and_invalid_corrections_are_refused(client: TestClient, data_dir: Path) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    url = f"/scenes/{BINDING.scene_id}"
+
+    def put(edit: RoomScene) -> int:
+        return client.put(url, json=edit.model_dump(mode="json")).status_code
+
+    def with_item(**update: object) -> RoomScene:
+        chair = _item(scene, CHAIR).model_copy(update=update)
+        others = [item for item in scene.furniture if item.id != CHAIR]
+        return scene.model_copy(update={"furniture": [*others, chair], "revision": 1})
+
+    assert put(scene) == 409  # not newer than the kept revision
+    assert put(with_item(id="vid-000099")) == 422  # unknown item
+    bigger = _item(scene, CHAIR).bbox_m.model_copy(update={"width": 2.0})
+    assert put(with_item(bbox_m=bigger)) == 422  # sizes are not a placement correction
+    assert put(with_item(glb_url="/api/reconstruction/assets/other.glb")) == 422
+    assert put(_moved(scene, CHAIR, 4.0, 8.6).model_copy(update={"scene_id": "other"})) == 422
+    kept, _ = _scene(client)
+
+    # Scale: unknown wall, implausible factor, a revision other than the kept one.
+    assert _rescale(client, "w99", 4.0, kept.revision).status_code == 422
+    assert _rescale(client, "w16", 40.0, kept.revision).status_code == 422
+    assert _rescale(client, "w16", 0.0, kept.revision).status_code == 422
+    assert _rescale(client, "w16", 4.5, kept.revision + 5).status_code == 409
+    assert _rescale(client, "w16", 4.5, kept.revision).status_code == 200
+    # An edit made against the room before the correction is stale.
+    assert put(_moved(kept, CHAIR, 4.1, 8.6).model_copy(update={"revision": 99})) == 409
+    demo = client.post(
+        "/scenes/g-reception/scale", params={"wall_id": "w0", "length_m": 4, "revision": 0}
+    )
+    assert demo.status_code == 422
+    unknown = client.put(
+        "/scenes/nope", json=scene.model_copy(update={"scene_id": "nope"}).model_dump(mode="json")
+    )
+    assert unknown.status_code == 404
+
+
+def test_an_added_correction_flag_is_refused(client: TestClient, data_dir: Path) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    table = _item(scene, TABLE)
+    assert "orientation" in table.correction_needed
+    cleared = [c for c in table.correction_needed if c != "orientation"]
+    edit = scene.model_copy(
+        update={
+            "furniture": [table.model_copy(update={"correction_needed": cleared})],
+            "revision": 1,
+        }
+    )
+    assert _item(_put(client, edit), TABLE).correction_needed == cleared  # confirmed by the user
+    readded = edit.model_copy(update={"furniture": [table], "revision": 2})
+    res = client.put(f"/scenes/{BINDING.scene_id}", json=readded.model_dump(mode="json"))
+    assert res.status_code == 422 and "cannot add" in res.text
+
+
+def test_a_non_finite_pose_is_refused_and_nothing_changes(
+    client: TestClient, data_dir: Path
+) -> None:
+    """PR #59 review: `"NaN"` was saved and came back as `null`, an invalid scene."""
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    for field, value in (("x", "NaN"), ("z", "-Infinity"), ("yaw_deg", "Infinity")):
+        body = _moved(scene, CHAIR, 4.0, 8.6).model_dump(mode="json")
+        next(i for i in body["furniture"] if i["id"] == CHAIR)["pose"][field] = value
+        res = client.put(f"/scenes/{BINDING.scene_id}", json=body)
+        assert res.status_code == 422 and "finite" in res.text, (field, res.text)
+    again, _ = _scene(client)  # still a valid scene, unchanged
+    assert again == scene
+
+
+def _save_in_thread(edit: RoomScene, outcomes: dict[int, int]) -> threading.Thread:
+    def save() -> None:
+        try:
+            scenes.put_scene(edit.scene_id, edit, FastAPIResponse())
+            outcomes[edit.revision] = 200
+        except HTTPException as exc:
+            outcomes[edit.revision] = exc.status_code
+
+    thread = threading.Thread(target=save)
+    thread.start()
+    return thread
+
+
+def test_overlapping_saves_keep_the_newest_revision(
+    client: TestClient, data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PR #59 review: two overlapping PUTs both checked against revision 0 and the older one,
+    finishing last, replaced the newer one."""
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    real = scenes.apply_pose_edit
+
+    def slow(kept: RoomScene, edit: RoomScene) -> RoomScene:
+        saved = real(kept, edit)  # checked against the kept revision
+        if edit.revision == 1:
+            time.sleep(0.3)  # still in flight when revision 2 arrives
+        return saved
+
+    monkeypatch.setattr(scenes, "apply_pose_edit", slow)
+    first = _moved(scene, CHAIR, 4.0, 8.6)
+    # What the editor holds after the first save: the chair's placement is confirmed.
+    chair = _item(first, CHAIR)
+    flags = [c for c in chair.correction_needed if c != "placement"]
+    confirmed = [
+        chair.model_copy(update={"correction_needed": flags}) if item.id == CHAIR else item
+        for item in first.furniture
+    ]
+    second = _moved(first.model_copy(update={"furniture": confirmed}), CHAIR, 4.0, 8.4)
+    outcomes: dict[int, int] = {}
+    a = _save_in_thread(first, outcomes)
+    time.sleep(0.1)
+    b = _save_in_thread(second, outcomes)
+    a.join(5)
+    b.join(5)
+    assert outcomes == {1: 200, 2: 200}
+    kept, _ = _scene(client)
+    assert kept.revision == 2 and _item(kept, CHAIR).pose.z == 8.4
+
+
+class _HeldSource:
+    """A furniture source that waits until released, like a slow pipeline read."""
+
+    def __init__(self) -> None:
+        self.started, self.release = threading.Event(), threading.Event()
+        self.inner = scenes.get_furniture_source()
+
+    def furniture_for(self, room: RoomScene) -> SceneFurniture:
+        self.started.set()
+        assert self.release.wait(5)
+        return self.inner.furniture_for(room)
+
+
+def _get_in_thread(
+    scene_id: str, source: _HeldSource, out: list[RoomScene | HTTPException]
+) -> threading.Thread:
+    def get() -> None:
+        try:
+            out.append(scenes.get_scene(scene_id, FastAPIResponse(), source))
+        except HTTPException as exc:
+            out.append(exc)
+
+    thread = threading.Thread(target=get)
+    thread.start()
+    assert source.started.wait(5)
+    return thread
+
+
+def test_a_slow_assembly_never_replaces_a_saved_edit(client: TestClient, data_dir: Path) -> None:
+    register_reviewed_items(data_dir)
+    held = _HeldSource()
+    out: list[RoomScene | HTTPException] = []
+    slow = _get_in_thread(BINDING.scene_id, held, out)
+    scene, _ = _scene(client)  # a faster request assembles and keeps the scene
+    saved = _put(client, _moved(scene, CHAIR, 4.0, 8.6))
+    held.release.set()
+    slow.join(5)
+    kept, _ = _scene(client)
+    assert kept == saved and kept.revision == 1
+    assert out == [saved]  # the slow request is answered with the kept scene too
+
+
+def test_an_assembly_overtaken_by_a_scale_correction_is_done_again(
+    client: TestClient, data_dir: Path
+) -> None:
+    """PR #59 review: an overtaken GET returned a scene whose shell URL was retired (404)."""
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    neighbour_id = f"{PLAN_ID}-floor-0-room-0"
+    held = _HeldSource()
+    out: list[RoomScene | HTTPException] = []
+    slow = _get_in_thread(neighbour_id, held, out)
+    assert _rescale(client, "w16", 4.8, scene.revision).status_code == 200
+    held.release.set()
+    slow.join(5)
+    (answer,) = out
+    assert isinstance(answer, RoomScene)
+    assert client.get(answer.shell_glb_url.removeprefix(PROXY_PREFIX)).status_code == 200
+    assert scenes._scenes[neighbour_id].scene == answer  # the corrected room, kept
+    parsed = next(
+        r.scene
+        for f in routes._originals[PLAN_ID].floors
+        for r in f.rooms
+        if r.scene.scene_id == neighbour_id
+    )
+    factor = 4.8 / BINDING.walls_m["w16"]
+    for wall_id, length in _walls(parsed).items():
+        assert _walls(answer)[wall_id] == pytest.approx(length * factor, abs=1e-6)
+
+
+def test_an_assembly_overtaken_every_time_is_a_conflict(
+    client: TestClient, data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    monkeypatch.setattr(scenes, "ASSEMBLY_ATTEMPTS", 1)
+    neighbour_id = f"{PLAN_ID}-floor-0-room-0"
+    held = _HeldSource()
+    out: list[RoomScene | HTTPException] = []
+    slow = _get_in_thread(neighbour_id, held, out)
+    assert _rescale(client, "w16", 4.8, scene.revision).status_code == 200
+    held.release.set()
+    slow.join(5)
+    (answer,) = out
+    assert isinstance(answer, HTTPException) and answer.status_code == 409
+    assert neighbour_id not in scenes._scenes
+
+
+def _scale_room(client: TestClient, room_id: str, factor: float) -> Response:
+    scene_id = f"{PLAN_ID}-{room_id}"
+    res = client.get(f"/scenes/{scene_id}")
+    assert res.status_code == 200, res.text
+    scene = RoomScene.model_validate(res.json())
+    wall = scene.walls[0]
+    params = {"wall_id": wall.id, "length_m": _length(wall) * factor, "revision": scene.revision}
+    return client.post(f"/scenes/{scene_id}/scale", params=params)
+
+
+def test_a_rescaled_diagonal_door_is_accepted_by_the_audit(
+    client: TestClient, auditor: TestClient
+) -> None:
+    """PR #59 review: x1.1 made floor-1-room-5's door1 wider than its diagonal wall w6."""
+    res = _scale_room(client, "floor-1-room-5", 1.1)
+    assert res.status_code == 200, res.text
+    corrected = RoomScene.model_validate(res.json())
+    for door in corrected.doors:
+        wall = next(w for w in corrected.walls if w.id == door.wall_id)
+        assert door.width_m <= _length(wall) + 1e-9
+    _audit(auditor, corrected)
+
+
+def test_a_scale_that_breaks_a_room_is_refused_and_changes_nothing(
+    client: TestClient, auditor: TestClient
+) -> None:
+    """PR #59 review: x0.25 made floor-1-room-0 invalid and the route answered 500."""
+    before_plan = client.get(f"/floor-plans/{PLAN_ID}").json()
+    scene_id = f"{PLAN_ID}-floor-1-room-0"
+    res = _scale_room(client, "floor-1-room-0", 0.25)
+    assert res.status_code == 422, res.text
+    assert "would not be a valid room" in res.text
+    assert client.get(f"/floor-plans/{PLAN_ID}").json() == before_plan  # nothing published
+    kept = RoomScene.model_validate(client.get(f"/scenes/{scene_id}").json())
+    assert kept.revision == 0 and kept == scenes._scenes[scene_id].scene
+
+    # The same factor is fine where every room stays valid.
+    res = _scale_room(client, "floor-2-room-0", 0.25)
+    assert res.status_code == 200, res.text
+    _audit(auditor, RoomScene.model_validate(res.json()))
+
+
+def test_corrections_need_a_settled_scene(client: TestClient, data_dir: Path) -> None:
+    """While its furniture is still being extracted the scene is not kept, so there is nothing
+    to correct yet."""
+    scene, warnings = _scene(client)
+    assert warnings == [NOT_EXTRACTED]
+    res = client.put(
+        f"/scenes/{scene.scene_id}", json=_moved(scene, CHAIR, 1, 1).model_dump(mode="json")
+    )
+    assert res.status_code == 409
+    assert _rescale(client, "w16", 4.5, scene.revision).status_code == 409
+
+
+def test_a_rescaled_bound_room_still_gets_its_furniture_when_assembled_again(
+    client: TestClient, data_dir: Path
+) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    assert _rescale(client, "w16", 4.8, scene.revision).status_code == 200
+    scenes.clear_cache()  # assembled from the corrected room, from scratch
+    again, warnings = _scene(client)
+    assert sorted(item.id for item in again.furniture) == ITEM_IDS
+    assert not any("does not match" in w for w in warnings)
+    assert _walls(again)["w16"] == pytest.approx(4.8, abs=0.002)
 
 
 @pytest.mark.skipif(

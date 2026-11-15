@@ -140,7 +140,7 @@ class _Room:
             _access(item.category, item.bbox_m, item.pose, item.requires_front_clear_m),
         )
 
-    def possible(self, asset: FurnitureAsset, pose: Pose2D) -> bool:
+    def possible(self, asset: FurnitureAsset | FurnitureItem, pose: Pose2D) -> bool:
         """Physically possible: inside the room and not inside another item."""
         if not fp.covered_by(fp.footprint(asset.bbox_m, pose).points, self.polygon):
             return False
@@ -247,6 +247,40 @@ def wall_relative(scene: RoomScene, item: FurnitureItem) -> PlacementHint | None
             )
             best = (score, hint)
     return best[1] if best else None
+
+
+def nearest_fit(scene: RoomScene, item: FurnitureItem, pose: Pose2D) -> tuple[Pose2D, float] | None:
+    """The nearest pose to `pose`, with its yaw, where `item` is inside the room and clear of
+    `scene.furniture`, and how far that is; None when nowhere fits (e.g. larger than the room).
+
+    Searches a fine grid around `pose` first, then a coarser one over the whole room. The yaw is
+    never changed: it is the user's, so only the position gives way.
+    """
+    room = _Room(scene)
+
+    def at(x: float, z: float) -> Pose2D:
+        return Pose2D(x=x, z=z, yaw_deg=pose.yaw_deg)
+
+    reach = int(SEARCH_ALONG_M / SEARCH_STEP_M)
+    near = [
+        (i * SEARCH_STEP_M, j * SEARCH_STEP_M)
+        for i in range(-reach, reach + 1)
+        for j in range(-reach, reach + 1)
+    ]
+    xs, zs = [p[0] for p in room.polygon], [p[1] for p in room.polygon]
+    step = DEFAULT_STEP_M
+    far = [
+        (min(xs) + i * step - pose.x, min(zs) + j * step - pose.z)
+        for i in range(int((max(xs) - min(xs)) / step) + 1)
+        for j in range(int((max(zs) - min(zs)) / step) + 1)
+    ]
+    for shifts in (near, far):
+        shifts.sort(key=lambda s: (math.hypot(*s), s))
+        for dx, dz in shifts:
+            candidate = at(pose.x + dx, pose.z + dz)
+            if room.possible(item, candidate):
+                return candidate, math.hypot(dx, dz)
+    return None
 
 
 # --- placement --------------------------------------------------------------------------------
