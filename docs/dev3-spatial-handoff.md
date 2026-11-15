@@ -149,3 +149,25 @@ Handling the `LayoutProposal`:
   verified layout; mention the search was cut short.
 - `goal` is the goal that was applied; show it so the user can correct it.
 - HTTP 422 means the request was invalid (for example an unknown locked ID).
+
+## Editor integration status (issues #32 and #35)
+
+Wired in the editor (`frontend/src/lib/spatial.ts`, `components/editor/useLiveAudit.ts`):
+
+- **Live audit (#32):** every committed edit, which is a new scene revision, is audited
+  through `/api/spatial_engine/audit` after a 250 ms pause. An older request is cancelled when
+  a newer edit arrives, and a report is stored only if the scene is still at the revision it
+  was computed for. The Stats tab shows "Checking the room..." or the service's error. Both
+  services must be running (`bun run dev:spatial`); the editor shows the error otherwise.
+- **Chat to `/solve` (#35):** `lib/agent.ts` sends the typed message. A reply with poses shows
+  the server's explanation, a one-line outlook from the proposal's own audit, and Apply or
+  Dismiss. Apply keeps the existing stale-revision check, bumps the revision, and the live
+  audit then re-audits the result. Nothing changes the scene until Apply. Dismissed or
+  applied proposals cannot be applied again. Errors, 422s and timeouts become readable chat
+  messages.
+- Library items added in the editor have an empty `glb_url`, which the contract rejects, so
+  `toServiceScene` substitutes a placeholder URL for requests only. The scene itself is untouched.
+- The Stats tab lists each Feng Shui judgement with its reason.
+
+Not done yet: a 3D preview of a proposal before applying it, goal chips, and locking the
+selected item (`locked_item_ids` is always sent empty, so the user's wording is the only lock).

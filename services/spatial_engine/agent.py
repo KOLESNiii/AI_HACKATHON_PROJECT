@@ -399,6 +399,9 @@ def _explain_result(
             parts.append(
                 f"Feng shui score (a traditional placement rule of thumb, not a prediction): "
                 f"{a.feng_shui_score} before, {b.feng_shui_score} now."
+                if a.feng_shui_score != b.feng_shui_score
+                else f"The feng shui score stays at {b.feng_shui_score}: no move that keeps the "
+                "room valid changed how the beds and desks face the door."
             )
         if preferences.near_window_item_ids and b.near_window_shortfall_m is not None:
             parts.append(
