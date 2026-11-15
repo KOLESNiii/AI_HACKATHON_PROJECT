@@ -568,7 +568,8 @@ and the opt-in AI advice at `/feng-shui`. A shared 250 ms debounce refreshes aud
 and score after canonical room load and committed edits; active gestures suppress
 requests. Independent loading/error/retry state prevents a scoring failure from
 hiding a valid audit. Room-session, scene-snapshot and revision validation rejects
-late results, including same-revision drag changes. Room/version changes and
+late results from an older committed revision or that land mid-drag; uncommitted
+drag frames keep the last committed revision's results on screen. Room/version changes and
 editor cleanup abort outstanding scoring requests.
 
 Stats shows the server's score, weighted-rule coverage, audit cap, rule breakdown,
@@ -589,6 +590,8 @@ The active editor chat uses `POST /chat/stream`. It runs main's `/chat` addition
 and rearrangement flow with the same factual progress transport as `/solve/stream`.
 The existing JSON `/chat` and `/solve` routes and direct `/solve/stream` remain
 available. Chat preserves the nested layout goal/outcome when it delegates to solve.
+Its terminal SSE event is `reply` (a `ChatReply`, `ChatStreamEvent` in contracts), so
+it is never confused with `LayoutStreamEvent`'s `result`.
 
 The editor validates additions and existing-item moves atomically, previews new
 footprints, and saves accepted additions as part of the same room-history version.
@@ -615,9 +618,11 @@ not incur full scoring or skill-loading work.
 `feng_shui_inputs.py` holds shared request models and validation, keeping the pure
 scorer independent of model orchestration. Existing imports from `feng_shui.py`
 remain compatible. The advisory endpoint uses the same skill in read-only
-`assessment` mode with its original structured-response tool. Missing optimisation
-skill content fails closed as an unavailable assistant, rather than exploring
-without the requested guidance. No additional provider call or new dependency is
+`assessment` mode with its original structured-response tool. Missing or malformed
+skill content is a server configuration error (HTTP 503, or a stream `error` event),
+never `assistant_unavailable`, and exploration never runs without the guidance.
+During optimisation the scorer reuses each candidate's audit and geometry, so it adds
+no repeated audits and accepts every scene `/audit` accepts. No additional provider call or new dependency is
 introduced. Score weights, inventory and fixed/locked-item constraints are unchanged.
 
 
@@ -636,3 +641,23 @@ Unknown IDs and invented metadata are rejected; an empty inventory removes the
 addition tool. There is no proxy fallback. The editor independently checks each
 addition against its own Library before preview/application, including JSON-client
 responses. Existing room items and saved versions are not rewritten.
+
+
+## Library URL imports
+
+`POST /catalog/import` on reconstruction accepts `{url, scene_id}` and returns the
+existing `CatalogImport` model (asset, provenance, checks and warnings). The editor
+uses `/api/reconstruction/catalog/import`, previews the result and adds it only on
+**Add**. The existing retailer pipeline fetches public HTTP(S) addresses only,
+including redirects, and bounds downloads. Imports are serialized within the
+service process to protect registry updates. With `FAL_KEY`, masks use fal SAM 3 (`fal-ai/sam-3/image`) and missing or
+unusable retailer models fall back to SAM 3D (`fal-ai/sam-3/3d-objects`).
+Without a key, segmentation stays local and geometry falls back to a proxy.
+Failed live segmentation falls back to stored masks or GrabCut with warnings; failed
+generation returns a labelled proxy. Existing GrabCut masks are upgraded on reimport;
+successful SAM masks and meshes reuse the registry cache to avoid duplicate charges.
+Published dimensions remain authoritative. Each stage permits at most two requests,
+with existing provider timeouts (120 seconds for masks, 420 seconds for meshes).
+Unusable pages return 422; storage/processing failures return 502. Dimension
+correction flags and provenance survive addition to the room. Imported assets use
+the same configured furniture data directory and asset-serving route as video assets.

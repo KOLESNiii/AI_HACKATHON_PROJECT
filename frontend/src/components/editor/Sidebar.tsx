@@ -7,6 +7,8 @@ import type {
 } from '../../lib/contracts'
 import { MAX_LAYOUT_INSTRUCTION_CHARS } from '../../lib/contracts'
 import { matchingAudit } from '../../lib/layoutDiff'
+import { importCatalogUrl } from '../../lib/catalogImport'
+import type { CatalogItem } from '../../data/catalog'
 import { fitsRoom } from '../../lib/geometry'
 import { useStore, type Tab } from '../../store'
 import { Button, Chip, ScoreRing, StatusDot, type Status } from '../ui'
@@ -497,7 +499,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Add the same dimensioned mesh assets that the room renderer already supports. */
+/** Library mesh assets, plus retailer URL import. */
 function LibraryTab() {
   const roomLoading = useStore((s) => s.roomLoading)
   const floor = useStore((s) => s.scene.floor_polygon)
@@ -505,27 +507,92 @@ function LibraryTab() {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string>('all')
   const [previewSku, setPreviewSku] = useState<string | null>(null)
+  const [imported, setImported] = useState<CatalogItem | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
+  const request = useRef<AbortController | null>(null)
+  useEffect(() => () => request.current?.abort(), [])
+  const isUrl = /^https?:\/\//i.test(query.trim())
+  const importLink = async () => {
+    request.current?.abort()
+    const controller = new AbortController()
+    request.current = controller
+    const { scene, roomSession } = useStore.getState()
+    setBusy(true)
+    setImported(null)
+    setNotice('')
+    try {
+      const result = await importCatalogUrl(
+        query.trim(),
+        scene.scene_id,
+        controller.signal,
+      )
+      if (
+        !controller.signal.aborted &&
+        roomSession === useStore.getState().roomSession
+      ) {
+        setImported(result.item)
+        setNotice(result.warnings.join(' '))
+      }
+    } catch (error) {
+      if (!controller.signal.aborted)
+        setNotice(
+          error instanceof Error ? error.message : 'Import failed. Try again.',
+        )
+    } finally {
+      if (!controller.signal.aborted) setBusy(false)
+    }
+  }
 
   const results = useMemo(
     () =>
-      catalog.filter(
-        (c) =>
-          (category === 'all' || c.category === category) &&
-          c.name.toLowerCase().includes(query.trim().toLowerCase()),
-      ),
-    [category, query],
+      isUrl
+        ? imported
+          ? [imported]
+          : []
+        : catalog.filter(
+            (c) =>
+              (category === 'all' || c.category === category) &&
+              c.name.toLowerCase().includes(query.trim().toLowerCase()),
+          ),
+    [category, query, isUrl, imported],
   )
   const preview = results.find((item) => item.sku === previewSku) ?? results[0]
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <input
-        aria-label="Search available furniture"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search available furniture…"
+        onChange={(e) => {
+          request.current?.abort()
+          setBusy(false)
+          setImported(null)
+          setNotice('')
+          setQuery(e.target.value)
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && isUrl && !busy) void importLink()
+        }}
+        aria-label="Search furniture or paste a product link"
+        placeholder="Search furniture or paste a product link"
         className="rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
       />
+      {isUrl && (
+        <Button disabled={busy} onClick={() => void importLink()}>
+          {busy ? 'Importing product…' : 'Import product'}
+        </Button>
+      )}
+      {busy && (
+        <p role="status" className="text-[11px] text-ink-medium">
+          Checking retailer models. If needed, AI reconstruction can take
+          several minutes.
+        </p>
+      )}
+      {notice && (
+        <p role="status" className="text-[11px] font-medium text-accent-ochre">
+          {notice}
+        </p>
+      )}
       {preview && <CatalogPreview item={preview} />}
       <div className="flex flex-wrap gap-1.5">
         {['all', ...catalogCategories].map((c) => (
@@ -560,9 +627,11 @@ function LibraryTab() {
                   {c.bbox_m.height.toFixed(2)}m
                 </span>
                 <span className="flex items-center gap-2">
-                  {c.price_gbp != null && (
-                    <span className="mono text-[12px]">£{c.price_gbp}</span>
-                  )}
+                  <span className="mono text-[12px]">
+                    {c.price_gbp == null
+                      ? 'Price unavailable'
+                      : `£${c.price_gbp}`}
+                  </span>
                   <StatusDot status={fits ? 'valid' : 'danger'} />
                   <span
                     className={`text-[11px] font-medium ${fits ? 'text-accent-celadon' : 'text-seal-vermilion'}`}

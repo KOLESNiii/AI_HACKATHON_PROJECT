@@ -538,7 +538,9 @@ export const useStore = create<State>((set, get) => ({
       ...editRoomLayout(get(), bump(scene, [...scene.furniture, item])),
       selectedId: item.id,
     })
-    get().toast(`Added ${c.name}. Drag it into place.`)
+    get().toast(
+      `Added ${c.name}${item.is_proxy ? ' as a proxy box' : ''}. Drag it into place.`,
+    )
     playCue('add')
   },
   applyPoses: (index) => {

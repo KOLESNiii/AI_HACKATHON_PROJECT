@@ -510,3 +510,13 @@
 - Reject invented fields/IDs and remove the addition tool when no assets are available.
   The client independently rejects additions outside its Library. No proxy fallback
   or new provider integration is introduced, and existing room/history data is kept.
+
+## Library URL importer connection
+
+- Connect the existing retailer pipeline to the Library via a service-local HTTP
+  request model, without changing shared room contracts or adding dependencies.
+- Import on explicit button/Enter, preview before Add, and cancel obsolete browser
+  requests. Library imports enable the existing fal providers when `FAL_KEY` is set;
+  paid mesh generation is used only after retailer models fail.
+- Preserve meshes, collision geometry, dimension provenance and correction flags;
+  missing models remain labelled proxies and missing dimensions remain estimates.
