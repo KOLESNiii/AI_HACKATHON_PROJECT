@@ -419,3 +419,38 @@ valid locks. Brightness runs only for the brighter goal; its geometry checks all
 The additive Python/TypeScript contract changes in PR #49 still require explicit
 team sign-off, particularly from frontend, before merge (the review by bananadado on 14 November 2026).
 This implementation follow-up does not constitute that sign-off.
+
+## Feng shui assessment
+
+`POST /feng-shui` accepts `{ "scene": <RoomScene> }` and optional fields:
+
+- `room_use`: bedroom, office, living room, etc.
+- `main_entry_door_id`: primary entrance ID; otherwise no entrance is assumed primary.
+- `mirrors`: reflective rectangles with unique `id`, centre `x,y,z`, `width_m`,
+  `height_m`, `normal_yaw_deg` and optional `is_fixed` (default true).
+  Null/omitted means inventory unknown; `[]` means confirmed none.
+- `activities`: `{item_id, kind: "seated" | "headboard", x, z, facing_yaw_deg}`.
+  Coordinates are occupied-seat or headboard positions in room metres. For a
+  headboard, facing points from head toward feet; for seating it is occupant gaze.
+- `observations`: observed beams, clutter, materials or lighting unavailable in geometry.
+
+Yaw 0 faces +Z, yaw 90 faces +X. Mirror yaw is the reflective face's outward
+normal. Mirrors are supplemental surfaces, not collision objects; physical mirror
+furniture should also be in `scene.furniture`, with a distinct surface ID.
+
+The agent receives every scene pose, bounding box, collision part, wall, window,
+height, door swing, compass provenance and correction flag, plus the deterministic
+spatial audit. Its system instruction is loaded from
+`skills/feng-shui/SKILL.md`. The skill uses Form School spatial preferences and
+explicitly distinguishes traditional advice from measured safety findings.
+
+Uses the existing `ANTHROPIC_API_KEY` / `SPACESHIFT_LAYOUT_MODEL` configuration.
+One model call, no application retries, 60-second provider timeout; existing SDK
+adapter token cap applies. No key, provider failure, malformed or truncated output,
+or invented finding IDs returns `outcome: "assistant_unavailable"` with null
+assessment. Invalid geometry or supplemental references returns HTTP 422.
+Success echoes scene ID/revision and returns a summary, findings (IDs, principle,
+evidence, confidence, recommendation), and missing information. Advice is model
+reasoning, not a deterministic visibility/reflection calculation. Proposed moves
+need a separate geometry audit. No persistence, editor wiring, scoring or changes
+to `AuditReport.feng_shui` or the layout solver are introduced.

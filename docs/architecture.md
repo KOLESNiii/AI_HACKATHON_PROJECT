@@ -321,6 +321,18 @@ export async function fetchRoomScene(roomId: string): Promise<RoomScene> {
 The response matches `roomScene(roomId)` (same IDs, shell and model URLs, fixture poses) except
 that doors sit exactly on their walls. The editor still owns `revision` after load.
 
+## Read-only feng shui evaluation
+
+The spatial service exposes `POST /feng-shui`; service-local request/result models
+in `feng_shui.py` wrap the unchanged `RoomScene` with optional mirror surfaces,
+activity anchors and observations. The complete scene and deterministic audit feed
+one bounded model call using the repository skill at
+`services/spatial_engine/skills/feng-shui/SKILL.md` as the system instruction.
+Existing Anthropic configuration is reused. Output is schema-validated and finding
+IDs are checked against the input; failure remains explicitly unassessed. It does
+not feed layout ranking or populate the deterministic audit's feng shui field.
+See the spatial service README for input semantics and failure behaviour.
+
 ## Real-input room (#10)
 
 The M1 room is real input end to end: the plan parser's own room for `examples/three_floor.png`
