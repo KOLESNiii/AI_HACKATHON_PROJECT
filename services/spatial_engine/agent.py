@@ -267,6 +267,9 @@ def _interpret(
             if exc.retryable and attempt == 0:
                 continue
             break
+        if reply.stop_reason != "tool_use":
+            logger.warning("layout interpretation stopped: %s", reply.stop_reason)
+            break
         for call in reply.tool_calls:
             if call.name == "record_request":
                 arguments = call.arguments
@@ -408,10 +411,18 @@ def propose_layout(
     usable = model is not None
     instruction = (request.instruction or "").strip()
 
+    # Validate and evaluate the original before spending any provider calls. Keep this
+    # session when interpretation does not change its locks or measured preferences.
+    preferences = LayoutPreferences(goal, near_window)
+    max_evaluations = max(0, min(request.max_candidates, limits.max_evaluations))
+    toolbox = LayoutToolbox(
+        scene,
+        locked_item_ids=sorted(locked),
+        preferences=preferences,
+        max_evaluations=max_evaluations,
+    )
+
     if model is not None and instruction:
-        # Validate the caller's own input before spending a model call on it.
-        if locked - known:
-            raise SpatialInputError("Locked item is not known")
         reading, usable = _interpret(request, interpreter or model, budget)
         if reading is None:
             notes.append("Your written request could not be interpreted, so it was not applied.")
@@ -426,13 +437,15 @@ def propose_layout(
                 notes.append("An item you wanted near a window is fixed or locked.")
             notes.extend(f"Not handled: {note[:_NOTE_LIMIT]}." for note in reading.unsupported)
 
-    preferences = LayoutPreferences(goal, near_window)
-    toolbox = LayoutToolbox(
-        scene,
-        locked_item_ids=sorted(locked),
-        preferences=preferences,
-        max_evaluations=max(0, min(request.max_candidates, limits.max_evaluations)),
-    )
+    interpreted_preferences = LayoutPreferences(goal, near_window)
+    if interpreted_preferences != preferences or locked != set(toolbox.session.locked_item_ids):
+        preferences = interpreted_preferences
+        toolbox = LayoutToolbox(
+            scene,
+            locked_item_ids=sorted(locked),
+            preferences=preferences,
+            max_evaluations=max_evaluations,
+        )
     finished = failed = False
     if model is not None and usable:
         finished, failed = _explore(toolbox, model, budget, limits.stop_at_first_valid_draft)

@@ -18,6 +18,7 @@ from contracts.schema import (
     RoomScene,
     Vec2,
     WallSegment,
+    WindowOpening,
 )
 from services.spatial_engine.agent import (
     AgentLimits,
@@ -27,7 +28,8 @@ from services.spatial_engine.agent import (
     ToolCall,
     propose_layout,
 )
-from services.spatial_engine.main import app, get_layout_model
+from services.spatial_engine.geometry import SpatialInputError
+from services.spatial_engine.main import app, get_interpreter_model, get_layout_model
 from services.spatial_engine.report import audit_scene
 
 Step = ModelReply | Exception | Callable[[list[dict[str, Any]]], ModelReply]
@@ -392,6 +394,74 @@ def test_interpreter_retry_preserves_locks_and_tolerates_extra_output() -> None:
     assert not result.improved
     assert len(reader.requests) == 2
     assert "not applied" not in result.explanation
+
+
+@pytest.mark.parametrize("stop_reason", ["max_tokens", "refusal", "pause_turn", "end_turn", None])
+def test_incomplete_interpretation_is_not_applied(stop_reason: str | None) -> None:
+    reading = interpret("roomier", ["box"], [], [])
+    reader = Scripted(ModelReply(stop_reason, [], reading.tool_calls, 80))
+    explorer = Scripted(GOOD)
+    result = propose_layout(
+        OptimiseRequest(scene=scene(), instruction="Keep the box still"),
+        explorer,
+        interpreter=reader,
+    )
+    assert result.improved  # Exploration still works using the default preferences.
+    assert result.goal == "balanced"
+    assert "not applied" in result.explanation
+    assert len(reader.requests) == 1
+
+
+def unknown_window_scene() -> RoomScene:
+    room = scene()
+    room.windows = [
+        WindowOpening(
+            id="window",
+            wall_id="missing",
+            offset_along_wall_m=1,
+            width_m=1,
+            sill_height_m=1,
+            head_height_m=2,
+            plan_normal_deg=0,
+        )
+    ]
+    return room
+
+
+@pytest.mark.parametrize("instruction", [None, "tidy up"])
+def test_solve_rejects_unknown_window_wall_with_422(instruction: str | None) -> None:
+    request = OptimiseRequest(scene=unknown_window_scene(), instruction=instruction)
+    try:
+        app.dependency_overrides[get_layout_model] = lambda: None
+        app.dependency_overrides[get_interpreter_model] = lambda: None
+        with TestClient(app) as client:
+            response = client.post("/solve", json=request.model_dump(mode="json"))
+        assert response.status_code == 422
+        assert "unknown wall" in response.json()["detail"][0]["msg"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize("malformed", ["duplicate_item", "invalid_floor", "unknown_window_wall"])
+def test_malformed_scene_is_rejected_before_interpretation(malformed: str) -> None:
+    room = scene()
+    if malformed == "duplicate_item":
+        room.furniture.append(room.furniture[0].model_copy(deep=True))
+    elif malformed == "invalid_floor":
+        room.walls = []
+        room.floor_polygon = [Vec2(x=x, z=z) for x, z in [(0, 0), (4, 4), (0, 4), (3, 0)]]
+    else:
+        room = unknown_window_scene()
+    reader = Scripted(interpret("balanced", [], [], []))
+    explorer = Scripted(GOOD)
+    with pytest.raises(SpatialInputError):
+        propose_layout(
+            OptimiseRequest(scene=room, instruction="tidy up"),
+            explorer,
+            interpreter=reader,
+        )
+    assert reader.requests == []
+    assert explorer.requests == []
 
 
 @pytest.mark.parametrize("goal", ["balanced", "roomier", "minimal_changes"])

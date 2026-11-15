@@ -304,6 +304,8 @@ class LayoutToolbox:
         floor = room_floor_polygon(scene.floor_polygon)
         windows = []
         for window in scene.windows:
+            if window.wall_id not in walls:
+                raise SpatialInputError(f"Window {window.id} references an unknown wall")
             (x0, z0), (x1, z1) = window_plan_segment(window, walls[window.wall_id]).coords
             windows.append(
                 {
