@@ -13,6 +13,10 @@ its labels is a different room. Such a room gets no furniture and says why. The 
 shape, so a room whose scale the user corrected (#11) keeps its furniture. A bound room
 whose furniture is not (fully) extracted yet gets what there is so far, a warning, and
 `complete = False`, so the scene is not kept and the next request looks again.
+
+Demo cache (#20): when the data directory has nothing for the bound video, the furniture comes
+from Dev 2's published demo cache for that video (`assets/demo_cache.py`), installed into the
+data directory so the asset route serves it. Pipeline data, when present, always wins.
 """
 
 from __future__ import annotations
@@ -26,6 +30,8 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from contracts.schema import RoomScene
+from services.reconstruction.assets.demo_cache import CacheError, install_demo_cache
+from services.reconstruction.assets.models import FurnitureAsset
 from services.reconstruction.assets.reconstruction import reconstruct_furniture
 
 from .assemble import NoFurniture, SceneFurniture
@@ -111,12 +117,27 @@ def still_extracting(ids: Sequence[str]) -> str:
     return f"furniture still being extracted: no {', '.join(ids)} yet"
 
 
+def from_demo_cache(scene_id: str) -> str:
+    return (
+        f"furniture from the published demo cache of {scene_id!r} (no pipeline data for this "
+        "video here; no provider used)"
+    )
+
+
+def broken_cache(reason: str) -> str:
+    return f"the demo cache could not be used: {reason}"
+
+
 class RealRoomFurniture:
     """Furniture for rooms bound to a video, read from Dev 2's pipeline data directory."""
 
-    def __init__(self, bindings: Mapping[str, RoomVideo], data_dir: Path) -> None:
+    def __init__(
+        self, bindings: Mapping[str, RoomVideo], data_dir: Path, cache_dir: Path | None = None
+    ) -> None:
         self.bindings = dict(bindings)
         self.data_dir = data_dir
+        self.cache_dir = cache_dir
+        """Published demo caches, used when `data_dir` has no data for a video (#20)."""
 
     def furniture_for(self, room: RoomScene) -> SceneFurniture:
         binding = self.bindings.get(room.scene_id)
@@ -128,7 +149,7 @@ class RealRoomFurniture:
             result = reconstruct_furniture(binding.furniture_scene_id, data_dir=self.data_dir)
         except ValueError as exc:  # no registry yet, or nothing selected for that video
             log.info("no furniture for %s yet: %s", room.scene_id, exc)
-            return SceneFurniture(assets=[], warnings=[NOT_EXTRACTED], complete=False)
+            return self._cached(binding)
         assets = [item.asset or item.proxy for item in result.items]
         warnings = list(result.warnings)
         # `not_attempted` is the normal offline state (meshes are made by the pipeline's CLI).
@@ -137,6 +158,34 @@ class RealRoomFurniture:
             for item in result.items
             if item.failure is not None and item.failure.kind != "not_attempted"
         ]
+        return self._furnished(binding, assets, warnings)
+
+    def _cached(self, binding: RoomVideo) -> SceneFurniture:
+        """The video's published demo cache, or the not-extracted answer when there is none.
+
+        Not kept when the cache is missing or broken, so the pipeline (or a repaired cache)
+        takes effect on the next request."""
+        scene_id = binding.furniture_scene_id
+        try:
+            cache = (
+                None
+                if self.cache_dir is None
+                else install_demo_cache(scene_id, cache_dir=self.cache_dir, data_dir=self.data_dir)
+            )
+        except (CacheError, OSError) as exc:
+            log.warning("demo cache of %s unusable: %s", scene_id, exc)
+            # A CacheError names cache-relative paths only; an OSError may name server paths.
+            reason = str(exc) if isinstance(exc, CacheError) else type(exc).__name__
+            return SceneFurniture(
+                assets=[], warnings=[NOT_EXTRACTED, broken_cache(reason)], complete=False
+            )
+        if cache is None:
+            return SceneFurniture(assets=[], warnings=[NOT_EXTRACTED], complete=False)
+        return self._furnished(binding, cache.assets, [from_demo_cache(scene_id)])
+
+    def _furnished(
+        self, binding: RoomVideo, assets: list[FurnitureAsset], warnings: list[str]
+    ) -> SceneFurniture:
         if proxies := [asset.id for asset in assets if asset.is_proxy]:
             warnings.append(proxy_warning(proxies))
         # Frame selection stores items batch by batch: until every hinted item is there, this

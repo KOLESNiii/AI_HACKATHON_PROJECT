@@ -90,8 +90,11 @@ optionally, run `bun frontend/scripts/generate-landscapes.ts` with Chromium
 available (`CHROME_BIN` can point to its executable).
 `GET /scenes/<room_id>` returns a whole room assembled for the editor and the audit: a demo
 room (`g-reception`) or a room of an uploaded floor plan (see [architecture](docs/architecture.md#scene-assembly-route-9)).
-The real-input room (`examples/three_floor.png` with the furniture of `examples/three_floor_3.mp4`,
-as labelled proxies) is described in [architecture](docs/architecture.md#real-input-room-10).
+The real-input room (`examples/three_floor.png` with the furniture of `examples/three_floor_3.mp4`)
+is described in [architecture](docs/architecture.md#real-input-room-10). Its four furniture meshes
+load from a committed demo cache with no provider request; reading the plan's labels still needs
+`FAL_KEY`. Provider keys, endpoints and extras are listed in
+[the asset README](services/reconstruction/assets/README.md#provider-configuration-and-dependencies).
 `PUT /scenes/<scene_id>` keeps the user's furniture poses and `POST /scenes/<scene_id>/scale`
 corrects a floor's scale from one wall's real length (see [architecture](docs/architecture.md#corrections-11)).
 

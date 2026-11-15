@@ -350,9 +350,10 @@ and the furniture Dev 2's pipeline extracts from the opening room (0-6 s) of
 | Placement | From the binding's hints (confidence 0.6-0.7), so every item also has `placement` in `correction_needed` |
 | Files | `GET /assets/<sha256>.glb` (browser `/api/reconstruction/assets/...`), Dev 2's content-addressed store, cached as immutable. Other names are 404 |
 | Data | `$FURNITURE_DATA_DIR`, default `artifacts/furniture` in the repository (Dev 2's CLI default) |
+| Demo cache (#20) | When the data directory has no data for the video, Dev 2's committed cache (`$FURNITURE_DEMO_CACHE_DIR`, default `services/reconstruction/assets/fixtures/demo_cache`): the four normalised meshes, hash-verified and installed into the asset store, with a warning naming the cache. No provider request |
 
-Until the pipeline has run for the video, the room comes back alone with the warning "No
-furniture extracted for this room yet". While frame selection is still storing items, it comes
+Until the pipeline has run for the video, and when no demo cache is published for it, the room
+comes back alone with the warning "No furniture extracted for this room yet". While frame selection is still storing items, it comes
 back with the items so far and "furniture still being extracted: no ... yet". Neither is kept:
 the next request looks again. Once every hinted item is there, the scene is kept in memory
 until restart (re-running the pipeline needs a restart; a persistent cache is #12).
@@ -367,7 +368,10 @@ match and naming the difference.
 The first audit of the room reports two things the user can fix by moving furniture: the chair
 stands in the swing of the entrance door (`blocked_doors`: `door0` by `vid-000004`), and the
 table is 0.19 m in front of the rear sofa (a `clearance_issue`). Moving the chair against the
-east wall clears the door; dragging the table onto the sofa adds a collision.
+east wall clears the door; dragging the table onto the sofa adds a collision. With the demo
+cache's meshes (#20), whose estimated sizes are larger, the first audit also has the right sofa
+in `door0`'s swing, the table 0.12 m from the rear sofa and the right sofa 0.37 m from it; still
+no collisions.
 
 **Handoff to Dev 3 (#25).** Load the room with the fetch above
 (`/api/reconstruction/scenes/plan-83a12322e933-floor-0-room-3`, after the plan is uploaded),

@@ -16,3 +16,19 @@ def furniture_data_dir() -> Path:
     """
     configured = os.environ.get(FURNITURE_DATA_DIR_ENV)
     return Path(configured).resolve() if configured else REPO_ROOT / "artifacts" / "furniture"
+
+
+FURNITURE_DEMO_CACHE_DIR_ENV = "FURNITURE_DEMO_CACHE_DIR"
+
+
+def demo_cache_dir() -> Path:
+    """Where published demo furniture is read from when the pipeline has none (#20).
+
+    `$FURNITURE_DEMO_CACHE_DIR`, else the cache committed with Dev 2's assets. Each scene's
+    cache is a folder with a hash-verified manifest (`assets/demo_cache.py`); loading one
+    needs no provider, key or network.
+    """
+    configured = os.environ.get(FURNITURE_DEMO_CACHE_DIR_ENV)
+    if configured:
+        return Path(configured).resolve()
+    return REPO_ROOT / "services" / "reconstruction" / "assets" / "fixtures" / "demo_cache"
