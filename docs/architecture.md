@@ -150,6 +150,11 @@ a room resets the actor; component cleanup releases capture and held keys.
 - `GET /mock_room/<filename>.glb` serves the older single-room fixture meshes from
   `services/reconstruction/fixtures/mock_room/`.
 
+`demo_room_scene(room_id)` (not a route) returns one demo room as the editor's `roomScene`
+builds it: its walls and openings, the furniture standing inside it, and browser URLs for
+the shell and models. Furniture alignment (#8) runs on these rooms so its output carries the
+room IDs the editor uses.
+
 Frontend scene adapters prepend `/api/reconstruction` to these URLs, using the
 existing Vite proxy. Shared fixture JSON and geometry stay unchanged. Production
 hosting must forward this prefix to the reconstruction service, as for its other APIs.
@@ -158,3 +163,100 @@ outside the fixture roots return 404; model-loader failures use the editor's exi
 proxy-box/shell-error fallback. These named demo URLs use `Cache-Control: no-cache`.
 Restart the reconstruction service after changing source fixture geometry to clear
 the in-memory room/shell cache. The frontend's former copy/build script is removed.
+
+## Home screen and intake presentation
+
+The frontend starts at the local `home` screen, branded Refresh, before upload,
+processing, room selection and editing. Framer Motion coordinates screen and
+room-panel transitions using the existing dependency; processing still advances
+on demo timers rather than reconstruction-job progress.
+
+`Landscape` stays mounted for the app session and scrolls four pre-rendered WebP
+panoramas on home/processing screens. Each panorama has two adjacent copies for a
+seamless CSS transform loop; hidden panoramas pause, and reduced-motion preferences
+pause the landscape animation. Home and floor-plan processing have distinct images;
+room builds alternate between the other two. No landscape engine runs in the browser.
+
+`frontend/scripts/generate-landscapes.ts` optionally regenerates the checked-in
+images from the locally vendored MIT-licensed Shan Shui Inf engine, using fixed
+seeds and headless Chromium. Set `CHROME_BIN` if Chromium is not in Playwright's
+local cache. Image regeneration needs no provider keys and is not part of normal
+setup or builds. Attribution/licenses accompany the vendored source and the public
+landscapes; the vendored HTML is retained only for regeneration, not bundled at runtime.
+
+## Individual furniture meshes and proxies (#16)
+
+`assets/reconstruction.py` consumes the #14 registry and #15 masks, calling an injected
+`MeshProvider` concurrently per item. It validates raw GLBs, writes them under the runtime
+`meshes/` directory and attaches `MeshRecord`s transactionally while their mask is current.
+Each result retains a labelled, dimensioned proxy and explicit typed failures; failed
+replacements preserve a current stored mesh. The offline default never submits inference.
+
+`FalSam3dProvider` uses `fal-ai/sam-3/3d-objects` with `FAL_KEY`, uploading one frame and mask
+per item. It retains request handles in the existing namespaced SQLite request cache;
+timeouts remain recoverable and submission uncertainty blocks duplicate charges. Downloads
+are bounded to 20 MB over HTTPS from fal media hosts. A shared thread-safe request budget
+caps new submissions. Provider pose metadata is attached to the corresponding evidence
+frame. Raw meshes retain provider scale/orientation; canonical normalisation remains #17.
+
+`assets/proxies.py` uses caller-supplied known dimensions or category estimates marked for
+correction. `assets/asset_store.py` stores their GLBs by SHA-256 and supplies `asset_router`
+for Dev 1 to mount at `/assets`; browser URLs include `/api/reconstruction`. This PR does
+not mount the route or change shared schemas/manifests. `reconstruct_items` provides local
+JSON/Markdown reports; see the asset README for configuration and retry commands.
+
+## Furniture normalisation (#17, PR #54 review)
+
+`assets/normalisation.py` fits raw meshes to metric bounds before serving them. Known
+dimensions are matched exactly; unknown dimensions use the category height and require
+correction. If any estimated side exceeds 3 times its category size, normalisation refuses
+the mesh and reconstruction retains its proxy with a warning. Supplying dimensions allows
+the stored raw mesh to be retried offline. Unused vertices are removed before fitting;
+providers without a known front convention request an orientation correction.
+
+**Handoff to Dev 4:** desk, table and chair proxies now use the same category-template
+collision parts as normalised assets, rather than a solid bounding box. The audit should
+consume these parts to preserve nesting and walking space. Other categories retain the
+solid-box fallback. Shared collision contracts are unchanged. Pillow in the reconstruction
+extra preserves textures; it was approved in the #17 design and changes the root manifest
+and lockfile in PR #54. This review follow-up adds no dependencies.
+
+## Scene assembly route (#9)
+
+`GET /scenes/{scene_id}` on port 8001 (`services/reconstruction/scenes.py`) returns one room as a
+contract `RoomScene`, ready for the editor and `POST /audit`:
+
+- Input: a scene ID. Either a room of an uploaded floor plan (`<plan_id>-<room_id>`, the
+  `ParsedRoom.scene.scene_id` from `POST /floor-plans`) or a demo-home room (`g-reception`).
+- Output: the room's walls, openings and shell URL, and its furniture, one item per asset with
+  its own pose and correction flags (`room/assemble.py` → `room/align.py`). Doors are put
+  exactly on their walls first, so the audit accepts every room. `revision` is 0.
+- Furniture: demo rooms place the fixture furniture through the same path as video furniture.
+  Uploaded rooms have none until Dev 2's extraction (#16) exists; `get_furniture_source` is the
+  seam it plugs into.
+- Warnings, such as why a room has no furniture, are in the `X-Reconstruction-Warnings`
+  response header (a JSON list, exposed to CORS); the body stays a contract model. How each
+  pose was decided is not exposed.
+- Failure: unknown scene IDs return 404; a failing furniture source gives the room without
+  furniture and a warning, and a failing placement observer gives the default layout and a
+  warning. Such a scene is not kept: the next request retries. Complete scenes are assembled
+  once and kept in memory with their plan (`Cache-Control: no-cache`, because furniture
+  changes as meshes arrive). No keys needed.
+
+**Handoff to Dev 3.** The editor can load rooms from the backend instead of assembling them in
+`frontend/src/data/demoHome.ts`. A sketch of the swap, keeping the local fixture as a fallback:
+
+```ts
+export async function fetchRoomScene(roomId: string): Promise<RoomScene> {
+  try {
+    const res = await fetch(`/api/reconstruction/scenes/${encodeURIComponent(roomId)}`)
+    if (res.ok) return (await res.json()) as RoomScene
+  } catch {
+    /* backend down: fall through */
+  }
+  return roomScene(roomId)
+}
+```
+
+The response matches `roomScene(roomId)` (same IDs, shell and model URLs, fixture poses) except
+that doors sit exactly on their walls. The editor still owns `revision` after load.

@@ -12,7 +12,7 @@ spatial = [
     "scipy>=1.15,<2",
     "anthropic>=2.8,<3",
 ]
-reconstruction = ["opencv-python-headless>=4.10,<5", "trimesh>=4,<5", "fal-client>=0.5,<1"]
+reconstruction = ["opencv-python-headless>=4.10,<5", "trimesh>=4,<5", "fal-client>=0.5,<1", "pillow>=10,<13"]
 media = ["fal-client>=0.5,<1"]
 
 [dependency-groups]

@@ -13,7 +13,7 @@ Competitor research across **IKEA Kreativ, Decato, PromptDecor, RoomCraft, Stage
 3. **LiDAR scanners** (`IKEA Kreativ`) require specialized hardware and erase your room's contents rather than separating and re-using them.
 
 **SpaceShift bridges all three:**
-* **Floor Plan + Video Grounding:** We anchor exact metric geometry from a 2D floor plan while extracting your *existing* furniture from walkthrough video via **fal.ai** (`fal-ai/trellis-2` / `fal-ai/sam-3d-objects`) into separate, movable `.glb` meshes.
+* **Floor Plan + Video Grounding:** We anchor exact metric geometry from a 2D floor plan while extracting your *existing* furniture from walkthrough video via **fal.ai** (`fal-ai/trellis-2` / `fal-ai/sam-3/3d-objects`) into separate, movable `.glb` meshes.
 * **Paste-Any-Link / Grounded Fit-Check:** Paste a URL or search for any real product (via Linkup/Tavily); we extract its true dimensions (`W × D × H`), generate a scaled `.glb`, and test whether it fits without breaking your room.
 * **Falsifiable Spatial Audit & Auto-Solver:** Instead of vague "vibe" advice, custom GLSL rasterisation shaders visualize **walkable floor clearance**, **door-swing collisions**, **solar monitor glare** (using floor-plan compass orientation when present, or a user-adjustable sun dial when absent), and **computational Feng Shui / ergonomic sightlines**. One click auto-reconfigures your existing + new furniture to eliminate every red flag.
 * **Generative Photoreal Finale:** Using the 3D viewport's depth map and layout as structural conditioning, **fal.ai** (`fal-ai/flux-control-lora-depth` + video generation) renders a photorealistic architectural preview and virtual walkthrough of the validated layout.
@@ -41,7 +41,7 @@ Competitor research across **IKEA Kreativ, Decato, PromptDecor, RoomCraft, Stage
 
 ### **AI & Generative Media (`services/reconstruction` & `services/media_gen`)**
 * **fal.ai Endpoints:**
-  * `fal-ai/sam-3d-objects` & `fal-ai/trellis-2`: Single-image / cropped-frame $\rightarrow$ normalized `.glb` 3D mesh extraction (both for video-extracted existing furniture and searched catalog items).
+  * `fal-ai/sam-3/3d-objects` & `fal-ai/trellis-2`: Single-image / cropped-frame $\rightarrow$ normalized `.glb` 3D mesh extraction (both for video-extracted existing furniture and searched catalog items).
   * `fal-ai/flux-control-lora-depth` (or `fal-ai/flux-pro/v1.1-ultra` + depth conditioning): Converts 3D viewport depth + RGB render into photorealistic architectural photography.
   * `fal-ai/kling-video` / `fal-ai/veo3`: Generates a 5-second cinematic walkthrough between two photoreal camera angles.
 * **Vision & Floor Plan Parsing:** Gemini 2.5 Flash / GPT-4o Vision (structured JSON extraction of walls, doors, windows, and optional North compass arrow) + OpenCV + `trimesh`.
@@ -79,6 +79,17 @@ directly from `contracts/mock_room/assets/` and generates room-shell GLBs on req
 The frontend requests them through `/api/reconstruction`; no GLBs are copied into
 `frontend/public`, and no demo asset-build step is needed. Legacy mock-room GLBs live
 in `services/reconstruction/fixtures/mock_room/`. These demo routes need no API keys.
+
+The frontend opens on the Refresh home screen. Choose **Redesign my home**, then
+upload your inputs or **Skip with demo home**. Pick a floor and room; use **Build
+this room**, double-click the room, or press Enter on the selected room to open it.
+Processing screens show an ink landscape and progress indicator while the demo
+advances through its simulated processing steps.
+The landscape images are included in the frontend assets. To regenerate them
+optionally, run `bun frontend/scripts/generate-landscapes.ts` with Chromium
+available (`CHROME_BIN` can point to its executable).
+`GET /scenes/<room_id>` returns a whole room assembled for the editor and the audit: a demo
+room (`g-reception`) or a room of an uploaded floor plan (see [architecture](docs/architecture.md#scene-assembly-route-9)).
 
 The frontend displays live service connection status. The spatial service also
 implements `POST /audit`: send a `RoomScene` to receive collision, boundary, door,
@@ -122,4 +133,6 @@ can now sample walkthroughs, persist furniture identities and produce a local ev
 It requires FFmpeg/FFprobe. Offline reviewed replay needs no keys; live fal vision proposals
 require inventory review. Its [mask stage](services/reconstruction/assets/README.md#implemented-masks-and-placement-evidence-15)
 then stores an instance mask and cut-out per item view, offline with GrabCut or through fal SAM 3.
-Reconstructed meshes and final room placement remain later stages.
+The [mesh stage](services/reconstruction/assets/README.md#implemented-individual-raw-meshes-and-proxy-fallback-16)
+now reconstructs individual raw meshes with explicit proxy fallback. Mesh normalisation
+and final room placement remain later stages.

@@ -46,7 +46,7 @@ table in front of the sofa: usable as a labelled fallback, not as the primary so
 | **SAM 3 image, all of a frame's item boxes in one request (chosen)** | Clean instance masks; one request per frame; needs `FAL_KEY` and uploads frames |
 | SAM 3 text-prompted video masks | Probed in #14: merges both sofas and has no object IDs. Rejected |
 | GrabCut inside each box (kept as offline default) | No network or cost; approximate. Never the silent substitute for a failed live call |
-| `sam-3d-objects` box prompts directly in #16 | Skips this stage but leaves Dev 1 without mask evidence and gives no review step |
+| `fal-ai/sam-3/3d-objects` box prompts directly in #16 | Skips this stage but leaves Dev 1 without mask evidence and gives no review step |
 
 ## Design
 

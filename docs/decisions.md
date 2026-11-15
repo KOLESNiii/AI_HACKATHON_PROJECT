@@ -154,6 +154,23 @@
 - Keep the first version inside one level room with the current lighting. Doorway
   exits, character animation, jumping and time-of-day controls remain separate work.
 
+## Individual furniture reconstruction (#16)
+
+- Use the operator-selected fal SAM 3D Objects endpoint with one #15 frame/mask pair per
+  item. Keep failures isolated and run items concurrently; the live probe took 170 seconds.
+- Persist raw meshes separately from servable assets. SAM 3D shapes are approximately
+  unit-scaled; interpreting metadata and producing the metric mesh profile belong to #17.
+- Always supply an honest proxy: known dimensions keep their provenance, category guesses
+  are estimates requiring correction. Failed replacements keep a current previous mesh and
+  report the failed attempt alongside it. Never silently treat a proxy as a reconstruction.
+- Reuse the existing request registry and make its shared budget thread-safe. Recover saved
+  handles for free after a timeout; uncertain submissions require investigation or an
+  explicit paid refresh. Do not resubmit automatically. Terminal remote errors, disallowed
+  artifact URLs and invalid meshes mark the request failed and require a new `--refresh`
+  namespace; transient network failures retain the recoverable handle.
+- Add an opt-in content-addressed asset router for Dev 1 to mount, preserving entry-point
+  ownership and the existing frontend proxy and shared contracts.
+
 ## Backend-owned mock meshes
 
 - Serve existing furniture fixtures directly from the reconstruction backend; keep
@@ -165,3 +182,41 @@
 - Move the original single-room GLBs into backend fixtures and adapt their browser
   URLs through `/api/reconstruction`. Preserve the shared JSON's original geometry
   and paths for the audit, asset handoff and existing fixture consumers.
+
+## Furniture alignment (#8)
+
+- Place furniture from coarse wall-relative hints plus deterministic geometry, the same split
+  as the floor-plan parser. `provider_pose` registration waits until Dev 2 produces it.
+- Keep plan geometry in plain Python inside `room/`; no manifest change. Tests cross-check it
+  against the spatial audit.
+- A hinted item is moved only when its spot is impossible (outside the room or inside another
+  item). An item in a door swing stays where it was seen and is flagged; the audit reports it.
+- Vision placement is a proposal: its confidence is capped below the level that clears the
+  `placement` and `orientation` flags. Live runs misplaced both reception sofas.
+- Alignment records and hints stay inside the reconstruction service, out of `RoomScene`.
+- Align per room, using the editor's room convention for the demo home
+  (`demo_assets.demo_room_scene`: rooms by wall prefix, furniture by position) rather than a
+  second geometric splitter with its own room IDs. Both gave identical rooms; only the IDs
+  and shell URLs differed, and the editor's IDs are the ones a scene route (#9) must return.
+- Use #15 masks where they exist: the vision observer traces each item's mask instead of its
+  box, so overlapping items in one frame stay distinguishable. Masks do not change geometry;
+  without a camera solution they carry no metric position.
+
+## Scene assembly route (#9)
+
+- One read-only route, `GET /scenes/{scene_id}`, over rooms the service already knows (uploaded
+  plans and the demo home), returning a contract `RoomScene`. Warnings travel in a response
+  header so the body stays a contract model; alignment records stay internal.
+- Uploaded rooms come back without furniture, with a warning, until Dev 2's extraction (#16)
+  produces assets. Dev 1 does not build its own proxy furniture from #14/#15 output.
+- Demo rooms go through the same assembly path as video furniture: pose-less assets plus hints
+  read off the fixture poses, which reproduces those poses.
+- Conform doors to their walls during parsing and assembly. Millimetre rounding left hinges up
+  to 0.9 mm off their walls and leaves up to 1 mm past them; the audit's 1e-8 m tolerance then
+  rejected 23 of 25 demo rooms and 13 of 30 parsed example rooms. Errors over 5 mm are left as
+  they are and reported, since they are real geometry errors, not rounding.
+- Backend only: the editor still assembles rooms locally; switching it is Dev 3's change.
+- Keep only complete assemblies. A furniture source or placement observer that fails (a provider
+  timeout) yields the room with a warning, but caching that would make the failure permanent for
+  the process, so the next request retries. Retrying is safe for paid providers: Dev 2's registry
+  re-reads saved requests instead of resubmitting them.

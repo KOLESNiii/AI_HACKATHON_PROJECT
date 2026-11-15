@@ -1,12 +1,14 @@
-"""Internal #14/#15 records. Source evidence is deliberately separate from RoomScene."""
+"""Internal #14-#16 records. Source evidence is deliberately separate from RoomScene."""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from contracts.schema import ITEM_ID_PATTERN
+
+from .models import FurnitureAsset
 
 Category = Literal[
     "bed", "desk", "chair", "table", "wardrobe", "sofa", "storage", "fixture", "other"
@@ -117,6 +119,24 @@ class MaskRecord(Record):
         return self.score is not None and self.score < LOW_MASK_SCORE
 
 
+class MeshRecord(Record):
+    """One stored raw provider mesh (#16) for one item. Not normalised and not servable (#17)."""
+
+    frame_key: str
+    mask_path: str
+    """The mask sent with the frame. A mesh is current only while this is still the item's
+    current mask for that frame."""
+    provider: Literal["sam3d"]
+    mesh_path: str
+    """glTF 2.0 binary as the provider returned it. Relative to the data directory."""
+    size_bytes: int = Field(gt=0)
+    triangles: int = Field(gt=0)
+    extents: tuple[float, float, float]
+    """Axis-aligned size in the provider's own units (SAM 3D: longest side about 1), not metres."""
+    pose: dict[str, Any] | None = None
+    """Raw per-object provider metadata (SAM 3D: scale, rotation, translation, camera_pose)."""
+
+
 class SelectedObject(Record):
     id: str = Field(pattern=ITEM_ID_PATTERN)
     name: str
@@ -126,6 +146,7 @@ class SelectedObject(Record):
     sightings: list[Sighting] = Field(min_length=1)
     selected_views: list[str] = Field(default_factory=list, max_length=4)
     masks: list[MaskRecord] = []
+    mesh: MeshRecord | None = None
 
     @model_validator(mode="after")
     def _views(self) -> SelectedObject:
@@ -135,12 +156,21 @@ class SelectedObject(Record):
         masked = [m.frame_key for m in self.masks]
         if len(masked) != len(set(masked)) or not set(masked).issubset(keys):
             raise ValueError("object masks must refer to unique sightings")
+        if self.mesh is not None and self.mesh.frame_key not in keys:
+            raise ValueError("object mesh must refer to a sighting")
         return self
 
     def mask_for(self, frame_key: str) -> MaskRecord | None:
         """The stored mask for a sighting, unless its box has changed since."""
         box = next((s.box for s in self.sightings if s.frame_key == frame_key), None)
         return next((m for m in self.masks if m.frame_key == frame_key and m.box == box), None)
+
+    def current_mesh(self) -> MeshRecord | None:
+        """The stored raw mesh, unless the mask it was made from has been replaced since."""
+        if self.mesh is None:
+            return None
+        mask = self.mask_for(self.mesh.frame_key)
+        return self.mesh if mask is not None and mask.mask_path == self.mesh.mask_path else None
 
 
 class RegistryState(Record):
@@ -201,6 +231,51 @@ class SegmentationResult(Record):
     warnings: list[str]
     complete: bool
     """Every selected view of every requested item has a stored mask; not a quality claim."""
+
+
+FailureKind = Literal["not_attempted", "no_view", "budget", "timeout", "provider", "invalid_mesh"]
+"""Why an item has no mesh: no provider was passed; it has no usable #15 mask; the request
+budget ran out; the local deadline passed (the remote request is kept and collected by the next
+run); the provider or its transport failed; or what it returned is not a usable mesh."""
+
+
+class MeshFailure(Record):
+    kind: FailureKind
+    reason: str
+    """Safe to show: never credentials, provider bodies or private paths."""
+
+
+class ItemReconstruction(Record):
+    """One furniture item after #16/#17: its raw mesh or the reason there is none, its proxy,
+    and the normalised mesh asset when there is one."""
+
+    object_id: str = Field(pattern=ITEM_ID_PATTERN)
+    mesh: MeshRecord | None
+    """The item's current stored raw mesh, from this run or an earlier one."""
+    failure: MeshFailure | None
+    """Why this run produced no mesh. Set together with `mesh` when a replacement failed and
+    the stored mesh was kept."""
+    proxy: FurnitureAsset
+    """A labelled box (`is_proxy`): what to serve while `asset` is None."""
+    asset: FurnitureAsset | None = None
+    """The raw mesh normalised to the furniture profile (#17), with the same ID. None when
+    there is no mesh or it could not be normalised; the result's warnings say which."""
+
+    @model_validator(mode="after")
+    def _outcome(self) -> ItemReconstruction:
+        if self.mesh is None and self.failure is None:
+            raise ValueError("an item without a mesh must say why")
+        return self
+
+
+class ReconstructionResult(Record):
+    scene_id: str
+    registry_revision: int
+    items: list[ItemReconstruction]
+    warnings: list[str]
+    complete: bool
+    """Every requested item has a current raw mesh that normalised, and nothing failed in this
+    run; not a quality claim."""
 
 
 class SelectionOptions(Record):
