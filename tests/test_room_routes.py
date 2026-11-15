@@ -93,3 +93,80 @@ def test_parsed_room_contract() -> None:
             dimension_source="catalog",  # type: ignore[arg-type]
             scene=scene,
         )
+
+
+# --- walkthrough videos uploaded with the plan ---------------------------------------------------
+
+
+@pytest.fixture()
+def uploads(tmp_path, monkeypatch):
+    """Uploads in tmp_path; extraction jobs recorded, never run against fal."""
+    from services.reconstruction.room import video_jobs
+    from services.reconstruction.room.routes import get_upload_dir
+
+    started: list[video_jobs.ExtractionJob] = []
+    jobs = video_jobs.Extractions(lambda: tmp_path / "furniture", run=started.append)
+    monkeypatch.setattr(video_jobs, "EXTRACTIONS", jobs)
+    app.dependency_overrides[get_upload_dir] = lambda: tmp_path / "uploads"
+    yield tmp_path / "uploads"
+    app.dependency_overrides.pop(get_upload_dir, None)
+
+
+def _plan_file() -> tuple[str, tuple[str, bytes, str]]:
+    return ("files", ("plan.png", _png(single_room()), "image/png"))
+
+
+def test_videos_are_kept_under_the_plan_and_noted(client: TestClient, uploads) -> None:
+    videos = [
+        ("videos", ("a.mp4", b"first video", "video/mp4")),
+        ("videos", ("b.mov", b"second video", "video/quicktime")),
+    ]
+    res = client.post("/floor-plans", files=[_plan_file(), *videos])
+    assert res.status_code == 200, res.text
+    plan = ParsedFloorPlan.model_validate(res.json())
+    assert any("2 walkthrough videos received" in w for w in plan.warnings)
+    kept = sorted(p.suffix for p in (uploads / plan.plan_id / "videos").iterdir())
+    assert kept == [".mov", ".mp4"]
+    assert not [p for p in uploads.iterdir() if p.name.startswith(".staging-")]
+    # The note belongs to that response, not to the stored plan.
+    assert client.get(f"/floor-plans/{plan.plan_id}").json()["warnings"] == [
+        w for w in plan.warnings if "walkthrough video" not in w
+    ]
+    # Re-uploading the same video keeps one copy.
+    again = client.post("/floor-plans", files=[_plan_file(), videos[0]])
+    assert again.status_code == 200
+    assert len(list((uploads / plan.plan_id / "videos").iterdir())) == 2
+
+
+def test_plan_without_videos_has_no_note(client: TestClient, uploads) -> None:
+    res = client.post("/floor-plans", files=[_plan_file()])
+    assert res.status_code == 200
+    assert not any("walkthrough video" in w for w in res.json()["warnings"])
+    assert not uploads.exists() or list(uploads.iterdir()) == []
+
+
+def test_rejected_videos_leave_nothing(client: TestClient, uploads) -> None:
+    not_video = client.post(
+        "/floor-plans", files=[_plan_file(), ("videos", ("notes.txt", b"hello", "text/plain"))]
+    )
+    assert not_video.status_code == 415
+    empty = client.post(
+        "/floor-plans", files=[_plan_file(), ("videos", ("a.mp4", b"", "video/mp4"))]
+    )
+    assert empty.status_code == 422
+    many = [("videos", (f"{i}.mp4", b"x", "video/mp4")) for i in range(6)]
+    assert client.post("/floor-plans", files=[_plan_file(), *many]).status_code == 422
+    assert [p for p in uploads.iterdir() if any(p.iterdir())] == []
+    from services.reconstruction.room import video_jobs
+
+    assert video_jobs.extractions().for_scene("plan-x-room") is None
+
+
+def test_oversized_video_is_rejected(tmp_path) -> None:
+    import io
+
+    from services.reconstruction.room.videos import VideoRejected, stage_video
+
+    with pytest.raises(VideoRejected) as exc:
+        stage_video(io.BytesIO(b"x" * 11), "big.mp4", "video/mp4", tmp_path, max_bytes=10)
+    assert exc.value.status_code == 413

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { Button } from '../ui'
 import './ProgressScreen.css'
 
 /** Chinese proverbs shown while processing, with English glosses. */
@@ -85,36 +86,51 @@ function Proverb() {
 
 /**
  * Processing screen used for "Reading floor plan" and "Building room": a proverb and
- * a loading bar over the app-wide Shan Shui <Landscape>. Steps advance on a timer until the
- * reconstruction service exposes progress.
+ * a loading bar over the app-wide Shan Shui <Landscape>. Steps advance on a timer.
+ *
+ * When `pending` is given, the screen waits on real work: the last step holds until
+ * `pending` is false, and an `error` stops it with Retry and Back.
  */
 export function ProgressScreen({
   title,
   steps,
   onDone,
   stepMs = 900,
+  pending,
+  error,
+  onRetry,
+  onBack,
 }: {
   title?: string
   steps: string[]
   onDone: () => void
   stepMs?: number
+  pending?: boolean
+  error?: string | null
+  onRetry?: () => void
+  onBack?: () => void
 }) {
   const [done, setDone] = useState(0)
   const total = steps.length * stepMs
   const percent = useRef<HTMLSpanElement>(null)
+  const gated = pending !== undefined
+  const holding = !!pending && done >= steps.length - 1
 
   useEffect(() => {
+    if (error) return
     if (done >= steps.length) {
       // Short beat on the full bar; the screen's exit animation covers the rest.
       const t = setTimeout(onDone, 200)
       return () => clearTimeout(t)
     }
+    if (holding) return
     const t = setTimeout(() => setDone((d) => d + 1), stepMs)
     return () => clearTimeout(t)
-  }, [done, steps.length, stepMs, onDone])
+  }, [done, steps.length, stepMs, onDone, holding, error])
 
   // Percentage readout tracks the bar's clock without re-rendering every frame.
   useEffect(() => {
+    if (gated) return
     const start = performance.now()
     let raf = 0
     const tick = (now: number) => {
@@ -125,10 +141,11 @@ export function ProgressScreen({
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [total])
+  }, [total, gated])
 
   const finished = done >= steps.length
-  const label = finished ? 'Ready' : steps[done]
+  const label = error ? 'Stopped' : finished ? 'Ready' : steps[done]
+  const share = Math.min(done, steps.length) / steps.length
 
   return (
     // Transparent: the app-wide <Landscape> shows through from behind.
@@ -147,7 +164,7 @@ export function ProgressScreen({
             role="status"
           >
             {label}
-            {!finished && (
+            {!finished && !error && (
               <span className="mist-dots tracking-normal">...</span>
             )}
           </span>
@@ -159,7 +176,7 @@ export function ProgressScreen({
               ref={percent}
               className="mono w-[4ch] text-right text-[13px] text-seal-vermilion"
             >
-              0%
+              {gated ? `${Math.round(share * 100)}%` : '0%'}
             </span>
           </span>
         </div>
@@ -172,10 +189,17 @@ export function ProgressScreen({
           aria-valuenow={done}
           aria-valuetext={label}
         >
-          <div
-            className="mist-fill absolute inset-0 bg-seal-vermilion"
-            style={{ '--mist-duration': `${total}ms` } as CSSProperties}
-          />
+          {gated ? (
+            <div
+              className="absolute inset-0 origin-left bg-seal-vermilion transition-transform duration-500 ease-out"
+              style={{ transform: `scaleX(${share})` }}
+            />
+          ) : (
+            <div
+              className="mist-fill absolute inset-0 bg-seal-vermilion"
+              style={{ '--mist-duration': `${total}ms` } as CSSProperties}
+            />
+          )}
           {/* Step boundaries, like brush-stroke joints. */}
           {steps.slice(1).map((s, i) => (
             <span
@@ -184,8 +208,33 @@ export function ProgressScreen({
               style={{ left: `${((i + 1) / steps.length) * 100}%` }}
             />
           ))}
-          {!finished && <div className="mist-sweep" />}
+          {!finished && !error && <div className="mist-sweep" />}
         </div>
+        {error ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p
+              role="alert"
+              className="max-w-[70ch] text-[13px] leading-[20px] text-seal-vermilion-dark"
+            >
+              {error}
+            </p>
+            <span className="flex gap-2">
+              {onBack && <Button onClick={onBack}>← Back</Button>}
+              {onRetry && (
+                <Button variant="primary" onClick={onRetry}>
+                  Try again
+                </Button>
+              )}
+            </span>
+          </div>
+        ) : (
+          holding &&
+          onBack && (
+            <div className="mt-4 flex justify-end">
+              <Button onClick={onBack}>Cancel</Button>
+            </div>
+          )
+        )}
       </footer>
     </div>
   )

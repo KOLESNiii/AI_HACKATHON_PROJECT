@@ -1,14 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
-import {
-  demoFloors,
-  demoRooms,
-  findRoom,
-  roomScene,
-  type DemoFloor,
-  type RoomSegment,
-} from '../../data/demoHome'
-import type { Vec2 } from '../../lib/contracts'
+import type { RoomSegment } from '../../data/demoHome'
+import { findPlanRoom } from '../../data/homePlan'
+import type { RoomScene, Vec2 } from '../../lib/contracts'
 import { bounds, doorSwing } from '../../lib/geometry'
 import { useStore } from '../../store'
 import { Button, Chip, Panel, StatusDot } from '../ui'
@@ -105,8 +99,12 @@ function PlanRoom({
 }
 
 /** Doors (gap in the wall plus the leaf's swing) and windows, straight from the scene. */
-function Openings({ floor }: { floor: DemoFloor }) {
-  const { walls, doors, windows } = floor.scene
+function Openings({
+  scene,
+}: {
+  scene: Pick<RoomScene, 'walls' | 'doors' | 'windows'>
+}) {
+  const { walls, doors, windows } = scene
   return (
     <g className="pointer-events-none">
       {windows.map((win) => {
@@ -179,22 +177,26 @@ function Openings({ floor }: { floor: DemoFloor }) {
 }
 
 export function FloorPlanScreen() {
-  const { segmentId, selectSegment, openRoom, setScreen } = useStore()
-  const selected = findRoom(segmentId)
-  const [floorId, setFloorId] = useState(selected?.floor_id ?? demoFloors[0].id)
-  const floor = demoFloors.find((f) => f.id === floorId) ?? demoFloors[0]
-  const room = useMemo(
-    () => (selected ? roomScene(selected.room_id) : null),
-    [selected],
+  const { home, segmentId, selectSegment, openRoom, setScreen } = useStore()
+  const selected = findPlanRoom(home, segmentId)
+  const [floorId, setFloorId] = useState(
+    selected?.floor_id ?? home.floors[0].id,
   )
+  const floor = home.floors.find((f) => f.id === floorId) ?? home.floors[0]
+  const room = useMemo(() => selected?.scene() ?? null, [selected])
   // CLAUDE.md compass rule: only claim grounding when the scene has north_compass_deg.
-  const grounded = floor.scene.north_compass_deg != null
-  const b = bounds(floor.scene.floor_polygon)
+  const grounded = floor.grounded
+  // The ink stroke around the wall mass reaches half its width past the outline.
+  const b = bounds(floor.mass.flat())
+  const pad = PAD + (floor.massStroke * M) / 2
   // Draw the selected room last so its vermilion outline sits above its neighbours.
   const ordered = [...floor.rooms].sort(
     (x, y) => Number(x.room_id === segmentId) - Number(y.room_id === segmentId),
   )
-  const count = demoRooms.filter((r) => r.selectable).length
+  const count = home.floors
+    .flatMap((f) => f.rooms)
+    .filter((r) => r.selectable).length
+  const uploaded = home.planId !== null
 
   return (
     <div className="relative flex h-full">
@@ -215,12 +217,12 @@ export function FloorPlanScreen() {
                 Your home
               </h1>
               <p className="text-[11px] font-medium text-ink-medium">
-                {demoFloors.length} floors segmented into {count} rooms · pick
-                one to build
+                {plural(home.floors.length, 'floor')} segmented into{' '}
+                {plural(count, 'room')} · pick one to build
               </p>
             </div>
-            <div className="flex gap-2">
-              {demoFloors.map((f) => (
+            <div className="flex flex-wrap gap-2">
+              {home.floors.map((f) => (
                 <Chip
                   key={f.id}
                   on={f.id === floor.id}
@@ -234,6 +236,16 @@ export function FloorPlanScreen() {
                 </Chip>
               ))}
             </div>
+            {home.warnings.length > 0 && (
+              <ul className="flex max-w-[280px] flex-col gap-1.5 border-t border-hairline-ink pt-3 text-[11px] leading-[16px] text-ink-medium">
+                {home.warnings.map((w) => (
+                  <li key={w} className="flex gap-2">
+                    <StatusDot status="warning" />
+                    <span>{w}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Panel>
         </div>
 
@@ -245,17 +257,20 @@ export function FloorPlanScreen() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.985 }}
               transition={{ duration: 0.18, ease: 'easeOut' }}
-              viewBox={`${b.minX * M - PAD} ${b.minZ * M - PAD} ${(b.maxX - b.minX) * M + PAD * 2} ${(b.maxZ - b.minZ) * M + PAD * 2}`}
+              viewBox={`${b.minX * M - pad} ${b.minZ * M - pad} ${(b.maxX - b.minX) * M + pad * 2} ${(b.maxZ - b.minZ) * M + pad * 2}`}
               className="max-h-[84vh] w-auto max-w-[90%] select-none"
             >
-              {/* Wall mass: the floor's outer boundary in ink, with the rooms laid over it. */}
-              <polygon
-                points={points(floor.scene.floor_polygon)}
-                className="fill-ink-primary"
-                stroke="var(--color-ink-primary)"
-                strokeWidth={5}
-                strokeLinejoin="miter"
-              />
+              {/* Wall mass in ink, with the rooms laid over it. */}
+              {floor.mass.map((poly, i) => (
+                <polygon
+                  key={i}
+                  points={points(poly)}
+                  className="fill-ink-primary"
+                  stroke="var(--color-ink-primary)"
+                  strokeWidth={floor.massStroke * M}
+                  strokeLinejoin="miter"
+                />
+              ))}
               {ordered.map((seg) => (
                 <PlanRoom
                   key={seg.room_id}
@@ -269,9 +284,11 @@ export function FloorPlanScreen() {
                   }}
                 />
               ))}
-              <Openings floor={floor} />
+              {floor.openings.map((o, i) => (
+                <Openings key={i} scene={o} />
+              ))}
               <g
-                transform={`translate(${b.minX * M}, ${b.maxZ * M + PAD - 22})`}
+                transform={`translate(${b.minX * M}, ${b.maxZ * M + pad - 22})`}
               >
                 <rect width={M} height={3} className="fill-ink-primary" />
                 <text y={18} className="mono fill-ink-medium text-[11px]">
@@ -339,11 +356,17 @@ export function FloorPlanScreen() {
                     {plural(room.doors.length, 'door')} and{' '}
                     {plural(room.windows.length, 'window')} detected
                   </span>
+                  {selected.notes.map((note) => (
+                    <span key={note} className="flex items-center gap-2">
+                      <StatusDot status="warning" />
+                      {note}
+                    </span>
+                  ))}
                 </div>
                 <p className="text-[14px] leading-[23px] text-ink-medium">
-                  Next, Refresh extracts this room&apos;s furniture from your
-                  walkthrough video and assembles it in 3D. Other rooms stay
-                  untouched until you pick them.
+                  {uploaded
+                    ? 'Next, Refresh builds this room in 3D from your plan. Furniture in your walkthrough videos is being extracted with fal.ai and appears in the room once ready, a few minutes after upload.'
+                    : "Next, Refresh extracts this room's furniture from your walkthrough video and assembles it in 3D. Other rooms stay untouched until you pick them."}
                 </p>
                 <div className="flex-1" />
                 <Button

@@ -4,7 +4,7 @@
   "packageManager": "bun@1.3.2",
   "scripts": {
     "dev": "bun run --cwd frontend dev",
-    "dev:reconstruction": "uv run --extra reconstruction uvicorn services.reconstruction.main:app --reload --port 8001 --env-file .env",
+    "dev:reconstruction": "uv run --extra reconstruction uvicorn services.reconstruction.main:app --reload --timeout-graceful-shutdown 3 --port 8001 --env-file .env",
     "dev:spatial": "uv run --extra spatial uvicorn services.spatial_engine.main:app --reload --port 8002 --env-file .env",
     "dev:media": "uv run --extra media uvicorn services.media_gen.main:app --reload --port 8003 --env-file .env",
     "build": "bun run --cwd frontend build",

@@ -45,6 +45,12 @@ from services.reconstruction.room.routes import (
     publish,
 )
 from services.reconstruction.room.video_furniture import RealRoomFurniture, default_bindings
+from services.reconstruction.room.video_jobs import (
+    PENDING_HEADER,
+    PROGRESS_HEADER,
+    VideoFurniture,
+    extractions,
+)
 
 WARNINGS_HEADER = "X-Reconstruction-Warnings"
 SCENE_HEADERS = {"Cache-Control": "no-cache"}
@@ -72,16 +78,25 @@ class DemoFurniture:
 
 
 def get_furniture_source() -> FurnitureSource:
-    """Furniture for uploaded rooms: the video furniture of rooms bound to a video
+    """Furniture for uploaded rooms: what was extracted from the videos uploaded with the plan
+    (`room/video_jobs.py`); else the video furniture of rooms bound to a video
     (`room/fixtures/real_rooms.json`), read from the furniture data directory, else from the
     published demo cache (#20); the room alone otherwise. Overridden in tests
     (`app.dependency_overrides`)."""
-    return RealRoomFurniture(default_bindings(), furniture_data_dir(), demo_cache_dir())
+    bound = RealRoomFurniture(default_bindings(), furniture_data_dir(), demo_cache_dir())
+    return VideoFurniture(extractions(), furniture_data_dir(), bound)
 
 
 def clear_cache() -> None:
     """Forget assembled scenes (tests, or after the furniture source changes)."""
     _scenes.clear()
+
+
+def forget_plan(plan_id: str) -> None:
+    """Forget the kept scenes of one uploaded plan: its furniture source changed."""
+    with STATE_LOCK:
+        for scene_id in [s for s in _scenes if s.startswith(f"{plan_id}-")]:
+            del _scenes[scene_id]
 
 
 @router.get("/{scene_id}", response_model=RoomScene)
@@ -97,12 +112,16 @@ def get_scene(
     (#12) are known from startup. An assembly that a furniture-source or observer
     failure degraded is returned (room plus warning) but not kept, so the next request retries.
     An assembly that a scale correction overtook is done again from the corrected room, so a
-    response's shell is always served; 409 if that keeps happening.
+    response's shell is always served; 409 if that keeps happening. So is one whose furniture
+    source changed meanwhile (new videos started an extraction job), and one assembled while
+    the plan's furniture was being extracted if that extraction has finished since.
     """
+    jobs = extractions()
     for _ in range(ASSEMBLY_ATTEMPTS):
         kept = _scenes.get(scene_id)
         if kept is not None:
             return _respond(response, kept)
+        generation = jobs.generation(scene_id)
         parsed = find_parsed_scene(scene_id)
         if parsed is not None:
             assembly = assemble_scene(parsed, source)
@@ -116,6 +135,10 @@ def get_scene(
             kept = _scenes.get(scene_id)
             if kept is not None:  # another request kept it meanwhile, perhaps then edited
                 return _respond(response, kept)
+            if jobs.generation(scene_id) != generation:
+                continue  # assembled from a furniture source new videos replaced: again
+            if assembly.pending and not jobs.pending(scene_id):
+                continue  # the extraction finished while this was assembled: again
             current = find_parsed_scene(scene_id)
             if current is None or current.shell_glb_url == assembly.scene.shell_glb_url:
                 if assembly.complete:
@@ -127,13 +150,20 @@ def get_scene(
 
 ASSEMBLY_ATTEMPTS = 3
 OVERTAKEN = (
-    "the room's scale was corrected while it was being assembled, more than once; load it again"
+    "the room changed while it was being assembled (its scale was corrected, or new videos "
+    "changed its furniture), more than once; load it again"
 )
 
 
 def _respond(response: Response, assembly: Assembly) -> RoomScene:
     response.headers.update(SCENE_HEADERS)
     response.headers[WARNINGS_HEADER] = json.dumps(assembly.warnings)
+    if assembly.pending:
+        # Assembled while the furniture was being extracted: ask again later. Decided by the
+        # assembly, so a job that finishes meanwhile still gets one more request.
+        response.headers[PENDING_HEADER] = "true"
+        if (progress := extractions().progress(assembly.scene.scene_id)) is not None:
+            response.headers[PROGRESS_HEADER] = json.dumps(progress)
     return assembly.scene
 
 

@@ -15,10 +15,17 @@ export type {
   LayoutProgress,
   LayoutStreamEvent,
   OptimiseRequest,
+  ParsedFloor,
+  ParsedFloorPlan,
+  ParsedRoom,
   Pose2D,
   ProductOption,
   RoomScene,
   Vec2,
   WallSegment,
 } from '../../../contracts/schema'
-export { MAX_LAYOUT_INSTRUCTION_CHARS } from '../../../contracts/schema'
+export {
+  MAX_FLOOR_PLAN_IMAGES,
+  MAX_LAYOUT_INSTRUCTION_CHARS,
+  MAX_ROOM_VIDEOS,
+} from '../../../contracts/schema'

@@ -12,6 +12,7 @@ from services.reconstruction.demo_assets import router as demo_router
 from services.reconstruction.room.routes import router as floor_plan_router
 from services.reconstruction.room.routes import shell_router
 from services.reconstruction.room.scene_cache import restore_published
+from services.reconstruction.room.video_jobs import PENDING_HEADER, PROGRESS_HEADER
 from services.reconstruction.scenes import WARNINGS_HEADER
 from services.reconstruction.scenes import router as scene_router
 
@@ -21,7 +22,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=[WARNINGS_HEADER],
+    expose_headers=[WARNINGS_HEADER, PENDING_HEADER, PROGRESS_HEADER],
 )
 app.include_router(floor_plan_router)
 app.include_router(shell_router)
