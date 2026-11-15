@@ -38,6 +38,7 @@ from services.reconstruction.room.correct import (
 )
 from services.reconstruction.room.observe import FixedObserver
 from services.reconstruction.room.routes import (
+    STATE_LOCK,
     ScaleCorrectionError,
     correct_floor_scale,
     find_parsed_scene,
@@ -105,8 +106,23 @@ def get_scene(
         else:
             raise HTTPException(404, "unknown scene_id (upload the floor plan first)")
         if assembly.complete:
-            _scenes[scene_id] = assembly
+            assembly = _keep(scene_id, assembly)
     return _respond(response, assembly)
+
+
+def _keep(scene_id: str, assembly: Assembly) -> Assembly:
+    """Keep a fresh assembly unless the slot was filled meanwhile (another GET, then perhaps a
+    user's edit, which must win) or the room was rescaled while it was assembled (it is then
+    returned but not kept, so the next request assembles the corrected room). Returns what to
+    serve."""
+    with STATE_LOCK:
+        kept = _scenes.get(scene_id)
+        if kept is not None:
+            return kept
+        current = find_parsed_scene(scene_id)
+        if current is None or current.shell_glb_url == assembly.scene.shell_glb_url:
+            _scenes[scene_id] = assembly
+        return assembly
 
 
 def _respond(response: Response, assembly: Assembly) -> RoomScene:
@@ -144,14 +160,15 @@ def put_scene(scene_id: str, edit: RoomScene, response: Response) -> RoomScene:
     """
     if edit.scene_id != scene_id:
         raise HTTPException(422, f"body scene_id {edit.scene_id!r} is not {scene_id!r}")
-    assembly = _kept(scene_id)
-    try:
-        scene = apply_pose_edit(assembly.scene, edit)
-    except StaleEdit as exc:
-        raise HTTPException(409, str(exc)) from exc
-    except InvalidEdit as exc:
-        raise HTTPException(422, str(exc)) from exc
-    assembly = _scenes[scene_id] = replace(assembly, scene=scene)
+    with STATE_LOCK:  # the revision check and the write are one step
+        assembly = _kept(scene_id)
+        try:
+            scene = apply_pose_edit(assembly.scene, edit)
+        except StaleEdit as exc:
+            raise HTTPException(409, str(exc)) from exc
+        except InvalidEdit as exc:
+            raise HTTPException(422, str(exc)) from exc
+        assembly = _scenes[scene_id] = replace(assembly, scene=scene)
     return _respond(response, assembly)
 
 
@@ -174,30 +191,32 @@ def correct_scale(
     """
     if scene_id in demo_rooms():
         raise HTTPException(422, "demo rooms have fixed geometry; their scale cannot be corrected")
-    kept = _kept(scene_id)
-    if revision != kept.scene.revision:
-        raise HTTPException(
-            409,
-            f"revision {revision} is not the kept revision {kept.scene.revision}: save or "
-            "reload the scene first",
-        )
-    try:
-        correction = correct_floor_scale(scene_id, wall_id, length_m)
-    except ScaleCorrectionError as exc:
-        raise HTTPException(422, str(exc)) from exc
-    if correction is None:  # the plan went between the lookups
-        raise HTTPException(404, "unknown scene_id (upload the floor plan first)")
-    for sid in correction.scene_ids:
-        old = _scenes.get(sid)
-        room = find_parsed_scene(sid)
-        if old is None or room is None:
-            continue  # assembled from the corrected room when first requested
-        room = room.model_copy(update={"sun_hour": old.scene.sun_hour})
-        result = carry_furniture(old.scene, room)
-        scene = RoomScene.model_validate(
-            result.place_in(room).model_dump() | {"revision": old.scene.revision + 1}
-        )
-        _scenes[sid] = replace(
-            old, scene=scene, records=result.records, warnings=old.warnings + result.warnings
-        )
-    return _respond(response, _scenes[scene_id])
+    with STATE_LOCK:  # the plan and every kept scene of the floor change together
+        kept = _kept(scene_id)
+        if revision != kept.scene.revision:
+            raise HTTPException(
+                409,
+                f"revision {revision} is not the kept revision {kept.scene.revision}: save or "
+                "reload the scene first",
+            )
+        try:
+            correction = correct_floor_scale(scene_id, wall_id, length_m)
+        except ScaleCorrectionError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        if correction is None:  # the plan went between the lookups
+            raise HTTPException(404, "unknown scene_id (upload the floor plan first)")
+        for sid in correction.scene_ids:
+            old = _scenes.get(sid)
+            room = find_parsed_scene(sid)
+            if old is None or room is None:
+                continue  # assembled from the corrected room when first requested
+            room = room.model_copy(update={"sun_hour": old.scene.sun_hour})
+            result = carry_furniture(old.scene, room)
+            scene = RoomScene.model_validate(
+                result.place_in(room).model_dump() | {"revision": old.scene.revision + 1}
+            )
+            _scenes[sid] = replace(
+                old, scene=scene, records=result.records, warnings=old.warnings + result.warnings
+            )
+        assembly = _scenes[scene_id]
+    return _respond(response, assembly)

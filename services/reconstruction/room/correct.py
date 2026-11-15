@@ -32,9 +32,7 @@ from contracts.schema import (
 )
 
 from . import footprint as fp
-from .align import AlignmentResult, align_assets, wall_relative
-from .assemble import assets_of
-from .observe import FixedObserver, PlacementHint
+from .align import MOVED_FLAG_M, AlignmentRecord, AlignmentResult, nearest_fit, wall_relative
 from .openings import conform_openings
 
 MIN_FACTOR, MAX_FACTOR = 0.25, 4.0
@@ -163,11 +161,13 @@ def carry_furniture(old: RoomScene, room: RoomScene) -> AlignmentResult:
 
     Each item's centre keeps its fraction along the wall it stands in front of
     (`align.wall_relative`) and its distance from that wall, so an item flush with a wall stays
-    flush; its yaw is unchanged (a uniform rescale turns no wall). An item in front of no wall
-    has its centre scaled. IDs, meshes, sizes and correction flags are kept; overlaps are left
-    for the audit to report, as the user may have made them. Only an item that the rescale
-    pushes out of the room (a smaller room) is placed again, by the aligner from its wall hint,
-    which moves it to the nearest possible spot and flags `placement` if that is far.
+    flush. An item in front of no wall has its centre scaled. Yaws never change: a uniform
+    rescale turns no wall, and a yaw may be the user's. IDs, meshes, sizes and correction flags
+    are kept; overlaps are left for the audit to report, as the user may have made them.
+
+    An item the rescale pushes out of the room (a smaller room) moves to the nearest spot where
+    it fits with its yaw (`align.nearest_fit`), flagged `placement` if that is more than
+    `MOVED_FLAG_M` away. One that fits nowhere stays where it was carried, flagged.
     """
     factor = _perimeter(room) / _perimeter(old)
     old_frames = {w.id: fp.wall_frame(w) for w in old.walls}
@@ -175,7 +175,8 @@ def carry_furniture(old: RoomScene, room: RoomScene) -> AlignmentResult:
     old_poly = [(p.x, p.z) for p in old.floor_polygon]
     new_poly = [(p.x, p.z) for p in room.floor_polygon]
     carried: list[FurnitureItem] = []
-    stray: list[PlacementHint] = []
+    displaced: list[FurnitureItem] = []
+    records: dict[str, AlignmentRecord] = {}
     for item in old.furniture:
         hint = wall_relative(old, item)
         before = old_frames.get(hint.wall_id) if hint else None
@@ -186,21 +187,43 @@ def carry_furniture(old: RoomScene, room: RoomScene) -> AlignmentResult:
         else:
             x, z = item.pose.x * factor, item.pose.z * factor
         moved = item.model_copy(update={"pose": Pose2D(x=x, z=z, yaw_deg=item.pose.yaw_deg)})
+        records[item.id] = AlignmentRecord(
+            asset_id=item.id,
+            method="kept",
+            wall_id=hint.wall_id if hint else None,
+            notes=["carried over the scale correction along its wall"],
+        )
         was_inside = fp.covered_by(fp.footprint(item.bbox_m, item.pose).points, old_poly)
         inside = fp.covered_by(fp.footprint(moved.bbox_m, moved.pose).points, new_poly)
-        if inside or not was_inside:
-            carried.append(moved)
-        elif hint is not None:
-            stray.append(hint)
-    base = room.model_copy(update={"furniture": carried})
-    result = align_assets(base, assets_of(old), FixedObserver(stray))
-    kept = {item.id for item in carried}
-    for asset_id, record in result.records.items():
-        if asset_id in kept:
-            record.notes = ["carried over the scale correction along its wall"]
+        (carried if inside or not was_inside else displaced).append(moved)
+
+    placed = {item.id: item for item in carried}
+    obstacles = room.model_copy(update={"furniture": carried})
+    for item in displaced:
+        record = records[item.id]
+        fit = nearest_fit(obstacles, item, item.pose)
+        flags = set(item.correction_needed)
+        if fit is None:
+            pose, record.fits = item.pose, False
+            flags.add("placement")
+            record.notes = ["left the room when rescaled and fits nowhere; left where carried"]
         else:
-            record.notes.insert(0, "left the room when rescaled; placed again from its wall")
-    return result
+            pose, moved_m = fit
+            record.moved_m = round(moved_m, 3)
+            if moved_m > MOVED_FLAG_M:
+                flags.add("placement")
+            record.notes = [f"left the room when rescaled; moved {moved_m:.2f} m, yaw kept"]
+        order = ("dimensions", "placement", "orientation")
+        final = item.model_copy(
+            update={"pose": pose, "correction_needed": [c for c in order if c in flags]}
+        )
+        placed[item.id] = final
+        obstacles = obstacles.model_copy(update={"furniture": [*obstacles.furniture, final]})
+    return AlignmentResult(
+        items=[placed[item.id] for item in old.furniture],
+        records={item.id: records[item.id] for item in old.furniture},
+        warnings=[],
+    )
 
 
 # --- placement --------------------------------------------------------------------------------
@@ -242,6 +265,8 @@ def apply_pose_edit(kept: RoomScene, edit: RoomScene) -> RoomScene:
         ]
         if fields:
             raise InvalidEdit(f"{item.id}: only the pose can be corrected, not {', '.join(fields)}")
+        if not all(map(math.isfinite, (item.pose.x, item.pose.z, item.pose.yaw_deg))):
+            raise InvalidEdit(f"{item.id}: the pose must be finite numbers")
         if added := sorted(set(item.correction_needed) - set(current.correction_needed)):
             raise InvalidEdit(f"{item.id}: cannot add correction flags ({', '.join(added)})")
         cleared = set(current.correction_needed) - set(item.correction_needed)

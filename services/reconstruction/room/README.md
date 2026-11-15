@@ -116,7 +116,8 @@ flags and the audit reports until the chair is moved.
   a new shell URL (`<scene_id>.<digest>.glb`). `routes.correct_floor_scale` takes the factor
   against the original parse (`routes._originals`), so corrections never compound.
 - `carry_furniture(old, room)`: furniture keeps its fraction along its wall, its distance
-  from it and its yaw. Only items pushed out of a smaller room go back through the aligner.
+  from it and its yaw. An item pushed out of a smaller room moves to the nearest spot where it
+  fits with the same yaw (`align.nearest_fit`).
 
 See [architecture](../../../docs/architecture.md#corrections-11) for the rules and handoffs.
 

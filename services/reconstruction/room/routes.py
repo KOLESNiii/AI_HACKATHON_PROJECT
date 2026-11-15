@@ -9,6 +9,7 @@ correction is made from the parse and correcting back restores it exactly.
 from __future__ import annotations
 
 import math
+import threading
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -30,6 +31,10 @@ _plans: dict[str, ParsedFloorPlan] = {}
 """The plans as served: corrected where the user corrected a floor's scale."""
 _originals: dict[str, ParsedFloorPlan] = {}
 """The plans as parsed."""
+STATE_LOCK = threading.Lock()
+"""Held for every check-then-write of the plan store and of the kept scenes (`scenes.py`):
+sync routes run in a thread pool, so a revision check and its write must not interleave with
+another request's. Never held during parsing or furniture assembly."""
 
 
 def get_annotator() -> PlanAnnotator:
@@ -58,8 +63,11 @@ async def parse_plan(
         plan = await run_in_threadpool(parse_floor_plan, images, annotator)
     except UnreadableImage as exc:
         raise HTTPException(422, str(exc)) from exc
-    _plans[plan.plan_id] = _originals[plan.plan_id] = plan
-    return plan
+    with STATE_LOCK:
+        # A duplicate upload parsed in parallel must not replace a plan corrected meanwhile.
+        if plan.plan_id not in _plans:
+            _plans[plan.plan_id] = _originals[plan.plan_id] = plan
+        return _plans[plan.plan_id]
 
 
 @router.get("/{plan_id}", response_model=ParsedFloorPlan)
@@ -124,7 +132,7 @@ def correct_floor_scale(scene_id: str, wall_id: str, length_m: float) -> ScaleCo
     on the floor is rescaled (one drawing, one scale, one frame), and the plan's warnings say
     so, replacing an earlier correction note for that floor. None for an unknown scene; raises
     `ScaleCorrectionError` for an unknown wall or a factor outside
-    [`correct.MIN_FACTOR`, `correct.MAX_FACTOR`].
+    [`correct.MIN_FACTOR`, `correct.MAX_FACTOR`]. Callers hold `STATE_LOCK`.
     """
     for plan_id, original in _originals.items():
         for f, floor in enumerate(original.floors):
@@ -154,7 +162,8 @@ def correct_floor_scale(scene_id: str, wall_id: str, length_m: float) -> ScaleCo
 
 def clear_corrections() -> None:
     """Serve every plan as parsed again (tests)."""
-    _plans.update(_originals)
+    with STATE_LOCK:
+        _plans.update(_originals)
 
 
 @shell_router.get(

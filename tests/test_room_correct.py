@@ -155,9 +155,36 @@ def test_an_item_pushed_out_of_a_smaller_room_is_placed_again() -> None:
     result = carry_furniture(old, new)
     (moved,) = result.items
     assert inside(new, moved)
-    assert result.records["chest"].method == "hint"  # placed again, not kept
-    assert result.records["chest"].notes[0].startswith("left the room")
+    record = result.records["chest"]
+    assert record.notes[0].startswith("left the room") and 0 < record.moved_m <= 0.3
     assert moved.pose.yaw_deg == 0.0 and moved.correction_needed == middle.correction_needed
+
+
+def test_a_displaced_item_keeps_the_users_rotation() -> None:
+    """PR #59 review: a turned item pushed out of a smaller room kept a wall-aligned yaw."""
+    before = room()
+    turned = item("chest", 3.0, 2.0, 30.0, 0.5, 0.5).model_copy(update={"correction_needed": []})
+    beside = item("box", 1.5, 0.3, 0.0, 0.6, 0.6)  # flush with the north wall: stays inside
+    old = before.model_copy(update={"furniture": [turned, beside]})
+    new = rescale_room(before, 0.5)
+    result = carry_furniture(old, new)
+    chest, box = result.items
+    assert chest.pose.yaw_deg == 30.0  # the user's, not the wall's
+    assert inside(new, chest)
+    parts = [fp.occupied(i.bbox_m, i.collision_parts, i.pose) for i in (chest, box)]
+    assert not fp.any_overlap(*parts)
+    assert "orientation" not in chest.correction_needed  # nothing about its front is new
+    assert result.records["chest"].moved_m > 0 and result.records["box"].moved_m == 0
+
+
+def test_an_item_that_fits_nowhere_stays_where_carried_and_is_flagged() -> None:
+    before = room()
+    huge = item("bed", 3.0, 2.0, 0.0, 3.5, 2.5).model_copy(update={"correction_needed": []})
+    old = before.model_copy(update={"furniture": [huge]})
+    result = carry_furniture(old, rescale_room(before, 0.5))  # 3 x 2 m: a 3.5 x 2.5 m bed
+    (bed,) = result.items
+    assert bed.correction_needed == ["placement"] and bed.pose.yaw_deg == 0.0
+    assert result.records["bed"].fits is False
 
 
 def test_a_pose_edit_keeps_poses_only() -> None:
@@ -186,6 +213,11 @@ def test_a_pose_edit_keeps_poses_only() -> None:
         apply_pose_edit(kept, edit.model_copy(update={"walls": rescale_room(kept, 2).walls}))
     with pytest.raises(InvalidEdit, match="twice"):
         apply_pose_edit(kept, edit.model_copy(update={"furniture": [turned, turned]}))
+    for bad in ({"x": math.nan}, {"z": math.inf}, {"yaw_deg": -math.inf}):
+        pose = turned.pose.model_copy(update=bad)
+        nan_edit = edit.model_copy(update={"furniture": [turned.model_copy(update={"pose": pose})]})
+        with pytest.raises(InvalidEdit, match="finite"):
+            apply_pose_edit(kept, nan_edit)
     with pytest.raises(InvalidEdit, match="is_proxy"):
         proxy = turned.model_copy(update={"is_proxy": True})
         apply_pose_edit(kept, edit.model_copy(update={"furniture": [proxy]}))

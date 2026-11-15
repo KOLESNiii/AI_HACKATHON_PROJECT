@@ -348,9 +348,10 @@ Pose correction rules:
   shell URL, north) differs from the kept scene, i.e. it was edited before a scale correction.
 - **422** for an unknown item, an item changed in anything but `pose`, or an added correction
   flag. Asset identity (ID, mesh URL, size, proxy state) cannot change through an edit.
+- **422** for a non-finite pose (`NaN`, `Infinity`), before anything is kept.
 - Moving an item clears its `placement` flag and turning it clears `orientation`; the editor
   may also clear a flag the user confirmed. Items left out keep their pose. Poses are not
-  checked: the audit reports problems.
+  checked against the room: the audit reports problems.
 
 Scale correction:
 
@@ -365,10 +366,18 @@ Scale correction:
   the superseded URL is 404.
 - Every kept scene of the floor carries its furniture over and goes up one revision. Each
   item keeps its fraction along the wall it stands in front of, its distance from that wall
-  and its yaw; sizes do not change (they come from the video, not the plan). Only an item the
-  rescale pushes out of a smaller room is placed again, by the aligner from that wall.
+  and its yaw; sizes do not change (they come from the video, not the plan). An item the
+  rescale pushes out of a smaller room moves to the nearest spot where it fits with the same
+  yaw (`align.nearest_fit`), flagged `placement` if that is more than 0.3 m away; one that fits
+  nowhere stays where it was carried, flagged.
 - **422** for a demo room (fixture geometry), an unknown wall, or a factor outside 0.25-4;
   **409** when the scene is not kept, or `revision` is not the kept one (save edits first).
+
+Concurrency: sync routes run in a thread pool, so every check-then-write of the plan store and
+the kept scenes holds one lock (`routes.STATE_LOCK`): a PUT's revision check and write, a whole
+scale correction, and a GET's cache write. Assembly itself runs outside it. A GET never
+replaces a kept scene (a slow assembly that finishes after a save returns the saved scene), and
+an assembly overtaken by a scale correction is returned but not kept.
 
 **Handoff to Dev 3 (#25, #26).** PUT the scene when a drag or rotation ends (the revision the
 editor already bumps). To correct scale, PUT first, then POST with the current revision and

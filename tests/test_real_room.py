@@ -8,6 +8,8 @@ import json
 import math
 import shutil
 import tempfile
+import threading
+import time
 from collections.abc import Collection, Iterator
 from pathlib import Path
 
@@ -17,6 +19,8 @@ pytest.importorskip("cv2")
 pytest.importorskip("shapely")
 pytest.importorskip("trimesh")
 
+from fastapi import HTTPException  # noqa: E402
+from fastapi import Response as FastAPIResponse  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from httpx import Response  # noqa: E402
 
@@ -48,7 +52,7 @@ from services.reconstruction.room.annotate import (  # noqa: E402
     NullAnnotator,
     PlanAnnotations,
 )
-from services.reconstruction.room.assemble import assemble_scene  # noqa: E402
+from services.reconstruction.room.assemble import SceneFurniture, assemble_scene  # noqa: E402
 from services.reconstruction.room.correct import rescale_room  # noqa: E402
 from services.reconstruction.room.routes import get_annotator  # noqa: E402
 from services.reconstruction.room.video_furniture import (  # noqa: E402
@@ -577,6 +581,125 @@ def test_an_added_correction_flag_is_refused(client: TestClient, data_dir: Path)
     readded = edit.model_copy(update={"furniture": [table], "revision": 2})
     res = client.put(f"/scenes/{BINDING.scene_id}", json=readded.model_dump(mode="json"))
     assert res.status_code == 422 and "cannot add" in res.text
+
+
+def test_a_non_finite_pose_is_refused_and_nothing_changes(
+    client: TestClient, data_dir: Path
+) -> None:
+    """PR #59 review: `"NaN"` was saved and came back as `null`, an invalid scene."""
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    for field, value in (("x", "NaN"), ("z", "-Infinity"), ("yaw_deg", "Infinity")):
+        body = _moved(scene, CHAIR, 4.0, 8.6).model_dump(mode="json")
+        next(i for i in body["furniture"] if i["id"] == CHAIR)["pose"][field] = value
+        res = client.put(f"/scenes/{BINDING.scene_id}", json=body)
+        assert res.status_code == 422 and "finite" in res.text, (field, res.text)
+    again, _ = _scene(client)  # still a valid scene, unchanged
+    assert again == scene
+
+
+def _save_in_thread(edit: RoomScene, outcomes: dict[int, int]) -> threading.Thread:
+    def save() -> None:
+        try:
+            scenes.put_scene(edit.scene_id, edit, FastAPIResponse())
+            outcomes[edit.revision] = 200
+        except HTTPException as exc:
+            outcomes[edit.revision] = exc.status_code
+
+    thread = threading.Thread(target=save)
+    thread.start()
+    return thread
+
+
+def test_overlapping_saves_keep_the_newest_revision(
+    client: TestClient, data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """PR #59 review: two overlapping PUTs both checked against revision 0 and the older one,
+    finishing last, replaced the newer one."""
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    real = scenes.apply_pose_edit
+
+    def slow(kept: RoomScene, edit: RoomScene) -> RoomScene:
+        saved = real(kept, edit)  # checked against the kept revision
+        if edit.revision == 1:
+            time.sleep(0.3)  # still in flight when revision 2 arrives
+        return saved
+
+    monkeypatch.setattr(scenes, "apply_pose_edit", slow)
+    first = _moved(scene, CHAIR, 4.0, 8.6)
+    # What the editor holds after the first save: the chair's placement is confirmed.
+    chair = _item(first, CHAIR)
+    flags = [c for c in chair.correction_needed if c != "placement"]
+    confirmed = [
+        chair.model_copy(update={"correction_needed": flags}) if item.id == CHAIR else item
+        for item in first.furniture
+    ]
+    second = _moved(first.model_copy(update={"furniture": confirmed}), CHAIR, 4.0, 8.4)
+    outcomes: dict[int, int] = {}
+    a = _save_in_thread(first, outcomes)
+    time.sleep(0.1)
+    b = _save_in_thread(second, outcomes)
+    a.join(5)
+    b.join(5)
+    assert outcomes == {1: 200, 2: 200}
+    kept, _ = _scene(client)
+    assert kept.revision == 2 and _item(kept, CHAIR).pose.z == 8.4
+
+
+class _HeldSource:
+    """A furniture source that waits until released, like a slow pipeline read."""
+
+    def __init__(self) -> None:
+        self.started, self.release = threading.Event(), threading.Event()
+        self.inner = scenes.get_furniture_source()
+
+    def furniture_for(self, room: RoomScene) -> SceneFurniture:
+        self.started.set()
+        assert self.release.wait(5)
+        return self.inner.furniture_for(room)
+
+
+def _get_in_thread(scene_id: str, source: _HeldSource, out: list[RoomScene]) -> threading.Thread:
+    thread = threading.Thread(
+        target=lambda: out.append(scenes.get_scene(scene_id, FastAPIResponse(), source))
+    )
+    thread.start()
+    assert source.started.wait(5)
+    return thread
+
+
+def test_a_slow_assembly_never_replaces_a_saved_edit(client: TestClient, data_dir: Path) -> None:
+    register_reviewed_items(data_dir)
+    held, out = _HeldSource(), []
+    slow = _get_in_thread(BINDING.scene_id, held, out)
+    scene, _ = _scene(client)  # a faster request assembles and keeps the scene
+    saved = _put(client, _moved(scene, CHAIR, 4.0, 8.6))
+    held.release.set()
+    slow.join(5)
+    kept, _ = _scene(client)
+    assert kept == saved and kept.revision == 1
+    assert out == [saved]  # the slow request is answered with the kept scene too
+
+
+def test_an_assembly_overtaken_by_a_scale_correction_is_not_kept(
+    client: TestClient, data_dir: Path
+) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    neighbour_id = f"{PLAN_ID}-floor-0-room-0"
+    held, out = _HeldSource(), []
+    slow = _get_in_thread(neighbour_id, held, out)
+    assert _rescale(client, "w16", 4.8, scene.revision).status_code == 200
+    held.release.set()
+    slow.join(5)
+    (stale,) = out
+    assert neighbour_id not in scenes._scenes  # assembled from the room before the correction
+    fresh = RoomScene.model_validate(client.get(f"/scenes/{neighbour_id}").json())
+    assert fresh.shell_glb_url != stale.shell_glb_url
+    factor = 4.8 / BINDING.walls_m["w16"]
+    for wall_id, length in _walls(stale).items():
+        assert _walls(fresh)[wall_id] == pytest.approx(length * factor, abs=0.002)
 
 
 def test_corrections_need_a_settled_scene(client: TestClient, data_dir: Path) -> None:

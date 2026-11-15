@@ -251,3 +251,10 @@
   extracted), and the scale correction needs the kept revision, so unsaved edits are never
   dropped. Corrected shells get a new URL, keeping shell files immutable.
 - Kept in memory with the plan and scene; persistence across restarts is #12.
+- PR #59 review: one lock (`routes.STATE_LOCK`) serialises every check-then-write of plans and
+  kept scenes, so an older in-flight save can no longer replace a newer revision; a GET only
+  fills an empty slot and does not keep an assembly whose room was rescaled meanwhile.
+- PR #59 review: an item pushed out by a rescale keeps the user's yaw; only its position gives
+  way (`align.nearest_fit`), and no orientation flag is added.
+- PR #59 review: non-finite poses are refused (422); `Pose2D` itself accepts them, and they
+  would come back as `null`, an invalid scene.
