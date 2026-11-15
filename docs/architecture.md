@@ -192,6 +192,22 @@ for Dev 1 to mount at `/assets`; browser URLs include `/api/reconstruction`. Thi
 not mount the route or change shared schemas/manifests. `reconstruct_items` provides local
 JSON/Markdown reports; see the asset README for configuration and retry commands.
 
+## Furniture normalisation (#17, PR #54 review)
+
+`assets/normalisation.py` fits raw meshes to metric bounds before serving them. Known
+dimensions are matched exactly; unknown dimensions use the category height and require
+correction. If any estimated side exceeds 3 times its category size, normalisation refuses
+the mesh and reconstruction retains its proxy with a warning. Supplying dimensions allows
+the stored raw mesh to be retried offline. Unused vertices are removed before fitting;
+providers without a known front convention request an orientation correction.
+
+**Handoff to Dev 4:** desk, table and chair proxies now use the same category-template
+collision parts as normalised assets, rather than a solid bounding box. The audit should
+consume these parts to preserve nesting and walking space. Other categories retain the
+solid-box fallback. Shared collision contracts are unchanged. Pillow in the reconstruction
+extra preserves textures; it was approved in the #17 design and changes the root manifest
+and lockfile in PR #54. This review follow-up adds no dependencies.
+
 ## Scene assembly route (#9)
 
 `GET /scenes/{scene_id}` on port 8001 (`services/reconstruction/scenes.py`) returns one room as a
