@@ -1,5 +1,6 @@
 """Floor-plan routes. Parsed plans are cached in memory by `plan_id` (derived from the image
-bytes), so re-uploading the same plan is free and rooms can be fetched one at a time.
+bytes), so re-uploading the same plan is free and rooms can be fetched one at a time. Plans
+published in the scene cache (#12, `scene_cache.py`) are in that store from startup.
 
 A floor whose scale the user corrected (#11: `prepare_floor_scale`, then `publish`) is served
 corrected: by these routes, by re-upload and to `/scenes`. The original parse is kept beside
@@ -87,6 +88,19 @@ def get_room(plan_id: str, room_id: str) -> RoomScene:
             if room.room_id == room_id:
                 return room.scene
     raise HTTPException(404, "unknown room_id")
+
+
+def restore_plan(plan: ParsedFloorPlan) -> bool:
+    """Serve a published plan (`scene_cache.py`, #12) as if it had been uploaded and parsed.
+
+    A plan already served under that ID stays: an upload, and any scale correction made to
+    it, is never replaced. Returns whether the plan was added.
+    """
+    with STATE_LOCK:
+        if plan.plan_id in _plans:
+            return False
+        _plans[plan.plan_id] = _originals[plan.plan_id] = plan
+        return True
 
 
 # --- room shells ------------------------------------------------------------------------------

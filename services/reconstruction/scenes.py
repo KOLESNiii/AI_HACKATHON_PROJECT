@@ -93,7 +93,8 @@ def get_scene(
     """One room with its furniture placed, ready for the editor and `POST /audit`.
 
     Assembled on first request and kept in memory. Uploaded rooms are kept only while their
-    plan is (upload it again after a restart). An assembly that a furniture-source or observer
+    plan is (upload it again after a restart); rooms of a plan published in the scene cache
+    (#12) are known from startup. An assembly that a furniture-source or observer
     failure degraded is returned (room plus warning) but not kept, so the next request retries.
     An assembly that a scale correction overtook is done again from the corrected room, so a
     response's shell is always served; 409 if that keeps happening.
