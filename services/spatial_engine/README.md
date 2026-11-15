@@ -417,5 +417,5 @@ valid locks. Brightness runs only for the brighter goal; its geometry checks all
 5 mm of reconstruction rounding. Provider clients are reused by configuration.
 
 The additive Python/TypeScript contract changes in PR #49 still require explicit
-team sign-off, particularly from frontend, before merge (review 5907503436).
+team sign-off, particularly from frontend, before merge (the review by bananadado on 14 November 2026).
 This implementation follow-up does not constitute that sign-off.
