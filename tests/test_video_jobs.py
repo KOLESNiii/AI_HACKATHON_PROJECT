@@ -16,24 +16,32 @@ pytest.importorskip("cv2")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from contracts.schema import RoomScene  # noqa: E402
+from contracts.schema import BBoxM, ParsedFloorPlan, RoomScene  # noqa: E402
+from services.reconstruction.assets.proxies import KnownDimensions  # noqa: E402
 from services.reconstruction.main import app  # noqa: E402
 from services.reconstruction.room import video_jobs  # noqa: E402
 from services.reconstruction.room.annotate import FixedAnnotator, PlanAnnotations  # noqa: E402
 from services.reconstruction.room.assemble import NoFurniture, SceneFurniture, assets_of  # noqa: E402
 from services.reconstruction.room.routes import get_annotator, get_upload_dir  # noqa: E402
+from services.reconstruction.room.sizing import Sizes  # noqa: E402
 from services.reconstruction.room.video_jobs import (  # noqa: E402
     PENDING_HEADER,
     PROGRESS_HEADER,
     ExtractionError,
     ExtractionJob,
     Extractions,
+    RoomMeshes,
+    RoomWork,
     VideoFurniture,
 )
 from services.reconstruction.scenes import clear_cache  # noqa: E402
 from tests.test_room_parse import _label, _png, single_room  # noqa: E402
 
 MOCK_SCENE = Path(__file__).parents[1] / "contracts" / "mock_room" / "mock_scene.json"
+CACHED_PLAN = (
+    Path(__file__).parents[1]
+    / "services/reconstruction/room/fixtures/scene_cache/plan-83a12322e933.json"
+)
 
 
 def _wait(job: ExtractionJob, timeout: float = 5) -> None:
@@ -47,12 +55,12 @@ def test_jobs_run_once_per_plan_and_videos_and_retry_after_failure(tmp_path: Pat
     runs: list[str] = []
     fail = True
 
-    def run(job: ExtractionJob, data_dir: Path) -> None:
+    def prepare(job: ExtractionJob, data_dir: Path) -> None:
         runs.append(job.namespace)
         if fail:
             raise ExtractionError("no furniture was found in the videos")
 
-    jobs = Extractions(lambda: tmp_path, run=run)
+    jobs = Extractions(lambda: tmp_path, prepare=prepare)
     a = [tmp_path / "aaaa.mp4"]
     assert jobs.start("plan-1", a)
     job = jobs.for_scene("plan-1-floor-0-room-0")
@@ -76,10 +84,10 @@ def test_jobs_run_once_per_plan_and_videos_and_retry_after_failure(tmp_path: Pat
 
 
 def test_unexpected_errors_are_reported_without_details(tmp_path: Path) -> None:
-    def run(job: ExtractionJob, data_dir: Path) -> None:
+    def prepare(job: ExtractionJob, data_dir: Path) -> None:
         raise OSError("/secret/path")
 
-    jobs = Extractions(lambda: tmp_path, run=run)
+    jobs = Extractions(lambda: tmp_path, prepare=prepare)
     jobs.start("plan-1", [tmp_path / "a.mp4"])
     job = jobs.for_scene("plan-1-r")
     assert job is not None
@@ -91,7 +99,7 @@ def test_live_run_needs_a_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.delenv("FAL_KEY", raising=False)
     job = ExtractionJob("plan-1", "upload-plan-1-x", [tmp_path / "a.mp4"])
     with pytest.raises(ExtractionError, match="FAL_KEY"):
-        video_jobs.run_live(job, tmp_path)
+        video_jobs.prepare_live(job, tmp_path)
 
 
 class _Fallback:
@@ -105,40 +113,190 @@ def _room(scene_id: str = "plan-1-floor-0-room-0") -> RoomScene:
     )
 
 
-def test_video_furniture_by_job_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    jobs = Extractions(lambda: tmp_path, run=lambda job, d: None)
+def _work(room_id: str) -> RoomWork:
+    return RoomWork(room_id, f"Room {room_id}", f"ns-{room_id}", [])
+
+
+def _rooms(*room_ids: str) -> Callable[[ExtractionJob, Path], None]:
+    def prepare(job: ExtractionJob, data_dir: Path) -> None:
+        job.rooms = {r: _work(r) for r in room_ids}
+
+    return prepare
+
+
+def _until(check: Callable[[], bool], timeout: float = 5) -> None:
+    deadline = time.monotonic() + timeout
+    while not check() and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert check(), "condition not reached in time"
+
+
+def test_rooms_are_searched_at_once_and_fail_alone(tmp_path: Path) -> None:
+    rooms = ("floor-0-room-0", "floor-0-room-1", "floor-0-room-2")
+    together = threading.Barrier(len(rooms), timeout=5)
+
+    def find(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
+        together.wait()  # breaks (and fails the room) unless every room is searched at once
+        if work.room_id == "floor-0-room-2":
+            raise ExtractionError("the vision model could not read this room's frames")
+        work.objects = [f"vid-{work.room_id[-1]}"]
+
+    jobs = Extractions(lambda: tmp_path, prepare=_rooms(*rooms), find=find)
+    jobs.start("plan-1", [tmp_path / "a.mp4"])
+    job = jobs.for_scene("plan-1-floor-0-room-0")
+    assert job is not None
+    _wait(job)
+    assert job.state == "done"
+    assert [job.rooms[r].state for r in rooms] == ["ready", "ready", "failed"]
+    assert job.rooms["floor-0-room-2"].error == "the vision model could not read this room's frames"
+
+
+def test_every_room_failing_fails_the_job(tmp_path: Path) -> None:
+    def find(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
+        raise ExtractionError("the vision model could not read this room's frames")
+
+    jobs = Extractions(lambda: tmp_path, prepare=_rooms("r0", "r1"), find=find)
+    jobs.start("plan-1", [tmp_path / "a.mp4"])
+    job = jobs.for_scene("plan-1-r0")
+    assert job is not None
+    _wait(job)
+    assert job.state == "failed" and job.error is not None
+    assert job.error.startswith("no room could be searched")
+
+
+def test_a_room_is_built_while_other_rooms_are_still_searched(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    slow_room = threading.Event()
+    built: list[str] = []
+
+    def find(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
+        if work.room_id == "floor-0-room-1":
+            slow_room.wait(5)
+        work.objects = ["vid-000001"]
+
+    finish_build = threading.Event()
+
+    def mesh(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
+        built.append(work.room_id)
+        finish_build.wait(5)
+
+    rooms = _rooms("floor-0-room-0", "floor-0-room-1")
+    jobs = Extractions(lambda: tmp_path, prepare=rooms, find=find, mesh=mesh)
+    source = VideoFurniture(jobs, tmp_path, _Fallback())
+    jobs.start("plan-1", [tmp_path / "a.mp4"])
+    job = jobs.for_scene("plan-1-floor-0-room-0")
+    assert job is not None
+    _until(lambda: job.rooms_known and job.rooms["floor-0-room-0"].state == "ready")
+    assert job.rooms["floor-0-room-1"].state == "finding"
+    progress = jobs.progress("plan-1-floor-0-room-1")
+    assert progress is not None and progress["step"] == 3
+    assert "finding furniture in Room floor-0-room-1 (1 of 2 rooms done)" == progress["stage"]
+
+    first = source.furniture_for(_room("plan-1-floor-0-room-0"))
+    assert first.pending  # its 3D models are now being built
+    _until(lambda: built == ["floor-0-room-0"])
+    assert job.state == "running" and job.rooms["floor-0-room-1"].state == "finding"
+    slow_room.set()
+    finish_build.set()
+    _wait(job)
+    assert job.state == "done"
+
+
+def test_video_furniture_by_room_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    release = threading.Event()
+    meshed: list[tuple[str, list[str]]] = []
+
+    def mesh(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
+        release.wait(5)
+        meshed.append((work.room_id, list(work.objects)))
+
+    jobs = Extractions(lambda: tmp_path, mesh=mesh)
     source = VideoFurniture(jobs, tmp_path, _Fallback())
     assert source.furniture_for(_room()).warnings == ["fallback"]  # no videos for this plan
 
     job = ExtractionJob("plan-1", "upload-plan-1-x", [])
     jobs._jobs["plan-1"] = job
-    running = source.furniture_for(_room())
-    assert running.assets == [] and not running.complete
+    running = source.furniture_for(_room())  # steps 1-2: rooms not known yet
+    assert running.assets == [] and not running.complete and running.pending
     assert "Extracting furniture" in running.warnings[0]
+    assert jobs.pending("plan-1-floor-0-room-0")
 
     job.state, job.error = "failed", "FAL_KEY is not set on the reconstruction service"
     failed = source.furniture_for(_room())
     assert failed.warnings[0].startswith("Furniture could not be extracted")
     assert failed.warnings[1:] == ["fallback"]
+    assert not jobs.pending("plan-1-floor-0-room-0")
 
-    furnished = RoomScene.model_validate_json(MOCK_SCENE.read_text())
-    assets = assets_of(furnished)
-    items = [SimpleNamespace(asset=a, proxy=a) for a in assets]
+    assets = assets_of(RoomScene.model_validate_json(MOCK_SCENE.read_text()))
+    by_id = {a.id: a for a in assets}
+    read: list[tuple[str, list[str] | None]] = []
+
+    sized: list[object] = []
+
+    def reconstruct(  # type: ignore[no-untyped-def]
+        scene_id: str, data_dir: Path, object_ids: list[str] | None = None, dimensions=None
+    ):
+        read.append((scene_id, object_ids))
+        sized.append(dimensions)
+        items = [SimpleNamespace(asset=by_id[o], proxy=by_id[o]) for o in object_ids or []]
+        return SimpleNamespace(items=items, warnings=[])
+
     monkeypatch.setattr(
-        "services.reconstruction.assets.reconstruction.reconstruct_furniture",
-        lambda scene_id, data_dir: SimpleNamespace(items=items, warnings=[]),
+        "services.reconstruction.assets.reconstruction.reconstruct_furniture", reconstruct
     )
-    job.state = "done"
+    mine = assets[0].id
+    job.state, job.error, job.rooms_known = "running", None, True
+    job.rooms = {
+        "floor-0-room-0": _work("floor-0-room-0"),
+        "floor-0-room-1": _work("floor-0-room-1"),
+        "floor-0-room-2": _work("floor-0-room-2"),
+        "floor-0-room-3": _work("floor-0-room-3"),
+    }
+    job.rooms["floor-0-room-0"].state = "ready"
+    job.rooms["floor-0-room-0"].objects = [mine]
+    measured = KnownDimensions(bbox_m=BBoxM(width=1.5, height=0.5, depth=2.0), source="estimated")
+    job.rooms["floor-0-room-0"].dimensions = {mine: measured}
+    job.rooms["floor-0-room-1"].state = "finding"
+    job.rooms["floor-0-room-2"].state, job.rooms["floor-0-room-2"].error = "failed", "no luck"
+    job.rooms["floor-0-room-3"].state = "ready"  # searched, nothing found
+
+    unseen = source.furniture_for(_room("plan-1-floor-0-room-7"))  # no frame matched to it
+    assert unseen.complete and unseen.warnings[0] == video_jobs.NOTHING_SEEN
+    empty = source.furniture_for(_room("plan-1-floor-0-room-3"))
+    assert empty.complete and empty.warnings[0] == video_jobs.NOTHING_SEEN
+    searching = source.furniture_for(_room("plan-1-floor-0-room-1"))
+    assert searching.pending and "finding furniture in" in searching.warnings[0]
+    broken = source.furniture_for(_room("plan-1-floor-0-room-2"))
+    assert "no luck" in broken.warnings[0] and broken.warnings[1:] == ["fallback"]
+
+    # The first request for a ready room queues its 3D models; pending until they are built.
+    queued = source.furniture_for(_room())
+    assert queued.pending and not queued.complete and queued.assets == []
+    progress = jobs.progress("plan-1-floor-0-room-0")
+    assert progress is not None and progress["step"] == 4
+    release.set()
+    _until(
+        lambda: (
+            job.rooms["floor-0-room-0"].meshes is not None
+            and job.rooms["floor-0-room-0"].meshes.state == "done"
+        )
+    )
+    assert meshed == [("floor-0-room-0", [mine])]
+
     done = source.furniture_for(_room())
-    assert [a.id for a in done.assets] == [a.id for a in assets]
-    assert done.complete
+    assert [a.id for a in done.assets] == [mine]  # only this room's items
+    assert read == [("ns-floor-0-room-0", [mine])]  # from this room's own namespace
+    assert sized == [{mine: measured}]  # sized as measured against the plan
+    assert done.complete and not done.pending
     assert type(done.observer).__name__ == "FalVisionObserver"
+    assert not jobs.pending("plan-1-floor-0-room-0")
 
 
 @pytest.fixture()
 def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     release = threading.Event()
-    jobs = Extractions(lambda: tmp_path / "furniture", run=lambda job, d: release.wait(5))
+    jobs = Extractions(lambda: tmp_path / "furniture", prepare=lambda job, d: release.wait(5))
     monkeypatch.setattr(video_jobs, "EXTRACTIONS", jobs)
     ann = PlanAnnotations(rooms=[_label("Studio", 400, 350, 4.0, 3.0)])
     app.dependency_overrides[get_annotator] = lambda: FixedAnnotator(ann)
@@ -165,7 +323,7 @@ def test_rooms_of_a_plan_with_videos_wait_for_extraction(client: TestClient) -> 
     assert pending.status_code == 200
     assert pending.headers.get(PENDING_HEADER) == "true"
     progress = json.loads(pending.headers[PROGRESS_HEADER])
-    assert progress["steps"] == 3 and progress["elapsed_s"] >= 0
+    assert progress["steps"] == 4 and progress["elapsed_s"] >= 0
     assert isinstance(progress["stage"], str)
     assert "Extracting furniture" in json.loads(pending.headers["X-Reconstruction-Warnings"])[0]
     assert pending.json()["furniture"] == []
@@ -209,7 +367,7 @@ class _ScriptedSource:
 def plan_room(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[TestClient, str]]:
     """A parsed room and a client; extraction jobs run a no-op, never fal."""
     monkeypatch.setattr(
-        video_jobs, "EXTRACTIONS", Extractions(lambda: tmp_path, run=lambda job, d: None)
+        video_jobs, "EXTRACTIONS", Extractions(lambda: tmp_path, prepare=lambda job, d: None)
     )
     ann = PlanAnnotations(rooms=[_label("Studio", 400, 350, 4.0, 3.0)])
     app.dependency_overrides[get_annotator] = lambda: FixedAnnotator(ann)
@@ -291,3 +449,25 @@ def test_a_room_assembled_from_a_replaced_source_is_not_kept(
     from services.reconstruction import scenes
 
     assert scenes._scenes[scene_id].warnings[-1] == "new source"
+
+
+def test_a_room_is_measured_against_its_own_plan_room(tmp_path: Path) -> None:
+    plan = ParsedFloorPlan.model_validate(json.loads(CACHED_PLAN.read_text())["plan"])
+    room = plan.floors[0].rooms[0]
+    job = ExtractionJob(plan.plan_id, "ns", [], plan=plan)
+    work = RoomWork(room.room_id, room.name, "ns-room", [])
+    work.meshes = RoomMeshes(["vid-000001"], state="running")
+    asset = assets_of(RoomScene.model_validate_json(MOCK_SCENE.read_text()))[0]
+    measured = KnownDimensions(bbox_m=BBoxM(width=1.5, height=0.5, depth=2.0), source="estimated")
+    seen: list[str] = []
+
+    class Estimator:
+        def estimate(self, scene, assets, frames, masks=None):  # type: ignore[no-untyped-def]
+            seen.append(scene.scene_id)
+            assert work.meshes is not None and "against the plan" in work.meshes.phase
+            return Sizes({asset.id: measured}, ["sized from their category: x"])
+
+    video_jobs.size_room(job, work, [asset], tmp_path, estimator=Estimator())  # type: ignore[arg-type]
+    assert seen == [room.scene.scene_id]
+    assert work.dimensions == {asset.id: measured}
+    assert work.warnings == ["sized from their category: x"]
