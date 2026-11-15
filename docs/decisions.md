@@ -378,7 +378,9 @@
   the reason, never a partial room.
 - A publish never takes the cache away: it writes an immutable generation folder, then switches
   a `CURRENT` pointer file with one atomic replace (no symlink, so it works from git on any OS).
-  A reader resolves the pointer once; the replaced generation is kept for readers still on it.
+  A reader resolves the pointer once. Publishing deletes no generation (a reader may be several
+  switches behind); an explicit `prune`, run while nothing reads the cache, removes old ones.
+  Reusing an existing generation requires its manifest bytes to match too.
 - Commit the opening room's four meshes and masks (4.97 MB, derived from the committed example
   video). Do not commit retailer models (third-party files); catalog scenes are cached locally.
 - Bounds agreement includes the glTF's declared `POSITION` min/max. three.js fits the mesh from

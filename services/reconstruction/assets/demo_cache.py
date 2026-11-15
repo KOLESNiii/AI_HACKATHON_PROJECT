@@ -14,15 +14,17 @@ furniture, `imported_assets` for catalog imports). It writes a complete new gene
 switches `CURRENT` to it with one atomic replace, so a reader sees the old cache or the new
 one, and a refused or interrupted publish leaves the previous cache published. A generation is
 never changed once written; a reader resolves `CURRENT` once and reads only that generation.
-The generation just replaced is kept, so a reader that resolved it before the switch can
-finish; older ones are removed. Run one publisher at a time per cache directory.
+Publishing never deletes a generation, so a reader that resolved one before any number of
+switches can finish. `prune` removes every generation but the published one; run it only
+while nothing reads or publishes the cache. Run one publisher at a time per cache directory.
 
 CLI, offline:
 
     python -m services.reconstruction.assets.demo_cache publish --scene-id reviewed-opening-room
     python -m services.reconstruction.assets.demo_cache verify --scene-id reviewed-opening-room
+    python -m services.reconstruction.assets.demo_cache prune --scene-id reviewed-opening-room
 
-Exit 0: published, or the cache verified; 2: refused (a check failed, too few items) or the
+Exit 0: published, pruned, or the cache verified; 2: refused (a check failed, too few items) or the
 cache is missing or broken; 1: unusable input or storage.
 """
 
@@ -173,31 +175,50 @@ def publish_demo_cache(
         manifest = (cache.model_dump_json(indent=2) + "\n").encode()
         (staging / MANIFEST).write_bytes(manifest)
         generation = folder / f"g-{hashlib.sha256(manifest).hexdigest()[:16]}"
-        if _intact(generation, cache):
+        if _intact(generation, manifest, cache):
             shutil.rmtree(staging)  # Exactly this content is already a generation.
         else:
-            shutil.rmtree(generation, ignore_errors=True)  # A damaged copy, never served.
+            # A damaged copy: its content no longer matches its name, so no reader can use it.
+            shutil.rmtree(generation, ignore_errors=True)
             staging.rename(generation)
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
-    try:
-        previous = current_generation(cache_dir, scene_id)
-    except CacheError:
-        previous = None
-    write_atomic(folder / CURRENT, f"{generation.name}\n".encode())  # The switch.
-    keep = {generation.name} | ({previous.name} if previous is not None else set())
-    for entry in folder.iterdir():
-        if _GENERATION.fullmatch(entry.name) and entry.name not in keep:
-            shutil.rmtree(entry, ignore_errors=True)
+    # The switch. No generation is deleted here: a reader may still be using any of them.
+    write_atomic(folder / CURRENT, f"{generation.name}\n".encode())
     return cache
 
 
-def _intact(generation: Path, cache: DemoCache) -> bool:
+def _intact(generation: Path, manifest: bytes, cache: DemoCache) -> bool:
+    """Whether `generation` holds exactly `manifest` and every file it lists."""
     try:
+        if (generation / MANIFEST).read_bytes() != manifest:
+            return False
         return all(_sha256(generation / f.path) == f.sha256 for f in cache.files)
     except OSError:
         return False
+
+
+def prune_demo_cache(scene_id: str, *, cache_dir: Path) -> list[str]:
+    """Delete every generation but the published one, and staging left by a killed publish.
+
+    Returns the names removed. Run it only while nothing reads or publishes this cache: a
+    reader that resolved an older generation would lose its files. Raises CacheError when
+    `CURRENT` is bad or names a missing generation, so a broken cache is never pruned to
+    nothing.
+    """
+    current = current_generation(cache_dir, scene_id)
+    if current is None:
+        return []
+    if not (current / MANIFEST).is_file():
+        raise CacheError(f"the published generation {current.name} is missing")
+    removed = []
+    for entry in sorted(cache_folder(cache_dir, scene_id).iterdir()):
+        stale = _GENERATION.fullmatch(entry.name) or entry.name.startswith(".staging-")
+        if stale and entry != current and entry.is_dir():
+            shutil.rmtree(entry)
+            removed.append(entry.name)
+    return removed
 
 
 def publish_video_scene(
@@ -351,7 +372,10 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     publish = commands.add_parser("publish", help="publish a delivered scene as its cache")
     verify = commands.add_parser("verify", help="check a published cache, offline")
-    for command in (publish, verify):
+    prune = commands.add_parser(
+        "prune", help="delete replaced generations (only while nothing reads the cache)"
+    )
+    for command in (publish, verify, prune):
         command.add_argument("--scene-id", required=True)
         command.add_argument(
             "--catalog", action="store_true", help="the scene's catalog imports (#19)"
@@ -388,6 +412,10 @@ def main(argv: list[str] | None = None) -> int:
                 )
             folder = current_generation(args.cache_dir, scene_id)
             print(json.dumps(summary(cache) | {"folder": str(folder)}))
+            return 0
+        if args.command == "prune":
+            removed = prune_demo_cache(scene_id, cache_dir=args.cache_dir)
+            print(json.dumps({"scene_id": scene_id, "ok": True, "removed": removed}))
             return 0
         with tempfile.TemporaryDirectory(prefix="demo-cache-verify-") as temporary:
             data_dir = args.data_dir or Path(temporary)

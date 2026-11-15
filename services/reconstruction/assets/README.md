@@ -652,8 +652,9 @@ delivered, and every file they reference with its SHA-256 and size) plus those f
 paths they have in the data directory. The scene folder's `CURRENT` file names the published
 generation. A publish writes a complete generation, then switches `CURRENT` with one atomic
 replace: readers see the old cache or the new one, never none. A reader resolves `CURRENT` once
-and reads only that generation, which is never changed. The generation just replaced is kept
-for readers still using it; older ones are removed. Run one publisher at a time. Installing
+and reads only that generation, which is never changed. Publishing deletes no generation, so a
+reader is never left without its files; `prune` removes the replaced ones, and is run only while
+nothing reads or publishes the cache. Run one publisher at a time. Installing
 a cache copies the files into a data directory, so each `glb_url` is served by the existing
 asset route and each evidence `mask_url` resolves with `segmentation.read_mask`. The delivery
 checks (`inspect_asset`) then run again on the installed files. Nothing is regenerated and no
@@ -663,9 +664,10 @@ provider, key or network is used. Contracts, routes and dependencies do not chan
 |---|---|
 | `publish_video_scene(scene_id, *, data_dir, cache_dir, ...)` | `deliver_furniture` (#18), which must be `ok`, then publish. A delivered proxy stays a proxy. |
 | `publish_catalog_scene(scene_id, *, data_dir, cache_dir)` | `imported_assets` (#19), each `ok`, published under `catalog:<scene_id>` with its retailer provenance. |
-| `publish_demo_cache(scene_id, assets, ...)` | The common step. Refuses (`CacheError`, the earlier cache untouched) on too few items, a repeated ID, a failed check or a missing file. Written as a new generation, then switched to. The manifest is deterministic, so republishing the same assets reuses their generation. |
+| `publish_demo_cache(scene_id, assets, ...)` | The common step. Refuses (`CacheError`, the earlier cache untouched) on too few items, a repeated ID, a failed check or a missing file. Written as a new generation, then switched to. The manifest is deterministic, so republishing the same assets reuses their generation when its manifest and files are intact (a damaged one is rewritten). |
 | `read_demo_cache(scene_id, *, cache_dir, url_base=...)` | `None` when nothing is published. Otherwise the verified manifest: `CacheError` for a bad `CURRENT`, a bad manifest, another scene's, an asset outside `url_base`, a path leaving the folder, or a missing or altered file. |
 | `install_demo_cache(scene_id, *, cache_dir, data_dir, url_base=...)` | Read, copy what is missing or damaged from that one generation, check every asset again. |
+| `prune_demo_cache(scene_id, *, cache_dir)` | Delete every generation but the published one, and staging left by a killed publish. `CacheError` (nothing deleted) when `CURRENT` is bad or its generation is missing. Only while nothing reads or publishes. |
 
 `url_base` is the asset store's URL prefix (default `/api/reconstruction/assets`). Publish, read
 and install a cache with the same one.
@@ -675,12 +677,14 @@ uv run --extra reconstruction python -m services.reconstruction.assets.demo_cach
   --scene-id reviewed-opening-room --data-dir artifacts/furniture
 uv run --extra reconstruction python -m services.reconstruction.assets.demo_cache verify \
   --scene-id reviewed-opening-room
+uv run --extra reconstruction python -m services.reconstruction.assets.demo_cache prune \
+  --scene-id reviewed-opening-room  # only while no service reads the cache
 # Catalog imports: --scene-id demo --catalog (publishes catalog:demo)
 ```
 
 The default cache directory is `$FURNITURE_DEMO_CACHE_DIR`, else
 `services/reconstruction/assets/fixtures/demo_cache` (`config.demo_cache_dir()`). Exit codes:
-0 published or verified; 2 refused, missing or broken; 1 unusable input or storage.
+0 published, pruned or verified; 2 refused, missing or broken; 1 unusable input or storage.
 
 **Committed cache.** `fixtures/demo_cache/` holds `reviewed-opening-room`: the four normalised
 SAM 3D meshes of the opening room and their 15 SAM 3 masks, 4.97 MB, delivered from registry

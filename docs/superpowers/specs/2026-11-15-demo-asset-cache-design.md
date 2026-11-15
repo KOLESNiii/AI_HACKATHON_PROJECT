@@ -49,8 +49,11 @@ auditor (Dev 4) measures. Provider setup is spread over five README sections.
   unique, every `glb_url` and evidence mask exists. Written as a complete generation folder
   (`g-<manifest hash>`), then published by atomically replacing the scene folder's `CURRENT`
   file, so a failed publish keeps the previous cache and a concurrent reader always finds one.
-  Readers resolve `CURRENT` once; generations are immutable, and the replaced one is kept for
-  readers still using it. The manifest is deterministic.
+  Readers resolve `CURRENT` once; generations are immutable and publishing deletes none, so
+  a reader is never left without its files. The manifest is deterministic; an existing
+  generation is reused only when its manifest and every file match.
+- `prune_demo_cache(scene_id, *, cache_dir)`: deletes every generation but the published one
+  and leftover staging. Run only while nothing reads or publishes the cache.
 - `publish_video_scene` (via `deliver_furniture`, which must be `ok`) and
   `publish_catalog_scene` (via `imported_assets`, each `ok`).
 - `read_demo_cache` returns `None` when absent; `CacheError` for a bad pointer or manifest, a

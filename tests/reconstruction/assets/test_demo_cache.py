@@ -27,6 +27,7 @@ from services.reconstruction.assets.demo_cache import (
     current_generation,
     install_demo_cache,
     main,
+    prune_demo_cache,
     publish_catalog_scene,
     publish_demo_cache,
     read_demo_cache,
@@ -108,7 +109,46 @@ def test_the_manifest_is_deterministic_and_a_republish_drops_stale_files(
 
     publish_demo_cache(SCENE, [chair], data_dir=data_dir, cache_dir=cache_dir, source="catalog")
     third = _generation(cache_dir)
-    assert sorted(p.name for p in folder.iterdir()) == sorted([CURRENT, second.name, third.name])
+    names = [CURRENT, first.name, second.name, third.name]
+    assert sorted(p.name for p in folder.iterdir()) == sorted(names)  # publishing deletes none
+
+    (folder / ".staging-killed").mkdir()  # left by a publish killed mid-copy
+    removed = prune_demo_cache(SCENE, cache_dir=cache_dir)
+    assert sorted(removed) == sorted([".staging-killed", first.name, second.name])
+    assert sorted(p.name for p in folder.iterdir()) == sorted([CURRENT, third.name])
+    assert prune_demo_cache(SCENE, cache_dir=cache_dir) == []
+    assert prune_demo_cache("catalog:none", cache_dir=cache_dir) == []
+
+
+def test_prune_refuses_a_broken_pointer(published: tuple[Path, Path, DemoCache]) -> None:
+    """A bad `CURRENT` must not prune the cache down to nothing."""
+    _, cache_dir, _ = published
+    folder = cache_folder(cache_dir, SCENE)
+    generation = _generation(cache_dir)
+    (folder / CURRENT).write_text("g-0123456789abcdef\n")
+    with pytest.raises(CacheError, match="is missing"):
+        prune_demo_cache(SCENE, cache_dir=cache_dir)
+    (folder / CURRENT).write_text("../x\n")
+    with pytest.raises(CacheError, match="not a generation"):
+        prune_demo_cache(SCENE, cache_dir=cache_dir)
+    assert generation.is_dir()
+
+
+@pytest.mark.parametrize("damage", ["removed", "altered"])
+def test_a_republish_repairs_a_generation_whose_manifest_was_damaged(
+    published: tuple[Path, Path, DemoCache], damage: str
+) -> None:
+    data_dir, cache_dir, cache = published
+    generation = _generation(cache_dir)
+    manifest = (generation / MANIFEST).read_bytes()
+    if damage == "removed":
+        (generation / MANIFEST).unlink()
+    else:
+        (generation / MANIFEST).write_bytes(manifest.replace(b'"catalog"', b'"video"', 1))
+    assert publish_catalog_scene("room", data_dir=data_dir, cache_dir=cache_dir) == cache
+    assert _generation(cache_dir) == generation
+    assert (generation / MANIFEST).read_bytes() == manifest
+    assert read_demo_cache(SCENE, cache_dir=cache_dir) == cache
 
 
 def test_a_refused_publish_keeps_the_previous_cache(
@@ -272,14 +312,18 @@ def test_a_publish_that_dies_before_the_switch_keeps_the_previous_cache(
 def test_an_install_reads_the_generation_it_resolved(
     published: tuple[Path, Path, DemoCache], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """A publish between reading the manifest and copying the files does not mix the two."""
+    """Publishes between reading the manifest and copying the files (a change, the same
+    content again, then another change) neither mix the two nor delete what is being read."""
     data_dir, cache_dir, cache = published
-    desk = next(a for a in cache.assets if not a.is_proxy)
+    desk, chair = sorted(cache.assets, key=lambda a: a.is_proxy)
     read = demo_cache._read
 
     def then_republish(*args: object) -> tuple[DemoCache, Path] | None:
         result = read(*args)  # type: ignore[arg-type]
-        publish_demo_cache(SCENE, [desk], data_dir=data_dir, cache_dir=cache_dir, source="catalog")
+        for assets in ([desk], [desk], [chair]):
+            publish_demo_cache(
+                SCENE, assets, data_dir=data_dir, cache_dir=cache_dir, source="catalog"
+            )
         return result
 
     monkeypatch.setattr(demo_cache, "_read", then_republish)
@@ -374,6 +418,9 @@ def test_cli_publishes_and_verifies(tmp_path: Path, capsys: pytest.CaptureFixtur
     glb = next(cache_folder(cache_dir, SCENE).rglob("*.glb"))
     glb.write_bytes(b"glTF broken")
     assert main(["verify", *args]) == 2
+    capsys.readouterr()
+    assert main(["prune", *args]) == 0
+    assert json.loads(capsys.readouterr().out) == {"scene_id": SCENE, "ok": True, "removed": []}
     single = tmp_path / "single"
     import_catalog_asset(URL, "one", data_dir=single, fetch=Web())
     one = ["--scene-id", "one", "--catalog", "--cache-dir", str(cache_dir)]
