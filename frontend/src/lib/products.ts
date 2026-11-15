@@ -61,6 +61,38 @@ export async function importProduct(
   return (await response.json()) as FurnitureItem
 }
 
+/**
+ * In-flight and finished imports, keyed by scene and product page. Both a prefetch and the Add
+ * button go through here, so a product is never imported twice at once: a second concurrent
+ * import would find the first's paid SAM 3D request still pending and fall back to a proxy box.
+ * A failed import is forgotten so the next attempt retries it.
+ */
+const imports = new Map<string, Promise<FurnitureItem>>()
+
+export const importKey = (product: ProductOption, sceneId: string) =>
+  `${sceneId}\n${product.product_url}`
+
+/** The product's import, started now unless one is already running or done for this scene. */
+export function sharedImport(
+  product: ProductOption,
+  sceneId: string,
+): Promise<FurnitureItem> {
+  const key = importKey(product, sceneId)
+  const known = imports.get(key)
+  if (known) return known
+  const started = importProduct(product, sceneId)
+  imports.set(key, started)
+  started.catch(() => {
+    if (imports.get(key) === started) imports.delete(key)
+  })
+  return started
+}
+
+/** Forget every import (tests, or when the delivered items are no longer wanted). */
+export function clearImports() {
+  imports.clear()
+}
+
 interface PlaceReply {
   text: string
   additions: FurnitureItem[]
