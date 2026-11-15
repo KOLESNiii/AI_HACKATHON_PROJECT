@@ -160,3 +160,12 @@ then stores an instance mask and cut-out per item view, offline with GrabCut or 
 The [mesh stage](services/reconstruction/assets/README.md#implemented-individual-raw-meshes-and-proxy-fallback-16)
 now reconstructs individual raw meshes with explicit proxy fallback. Mesh normalisation
 and final room placement remain later stages.
+
+In the editor's **Chat** tab, ask to add one item (for example, “Add a small
+0.5 m wide side table”) or rearrange existing furniture. Start the spatial service
+and configure `ANTHROPIC_API_KEY` in the root `.env` for agent requests. Review the
+proposal, then click **Apply**. New furniture uses a labelled proxy with estimated
+dimensions that need checking; collision, floor-boundary and door checks run before
+it is proposed. Stats shows the accepted audit, including any front-clearance
+warnings. Editing the room invalidates older proposals. Retailer search and live
+furniture-mesh generation are separate from this flow.

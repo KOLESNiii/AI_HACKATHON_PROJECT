@@ -1,33 +1,31 @@
-import type { Pose2D, RoomScene } from './contracts'
+import type { AuditReport, FurnitureItem, Pose2D, RoomScene } from './contracts'
 
 export interface AgentReply {
   text: string
-  /** Proposed poses keyed by item id, when the agent suggests a layout change. */
   poses?: Record<string, Pose2D>
+  additions?: FurnitureItem[]
+  report?: AuditReport | null
 }
 
-/**
- * Redesign agent client. The only place the Chat tab talks to.
- *
- * No agent endpoint exists yet: it needs a contract (chat message + RoomScene in,
- * reply text + LayoutProposal-style poses out). Until then this returns a placeholder,
- * so swapping in the real call only changes this function.
- */
+/** Return a proposal; application is a separate, revision-guarded user action. */
 export async function sendAgentMessage(
   scene: RoomScene,
   text: string,
   signal?: AbortSignal,
 ): Promise<AgentReply> {
-  void scene
-  void text
-  await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(resolve, 500)
-    signal?.addEventListener('abort', () => {
-      clearTimeout(t)
-      reject(new DOMException('Aborted', 'AbortError'))
-    })
+  const response = await fetch('/api/spatial_engine/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scene, instruction: text }),
+    signal,
   })
+  if (!response.ok) throw new Error(`Agent request failed (${response.status})`)
+  const reply: AgentReply = await response.json()
   return {
-    text: 'The redesign agent is not connected yet. Once its endpoint exists, I will suggest layout changes here that you can apply in one click.',
+    text: reply.text,
+    report: reply.report,
+    poses:
+      reply.poses && Object.keys(reply.poses).length ? reply.poses : undefined,
+    additions: reply.additions?.length ? reply.additions : undefined,
   }
 }

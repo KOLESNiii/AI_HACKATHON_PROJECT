@@ -26,6 +26,8 @@ export interface ChatMessage {
   text: string
   /** Proposed poses attached to an agent reply (item_id -> pose). */
   poses?: Record<string, Pose2D>
+  additions?: FurnitureItem[]
+  report?: AuditReport | null
   /** Scene revision the agent saw; poses only apply while the scene is still at it. */
   baseRevision?: number
   applied?: boolean
@@ -336,7 +338,14 @@ export const useStore = create<State>((set, get) => ({
   applyPoses: (index) => {
     const { chat, scene } = get()
     const msg = chat[index]
-    if (!msg?.poses || msg.applied) return
+    if (
+      !msg ||
+      (!msg.poses && !msg.additions?.length) ||
+      msg.applied ||
+      get().interacting ||
+      get().mode !== 'edit'
+    )
+      return
     if (msg.baseRevision !== scene.revision) {
       playCue('reject')
       return get().toast(
@@ -344,13 +353,24 @@ export const useStore = create<State>((set, get) => ({
       )
     }
     // Fixed items (fixtures) are never moved by the agent or solver.
-    const poses = msg.poses
+    const additions = msg.additions ?? []
+    const ids = new Set(scene.furniture.map((item) => item.id))
+    for (const item of additions) {
+      if (ids.has(item.id)) return
+      ids.add(item.id)
+    }
+    const poses = msg.poses ?? {}
     const furniture = scene.furniture.map((i) =>
       poses[i.id] && !i.is_fixed ? { ...i, pose: { ...poses[i.id] } } : i,
     )
     withEditCue('apply', () =>
       set({
-        scene: bump(scene, furniture),
+        scene: bump(scene, [...furniture, ...additions]),
+        audit:
+          msg.report?.scene_id === scene.scene_id &&
+          msg.report.scene_revision === scene.revision
+            ? { ...msg.report, scene_revision: scene.revision + 1 }
+            : null,
         chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
       }),
     )

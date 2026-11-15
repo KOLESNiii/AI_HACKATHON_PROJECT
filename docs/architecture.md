@@ -375,3 +375,30 @@ revisions. Show the `X-Reconstruction-Warnings` list. **Dev 4 (#32):** the audit
 room as is; the findings above are the expected baseline. **Dev 2 (#18):** item IDs and the
 `glb_url`s pass through unchanged; an item's normalised mesh (`ItemReconstruction.asset`)
 replaces its proxy as soon as the pipeline stores one.
+
+## Chat additions and application
+
+`POST /chat` on the spatial service accepts `{scene: RoomScene, instruction: string}`
+(up to 500 characters, 60 existing items) and returns `{text, poses, additions, report}`.
+These service-local models leave `/solve` and the shared scene contract unchanged.
+Chat offers `add_item` and `rearrange_room`; the latter delegates to the existing
+solver, including its custom goals. Both use the configured layout model. Chat and
+any delegated solve share a 90-second, six-call, 200k-token allowance.
+
+`add_item` proposes exactly one dimensioned proxy plus up to 32 moves of existing
+movable furniture. All new dimensions are explicitly estimated and need correction;
+this is not retailer search. The complete candidate must pass collision, floor
+containment and door-swing checks. Rejections return findings to the model for a
+bounded retry. Existing fixed items cannot move. Front-clearance warnings are
+returned for review. The server never changes the submitted scene or persists a draft.
+Proxy GLBs are generated without dependencies at `/proxies/{width}/{height}/{depth}.glb`;
+they use metric bottom-centred coordinates and dimension-specific immutable URLs.
+The editor displays them through its existing labelled proxy renderer.
+
+The Chat tab calls `/api/spatial_engine/chat`. Apply appends additions and applies
+poses atomically with one revision bump; stale replies, duplicate IDs, repeated
+application and application during a gesture or Play are rejected. Room-session
+cancellation still discards responses from rooms that have been closed. The audited
+report follows the accepted revision into Stats. Provider failure or no key returns
+an explanation with no changes. No new configuration or dependencies are introduced;
+`ANTHROPIC_API_KEY` and `SPACESHIFT_LAYOUT_MODEL` are reused. Tests use scripted models.

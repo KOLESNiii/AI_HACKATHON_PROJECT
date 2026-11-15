@@ -58,7 +58,7 @@ function ChatTab() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const msg = text.trim()
-    if (!msg || busy) return
+    if (!msg || busy || useStore.getState().interacting) return
     setText('')
     const { scene, roomSession } = useStore.getState()
     const baseRevision = scene.revision
@@ -73,6 +73,8 @@ function ChatTab() {
           role: 'assistant',
           text: reply.text,
           poses: reply.poses,
+          additions: reply.additions,
+          report: reply.report,
           baseRevision,
         })
     } catch {
@@ -114,10 +116,13 @@ function ChatTab() {
             >
               {m.text}
             </p>
-            {m.poses && (
+            {(m.poses || m.additions?.length) && (
               <div className="flex w-full items-center justify-between gap-2.5 rounded-[2px] bg-paper-deep py-2 pr-2 pl-3">
                 <span className="text-[11px] font-medium text-ink-medium">
-                  Proposed layout · {Object.keys(m.poses).length} items
+                  Proposed layout · {Object.keys(m.poses ?? {}).length} moves
+                  {m.additions?.length
+                    ? ` · ${m.additions.length} new item`
+                    : ''}
                 </span>
                 <Button disabled={m.applied} onClick={() => applyPoses(i)}>
                   {m.applied ? 'Applied' : 'Apply'}
@@ -137,6 +142,7 @@ function ChatTab() {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
+          maxLength={500}
           placeholder="Ask Refresh to redesign the room…"
           className="min-w-0 flex-1 rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
         />

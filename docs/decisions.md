@@ -321,3 +321,16 @@
   in the priority table.
 - An instruction that could not be read is dropped with a note and the result is reported as
   `stopped_early`, so it is never presented as honouring what the user wrote.
+
+## Agent furniture additions
+
+- Operator authorised backend tool, Chat connection and an explicit Apply action,
+  plus integration of the existing solver-fix branch with the Feng Shui base.
+- Keep inventory-changing proposals in service-local `/chat` models; the pose-only
+  solver keeps its comparison invariants and existing response contract.
+- Add one dimensioned, visibly labelled proxy per request. Agent dimensions remain
+  estimates requiring correction; retailer lookup and live asset generation are separate.
+- Audit additions and supporting moves together before returning a proposal. Never
+  trade collisions, floor containment, fixed items or clear door swings for extra furniture.
+- Require explicit application against the submitted revision and preserve room-session
+  cancellation. No automatic scene mutations, persistence or new dependencies.
