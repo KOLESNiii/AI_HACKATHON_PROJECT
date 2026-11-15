@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { playCue, type SoundCue } from './audio/cues'
 import type { CatalogItem } from './data/catalog'
 import { roomScene } from './data/demoHome'
 import type {
@@ -66,8 +67,8 @@ interface State {
   setInteracting: (b: boolean) => void
   /** Live pose update while dragging/rotating; does not bump the revision. */
   setPose: (id: string, pose: Partial<Pose2D>) => void
-  /** Ends a drag/rotate: bumps the revision once. */
-  commitEdit: () => void
+  /** Ends a drag/rotate: bumps the revision once; null keeps cancelled/unchanged gestures silent. */
+  commitEdit: (cue?: 'place' | 'rotate' | null) => void
   snapItem: (id: string) => void
   rotateItem: (id: string, degrees: number) => void
   /** Turns an item back to yaw 0 (front facing +Z), kept inside the floor. */
@@ -131,6 +132,24 @@ function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
   }
 }
 
+/** Successful semantic edits get one cue, regardless of button or keyboard input. */
+function withEditCue(cue: SoundCue, change: () => void) {
+  const before = useStore.getState().scene.furniture
+  change()
+  const after = useStore.getState().scene.furniture
+  if (
+    before.length !== after.length ||
+    before.some(
+      (item, i) =>
+        item.id !== after[i].id ||
+        item.pose.x !== after[i].pose.x ||
+        item.pose.z !== after[i].pose.z ||
+        item.pose.yaw_deg !== after[i].pose.yaw_deg,
+    )
+  )
+    playCue(cue)
+}
+
 export const useStore = create<State>((set, get) => ({
   screen: 'home',
   segmentId: null,
@@ -182,7 +201,16 @@ export const useStore = create<State>((set, get) => ({
       agentAbort: null,
     }))
   },
-  select: (selectedId) => set({ selectedId }),
+  select: (selectedId) => {
+    const s = get()
+    if (s.selectedId === selectedId) return
+    set({ selectedId })
+    if (
+      selectedId &&
+      s.scene.furniture.some((i) => i.id === selectedId && !i.is_fixed)
+    )
+      playCue('select')
+  },
   setInteracting: (interacting) => set({ interacting }),
   setPose: (id, pose) =>
     set((s) => ({
@@ -194,82 +222,101 @@ export const useStore = create<State>((set, get) => ({
         })),
       },
     })),
-  commitEdit: () => set((s) => ({ scene: bump(s.scene) })),
+  commitEdit: (cue = 'place') => {
+    set((s) => ({ scene: bump(s.scene) }))
+    if (cue) playCue(cue)
+  },
   snapItem: (id) =>
-    set((s) => {
-      const item = s.scene.furniture.find((i) => i.id === id)
-      if (!item || item.is_fixed) return {}
-      return {
-        scene: bump(
-          s.scene,
-          mapItem(s.scene, id, (i) => ({
-            ...i,
-            pose: snapToNearestWall(s.scene.walls, s.scene.floor_polygon, i),
-          })),
-        ),
-      }
-    }),
+    withEditCue('snap', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (!item || item.is_fixed) return {}
+        return {
+          scene: bump(
+            s.scene,
+            mapItem(s.scene, id, (i) => ({
+              ...i,
+              pose: snapToNearestWall(s.scene.walls, s.scene.floor_polygon, i),
+            })),
+          ),
+        }
+      }),
+    ),
   rotateItem: (id, degrees) =>
-    set((s) => {
-      const item = s.scene.furniture.find((i) => i.id === id)
-      if (!item || item.is_fixed || s.interacting || !Number.isFinite(degrees))
-        return {}
-      const yaw = (((item.pose.yaw_deg + degrees) % 360) + 360) % 360
-      if (yaw === item.pose.yaw_deg) return {}
-      const rotated = { ...item, pose: { ...item.pose, yaw_deg: yaw } }
-      const p = clampToFloor(
-        s.scene.floor_polygon,
-        rotated,
-        item.pose.x,
-        item.pose.z,
-      )
-      return {
-        scene: bump(
-          s.scene,
-          mapItem(s.scene, id, (i) => ({
-            ...i,
-            pose: { x: p.x, z: p.z, yaw_deg: yaw },
-          })),
-        ),
-      }
-    }),
+    withEditCue('rotate', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (
+          !item ||
+          item.is_fixed ||
+          s.interacting ||
+          !Number.isFinite(degrees)
+        )
+          return {}
+        const yaw = (((item.pose.yaw_deg + degrees) % 360) + 360) % 360
+        if (yaw === item.pose.yaw_deg) return {}
+        const rotated = { ...item, pose: { ...item.pose, yaw_deg: yaw } }
+        const p = clampToFloor(
+          s.scene.floor_polygon,
+          rotated,
+          item.pose.x,
+          item.pose.z,
+        )
+        return {
+          scene: bump(
+            s.scene,
+            mapItem(s.scene, id, (i) => ({
+              ...i,
+              pose: { x: p.x, z: p.z, yaw_deg: yaw },
+            })),
+          ),
+        }
+      }),
+    ),
   resetRotation: (id) =>
-    set((s) => {
-      const item = s.scene.furniture.find((i) => i.id === id)
-      if (!item || item.is_fixed || item.pose.yaw_deg === 0) return {}
-      const upright = { ...item, pose: { ...item.pose, yaw_deg: 0 } }
-      const c = clampToFloor(
-        s.scene.floor_polygon,
-        upright,
-        item.pose.x,
-        item.pose.z,
-      )
-      return {
-        scene: bump(
-          s.scene,
-          mapItem(s.scene, id, (i) => ({
-            ...i,
-            pose: { x: c.x, z: c.z, yaw_deg: 0 },
-          })),
-        ),
-      }
-    }),
+    withEditCue('rotate', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (!item || item.is_fixed || item.pose.yaw_deg === 0) return {}
+        const upright = { ...item, pose: { ...item.pose, yaw_deg: 0 } }
+        const c = clampToFloor(
+          s.scene.floor_polygon,
+          upright,
+          item.pose.x,
+          item.pose.z,
+        )
+        return {
+          scene: bump(
+            s.scene,
+            mapItem(s.scene, id, (i) => ({
+              ...i,
+              pose: { x: c.x, z: c.z, yaw_deg: 0 },
+            })),
+          ),
+        }
+      }),
+    ),
   deleteItem: (id) =>
-    set((s) => {
-      const item = s.scene.furniture.find((i) => i.id === id)
-      if (!item || item.is_fixed) return {}
-      return {
-        scene: bump(
-          s.scene,
-          s.scene.furniture.filter((i) => i.id !== id),
-        ),
-        selectedId: s.selectedId === id ? null : s.selectedId,
-      }
-    }),
+    withEditCue('delete', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (!item || item.is_fixed) return {}
+        return {
+          scene: bump(
+            s.scene,
+            s.scene.furniture.filter((i) => i.id !== id),
+          ),
+          selectedId: s.selectedId === id ? null : s.selectedId,
+        }
+      }),
+    ),
   addFromCatalog: (c) => {
     const { scene } = get()
     const yaw = fitYaw(scene.floor_polygon, c.bbox_m.width, c.bbox_m.depth)
-    if (yaw == null) return get().toast(`${c.name} doesn't fit this room.`)
+    if (yaw == null) {
+      playCue('reject')
+      return get().toast(`${c.name} doesn't fit this room.`)
+    }
     const b = bounds(scene.floor_polygon)
     const draft = itemFromCatalog(c, { x: 0, z: 0, yaw_deg: yaw })
     const p = clampToFloor(
@@ -284,26 +331,35 @@ export const useStore = create<State>((set, get) => ({
       selectedId: item.id,
     })
     get().toast(`Added ${c.name} as a proxy box. Drag it into place.`)
+    playCue('add')
   },
   applyPoses: (index) => {
     const { chat, scene } = get()
     const msg = chat[index]
     if (!msg?.poses || msg.applied) return
-    if (msg.baseRevision !== scene.revision)
+    if (msg.baseRevision !== scene.revision) {
+      playCue('reject')
       return get().toast(
         'The room changed since this suggestion. Ask the agent again.',
       )
+    }
     // Fixed items (fixtures) are never moved by the agent or solver.
     const poses = msg.poses
     const furniture = scene.furniture.map((i) =>
       poses[i.id] && !i.is_fixed ? { ...i, pose: { ...poses[i.id] } } : i,
     )
-    set({
-      scene: bump(scene, furniture),
-      chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
-    })
+    withEditCue('apply', () =>
+      set({
+        scene: bump(scene, furniture),
+        chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
+      }),
+    )
   },
-  setTab: (tab) => set({ tab }),
+  setTab: (tab) => {
+    if (get().tab === tab) return
+    set({ tab })
+    playCue('select')
+  },
   beginHumanPlacement: () => {
     const s = get()
     if (s.mode !== 'edit' || s.interacting) return false
@@ -330,6 +386,9 @@ export const useStore = create<State>((set, get) => ({
       humanPreview: null,
       interacting: false,
     })
+    if (!valid) playCue('reject')
+    else if (!s.human || p!.x !== s.human.x || p!.z !== s.human.z)
+      playCue('place')
     return valid
   },
   cancelHumanPlacement: () => {

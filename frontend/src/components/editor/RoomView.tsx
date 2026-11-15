@@ -8,6 +8,7 @@ import {
   type PerspectiveCamera,
 } from 'three'
 import { useShallow } from 'zustand/react/shallow'
+import type { RoomScene } from '../../lib/contracts'
 import { bounds } from '../../lib/geometry'
 import { flaggedItemIds, spatialPreview } from '../../lib/spatialPreview'
 import { useStore } from '../../store'
@@ -20,6 +21,23 @@ import { Furniture, MeshBoundary } from './Furniture'
 import { KeyboardControls } from './KeyboardControls'
 import { SelectionTools } from './SelectionTools'
 import { Shell } from './Shell'
+
+// Zustand reruns selectors on every store update (hover, chat, play state...), so keep
+// the collision check to once per scene object rather than once per update.
+let flaggedCache: { scene: RoomScene; ids: string[] } | null = null
+function flaggedFor(scene: RoomScene): string[] {
+  if (flaggedCache?.scene !== scene) {
+    const p = spatialPreview(scene)
+    flaggedCache = {
+      scene,
+      ids: [
+        ...flaggedItemIds(p),
+        ...p.blocked_doors.map((d) => `door:${d.door_id}`),
+      ],
+    }
+  }
+  return flaggedCache.ids
+}
 
 /** Interactive room in the ink "clarity" style (Canvas/Room Render in Figma). */
 export function RoomView({
@@ -36,15 +54,7 @@ export function RoomView({
   const ids = useStore(useShallow((s) => s.scene.furniture.map((i) => i.id)))
   // Live preview of the spatial engine's checks. Re-renders this view only when the
   // set of flagged items or blocked doors changes.
-  const flagged = useStore(
-    useShallow((s) => {
-      const p = spatialPreview(s.scene)
-      return [
-        ...flaggedItemIds(p),
-        ...p.blocked_doors.map((d) => `door:${d.door_id}`),
-      ]
-    }),
-  )
+  const flagged = useStore(useShallow((s) => flaggedFor(s.scene)))
   const select = useStore((s) => s.select)
   const toast = useStore((s) => s.toast)
   const play = useStore((s) => s.mode === 'play')

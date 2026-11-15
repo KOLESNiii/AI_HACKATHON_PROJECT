@@ -127,6 +127,15 @@ then click **Resume** to capture the mouse again. Esc or **Return to editor**
 restores the editor camera. Lighting starts at 50% artificial light and 14:00;
 settings survive play sessions until another room is opened.
 
+Music and editor sounds are on by default. Browsers may wait for the first click
+or keypress before playing audio. Use the speaker button or **M** to mute; open
+**Sound** for independent music/effects toggles and volumes. Preferences are saved
+in this browser. M is inactive while typing. In Play, M still works; press L or
+Esc before using the sound panel. Hidden tabs pause audio and resume when visible.
+The bundled soundtrack is “Reverie” by Scott Buckley (CC BY 4.0); credits are in
+the sound panel and [audio notice](frontend/public/audio/NOTICE.md). Include that
+credit in the description when uploading a recorded demo to YouTube.
+
 Play uses textured, physically based materials, window daylight, moving sunlight
 and furniture shadows. The editor retains its ink style. Daylight is an
 illustrative clear day, rising east at 06:00 and setting west at 18:00, using the

@@ -1,5 +1,20 @@
 # Decisions
 
+## Calm editor audio
+
+- Enable music and effects by default, as chosen by the operator, with immediate
+  master mute, independent channel controls and remembered preferences. Respect
+  browser autoplay gating and pause hidden tabs; do not queue delayed effects.
+- Match the ink editor with short wooden/paper-like synthesized cues and a quiet
+  piano-led recording. Use semantic action completion instead of generic button or
+  hover sounds; keep camera movement, typing and continuous drags silent.
+- Use native Web Audio and streamed music rather than adding an audio framework
+  or decoding a full song into memory. Keep audio outside the room model and
+  shared interfaces. First-person footsteps and environmental ambience are deferred.
+- Bundle Scott Buckley's “Reverie” under CC BY 4.0 with visible attribution and an
+  asset notice. Serve music locally, normalize it, and crossfade repeat boundaries;
+  no live streaming service or paid provider is required.
+
 ## Bootstrap
 
 - Preserve the three FastAPI service boundaries and ports already agreed in the

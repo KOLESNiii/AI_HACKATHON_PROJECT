@@ -3,7 +3,7 @@ import type { Pose2D, RoomScene } from './contracts'
 import { bounds, planAngle, type Pt } from './geometry'
 import { collisionVolumes } from './spatialPreview'
 
-export const BODY_RADIUS_M = 0.25
+export const BODY_RADIUS_M = 0.0625 // thin enough to slip through tight gaps
 export const EYE_HEIGHT_M = 1.6
 export const WALK_SPEED_M_S = 1.4
 const EPSILON = 1e-9
