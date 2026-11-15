@@ -1,49 +1,49 @@
 {
   ".graphify_ast.json": {
     "mtime": 1794644052.0582492,
-    "seen": 1794740268.6439698,
+    "seen": 1794743212.91973,
     "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
     "semantic_hash": ""
   },
   ".graphify_cached.json": {
     "mtime": 1794644029.234256,
-    "seen": 1794740268.6439807,
+    "seen": 1794743212.9197412,
     "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
     "semantic_hash": ""
   },
   ".graphify_detect.json": {
     "mtime": 1794644020.845635,
-    "seen": 1794740268.6439855,
+    "seen": 1794743212.919747,
     "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
     "semantic_hash": ""
   },
   "contracts/mock_room/mock_scene.json": {
     "mtime": 1794674703.9606164,
-    "seen": 1794740268.643988,
+    "seen": 1794743212.9197493,
     "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
     "semantic_hash": ""
   },
   "contracts/mock_room/one_floor_scene.json": {
     "mtime": 1794687116.680454,
-    "seen": 1794740268.6439903,
+    "seen": 1794743212.9197516,
     "ast_hash": "5cf9ad89b04d8864803c10445203191e",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_first_scene.json": {
     "mtime": 1794687116.6806648,
-    "seen": 1794740268.643992,
+    "seen": 1794743212.9197538,
     "ast_hash": "0a4c182b4e46d4e9d4286470cb053411",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_ground_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794740268.643994,
+    "seen": 1794743212.9197562,
     "ast_hash": "93e97084b7ca2f957d1cba386cc3f91a",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_second_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794740268.6439948,
+    "seen": 1794743212.9197574,
     "ast_hash": "355cebd0f0b1cf9d07b96ec085fb9f47",
     "semantic_hash": ""
   },
@@ -186,8 +186,8 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Sidebar.tsx": {
-    "mtime": 1794740947.0606596,
-    "seen": 1794741360.4572864,
+    "mtime": 1794742136.8424711,
+    "seen": 1794742149.248964,
     "ast_hash": "a9f87477e21ca943d5fb4dcb64c38ab4",
     "semantic_hash": ""
   },
@@ -319,7 +319,7 @@
   },
   "frontend/src/data/ikeaCatalog.json": {
     "mtime": 1794731115.2534328,
-    "seen": 1794740268.644068,
+    "seen": 1794743212.9198391,
     "ast_hash": "414819acf400eda155fb04441ca8308c",
     "semantic_hash": ""
   },
@@ -390,9 +390,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/products.ts": {
-    "mtime": 1794740947.0608516,
-    "seen": 1794741360.4573438,
-    "ast_hash": "d56284c2fce9bbb68a1b9132ea1abe31",
+    "mtime": 1794742773.3669693,
+    "seen": 1794743212.919858,
+    "ast_hash": "d0fcae92f862cc651301aaebcde022e7",
     "semantic_hash": ""
   },
   "frontend/src/lib/roomVersions.ts": {
@@ -432,14 +432,14 @@
     "semantic_hash": ""
   },
   "frontend/src/store.ts": {
-    "mtime": 1794740947.0612254,
-    "seen": 1794741360.4573557,
+    "mtime": 1794742136.8432848,
+    "seen": 1794742149.250094,
     "ast_hash": "8227c9da7d79b1a791cca98816e79667",
     "semantic_hash": ""
   },
   "frontend/tests/addProduct.test.ts": {
-    "mtime": 1794740947.0614426,
-    "seen": 1794741360.4573576,
+    "mtime": 1794742136.8432848,
+    "seen": 1794742149.250096,
     "ast_hash": "a21f9c0bab186056d3006db428d8b6c1",
     "semantic_hash": ""
   },
@@ -648,15 +648,15 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/catalog.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794740268.6441426,
-    "ast_hash": "a6cf7bab3e56acab412327937c23d3d6",
+    "mtime": 1794743089.5786276,
+    "seen": 1794743212.9199202,
+    "ast_hash": "7d3fbdf7e3b261d6110576709a07919d",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/catalog_routes.py": {
-    "mtime": 1794732813.0712583,
-    "seen": 1794740268.6441436,
-    "ast_hash": "ab2c17f5e720202ed8a9ddcefc42e021",
+    "mtime": 1794743079.4693584,
+    "seen": 1794743212.9199212,
+    "ast_hash": "e66dea625e3c6280fa6fb069d2cd829b",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/check_delivery.py": {
@@ -691,7 +691,7 @@
   },
   "services/reconstruction/assets/fixtures/evidence.json": {
     "mtime": 1794674703.9634907,
-    "seen": 1794740268.6441495,
+    "seen": 1794743212.9199293,
     "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
     "semantic_hash": ""
   },
@@ -708,9 +708,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/mesh_providers.py": {
-    "mtime": 1794700786.8667858,
-    "seen": 1794740268.644153,
-    "ast_hash": "3aea74a044277a93b05772e8d18c2b69",
+    "mtime": 1794742463.9327316,
+    "seen": 1794743212.9199328,
+    "ast_hash": "39755ede6209f977af97cb035f7e5ab4",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/models.py": {
@@ -720,9 +720,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/normalisation.py": {
-    "mtime": 1794728115.5318108,
-    "seen": 1794740268.644155,
-    "ast_hash": "0683eeaf4c9cec7354d0e4a745974bfe",
+    "mtime": 1794742758.8437674,
+    "seen": 1794743212.919935,
+    "ast_hash": "4eba99f9c19ce826910277fe1dd9dd56",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/providers.py": {
@@ -756,9 +756,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/retailer.py": {
-    "mtime": 1794728115.5326133,
-    "seen": 1794740268.6441607,
-    "ast_hash": "17ea0286e05dfd38c0cc181f485b66fc",
+    "mtime": 1794742787.694412,
+    "seen": 1794743212.9199414,
+    "ast_hash": "cf866112ecc72b76831983c6e7010eea",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/segment_items.py": {
@@ -786,9 +786,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/selection_models.py": {
-    "mtime": 1794728115.5328217,
-    "seen": 1794740268.6441653,
-    "ast_hash": "772839f823be20e28de9bea731e1c2f1",
+    "mtime": 1794742463.9363859,
+    "seen": 1794743212.9199471,
+    "ast_hash": "52ab035c9024b6aec780b683c45cc5c8",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/video.py": {
@@ -798,9 +798,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/catalog_routes.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794740268.6441674,
-    "ast_hash": "0bd40634d8ca5f84738a26b72fb26407",
+    "mtime": 1794742773.3667724,
+    "seen": 1794743212.9199495,
+    "ast_hash": "739351b42e740e8a40f8e6ea0eaa7fc9",
     "semantic_hash": ""
   },
   "services/reconstruction/config.py": {
@@ -865,37 +865,37 @@
   },
   "services/reconstruction/room/fixtures/one_floor.annotations.json": {
     "mtime": 1794682055.4256458,
-    "seen": 1794740268.6441786,
+    "seen": 1794743212.9199677,
     "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/real_rooms.json": {
     "mtime": 1794728115.5340552,
-    "seen": 1794740268.6441798,
+    "seen": 1794743212.919969,
     "ast_hash": "57763014964ca56a99c6ee7f65976b9d",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.assets.json": {
     "mtime": 1794700786.8696582,
-    "seen": 1794740268.6441808,
+    "seen": 1794743212.9199703,
     "ast_hash": "0530c1f94cc30c63764c6b2abc721441",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.hints.json": {
     "mtime": 1794700786.8698816,
-    "seen": 1794740268.644182,
+    "seen": 1794743212.9199715,
     "ast_hash": "b9117b2c24745e36a9dfb743af0d5787",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/scene_cache/plan-83a12322e933.json": {
     "mtime": 1794731958.9228225,
-    "seen": 1794740268.6441834,
+    "seen": 1794743212.9199734,
     "ast_hash": "df0021c3d865b10ad54bb1b844085bbe",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/three_floor.annotations.json": {
     "mtime": 1794682055.4259014,
-    "seen": 1794740268.644184,
+    "seen": 1794743212.9199743,
     "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
     "semantic_hash": ""
   },
@@ -1063,7 +1063,7 @@
   },
   "services/spatial_engine/fixtures/audit_cases.json": {
     "mtime": 1794682055.4266927,
-    "seen": 1794740268.644214,
+    "seen": 1794743212.920011,
     "ast_hash": "288a075b44b0c604498a9fd1baafdf22",
     "semantic_hash": ""
   },
@@ -1141,14 +1141,14 @@
   },
   "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
     "mtime": 1794687676.6252723,
-    "seen": 1794740268.6442285,
+    "seen": 1794743212.920027,
     "ast_hash": "7d500ae57af354b3d9d569dfc0be1d6d",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_catalog.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794740268.6442292,
-    "ast_hash": "c80fb82d4a309af7ec9ac8cbe9a7d29a",
+    "mtime": 1794743054.8526757,
+    "seen": 1794743212.9200284,
+    "ast_hash": "c8612e17c09a33de3efe5173f1277914",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_catalog_imports.py": {
@@ -1188,9 +1188,9 @@
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_reconstruction.py": {
-    "mtime": 1794700786.871892,
-    "seen": 1794740268.6442358,
-    "ast_hash": "c581bdc2315a868e150d408f7f3363fc",
+    "mtime": 1794743079.5173159,
+    "seen": 1794743212.920036,
+    "ast_hash": "9ca78bb359199621968e088da56bd23c",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_segmentation.py": {
@@ -1368,9 +1368,9 @@
     "semantic_hash": ""
   },
   "tests/test_catalog_routes.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794740268.6442685,
-    "ast_hash": "fcd872bd5d2c0e5655c26c2ff5af4eff",
+    "mtime": 1794742869.098534,
+    "seen": 1794743212.920073,
+    "ast_hash": "6101aeb33906ab358cf829e8b06657c2",
     "semantic_hash": ""
   },
   "tests/test_contract_occupancy.py": {
@@ -1650,9 +1650,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/README.md": {
-    "mtime": 1794731958.9204974,
-    "seen": 1794740268.6443205,
-    "ast_hash": "989f3585b4a66a5fdabddd4066efd3a0",
+    "mtime": 1794743193.2999363,
+    "seen": 1794743212.920134,
+    "ast_hash": "1f2b184571c2e1887755a14b54666809",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/README.md": {
