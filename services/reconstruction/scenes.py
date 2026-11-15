@@ -20,7 +20,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 
 from contracts.schema import RoomScene
-from services.reconstruction.config import furniture_data_dir
+from services.reconstruction.config import demo_cache_dir, furniture_data_dir
 from services.reconstruction.demo_assets import demo_room_scene, demo_rooms
 from services.reconstruction.room.align import wall_relative
 from services.reconstruction.room.assemble import (
@@ -73,9 +73,10 @@ class DemoFurniture:
 
 def get_furniture_source() -> FurnitureSource:
     """Furniture for uploaded rooms: the video furniture of rooms bound to a video
-    (`room/fixtures/real_rooms.json`), read from the furniture data directory; the room alone
-    otherwise. Overridden in tests (`app.dependency_overrides`)."""
-    return RealRoomFurniture(default_bindings(), furniture_data_dir())
+    (`room/fixtures/real_rooms.json`), read from the furniture data directory, else from the
+    published demo cache (#20); the room alone otherwise. Overridden in tests
+    (`app.dependency_overrides`)."""
+    return RealRoomFurniture(default_bindings(), furniture_data_dir(), demo_cache_dir())
 
 
 def clear_cache() -> None:

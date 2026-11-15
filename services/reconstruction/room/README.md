@@ -67,7 +67,10 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
 `video_furniture.RealRoomFurniture` reads that furniture offline from `$FURNITURE_DATA_DIR`
 (default `artifacts/furniture`) and places it from the hints. Each item is its normalised mesh
 (#17) when the pipeline has made one, otherwise a labelled proxy (the runbook below makes
-none). Runbook (needs FFmpeg; no provider requests, no charges):
+none). When the data directory has nothing for the video, the furniture comes from Dev 2's
+committed demo cache instead (#20): the four normalised meshes, with no pipeline run, so step 1
+is optional (see `assets/README.md`, "validation and demo cache"). Runbook (needs FFmpeg; no
+provider requests, no charges):
 
 ```bash
 # 1. Furniture of the video: reviewed recording (#14) and GrabCut masks (#15), offline

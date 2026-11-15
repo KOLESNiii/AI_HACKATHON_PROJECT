@@ -1,0 +1,602 @@
+{
+  "format": 1,
+  "scene_id": "reviewed-opening-room",
+  "source": "video",
+  "registry_revision": 13,
+  "assets": [
+    {
+      "id": "vid-000001",
+      "name": "White coffee table",
+      "category": "table",
+      "source": "extracted_video",
+      "glb_url": "/api/reconstruction/assets/9253a772277bb29a31b6ffdfb3339cddc820f3a49464e629b0be89325d2f2174.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.568,
+        "height": 0.75,
+        "depth": 0.947
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.6,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions"
+      ],
+      "collision_parts": [
+        {
+          "x": 0.0,
+          "z": 0.0,
+          "width": 1.568,
+          "depth": 0.947,
+          "y_min": 0.71,
+          "y_max": 0.75
+        },
+        {
+          "x": -0.754,
+          "z": -0.4435,
+          "width": 0.06,
+          "depth": 0.06,
+          "y_min": 0.0,
+          "y_max": 0.71
+        },
+        {
+          "x": -0.754,
+          "z": 0.4435,
+          "width": 0.06,
+          "depth": 0.06,
+          "y_min": 0.0,
+          "y_max": 0.71
+        },
+        {
+          "x": 0.754,
+          "z": -0.4435,
+          "width": 0.06,
+          "depth": 0.06,
+          "y_min": 0.0,
+          "y_max": 0.71
+        },
+        {
+          "x": 0.754,
+          "z": 0.4435,
+          "width": 0.06,
+          "depth": 0.06,
+          "y_min": 0.0,
+          "y_max": 0.71
+        }
+      ],
+      "collision_source": "template",
+      "is_fixed": false,
+      "evidence": {
+        "frames": [
+          {
+            "frame_index": 0,
+            "timestamp_s": 0.0,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-0-0072e51e7d.png",
+            "bbox_px": [
+              10.0,
+              399.0,
+              222.0,
+              140.0
+            ],
+            "provider_pose": null
+          },
+          {
+            "frame_index": 30,
+            "timestamp_s": 1.0133333333333334,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-30-3c4c80da6c.png",
+            "bbox_px": [
+              143.0,
+              450.0,
+              219.0,
+              174.0
+            ],
+            "provider_pose": null
+          },
+          {
+            "frame_index": 59,
+            "timestamp_s": 1.995,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-59-229a7e484b.png",
+            "bbox_px": [
+              118.0,
+              399.0,
+              254.0,
+              219.0
+            ],
+            "provider_pose": {
+              "object_index": 0,
+              "scale": [
+                [
+                  0.6908139586448669,
+                  0.6908139586448669,
+                  0.6908139586448669
+                ]
+              ],
+              "rotation": [
+                [
+                  0.1982751488685608,
+                  0.31851184368133545,
+                  -0.7753749489784241,
+                  -0.5080088376998901
+                ]
+              ],
+              "translation": [
+                [
+                  0.01312112808227539,
+                  -0.18776226043701172,
+                  1.3239374160766602
+                ]
+              ],
+              "camera_pose": null
+            }
+          }
+        ],
+        "primary_frame_index": 0
+      }
+    },
+    {
+      "id": "vid-000002",
+      "name": "Rear sofa",
+      "category": "sofa",
+      "source": "extracted_video",
+      "glb_url": "/api/reconstruction/assets/9523571a7a8df8e56d6b44c9701b93308e101cb12273933f3e9856f848971202.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.82,
+        "height": 0.85,
+        "depth": 0.818
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.6,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false,
+      "evidence": {
+        "frames": [
+          {
+            "frame_index": 0,
+            "timestamp_s": 0.0,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-0-d97fa32f54.png",
+            "bbox_px": [
+              102.0,
+              354.0,
+              211.0,
+              100.0
+            ],
+            "provider_pose": null
+          },
+          {
+            "frame_index": 30,
+            "timestamp_s": 1.0133333333333334,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-30-09fa8a2ca5.png",
+            "bbox_px": [
+              232.0,
+              408.0,
+              240.0,
+              130.0
+            ],
+            "provider_pose": {
+              "object_index": 0,
+              "scale": [
+                [
+                  0.8636466860771179,
+                  0.8636466860771179,
+                  0.8636466860771179
+                ]
+              ],
+              "rotation": [
+                [
+                  0.2521026134490967,
+                  0.2632880210876465,
+                  -0.7316210269927979,
+                  -0.5760436058044434
+                ]
+              ],
+              "translation": [
+                [
+                  -0.39344996213912964,
+                  -0.15937374532222748,
+                  1.6575100421905518
+                ]
+              ],
+              "camera_pose": null
+            }
+          },
+          {
+            "frame_index": 59,
+            "timestamp_s": 1.995,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-59-81da8ecabe.png",
+            "bbox_px": [
+              282.0,
+              358.0,
+              198.0,
+              163.0
+            ],
+            "provider_pose": null
+          }
+        ],
+        "primary_frame_index": 0
+      }
+    },
+    {
+      "id": "vid-000003",
+      "name": "Right sofa",
+      "category": "sofa",
+      "source": "extracted_video",
+      "glb_url": "/api/reconstruction/assets/ae95f9aff26ed25bf4122d39d9b25ff392dca459b721472d9646ab82439cd13e.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.9,
+        "height": 0.85,
+        "depth": 0.859
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.6,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions"
+      ],
+      "collision_parts": [],
+      "collision_source": "template",
+      "is_fixed": false,
+      "evidence": {
+        "frames": [
+          {
+            "frame_index": 0,
+            "timestamp_s": 0.0,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-0-ac5fad3531.png",
+            "bbox_px": [
+              339.0,
+              365.0,
+              94.0,
+              192.0
+            ],
+            "provider_pose": null
+          },
+          {
+            "frame_index": 105,
+            "timestamp_s": 3.515,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-105-55089ab21e.png",
+            "bbox_px": [
+              0.0,
+              248.0,
+              380.0,
+              478.0
+            ],
+            "provider_pose": {
+              "object_index": 0,
+              "scale": [
+                [
+                  1.6981256008148193,
+                  1.6981256008148193,
+                  1.6981256008148193
+                ]
+              ],
+              "rotation": [
+                [
+                  0.09720025211572647,
+                  0.4137817919254303,
+                  -0.8171855807304382,
+                  -0.3893653154373169
+                ]
+              ],
+              "translation": [
+                [
+                  0.38829612731933594,
+                  -0.044489502906799316,
+                  1.929471492767334
+                ]
+              ],
+              "camera_pose": null
+            }
+          },
+          {
+            "frame_index": 134,
+            "timestamp_s": 4.496666666666667,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-134-90913fd52a.png",
+            "bbox_px": [
+              0.0,
+              423.0,
+              178.0,
+              389.0
+            ],
+            "provider_pose": null
+          },
+          {
+            "frame_index": 150,
+            "timestamp_s": 5.003333333333333,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-150-d9c11fcd6a.png",
+            "bbox_px": [
+              0.0,
+              363.0,
+              171.0,
+              442.0
+            ],
+            "provider_pose": null
+          }
+        ],
+        "primary_frame_index": 105
+      }
+    },
+    {
+      "id": "vid-000004",
+      "name": "Office chair",
+      "category": "chair",
+      "source": "extracted_video",
+      "glb_url": "/api/reconstruction/assets/aee1f9343d661a901b832bb9f811a6bed7ceef67ab05318406cce3e95e9cb86a.glb",
+      "product_url": null,
+      "price_gbp": null,
+      "bbox_m": {
+        "width": 1.015,
+        "height": 0.95,
+        "depth": 0.741
+      },
+      "has_screen": false,
+      "requires_front_clear_m": 0.6,
+      "wall_flush_preferred": true,
+      "is_proxy": false,
+      "dimension_source": "estimated",
+      "correction_needed": [
+        "dimensions"
+      ],
+      "collision_parts": [
+        {
+          "x": 0.0,
+          "z": 0.055575,
+          "width": 1.015,
+          "depth": 0.62985,
+          "y_min": 0.0,
+          "y_max": 0.475
+        },
+        {
+          "x": 0.0,
+          "z": -0.314925,
+          "width": 1.015,
+          "depth": 0.11115,
+          "y_min": 0.0,
+          "y_max": 0.95
+        }
+      ],
+      "collision_source": "template",
+      "is_fixed": false,
+      "evidence": {
+        "frames": [
+          {
+            "frame_index": 0,
+            "timestamp_s": 0.0,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-0-e5ed95d8dc.png",
+            "bbox_px": [
+              367.0,
+              499.0,
+              54.0,
+              112.0
+            ],
+            "provider_pose": null
+          },
+          {
+            "frame_index": 105,
+            "timestamp_s": 3.515,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-105-090dc2107a.png",
+            "bbox_px": [
+              276.0,
+              507.0,
+              204.0,
+              341.0
+            ],
+            "provider_pose": {
+              "object_index": 0,
+              "scale": [
+                [
+                  0.5479267835617065,
+                  0.5479267835617065,
+                  0.5479267835617065
+                ]
+              ],
+              "rotation": [
+                [
+                  0.07508409023284912,
+                  0.4517298638820648,
+                  -0.7847939729690552,
+                  -0.41750746965408325
+                ]
+              ],
+              "translation": [
+                [
+                  -0.2953667938709259,
+                  -0.48787903785705566,
+                  1.2113889455795288
+                ]
+              ],
+              "camera_pose": null
+            }
+          },
+          {
+            "frame_index": 134,
+            "timestamp_s": 4.496666666666667,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-134-a668756a9f.png",
+            "bbox_px": [
+              109.0,
+              477.0,
+              329.0,
+              371.0
+            ],
+            "provider_pose": null
+          },
+          {
+            "frame_index": 150,
+            "timestamp_s": 5.003333333333333,
+            "image_size_px": [
+              480,
+              848
+            ],
+            "mask_url": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-150-210622d67a.png",
+            "bbox_px": [
+              159.0,
+              443.0,
+              290.0,
+              405.0
+            ],
+            "provider_pose": null
+          }
+        ],
+        "primary_frame_index": 105
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "assets/9253a772277bb29a31b6ffdfb3339cddc820f3a49464e629b0be89325d2f2174.glb",
+      "sha256": "9253a772277bb29a31b6ffdfb3339cddc820f3a49464e629b0be89325d2f2174",
+      "size_bytes": 1257468
+    },
+    {
+      "path": "assets/9523571a7a8df8e56d6b44c9701b93308e101cb12273933f3e9856f848971202.glb",
+      "sha256": "9523571a7a8df8e56d6b44c9701b93308e101cb12273933f3e9856f848971202",
+      "size_bytes": 1095976
+    },
+    {
+      "path": "assets/ae95f9aff26ed25bf4122d39d9b25ff392dca459b721472d9646ab82439cd13e.glb",
+      "sha256": "ae95f9aff26ed25bf4122d39d9b25ff392dca459b721472d9646ab82439cd13e",
+      "size_bytes": 1157840
+    },
+    {
+      "path": "assets/aee1f9343d661a901b832bb9f811a6bed7ceef67ab05318406cce3e95e9cb86a.glb",
+      "sha256": "aee1f9343d661a901b832bb9f811a6bed7ceef67ab05318406cce3e95e9cb86a",
+      "size_bytes": 1410088
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-0-0072e51e7d.png",
+      "sha256": "f9d4aa217aa2b5f52c228a9f49b97ece3157c7f3a97e79754a5daf81c6ee9ef8",
+      "size_bytes": 3006
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-30-3c4c80da6c.png",
+      "sha256": "a0d9a53638a5952ee212cd9426817cfb74df36e023d52f65aa7bffac4198345c",
+      "size_bytes": 3044
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-59-229a7e484b.png",
+      "sha256": "265f4aca648c3b76f5f4802db6fd4c99a95e83fdede1a5a4846a3f7218315620",
+      "size_bytes": 3203
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-0-d97fa32f54.png",
+      "sha256": "d1585274137a00e718a1582a5ef4945cdf9c8744ce0ecd902eced8d45a0d54bc",
+      "size_bytes": 2337
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-30-09fa8a2ca5.png",
+      "sha256": "ce86e6b1bc6050573f0aa64615ea6e84bec9e161155c798786ae47757b1f21ec",
+      "size_bytes": 2502
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-59-81da8ecabe.png",
+      "sha256": "8b560a2a1158e1709c77202ea2e0cd4336dd3aab1207a2b733f4b858cc92f26b",
+      "size_bytes": 2363
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-0-ac5fad3531.png",
+      "sha256": "42815fc3188b63911045e94231fb59d1fd1ee3c73d6d74cbfd31c0d0440441b2",
+      "size_bytes": 2628
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-105-55089ab21e.png",
+      "sha256": "7fc62dc790e6be956de458234334eb95b4b403ffc5dd5e4e0c928902ee3a3d19",
+      "size_bytes": 3553
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-134-90913fd52a.png",
+      "sha256": "050c91e22d6e53537f46e233a9b29dfb8a6cff0f46b56e4239401f02edb0b4ab",
+      "size_bytes": 3269
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-150-d9c11fcd6a.png",
+      "sha256": "c5a94e03b7948103c017cea76ffb12e31e6ea30cc6df0f0d498314682b0d8443",
+      "size_bytes": 5208
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-0-e5ed95d8dc.png",
+      "sha256": "b3030bb5e2c7c31b06ba38a8214b0a007f6394178fc38a9217293d601eff9533",
+      "size_bytes": 2265
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-105-090dc2107a.png",
+      "sha256": "3820c49e14146f7ed3af5aac3df53cd8f697430d6a6a1dd191c97c01e39f21cf",
+      "size_bytes": 3053
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-134-a668756a9f.png",
+      "sha256": "218056e3568240456181f5673dbc0d10880c10c1be6cca2afe0f88fcf35d981a",
+      "size_bytes": 5762
+    },
+    {
+      "path": "masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-150-210622d67a.png",
+      "sha256": "d31e266a241fe75dd82fdd0918a452a1f80b3c2864ec219f84e2023f08d6fa07",
+      "size_bytes": 4791
+    }
+  ]
+}

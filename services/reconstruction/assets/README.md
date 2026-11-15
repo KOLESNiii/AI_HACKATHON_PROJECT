@@ -643,3 +643,134 @@ was refused. **Not verified:** the image → SAM 3 → SAM 3D path on a live pro
 with provider doubles only; no paid request was made), any retailer other than IKEA, the
 `<model-viewer>` path on a live page, and how the meshes look in the editor. Offline masks
 are GrabCut and approximate; they matter only when a mesh is generated from the image.
+
+## Implemented: validation and demo cache (#20)
+
+**Demo cache.** `demo_cache.py` publishes a scene's delivered assets as a generation folder,
+`g-<hex>` named by its manifest's hash: `manifest.json` (the `FurnitureAsset`s exactly as
+delivered, and every file they reference with its SHA-256 and size) plus those files, at the
+paths they have in the data directory. The scene folder's `CURRENT` file names the published
+generation. A publish writes a complete generation, then switches `CURRENT` with one atomic
+replace: readers see the old cache or the new one, never none. A reader resolves `CURRENT` once
+and reads only that generation, which is never changed. Publishing deletes no generation, so a
+reader is never left without its files; `prune` removes the replaced ones, and is run only while
+nothing reads or publishes the cache. Run one publisher at a time. Installing
+a cache copies the files into a data directory, so each `glb_url` is served by the existing
+asset route and each evidence `mask_url` resolves with `segmentation.read_mask`. The delivery
+checks (`inspect_asset`) then run again on the installed files. Nothing is regenerated and no
+provider, key or network is used. Contracts, routes and dependencies do not change.
+
+| Function | Does |
+|---|---|
+| `publish_video_scene(scene_id, *, data_dir, cache_dir, ...)` | `deliver_furniture` (#18), which must be `ok`, then publish. A delivered proxy stays a proxy. |
+| `publish_catalog_scene(scene_id, *, data_dir, cache_dir)` | `imported_assets` (#19), each `ok`, published under `catalog:<scene_id>` with its retailer provenance. |
+| `publish_demo_cache(scene_id, assets, ...)` | The common step. Refuses (`CacheError`, the earlier cache untouched) on too few items, a repeated ID, a failed check or a missing file. Written as a new generation, then switched to. The manifest is deterministic, so republishing the same assets reuses their generation when its manifest and files are intact (a damaged one is rewritten). |
+| `read_demo_cache(scene_id, *, cache_dir, url_base=...)` | `None` when nothing is published. Otherwise the verified manifest: `CacheError` for a bad `CURRENT`, a bad manifest, another scene's, an asset outside `url_base`, a path leaving the folder, or a missing or altered file. |
+| `install_demo_cache(scene_id, *, cache_dir, data_dir, url_base=...)` | Read, copy what is missing or damaged from that one generation, check every asset again. |
+| `prune_demo_cache(scene_id, *, cache_dir)` | Delete every generation but the published one, and staging left by a killed publish. `CacheError` (nothing deleted) when `CURRENT` is bad or its generation is missing. Only while nothing reads or publishes. |
+
+`url_base` is the asset store's URL prefix (default `/api/reconstruction/assets`). Publish, read
+and install a cache with the same one.
+
+```bash
+uv run --extra reconstruction python -m services.reconstruction.assets.demo_cache publish \
+  --scene-id reviewed-opening-room --data-dir artifacts/furniture
+uv run --extra reconstruction python -m services.reconstruction.assets.demo_cache verify \
+  --scene-id reviewed-opening-room
+uv run --extra reconstruction python -m services.reconstruction.assets.demo_cache prune \
+  --scene-id reviewed-opening-room  # only while no service reads the cache
+# Catalog imports: --scene-id demo --catalog (publishes catalog:demo)
+```
+
+The default cache directory is `$FURNITURE_DEMO_CACHE_DIR`, else
+`services/reconstruction/assets/fixtures/demo_cache` (`config.demo_cache_dir()`). Exit codes:
+0 published, pruned or verified; 2 refused, missing or broken; 1 unusable input or storage.
+
+**Committed cache.** `fixtures/demo_cache/` holds `reviewed-opening-room`: the four normalised
+SAM 3D meshes of the opening room and their 15 SAM 3 masks, 4.97 MB, delivered from registry
+revision 13. They are derived from the committed `examples/three_floor_3.mp4`. All four sizes
+are `estimated` and ask for `"dimensions"`. Retailer models are not committed (third-party
+files): publish a catalog scene into a local cache directory instead. See
+`fixtures/demo_cache/README.md`.
+
+**Use in the real-input room (Dev 1).** `RealRoomFurniture` takes `cache_dir`, and
+`get_furniture_source` passes `demo_cache_dir()`. When the data directory has no registry data
+for the bound video, the room installs that video's cache and warns that it did. Pipeline data,
+when present, always wins, so running the pipeline still takes effect on the next request. A
+broken cache gives the old empty room with `NOT_EXTRACTED` plus the reason, and is asked again.
+`tests/conftest.py` points `FURNITURE_DEMO_CACHE_DIR` at an empty directory, so other tests are
+unaffected. The plan's labels are still read with fal vision (`FAL_KEY`). Without them the room's
+geometry does not match its binding and gets no furniture. Recorded labels for a key-free demo are
+Dev 1's #12.
+
+**Bounds agreement (Devs 1, 3, 4).** One size, three readers:
+
+| Reader | What it uses | Checked by |
+|---|---|---|
+| Delivery (Dev 2) | Vertex bounds of the stored file equal `bbox_m`, bottom-centre at the origin | `inspect_asset` |
+| Editor (Dev 3) | `Box3.setFromObject` in `Furniture.tsx`. GLTFLoader builds it from the `POSITION` accessors' declared min/max, not from the vertices | `inspect_asset` now compares the declared bounds with `bbox_m` too |
+| Auditor (Dev 4) | `furniture_footprint(item)`: the width × depth box at the pose | `tests/test_demo_cache_room.py` |
+| Placement (Dev 1) | `check_placed`: only the pose changes, corrections only grow | same |
+
+`tests/test_demo_cache_room.py` blocks every socket and loads the real-input room from an
+empty data directory with the committed cache. Four meshes are served by content hash and
+`check_placed` is clean. For every item, the editor's scale is 1 and its offset 0. Mesh
+vertices placed with the editor's transform (at yaw 0°, 90° and 37°) lie inside the auditor's
+footprint and reach each of its sides. Two solid sofas 5 mm apart are clear to the auditor, and
+5 mm overlapping they collide. Moving one item changes only that item, and the audit follows
+it. The same checks pass for a catalog import published, installed and placed.
+
+**Verification (2026-11-15), no fal.ai request.**
+
+- The committed cache verifies offline: four meshes, bounds error under 0.001 mm, and a
+  republish gives an identical manifest.
+- A real uvicorn server ran with `FAL_KEY` unset, an empty `FURNITURE_DATA_DIR` and the
+  recorded plan labels. `GET /scenes/plan-83a12322e933-floor-0-room-3` returned the four meshes
+  with the cache warning, and each `glb_url` was served 200 with bytes matching its hash. The live
+  spatial service accepted the scene.
+- Live IKEA GB imports of MICKE and BILLY (retailer models, `catalog` sizes) were published,
+  verified in a fresh directory and passed the editor/auditor agreement at four yaws.
+
+**Not verified:** the meshes drawn in a browser. The editor has no backend scene loader yet
+(#22, #25).
+
+**Changed baseline for Devs 3 and 4.** The meshes' estimated sizes are larger than the proxies
+of the #10 runbook, so the first audit of the real-input room differs from the one documented
+in `docs/architecture.md`:
+
+- `door0` is blocked by `vid-000003` (right sofa) and `vid-000004` (chair).
+- The table is 0.12 m in front of the rear sofa; it needs 0.6 m.
+- The right sofa is 0.37 m from the rear sofa.
+
+There are no collisions. All are estimates flagged for correction.
+
+## Provider configuration and dependencies
+
+Every key is server-side, read from `.env` by `bun run dev:*` (`--env-file .env`) or
+`uv run --env-file .env`. Never expose one through a `VITE_` variable.
+
+| Variable | Used by | Default |
+|---|---|---|
+| `FAL_KEY` | `--live` on `select_frames`, `segment_items`, `reconstruct_items` and `import_product`; plan labels and the vision observer in `room/` | none: offline paths only |
+| `FAL_VISION_ENDPOINT`, `FAL_VISION_MODEL` | Live frame selection and plan reading | `fal-ai/any-llm/vision`, `google/gemini-2.5-flash` |
+| `FURNITURE_DATA_DIR` | The service's registry, masks, meshes and asset store | `artifacts/furniture` (Git-ignored) |
+| `FURNITURE_DEMO_CACHE_DIR` | Published demo caches | `services/reconstruction/assets/fixtures/demo_cache` |
+
+Leave unused variables out of `.env` instead of setting them empty: an empty
+`FAL_VISION_ENDPOINT` replaces the default with an empty string.
+
+| fal.ai endpoint | Step | Cost control |
+|---|---|---|
+| `fal-ai/any-llm/vision` | Frame selection proposals (#14) | `--max-requests`; cached by scene, frames, model and prompt |
+| `fal-ai/sam-3/image` | Masks (#15), one request per frame | `--max-requests`; saved results are re-read free |
+| `fal-ai/sam-3/3d-objects` | Raw meshes (#16), one request per item | `--max-requests`, `--concurrency`; uncertain submissions are never repeated |
+
+IKEA search and product pages need no key. The search endpoint is undocumented and may change.
+`LINKUP_API_KEY` and `TAVILY_API_KEY` are not used by Dev 2's code.
+
+**Dependencies.** No change in #20. The `reconstruction` extra (`opencv-python-headless`,
+`trimesh`, `fal-client`, `pillow`) covers every furniture CLI, the demo cache and the service.
+The service already starts with it (`bun run dev:reconstruction`). The bounds-agreement test
+also needs the `spatial` extra (`shapely`) and is skipped without it. Frame selection needs
+FFmpeg and FFprobe 8 on `PATH`; the demo cache, delivery and catalog import do not.
+`bun run setup` installs every extra.
