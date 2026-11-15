@@ -186,9 +186,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Sidebar.tsx": {
-    "mtime": 1794732813.0689764,
-    "seen": 1794740268.6440334,
-    "ast_hash": "23f35884bec4efa6aa4052713f6d4395",
+    "mtime": 1794740947.0606596,
+    "seen": 1794741360.4572864,
+    "ast_hash": "a9f87477e21ca943d5fb4dcb64c38ab4",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/VersionTree.tsx": {
@@ -390,9 +390,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/products.ts": {
-    "mtime": 1794732813.069105,
-    "seen": 1794740268.6440864,
-    "ast_hash": "19380c07d0c5feefffe26923d38073c3",
+    "mtime": 1794740947.0608516,
+    "seen": 1794741360.4573438,
+    "ast_hash": "d56284c2fce9bbb68a1b9132ea1abe31",
     "semantic_hash": ""
   },
   "frontend/src/lib/roomVersions.ts": {
@@ -432,15 +432,15 @@
     "semantic_hash": ""
   },
   "frontend/src/store.ts": {
-    "mtime": 1794740262.3865077,
-    "seen": 1794740268.6440973,
-    "ast_hash": "917e5bfb6c39d41084a86d2c43f6ce08",
+    "mtime": 1794740947.0612254,
+    "seen": 1794741360.4573557,
+    "ast_hash": "8227c9da7d79b1a791cca98816e79667",
     "semantic_hash": ""
   },
   "frontend/tests/addProduct.test.ts": {
-    "mtime": 1794732813.0712583,
-    "seen": 1794740268.644099,
-    "ast_hash": "64bfa33b9eb9d365684f7b77bcf39019",
+    "mtime": 1794740947.0614426,
+    "seen": 1794741360.4573576,
+    "ast_hash": "a21f9c0bab186056d3006db428d8b6c1",
     "semantic_hash": ""
   },
   "frontend/tests/agentAddItem.test.ts": {

@@ -10,7 +10,7 @@ import { matchingAudit } from '../../lib/layoutDiff'
 import { importCatalogUrl } from '../../lib/catalogImport'
 import type { CatalogItem } from '../../data/catalog'
 import { fitsRoom } from '../../lib/geometry'
-import type { ProductOption } from '../../lib/products'
+import { importKey, type ProductOption } from '../../lib/products'
 import { useStore, type Tab } from '../../store'
 import { Button, Chip, ScoreRing, StatusDot, type Status } from '../ui'
 import { LayoutProposalCard } from './LayoutProposalCard'
@@ -217,6 +217,9 @@ function ProductCard({ product }: { product: ProductOption }) {
   const inLibrary = useStore((s) =>
     s.library.some((e) => e.product.product_url === product.product_url),
   )
+  const prefetch = useStore(
+    (s) => s.prefetch[importKey(product, s.scene.scene_id)],
+  )
   const addProductToScene = useStore((s) => s.addProductToScene)
   const size = product.bbox_m
     ? `${product.bbox_m.width.toFixed(2)} × ${product.bbox_m.depth.toFixed(2)} × ${product.bbox_m.height.toFixed(2)} m`
@@ -243,6 +246,11 @@ function ProductCard({ product }: { product: ProductOption }) {
           )}
         </span>
         <span className="mono truncate text-[11px] text-ink-mist">{size}</span>
+        {!inLibrary && prefetch && (
+          <span className="truncate text-[11px] text-ink-mist">
+            {prefetch === 'ready' ? '3D model ready' : 'Preparing 3D model…'}
+          </span>
+        )}
       </div>
       <Button
         disabled={adding}

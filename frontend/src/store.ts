@@ -43,10 +43,11 @@ import type { Pt } from './lib/geometry'
 import { canStand, humanPoseAt } from './lib/walk'
 import {
   freshItemId,
-  importProduct,
+  importKey,
   loadLibrary,
   placeItem,
   saveLibrary,
+  sharedImport,
   type LibraryEntry,
   type ProductOption,
 } from './lib/products'
@@ -163,6 +164,8 @@ interface State {
   library: LibraryEntry[]
   /** Product URLs currently being imported or placed. */
   adding: string[]
+  /** Background imports of found products, keyed by `importKey(product, scene_id)`. */
+  prefetch: Record<string, 'pending' | 'ready'>
 
   setScreen: (s: Screen) => void
   setUploadFiles: (kind: UploadKind, files: File[]) => void
@@ -191,6 +194,8 @@ interface State {
   addFromCatalog: (c: CatalogItem) => void
   /** Import a found product into the library, then place it in the room. */
   addProductToScene: (p: ProductOption) => Promise<void>
+  /** Starts importing found products in parallel so Add to scene only has to place them. */
+  prefetchProducts: (products: ProductOption[]) => void
   applyPoses: (messageIndex: number) => void
   rejectProposal: (messageIndex: number) => void
   sendChat: (text: string) => Promise<void>
@@ -430,6 +435,7 @@ export const useStore = create<State>((set, get) => ({
   toasts: [],
   library: loadLibrary(),
   adding: [],
+  prefetch: {},
 
   setScreen: (screen) =>
     set({
@@ -806,7 +812,8 @@ export const useStore = create<State>((set, get) => ({
       // 1. The library: imported once per product, reused after that.
       let entry = get().library.find((e) => e.product.product_url === url)
       if (!entry) {
-        const item = await importProduct(product, get().scene.scene_id)
+        // Usually already running, or done, since the chat reply prefetched it.
+        const item = await sharedImport(product, get().scene.scene_id)
         entry = { product, item }
         const library = [
           entry,
@@ -864,6 +871,28 @@ export const useStore = create<State>((set, get) => ({
       )
     } finally {
       set((s) => ({ adding: s.adding.filter((u) => u !== url) }))
+    }
+  },
+  prefetchProducts: (products) => {
+    const sceneId = get().scene.scene_id
+    const mark = (key: string, status: 'pending' | 'ready' | null) =>
+      set((s) => {
+        const prefetch = { ...s.prefetch }
+        if (status) prefetch[key] = status
+        else delete prefetch[key]
+        return { prefetch }
+      })
+    for (const product of products) {
+      const url = product.product_url
+      const key = importKey(product, sceneId)
+      if (get().library.some((e) => e.product.product_url === url)) continue
+      if (get().prefetch[key]) continue
+      mark(key, 'pending')
+      // A failure stays quiet here: Add to scene retries the import and reports it.
+      sharedImport(product, sceneId).then(
+        () => mark(key, 'ready'),
+        () => mark(key, null),
+      )
     }
   },
   applyPoses: (index) => {
@@ -1004,6 +1033,7 @@ export const useStore = create<State>((set, get) => ({
           },
         ],
       }))
+      if (reply.products?.length) get().prefetchProducts(reply.products)
     } catch (error) {
       if (current() && !controller.signal.aborted)
         set((s) => ({
