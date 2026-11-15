@@ -34,6 +34,30 @@ Frontend and service directories can be developed independently. Coordinate
 changes to root manifests, lockfiles, proxy routing, and shared contracts.
 
 
+## Frontend audio
+
+`frontend/src/audio/` owns a native Web Audio mixer with music, effects and master
+gain buses. One `SoundControls` instance lives outside screen transitions and
+subscribes to typed semantic cues. Store actions emit cues after successful edits;
+drag handlers emit once on completion, and unchanged/cancelled gestures are silent.
+Effects are synthesized from original resonant tones and filtered noise, cached as
+short buffers, capped at six voices, with rotation ticks throttled to 100 ms.
+
+Two streamed HTML audio elements repeat the bundled `public/audio/reverie.mp3`
+with a five-second equal-power crossfade. Navigation preserves playback; Play
+reduces music by 25%. Music loading never gates the room UI. Failed music stops
+retrying for that app session while effects remain available; unsupported audio
+leaves the UI functional. Blocked autoplay retries on user gestures. Hidden tabs
+pause media and suspend the context, and late playback results respect mute and
+disposal. React Strict Mode cleanup removes subscriptions, timers and audio nodes.
+
+A separate Zustand store saves validated audio preferences under
+`spaceshift.audio.v1` in localStorage, tolerating disabled/corrupt storage. Defaults
+are music 20%, effects 55%, both enabled. Audio preferences never enter `RoomScene`
+or bump its revision. No service, API key, runtime dependency or backend contract
+is added. Credits, source and reproducible asset preparation are in
+`frontend/public/audio/NOTICE.md`.
+
 ## Workstream ownership
 
 `ARCHITECTURE_DAG.md` defines the revised four-person execution plan: Dev 1 owns

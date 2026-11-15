@@ -12,6 +12,7 @@ import { Landscape } from './components/intake/Landscape'
 import { ProgressScreen } from './components/intake/ProgressScreen'
 import { UploadScreen } from './components/intake/UploadScreen'
 import { Toasts } from './components/ui'
+import { SoundControls } from './components/SoundControls'
 import { findRoom } from './data/demoHome'
 import { useStore, type Screen } from './store'
 
@@ -54,7 +55,7 @@ export default function App() {
   const roomSession = useStore((s) => s.roomSession)
   // A different panorama per screen; room builds alternate between two.
   const landscape =
-    screen === 'home'
+    screen === 'home' || screen === 'upload'
       ? 0
       : screen === 'reading'
         ? 1
@@ -118,6 +119,7 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
         <Toasts toasts={toasts} onDismiss={dismissToast} />
+        <SoundControls />
         <div className="aged-vignette" />
         <div className="paper-grain-overlay" />
       </div>

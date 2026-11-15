@@ -65,7 +65,7 @@ function RotationRing({ item }: { item: FurnitureItem }) {
     if (controls) controls.enabled = true
     setInteracting(false)
     setActive(false)
-    if (changed) commitEdit()
+    if (changed) commitEdit(e.type === 'pointercancel' ? null : 'rotate')
   }
 
   if (item.is_fixed) return null

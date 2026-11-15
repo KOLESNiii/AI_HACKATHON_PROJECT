@@ -9,6 +9,7 @@ import { handleItemKey } from '../src/components/editor/keyboard'
 import { freshMockScene } from '../src/data/mockScene'
 import type { FurnitureItem, RoomScene } from '../src/lib/contracts'
 import {
+  BODY_RADIUS_M,
   canStand,
   humanPoseAt,
   walkingDelta,
@@ -18,6 +19,7 @@ import {
 import { useStore } from '../src/store'
 
 const initial = useStore.getState()
+const r = BODY_RADIUS_M
 function room(): RoomScene {
   return {
     ...freshMockScene(),
@@ -46,11 +48,11 @@ beforeEach(() =>
 afterEach(() => useStore.setState(initial))
 
 describe('walking geometry', () => {
-  test('fits the whole 50 cm body inside the floor; touching is allowed', () => {
+  test('fits the whole body inside the floor; touching is allowed', () => {
     const scene = room()
     expect(canStand({ x: 5, z: 5 }, scene)).toBe(true)
-    expect(canStand({ x: 0.25, z: 0.25 }, scene)).toBe(true)
-    expect(canStand({ x: 0.24, z: 5 }, scene)).toBe(false)
+    expect(canStand({ x: r, z: r }, scene)).toBe(true)
+    expect(canStand({ x: r - 0.01, z: 5 }, scene)).toBe(false)
     expect(canStand({ x: 11, z: 5 }, scene)).toBe(false)
     expect(canStand({ x: NaN, z: 5 }, scene)).toBe(false)
   })
@@ -65,7 +67,7 @@ describe('walking geometry', () => {
       { x: 0, z: 10 },
     ]
     expect(canStand({ x: 8, z: 8 }, scene)).toBe(false)
-    expect(canStand({ x: 3.9, z: 5 }, scene)).toBe(false)
+    expect(canStand({ x: 4 - r + 0.01, z: 5 }, scene)).toBe(false)
     expect(canStand({ x: 3, z: 5 }, scene)).toBe(true)
   })
   test('rotated and fixed furniture block walking', () => {
@@ -98,8 +100,8 @@ describe('walking geometry', () => {
     scene.furniture[0].collision_parts[0].y_min = 1.99
     expect(canStand({ x: 5, z: 5 }, scene)).toBe(false)
   })
-  test('can pass a 51 cm corridor but not a 49 cm corridor', () => {
-    for (const gap of [0.49, 0.51]) {
+  test('can pass a corridor just wider than the body but not one just narrower', () => {
+    for (const gap of [2 * r - 0.01, 2 * r + 0.01]) {
       const scene = room()
       scene.furniture = [
         item({
@@ -112,24 +114,24 @@ describe('walking geometry', () => {
           bbox_m: { width: 4 - gap, depth: 8, height: 1 },
         }),
       ]
-      expect(canStand({ x: 5, z: 5 }, scene)).toBe(gap > 0.5)
+      expect(canStand({ x: 5, z: 5 }, scene)).toBe(gap > 2 * r)
     }
   })
   test('substeps prevent crossing thin furniture on a long step', () => {
     const scene = room()
     scene.furniture = [item({ bbox_m: { width: 0.01, depth: 10, height: 1 } })]
     const next = walkStep({ x: 1, z: 5 }, { x: 8, z: 0 }, scene)
-    expect(next.x).toBeLessThanOrEqual(4.745 + 1e-9)
+    expect(next.x).toBeLessThanOrEqual(4.995 - r + 1e-9)
     expect(canStand(next, scene)).toBe(true)
   })
   test('slides alongside walls and obstacles', () => {
     const scene = room()
-    const next = walkStep({ x: 0.25, z: 2 }, { x: -1, z: 1 }, scene)
-    expect(next.x).toBeCloseTo(0.25)
+    const next = walkStep({ x: r, z: 2 }, { x: -1, z: 1 }, scene)
+    expect(next.x).toBeCloseTo(r)
     expect(next.z).toBeCloseTo(3)
     scene.furniture = [item()]
-    const beside = walkStep({ x: 4.25, z: 5 }, { x: 0.1, z: 0.2 }, scene)
-    expect(beside.x).toBeCloseTo(4.25)
+    const beside = walkStep({ x: 4.5 - r, z: 5 }, { x: 0.1, z: 0.2 }, scene)
+    expect(beside.x).toBeCloseTo(4.5 - r)
     expect(beside.z).toBeCloseTo(5.2)
   })
   test('diagonal input has constant speed, respects facing and caps long frames', () => {
