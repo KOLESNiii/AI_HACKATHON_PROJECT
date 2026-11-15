@@ -3,7 +3,16 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from contracts.schema import BBoxM, DoorOpening, FurnitureItem, Pose2D, RoomScene, Vec2, WallSegment
+from contracts.schema import (
+    BBoxM,
+    CollisionPart,
+    DoorOpening,
+    FurnitureItem,
+    Pose2D,
+    RoomScene,
+    Vec2,
+    WallSegment,
+)
 from services.spatial_engine.geometry import SpatialInputError, furniture_footprint
 from services.spatial_engine.main import app
 from services.spatial_engine.placement import place_item
@@ -70,6 +79,31 @@ def test_existing_furniture_is_avoided_and_never_moved() -> None:
 
 def test_free_standing_item_prefers_open_floor() -> None:
     assert not place_item(room(), item(0.8, 0.8, wall_flush_preferred=False)).against_wall
+
+
+def test_item_nests_under_a_tabletop_when_the_audit_allows_it() -> None:
+    # The reviewer's repro: only the tabletop is occupied, so the chair fits beneath it.
+    table = item(
+        0.9,
+        0.9,
+        id="table",
+        name="Table",
+        category="table",
+        pose=Pose2D(x=0.5, z=0.5),
+        collision_parts=[CollisionPart(x=0, z=0, width=0.9, depth=0.9, y_min=0.7, y_max=0.75)],
+    )
+    scene = room(table).model_copy(
+        update={
+            "floor_polygon": [Vec2(x=x, z=z) for x, z in [(0, 0), (1, 0), (1, 1), (0, 1)]],
+            "walls": [],
+            "doors": [],
+        }
+    )
+    chair = item(0.4, 0.4, id="chair", name="Chair", category="chair")
+    chair = chair.model_copy(update={"bbox_m": BBoxM(width=0.4, depth=0.4, height=0.5)})
+    placement = place_item(scene, chair)
+    assert not placement.report.collisions
+    assert furniture_footprint(placement.item).intersects(furniture_footprint(table))
 
 
 def test_too_big_item_is_refused() -> None:

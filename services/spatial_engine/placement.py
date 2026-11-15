@@ -12,13 +12,15 @@ from dataclasses import dataclass
 from math import atan2, degrees, hypot
 
 from shapely.geometry import Point, Polygon  # type: ignore[import-untyped]
-from shapely.ops import unary_union  # type: ignore[import-untyped]
 
-from contracts.schema import AuditReport, FurnitureItem, Pose2D, RoomScene
+from contracts.schema import MIN_PLAN_OVERLAP_M2, AuditReport, FurnitureItem, Pose2D, RoomScene
+from services.spatial_engine.audit import height_overlaps
 from services.spatial_engine.geometry import (
+    CollisionVolume,
     SpatialInputError,
     door_center,
     door_swing_sector,
+    furniture_collision_volumes,
     furniture_footprint,
     prepare_scene,
 )
@@ -27,7 +29,6 @@ from services.spatial_engine.report import audit_scene
 WALL_GAP_M = 0.02
 STEP_M = 0.2
 MAX_AUDITS = 10
-_OVERLAP_M2 = 1e-4
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,21 @@ def _open_poses(floor: Polygon, item: FurnitureItem) -> list[tuple[Pose2D, bool]
     return poses
 
 
+def _overlaps(volumes: list[CollisionVolume], obstacles: list[CollisionVolume]) -> bool:
+    """The audit's own test: plan overlap above tolerance where the heights also overlap.
+
+    Uses occupied collision parts, not whole bounding boxes, so a chair can nest under a
+    tabletop exactly when the collision audit would accept it.
+    """
+    return any(
+        part.footprint.intersects(obstacle.footprint)
+        and height_overlaps(part.y_min, part.y_max, obstacle.y_min, obstacle.y_max)
+        and part.footprint.intersection(obstacle.footprint).area > MIN_PLAN_OVERLAP_M2
+        for part in volumes
+        for obstacle in obstacles
+    )
+
+
 def place_item(scene: RoomScene, item: FurnitureItem) -> Placement:
     """The best audited pose for `item` in `scene`. Raises SpatialInputError if none fits.
 
@@ -88,15 +104,16 @@ def place_item(scene: RoomScene, item: FurnitureItem) -> Placement:
     prepared = prepare_scene(scene)
     floor = prepared.floor
     walls = {wall.id: wall for wall in scene.walls}
-    blocked = [entry.footprint for entry in prepared.furniture]
+    # Existing items' occupied parts, then each door sweep from the floor to its head.
+    obstacles = [volume for entry in prepared.furniture for volume in entry.volumes]
     doors: list[tuple[float, float]] = []
     for door in scene.doors:
         wall = walls.get(door.wall_id)
         if wall is None:
             continue
-        blocked.append(door_swing_sector(door, wall, scene.floor_polygon))
+        sweep = door_swing_sector(door, wall, scene.floor_polygon)
+        obstacles.append(CollisionVolume(sweep, 0.0, door.head_height_m))
         doors.append(door_center(door, wall, scene.floor_polygon))
-    obstacles = unary_union(blocked) if blocked else Polygon()
     inside = floor.buffer(1e-6)
 
     candidates = _wall_poses(floor, item) + _open_poses(floor, item)
@@ -107,7 +124,7 @@ def place_item(scene: RoomScene, item: FurnitureItem) -> Placement:
         footprint = furniture_footprint(placed)
         if not inside.contains(footprint):
             continue
-        if footprint.intersection(obstacles).area > _OVERLAP_M2:
+        if _overlaps(furniture_collision_volumes(placed), obstacles):
             continue
         spot = Point(pose.x, pose.z)
         door_distance = min((hypot(pose.x - dx, pose.z - dz) for dx, dz in doors), default=5.0)
