@@ -1,6 +1,7 @@
 """Layout ranking uses real audited geometry and explicit, stable priorities."""
 
 import math
+from dataclasses import replace
 
 import pytest
 
@@ -17,9 +18,11 @@ from contracts.schema import (
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.objective import (
     NEAR_WINDOW_M,
+    beats_original,
     compare_evaluations,
     compare_layouts,
     evaluate_layout,
+    is_acceptable_proposal,
 )
 
 
@@ -437,3 +440,82 @@ def test_inputs_and_nullable_scores_unchanged() -> None:
         result.baseline.report.overall_score is None
         and result.candidate.report.overall_score is None
     )
+
+
+def test_custom_goal_ignores_movement_but_never_accepts_worse_access() -> None:
+    from services.spatial_engine.objective import beats_original
+
+    original = room([item("target", 2, 2, clearance=1), item("a", 6, 6)])
+    moved = original.model_copy(deep=True)
+    moved.furniture[1].pose = Pose2D(x=7, z=7)
+    old, new = evaluate_layout(original, original), evaluate_layout(original, moved)
+    assert compare_evaluations(old, new, "custom").outcome == "equal"
+    assert beats_original(old, new, "custom") and not beats_original(old, new, "balanced")
+    assert not beats_original(old, old, "custom")  # nothing moved
+    blocked = original.model_copy(deep=True)
+    blocked.furniture[1].pose = Pose2D(x=2, z=3.5)
+    assert not beats_original(old, evaluate_layout(original, blocked), "custom")
+
+
+def test_custom_clearance_gain_cannot_compensate_for_lost_circulation(
+    divided_access_room: RoomScene,
+) -> None:
+    original = divided_access_room
+    candidate = original.model_copy(deep=True)
+    candidate.furniture[1].pose = Pose2D(x=4, z=7.5)
+    before = evaluate_layout(original, original)
+    after = evaluate_layout(original, candidate)
+    assert after.metrics.passes_critical_checks
+    assert before.metrics.clearance_deficit == pytest.approx(0.5)
+    assert after.metrics.clearance_deficit == 0
+    assert before.metrics.reachable_floor_ratio == pytest.approx(0.86124, abs=1e-5)
+    assert after.metrics.reachable_floor_ratio == pytest.approx(0.42108, abs=1e-5)
+    assert compare_evaluations(before, after, "custom").outcome == "better"
+    assert not beats_original(before, after, "custom")
+    assert not is_acceptable_proposal(before, after, "custom")
+    assert is_acceptable_proposal(before, after, "balanced")
+
+
+@pytest.mark.parametrize(
+    ("clearance", "reachable", "accepted"),
+    [
+        (0.6, 0.9, False),
+        (0.4, 0.7, False),
+        (0.4, None, False),
+        (0.5 + 1e-10, 0.8 - 1e-10, True),
+        (0.4, 0.9, True),
+    ],
+)
+def test_custom_access_metrics_are_checked_independently(
+    clearance: float,
+    reachable: float | None,
+    accepted: bool,
+) -> None:
+    measured = evaluate_layout(room([item("box", 2, 2)]), room([item("box", 2, 2)]))
+    before = replace(
+        measured,
+        metrics=replace(
+            measured.metrics,
+            clearance_deficit=0.5,
+            reachable_floor_ratio=0.8,
+        ),
+    )
+    after = replace(
+        measured,
+        metrics=replace(
+            measured.metrics,
+            clearance_deficit=clearance,
+            reachable_floor_ratio=reachable,
+            moved_item_count=1,
+            near_window_shortfall_m=0,
+        ),
+    )
+    # A higher-priority placement improvement must not bypass the clearance guard either.
+    before = replace(
+        before,
+        metrics=replace(before.metrics, near_window_shortfall_m=1),
+        near_window_item_ids=("box",),
+    )
+    after = replace(after, near_window_item_ids=("box",))
+    assert is_acceptable_proposal(before, after, "custom") is accepted
+    assert beats_original(before, after, "custom") is accepted

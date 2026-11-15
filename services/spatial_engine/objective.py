@@ -41,7 +41,12 @@ _SOFT_PRIORITIES: dict[LayoutGoal, tuple[str, ...]] = {
     ),
     "roomier": ("reachable_floor_ratio", "clearance_deficit", "movement_m"),
     "minimal_changes": ("clearance_deficit", "movement_m", "reachable_floor_ratio"),
+    # The user wants something we cannot measure, so movement is not penalised: only access
+    # may not get worse. See `beats_original`.
+    "custom": ("clearance_deficit", "reachable_floor_ratio"),
 }
+# A new measurable goal (e.g. Feng Shui) needs three things: a metric on LayoutMetrics, an
+# entry in this table, and a value in contracts.schema.LayoutGoal. Nothing else ranks layouts.
 _MAXIMISED = frozenset({"reachable_floor_ratio", "brightness_openness"})
 
 
@@ -253,6 +258,7 @@ def compare_evaluations(
     - brighter: window openness, front clearance, walking area, least movement.
     - roomier: walking area, front clearance, least movement.
     - minimal_changes: front clearance, least movement, walking area.
+    - custom: front clearance, walking area; movement is not penalised.
 
     Any unavailable metric is skipped, never replaced by zero or infinity.
     All priorities use 1e-9 absolute/relative float tolerance. Counts are exact.
@@ -312,3 +318,61 @@ def compare_layouts(
         original, candidate, measure_brightness=measure, near_window_item_ids=near_window_item_ids
     )
     return compare_evaluations(baseline_evaluation, proposed, goal)
+
+
+def _access_not_worse(original: LayoutEvaluation, candidate: LayoutEvaluation) -> bool:
+    """Check access independently; lexicographic ranking can hide a regression."""
+    before, after = original.metrics, candidate.metrics
+    if after.clearance_deficit > before.clearance_deficit and not isclose(
+        after.clearance_deficit, before.clearance_deficit, rel_tol=1e-9, abs_tol=1e-9
+    ):
+        return False
+    if before.reachable_floor_ratio is not None:
+        if after.reachable_floor_ratio is None:
+            return False
+        if after.reachable_floor_ratio < before.reachable_floor_ratio and not isclose(
+            after.reachable_floor_ratio, before.reachable_floor_ratio, rel_tol=1e-9, abs_tol=1e-9
+        ):
+            return False
+    return True
+
+
+def is_acceptable_proposal(
+    original: LayoutEvaluation, candidate: LayoutEvaluation, goal: LayoutGoal = "balanced"
+) -> bool:
+    """Whether a layout may be recommended at all, before it is ranked.
+
+    Never with overlapping furniture or anything outside the room: those are physically
+    impossible. A blocked door swing is tolerated only when that same door was already
+    blocked in the original, so a room with a problem no move can fix (a fixed item in a
+    door's swing) can still receive suggestions. Blocking a previously clear door is refused.
+    Custom requests also require each known access metric not to regress from the original.
+    """
+    blocked_before = {issue.door_id for issue in original.report.blocked_doors}
+    blocked_after = {issue.door_id for issue in candidate.report.blocked_doors}
+    metrics = candidate.metrics
+    return (
+        metrics.collision_count == 0
+        and metrics.out_of_bounds_count == 0
+        and blocked_after <= blocked_before
+        and (goal != "custom" or _access_not_worse(original, candidate))
+    )
+
+
+def beats_original(
+    baseline: LayoutEvaluation, candidate: LayoutEvaluation, goal: LayoutGoal
+) -> bool:
+    """Whether a candidate is a worthwhile suggestion compared with the original.
+
+    A measurable goal needs a strictly better ranking. A `custom` request cannot be measured,
+    so moving something is the point: the candidate must not rank worse, each access metric
+    must independently not regress, and at least one item must actually move.
+    """
+    outcome = compare_evaluations(baseline, candidate, goal).outcome
+    if goal == "custom":
+        return (
+            _access_not_worse(baseline, candidate)
+            and outcome != "worse"
+            and candidate.metrics.moved_item_count > 0
+        )
+    return outcome == "better"

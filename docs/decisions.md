@@ -293,3 +293,31 @@
   the plan deterministic without labels (recorded labels) is left to #12.
 - The asset store is mounted with the same data directory the source reads (#52), so a proxy
   URL in a scene is always servable by the same process.
+
+## Tolerance for reconstructed coordinates
+
+- The shared three-floor demo fixtures round wall coordinates to six decimals, so
+  door hinges sit about 3e-7 m off their wall. The audit required agreement within
+  1e-8 m and rejected 23 of the 25 demo rooms with HTTP 422; the door-entry test
+  had the same margin and reported empty rooms as 0% reachable.
+- Doors, windows and door entries now share `POSITION_TOLERANCE_M` (1 mm). An
+  opening more than 1 mm off its wall is still rejected as invalid input.
+
+## Acceptable layout proposals
+
+- Operator decision (2026-11-14): a proposal may keep a door-swing problem that
+  already existed, but never overlapping furniture or items outside the room, and
+  it may not block a door that was clear. This replaced the all-or-nothing rule,
+  under which a room with a fixed item in a door swing could never get a suggestion.
+- Operator decision (2026-11-14): no cached demo answers. Requests are always live.
+
+## Custom requests
+
+- A request that none of the four measurable goals fits becomes the `custom` goal: Sonnet
+  receives the user's words and the server enforces the hard rules and that access does not
+  get worse. The wish itself is unverified and the explanation says so; the user judges it in
+  the preview. Hard rules (no overlap, nothing outside the room, no newly blocked door, locks)
+  are never relaxed. Further measurable goals (Feng Shui) are added as a metric plus one entry
+  in the priority table.
+- An instruction that could not be read is dropped with a note and the result is reported as
+  `stopped_early`, so it is never presented as honouring what the user wrote.
