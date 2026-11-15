@@ -126,13 +126,15 @@ class MeshRecord(Record):
     mask_path: str
     """The mask sent with the frame. A mesh is current only while this is still the item's
     current mask for that frame."""
-    provider: Literal["sam3d"]
+    provider: Literal["sam3d", "retailer"]
+    """`retailer`: the model the retailer publishes for a catalog product (#19), not generated."""
     mesh_path: str
     """glTF 2.0 binary as the provider returned it. Relative to the data directory."""
     size_bytes: int = Field(gt=0)
     triangles: int = Field(gt=0)
     extents: tuple[float, float, float]
-    """Axis-aligned size in the provider's own units (SAM 3D: longest side about 1), not metres."""
+    """Axis-aligned size in the provider's own units (SAM 3D: longest side about 1), not
+    trusted as metres."""
     pose: dict[str, Any] | None = None
     """Raw per-object provider metadata (SAM 3D: scale, rotation, translation, camera_pose)."""
 
