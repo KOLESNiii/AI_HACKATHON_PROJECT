@@ -11,44 +11,24 @@ def proxy_glb(width: float, height: float, depth: float) -> bytes:
         for z in (-depth / 2, depth / 2)
         for x in (-width / 2, width / 2)
     ]
+    # Counter-clockwise when viewed from outside, so normals face outward
+    # and the box survives back-face culling.
+    # fmt: off
     indices = [
-        0,
-        2,
-        1,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        5,
-        7,
-        6,
-        0,
-        1,
-        4,
-        1,
-        5,
-        4,
-        2,
-        6,
-        3,
-        3,
-        6,
-        7,
-        0,
-        4,
-        2,
-        2,
-        4,
-        6,
-        1,
-        3,
-        5,
-        3,
-        7,
-        5,
+        0, 1, 2,
+        1, 3, 2,
+        4, 6, 5,
+        5, 6, 7,
+        0, 4, 1,
+        1, 4, 5,
+        2, 3, 6,
+        3, 7, 6,
+        0, 2, 4,
+        2, 6, 4,
+        1, 5, 3,
+        3, 5, 7,
     ]
+    # fmt: on
     positions = struct.pack("<24f", *(v for point in vertices for v in point))
     binary = positions + struct.pack("<36H", *indices)
     document = {

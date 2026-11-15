@@ -309,3 +309,23 @@ def test_proxy_has_metric_bottom_centred_bounds() -> None:
     doc = json.loads(data[20 : 20 + size])
     assert doc["accessors"][0]["min"] == [-0.6, 0, -0.3]
     assert doc["accessors"][0]["max"] == [0.6, 0.8, 0.3]
+
+
+def test_proxy_faces_wind_outward() -> None:
+    width, height, depth = 1.2, 0.8, 0.6
+    data = proxy_glb(width, height, depth)
+    size = struct.unpack_from("<I", data, 12)[0]
+    binary = data[20 + size + 8 :]
+    points = [struct.unpack_from("<3f", binary, 12 * i) for i in range(8)]
+    indices = struct.unpack_from("<36H", binary, 96)
+    centre = (0.0, height / 2, 0.0)
+    volume = 0.0
+    for t in range(12):
+        a, b, c = (points[i] for i in indices[3 * t : 3 * t + 3])
+        u = [b[k] - a[k] for k in range(3)]
+        v = [c[k] - a[k] for k in range(3)]
+        normal = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+        face_centre = [(a[k] + b[k] + c[k]) / 3 - centre[k] for k in range(3)]
+        assert sum(n * f for n, f in zip(normal, face_centre)) > 0
+        volume += sum(p * n for p, n in zip(a, normal)) / 6  # a · (b × c) / 6
+    assert volume == pytest.approx(width * height * depth, rel=1e-6)
