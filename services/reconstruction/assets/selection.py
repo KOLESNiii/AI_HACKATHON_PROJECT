@@ -198,12 +198,27 @@ def select_furniture_frames(
     """
     if not scene_id.strip() or len(scene_id) > 200:
         raise ValueError("scene_id must contain 1..200 non-blank characters")
+    options = options or SelectionOptions()
+    sources, frames, warnings = sample_sources(video_paths, data_dir, options)
+    return discover_frames(
+        scene_id,
+        sources,
+        frames,
+        data_dir=data_dir,
+        provider=provider,
+        options=options,
+        warnings=warnings,
+    )
+
+
+def sample_sources(
+    video_paths: Sequence[Path], data_dir: Path, options: SelectionOptions
+) -> tuple[list[SourceVideo], list[Frame], list[str]]:
+    """Sample every video once (the first half of `select_furniture_frames`): its sources,
+    their upright frames in (source, time) order, and sampling notes. Offline."""
     if not 1 <= len(video_paths) <= 5:
         raise ValueError("provide between one and five videos")
-    options = options or SelectionOptions()
-    provider = provider or OfflineProvider()
     data_dir = data_dir.resolve()
-    registry = Registry(data_dir, namespace=scene_id)
     sources: list[SourceVideo] = []
     frames: list[Frame] = []
     warnings: list[str] = []
@@ -215,6 +230,32 @@ def select_furniture_frames(
         frames.extend(sampled)
         warnings.extend(notes)
     frames.sort(key=lambda f: (f.source_id, f.timestamp_s, f.frame_index))
+    return sources, frames, warnings
+
+
+def discover_frames(
+    scene_id: str,
+    sources: Sequence[SourceVideo],
+    frames: Sequence[Frame],
+    *,
+    data_dir: Path,
+    provider: DiscoveryProvider | None = None,
+    options: SelectionOptions | None = None,
+    warnings: Sequence[str] = (),
+) -> SelectionResult:
+    """Register these sampled frames under `scene_id` and discover furniture in them (the
+    second half of `select_furniture_frames`). Lets a caller sample once and discover in
+    subsets of the frames, e.g. one room's frames per namespace."""
+    if not scene_id.strip() or len(scene_id) > 200:
+        raise ValueError("scene_id must contain 1..200 non-blank characters")
+    options = options or SelectionOptions()
+    provider = provider or OfflineProvider()
+    data_dir = data_dir.resolve()
+    registry = Registry(data_dir, namespace=scene_id)
+    used = {f.source_id for f in frames}
+    sources = [s for s in sources if s.source_id in used]
+    frames = sorted(frames, key=lambda f: (f.source_id, f.timestamp_s, f.frame_index))
+    warnings = list(warnings)
     if len(sources) > 1 and options.room_key is None:
         warnings.append("cross-video identity unverified: supply a caller-confirmed room_key")
 

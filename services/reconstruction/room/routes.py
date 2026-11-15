@@ -115,7 +115,7 @@ async def parse_plan(
         kept = await run_in_threadpool(keep_videos, staged, plan.plan_id, uploads)
     finally:
         discard_staging(staging)
-    if jobs.start(plan.plan_id, sorted(set(kept))):
+    if jobs.start(plan.plan_id, sorted(set(kept)), plan=plan):
         # Rooms kept before these videos arrived would never show their furniture.
         from services.reconstruction.scenes import forget_plan
 

@@ -264,10 +264,18 @@ def reconstruct_furniture(
                     url_base=url_base,
                 )
                 # Only stated dimensions are trusted: a size read off the mesh is an estimate.
+                corrections = list(fitted.correction_needed)
+                if (
+                    size is not None
+                    and size.source == "estimated"
+                    and "dimensions" not in corrections
+                ):
+                    corrections.append("dimensions")  # a judged size still asks to be confirmed
                 asset = FurnitureAsset.model_validate(
                     {
                         **proxy.model_dump(),
                         **fitted.model_dump(),
+                        "correction_needed": corrections,
                         "is_proxy": False,
                         "dimension_source": "estimated" if size is None else size.source,
                     }

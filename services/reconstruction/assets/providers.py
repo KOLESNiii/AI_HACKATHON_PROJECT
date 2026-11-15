@@ -8,23 +8,27 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol, get_args
 
 import cv2
 from pydantic import ValidationError
 
 from .registry import Registry
-from .selection_models import Discovery, Frame, SelectedObject
+from .selection_models import Category, Discovery, Frame, SelectedObject
 from .video import crop, read_image
 
-PROMPT_VERSION = "furniture-multi-image-v2"
+PROMPT_VERSION = "furniture-multi-image-v3"
 PROMPT = """Identify separate PHYSICAL furniture objects in the video frames F0, F1, etc.
 Return ONLY JSON: {"objects":[{"name":"...","category":"sofa","appearance":"...",
 "reference_id":null,"uncertain":false,"reflection":false,
 "sightings":[{"frame_key":"F0","box":{"x":0.1,"y":0.2,"width":0.3,"height":0.4}}]}],
 "empty_frames":[],"warnings":[]}.
 Categories: bed, desk, chair, table, wardrobe, sofa, storage, fixture, other.
-Include furniture (including radiators), not people, doors/windows, plumbing or kitchen appliances.
+Include movable furniture and radiators, not people, doors/windows, plumbing or kitchen appliances.
+Use "fixture" ONLY for radiators. Do NOT include ceiling or wall lights, lamps fixed to walls,
+stair railings, banisters, stairs, built-in kitchen units, wall-mounted cabinets, worktops,
+curtains, blinds, rugs, pictures, mirrors on walls or anything built into the walls.
+Never give a box covering (almost) the whole image: box only the visible object itself.
 Each object has one group across all its visible frames, with at most one sighting per frame.
 FIRST inventory every distinct instance visible in each frame, THEN associate across frames.
 Two sofas along different walls remain TWO groups even when both are brown and look identical.
@@ -145,9 +149,64 @@ class RecordedProvider:
         )
 
 
+CATEGORIES = frozenset(get_args(Category))
+
+
+def _lenient(raw: dict[str, Any], frame_labels: set[str], ref_labels: set[str]) -> list[str]:
+    """Repair what a live answer commonly gets wrong instead of rejecting the batch: unknown
+    categories become `other`, unknown references are dropped, sightings of unknown frames,
+    repeated frames or unusable boxes are dropped (boxes are clipped to the image), objects
+    left without sightings are dropped. Returns warnings saying what was repaired."""
+    notes: list[str] = []
+    objects = []
+    for obj in raw.get("objects") or []:
+        if not isinstance(obj, dict):
+            continue
+        if obj.get("category") not in CATEGORIES:
+            obj["category"] = "other"
+        if obj.get("reference_id") not in ref_labels:
+            obj["reference_id"] = None
+        obj["name"] = str(obj.get("name") or obj["category"])[:160]
+        obj["appearance"] = str(obj.get("appearance") or obj["name"])[:1000]
+        sightings, seen = [], set()
+        for sighting in obj.get("sightings") or []:
+            box = sighting.get("box") if isinstance(sighting, dict) else None
+            key = sighting.get("frame_key") if isinstance(sighting, dict) else None
+            if key not in frame_labels or key in seen or not isinstance(box, dict):
+                continue
+            try:
+                x = min(max(float(box["x"]), 0.0), 0.999)
+                y = min(max(float(box["y"]), 0.0), 0.999)
+                w = min(float(box["width"]), 1.0 - x)
+                h = min(float(box["height"]), 1.0 - y)
+            except (KeyError, TypeError, ValueError):
+                continue
+            if w <= 0 or h <= 0:
+                continue
+            seen.add(key)
+            sightings.append({**sighting, "box": {"x": x, "y": y, "width": w, "height": h}})
+        if sightings:
+            obj["sightings"] = sightings
+            objects.append(obj)
+    raw["objects"] = objects
+    seen_frames = {s["frame_key"] for obj in objects for s in obj["sightings"]}
+    empty = [k for k in raw.get("empty_frames") or [] if k in frame_labels and k not in seen_frames]
+    missing = sorted(frame_labels - seen_frames - set(empty))
+    if missing:
+        notes.append(f"{len(missing)} frame(s) not accounted for by the model; taken as empty")
+    raw["empty_frames"] = empty + missing
+    return notes
+
+
 def parse_discovery(
-    output: str, frames: list[Frame], references: list[SelectedObject]
+    output: str,
+    frames: list[Frame],
+    references: list[SelectedObject],
+    *,
+    lenient: bool = False,
 ) -> Discovery:
+    """The model's answer as a `Discovery`. Strict by default (the reviewed CLI flow): any
+    mistake rejects the batch. `lenient` repairs common mistakes instead (`_lenient`)."""
     start, end = output.find("{"), output.rfind("}")
     if start < 0 or end <= start:
         raise DiscoveryError("vision response did not contain a JSON object")
@@ -155,11 +214,13 @@ def parse_discovery(
         mapping = {f"F{i}": frame.key for i, frame in enumerate(frames)}
         refs = {f"R{i}": obj.id for i, obj in enumerate(references)}
         raw = json.loads(output[start : end + 1])
+        notes = _lenient(raw, set(mapping), set(refs)) if lenient else []
         for obj in raw.get("objects", []):
             reference = obj.get("reference_id")
             if reference is not None:
                 obj["reference_id"] = refs[reference]
         discovery = Discovery.model_validate(raw)
+        discovery.warnings.extend(notes)
         for obj in discovery.objects:
             for sighting in obj.sightings:
                 sighting.frame_key = mapping[sighting.frame_key]
@@ -179,7 +240,10 @@ class FalVisionProvider:
         model: str = "google/gemini-2.5-flash",
         timeout_s: float = 120,
         refresh: str = "",
+        lenient: bool = False,
     ) -> None:
+        """`lenient` repairs common answer mistakes instead of failing the batch
+        (`parse_discovery`); the live server uses it, the reviewed CLI flow does not."""
         if not key:
             raise ValueError("FAL_KEY is required for live discovery")
         if not 1 <= timeout_s <= 600:
@@ -193,6 +257,7 @@ class FalVisionProvider:
             timeout_s,
             refresh,
         )
+        self.lenient = lenient
 
     def discover(
         self,
@@ -214,6 +279,8 @@ class FalVisionProvider:
                     "prompt": hashlib.sha256(PROMPT.encode()).hexdigest(),
                     "version": PROMPT_VERSION,
                     "refresh": self.refresh,
+                    # A strict failure must not block a lenient retry of the same frames.
+                    "lenient": self.lenient,
                 },
                 sort_keys=True,
             ).encode()
@@ -294,7 +361,10 @@ class FalVisionProvider:
                         raise DiscoveryError("vision returned a partial/failed result")
                     try:
                         discovery = parse_discovery(
-                            str(result.get("output", "")), frames, references
+                            str(result.get("output", "")),
+                            frames,
+                            references,
+                            lenient=self.lenient,
                         )
                     except DiscoveryError:
                         registry.save_request(cache_key, {"status": "failed"})

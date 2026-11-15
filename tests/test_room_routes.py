@@ -105,7 +105,7 @@ def uploads(tmp_path, monkeypatch):
     from services.reconstruction.room.routes import get_upload_dir
 
     started: list[video_jobs.ExtractionJob] = []
-    jobs = video_jobs.Extractions(lambda: tmp_path / "furniture", run=started.append)
+    jobs = video_jobs.Extractions(lambda: tmp_path / "furniture", prepare=started.append)
     monkeypatch.setattr(video_jobs, "EXTRACTIONS", jobs)
     app.dependency_overrides[get_upload_dir] = lambda: tmp_path / "uploads"
     yield tmp_path / "uploads"

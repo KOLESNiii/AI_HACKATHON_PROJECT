@@ -134,9 +134,15 @@ def test_proxy_with_known_dimensions_keeps_their_provenance(tmp_path: Path) -> N
     for bad in (0.0, -1.0, float("nan"), float("inf")):
         with pytest.raises(ValidationError):
             KnownDimensions(bbox_m=BBoxM(width=bad, height=1, depth=1), source="measured")
-    with pytest.raises(ValidationError):  # A guess is not a known dimension.
+    # A judged size (e.g. measured against the floor plan) is used, but still asks the user to
+    # confirm it: it is never presented as a measurement.
+    judged = KnownDimensions(bbox_m=BBoxM(width=1.5, height=0.5, depth=2.0), source="estimated")
+    guess = proxy_asset("vid-000001", "Bed", "bed", EVIDENCE, data_dir=tmp_path, known=judged)
+    assert guess.bbox_m == judged.bbox_m
+    assert guess.dimension_source == "estimated" and guess.correction_needed == ["dimensions"]
+    with pytest.raises(ValidationError):
         KnownDimensions.model_validate(
-            {"bbox_m": {"width": 1, "height": 1, "depth": 1}, "source": "estimated"}
+            {"bbox_m": {"width": 1, "height": 1, "depth": 1}, "source": "guessed"}
         )
 
 
@@ -594,3 +600,16 @@ def test_item_on_white_keeps_only_the_masked_item_centred_in_a_square():
     assert (out[0] == 255).all() and (out[:, 0] == 255).all()
     centre = out.shape[0] // 2
     assert (out[centre, centre] == image[60, 60]).all()
+
+
+def test_an_estimated_size_fits_the_mesh_and_still_asks_to_be_confirmed(tmp_path):
+    masked_scene(tmp_path, two=False)
+    reconstruct_furniture("scene", data_dir=tmp_path, provider=MeshDouble())
+    judged = KnownDimensions(bbox_m=BBoxM(width=1.5, height=0.5, depth=2.0), source="estimated")
+    result = reconstruct_furniture("scene", data_dir=tmp_path, dimensions={"vid-000001": judged})
+    asset = result.items[0].asset
+    assert asset is not None and not asset.is_proxy
+    assert asset.bbox_m == judged.bbox_m
+    assert asset.dimension_source == "estimated" and "dimensions" in asset.correction_needed
+    stored = tmp_path / "assets" / asset.glb_url.rsplit("/", 1)[1]
+    assert np.abs(bounds(stored.read_bytes())[1] - [0.75, 0.5, 1.0]).max() < 1e-3

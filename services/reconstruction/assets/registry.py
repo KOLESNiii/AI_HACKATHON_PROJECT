@@ -32,7 +32,8 @@ class Registry:
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
-        connection = sqlite3.connect(self.path, timeout=5)
+        # Long enough for parallel writers (one per room) to queue behind BEGIN IMMEDIATE.
+        connection = sqlite3.connect(self.path, timeout=30)
         try:
             with connection:
                 yield connection
