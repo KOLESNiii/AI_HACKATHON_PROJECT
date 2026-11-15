@@ -469,10 +469,10 @@ opposite way; a bed's front is its foot, and the sleeper lies facing it.
 
 | Status | Meaning | Points |
 | --- | --- | --- |
-| `command_position` | The door is within 100 degrees of facing and the line to it stays inside the room | 1 |
+| `command_position` | The door is within 100 degrees of facing and the line to it stays inside the room and is unobstructed at 1.2 m | 1 |
 | `back_to_door` | The door is more than 100 degrees from facing, so it is behind the occupant | 0 |
 | `coffin_alignment` | A bed's foot points at the door (within 20 degrees, and the door is no wider than the bed's width plus 0.3 m off its axis) | 0 |
-| not listed | The door is in front but the line leaves the room (L-shaped rooms) | 0.5 |
+| not listed | The view is obstructed, leaves the room, or a desk faces the door head-on | 0.5 |
 
 `score` is the rounded average, 0 to 100, over the beds and desks that were judged. Rooms
 with no door, or no bed or desk, return `feng_shui: null`, never zero. The score ignores

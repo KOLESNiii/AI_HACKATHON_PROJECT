@@ -101,3 +101,17 @@ def test_every_orientation_gets_a_verdict_and_input_is_unchanged(yaw: float) -> 
     report = audit_scene(scene).feng_shui
     assert report is not None and 0 <= report.score <= 100
     assert scene.model_dump() == before
+
+
+def test_obstructed_door_is_not_certified_visible() -> None:
+    wardrobe = piece("wardrobe", "wardrobe", 3.5, 1.9)
+    wardrobe.bbox_m = BBoxM(width=1.4, depth=0.6, height=2.4)
+    report = audit_scene(room(piece("desk", "desk", 4.5, 3), wardrobe)).feng_shui
+    assert report is not None and report.score == 50
+    assert not report.sightlines
+
+
+def test_desk_directly_aligned_with_door_is_not_in_command() -> None:
+    report = audit_scene(room(piece("desk", "desk", 2.5, 3))).feng_shui
+    assert report is not None and report.score == 50
+    assert not report.sightlines

@@ -27,6 +27,7 @@ COFFIN_HALF_ANGLE_DEG = 20.0
 """A bed's foot points at the door when the door lies within this angle of its foot direction."""
 COFFIN_SIDE_MARGIN_M = 0.3
 DESK_SEAT_OFFSET_M = 0.45
+VIEW_HEIGHT_M = 1.2
 
 _POINTS = {"command_position": 1.0, "unclear": 0.5, "back_to_door": 0.0, "coffin_alignment": 0.0}
 
@@ -99,8 +100,17 @@ def calculate_feng_shui(
         if status == "unclear":
             if angle > VIEW_HALF_ANGLE_DEG:
                 status = "back_to_door"
-            elif room.covers(LineString([(ox, oz), (dx, dz)])):
-                status = "command_position"
+            elif not (item.category == "desk" and angle <= COFFIN_HALF_ANGLE_DEG):
+                line = LineString([(ox, oz), (dx, dz)])
+                obstructed = any(
+                    volume.y_min <= VIEW_HEIGHT_M <= volume.y_max
+                    and volume.footprint.intersects(line)
+                    for entry in prepared.furniture
+                    if entry.item.id != item.id
+                    for volume in entry.volumes
+                )
+                if room.covers(line) and not obstructed:
+                    status = "command_position"
         points.append(_POINTS[status])
         if status != "unclear":
             sightlines.append(

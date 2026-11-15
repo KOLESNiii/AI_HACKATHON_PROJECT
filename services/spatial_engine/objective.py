@@ -326,13 +326,33 @@ def compare_layouts(
     return compare_evaluations(baseline_evaluation, proposed, goal)
 
 
-def is_acceptable_proposal(original: LayoutEvaluation, candidate: LayoutEvaluation) -> bool:
+def _access_not_worse(original: LayoutEvaluation, candidate: LayoutEvaluation) -> bool:
+    """Check access independently; lexicographic ranking can hide a regression."""
+    before, after = original.metrics, candidate.metrics
+    if after.clearance_deficit > before.clearance_deficit and not isclose(
+        after.clearance_deficit, before.clearance_deficit, rel_tol=1e-9, abs_tol=1e-9
+    ):
+        return False
+    if before.reachable_floor_ratio is not None:
+        if after.reachable_floor_ratio is None:
+            return False
+        if after.reachable_floor_ratio < before.reachable_floor_ratio and not isclose(
+            after.reachable_floor_ratio, before.reachable_floor_ratio, rel_tol=1e-9, abs_tol=1e-9
+        ):
+            return False
+    return True
+
+
+def is_acceptable_proposal(
+    original: LayoutEvaluation, candidate: LayoutEvaluation, goal: LayoutGoal = "balanced"
+) -> bool:
     """Whether a layout may be recommended at all, before it is ranked.
 
     Never with overlapping furniture or anything outside the room: those are physically
     impossible. A blocked door swing is tolerated only when that same door was already
     blocked in the original, so a room with a problem no move can fix (a fixed item in a
     door's swing) can still receive suggestions. Blocking a previously clear door is refused.
+    Custom requests also require each known access metric not to regress from the original.
     """
     blocked_before = {issue.door_id for issue in original.report.blocked_doors}
     blocked_after = {issue.door_id for issue in candidate.report.blocked_doors}
@@ -341,6 +361,7 @@ def is_acceptable_proposal(original: LayoutEvaluation, candidate: LayoutEvaluati
         metrics.collision_count == 0
         and metrics.out_of_bounds_count == 0
         and blocked_after <= blocked_before
+        and (goal != "custom" or _access_not_worse(original, candidate))
     )
 
 
@@ -350,10 +371,14 @@ def beats_original(
     """Whether a candidate is a worthwhile suggestion compared with the original.
 
     A measurable goal needs a strictly better ranking. A `custom` request cannot be measured,
-    so moving something is the point: the candidate must not rank worse (access may not get
-    worse) and must actually move at least one item.
+    so moving something is the point: the candidate must not rank worse, each access metric
+    must independently not regress, and at least one item must actually move.
     """
     outcome = compare_evaluations(baseline, candidate, goal).outcome
     if goal == "custom":
-        return outcome != "worse" and candidate.metrics.moved_item_count > 0
+        return (
+            _access_not_worse(baseline, candidate)
+            and outcome != "worse"
+            and candidate.metrics.moved_item_count > 0
+        )
     return outcome == "better"

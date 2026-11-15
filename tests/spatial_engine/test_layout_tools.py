@@ -86,6 +86,26 @@ def evaluate(tools: LayoutToolbox, base: str, *moves: dict[str, Any]) -> dict[st
     return result
 
 
+@pytest.mark.parametrize("prior_best", [False, True])
+def test_custom_draft_cannot_trade_circulation_for_clearance(
+    divided_access_room: RoomScene,
+    prior_best: bool,
+) -> None:
+    tools = LayoutToolbox(divided_access_room, preferences=LayoutPreferences(goal="custom"))
+    original = tools.session.original_draft_id
+    if prior_best:
+        partial = evaluate(tools, original, move("box", 2, 5.7))
+        assert partial["can_be_recommended"] and partial["is_best"] and tools.improved
+    best = tools.best_draft_id
+    blocked = evaluate(tools, best, move("box", 4, 7.5))
+    assert blocked["ok"] and blocked["versus_previous_best"]["outcome"] == "better"
+    assert not blocked["can_be_recommended"] and not blocked["is_best"]
+    assert tools.best_draft_id == best
+    assert tools.improved is prior_best
+    inspected = tools.call("inspect_layout", {"draft_id": blocked["draft_id"]})
+    assert not inspected["can_be_recommended"]
+
+
 def test_tool_definitions_are_closed_schemas_matching_the_handlers() -> None:
     json.dumps(TOOL_DEFINITIONS)
     assert [tool["name"] for tool in TOOL_DEFINITIONS] == [
