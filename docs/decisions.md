@@ -119,8 +119,29 @@
 - Require explicit placement and Play activation. Invalid drops preserve the last
   placement; pointer-lock denial preserves the editor. Escape and lost capture
   return to the saved orbit view with the human at its last walking pose.
-- Keep the first version inside one level room with the current lighting. Doorway
-  exits, character animation, jumping and time-of-day controls remain separate work.
+- Keep the first version inside one level room. Doorway exits, character animation
+  and jumping remain separate work. Time-of-day lighting is added as described below.
+
+## Interactive play lighting
+
+- Use the existing Three.js/R3F/Drei renderer for an interactive preview. Avoid
+  path tracing, paid services and backend contract changes. A fixed illustrative
+  06:00–18:00 day follows plan north, assuming -Z when compass data is missing;
+  it does not predict real-world solar exposure or change glare audit results.
+- Keep the ink editor and use cloned PBR materials in Play, preserving source
+  furniture textures. Do not modify/dispose loader-cached geometry or textures.
+- Separate warm artificial lighting from sun/sky illumination. The artificial
+  dimmer controls virtual ceiling sources and their approximate bounce; changing
+  time affects only natural sources. Fix exposure so the dimmer remains meaningful.
+- Spend shadow rendering on one sun and one ceiling source. Use window area lights
+  and a throttled procedural environment for approximate fill and reflections;
+  accept that these do not model occluded multi-bounce light or exact reflections.
+- Use shadow-only doorway infills because adjacent-room geometry is absent. Keep
+  physical window apertures open; glazing, exterior obstructions and fixture-level
+  lamp placement are outside this preview.
+- L pauses first-person control and intentionally releases mouse capture for the
+  sliders; Resume explicitly recaptures it. Preserve unexpected-loss/Esc/focus-loss
+  exits and guard late capture results. Settings are local to the opened room.
 
 ## Individual furniture reconstruction (#16)
 

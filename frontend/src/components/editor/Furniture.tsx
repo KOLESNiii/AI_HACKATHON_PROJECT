@@ -5,6 +5,7 @@ import {
   memo,
   Suspense,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   type ReactNode,
@@ -22,15 +23,18 @@ import { clampToFloor, DEG, footprint } from '../../lib/geometry'
 import { useStore } from '../../store'
 import { Tag } from '../ui'
 import { categoryWash, disposeInk, inkify, inkLine } from './ink'
+import { invalidatePlayShadows, preparePlayMaterials } from '../play/materials'
 
 export const floorPlane = new Plane(new Vector3(0, 1, 0), 0)
 
 /** Loads the .glb and fits it to bbox_m (never trust raw mesh scale), bottom-centre at origin. */
-function Mesh({ item }: { item: FurnitureItem }) {
+function Mesh({ item, play }: { item: FurnitureItem; play: boolean }) {
   const gltf = useGLTF(item.glb_url)
-  const { object, scale, offset } = useMemo(() => {
+  const renderScene = useThree((s) => s.scene)
+  const { object, scale, offset, dispose } = useMemo(() => {
     const clone = gltf.scene.clone(true)
-    inkify(clone, () => categoryWash[item.category])
+    const dispose = play ? preparePlayMaterials(clone) : () => disposeInk(clone)
+    if (!play) inkify(clone, () => categoryWash[item.category])
     const box = new Box3().setFromObject(clone)
     const size = box.getSize(new Vector3())
     const s = new Vector3(
@@ -41,6 +45,7 @@ function Mesh({ item }: { item: FurnitureItem }) {
     const centre = box.getCenter(new Vector3())
     return {
       object: clone,
+      dispose,
       scale: s,
       offset: new Vector3(-centre.x * s.x, -box.min.y * s.y, -centre.z * s.z),
     }
@@ -50,11 +55,16 @@ function Mesh({ item }: { item: FurnitureItem }) {
     item.bbox_m.width,
     item.bbox_m.height,
     item.bbox_m.depth,
+    play,
   ])
-  useEffect(() => () => disposeInk(object), [object])
+  useEffect(() => dispose, [dispose])
+  useLayoutEffect(
+    () => invalidatePlayShadows(renderScene),
+    [renderScene, object],
+  )
   return (
     <group position={offset} scale={scale}>
-      <primitive object={object} />
+      <primitive object={object} dispose={null} />
     </group>
   )
 }
@@ -68,6 +78,11 @@ function ProxyBox({
   showLabel: boolean
 }) {
   const { width, height, depth } = item.bbox_m
+  const renderScene = useThree((s) => s.scene)
+  useLayoutEffect(
+    () => invalidatePlayShadows(renderScene),
+    [renderScene, width, height, depth, showLabel],
+  )
   const edges = useMemo(() => {
     const box = new BoxGeometry(width, height, depth)
     const e = new EdgesGeometry(box)
@@ -76,14 +91,31 @@ function ProxyBox({
   }, [width, height, depth])
   useEffect(() => () => edges.dispose(), [edges])
   return (
-    <mesh position={[0, height / 2, 0]}>
+    <mesh
+      position={[0, height / 2, 0]}
+      castShadow={!showLabel}
+      receiveShadow={!showLabel}
+    >
       <boxGeometry args={[width, height, depth]} />
-      <meshToonMaterial
-        color={categoryWash[item.category]}
-        transparent
-        opacity={0.8}
-      />
-      <lineSegments geometry={edges} material={inkLine} raycast={() => null} />
+      {showLabel ? (
+        <meshToonMaterial
+          color={categoryWash[item.category]}
+          transparent
+          opacity={0.8}
+        />
+      ) : (
+        <meshStandardMaterial
+          color={categoryWash[item.category]}
+          roughness={0.8}
+        />
+      )}
+      {showLabel && (
+        <lineSegments
+          geometry={edges}
+          material={inkLine}
+          raycast={() => null}
+        />
+      )}
       <Html
         position={[0, height / 2 + 0.05, 0]}
         center
@@ -245,7 +277,7 @@ export const Furniture = memo(function Furniture({
         {item.glb_url && !item.is_proxy ? (
           <MeshBoundary fallback={<ProxyBox item={item} showLabel={!play} />}>
             <Suspense fallback={<ProxyBox item={item} showLabel={!play} />}>
-              <Mesh item={item} />
+              <Mesh item={item} play={play} />
             </Suspense>
           </MeshBoundary>
         ) : (

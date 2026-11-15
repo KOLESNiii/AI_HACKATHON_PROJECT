@@ -1,7 +1,12 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useMemo, useState, type RefObject } from 'react'
-import type { PerspectiveCamera } from 'three'
+import {
+  ACESFilmicToneMapping,
+  PCFShadowMap,
+  SRGBColorSpace,
+  type PerspectiveCamera,
+} from 'three'
 import { useShallow } from 'zustand/react/shallow'
 import { bounds } from '../../lib/geometry'
 import { flaggedItemIds, spatialPreview } from '../../lib/spatialPreview'
@@ -9,6 +14,7 @@ import { useStore } from '../../store'
 import type { PlayControllerHandle } from '../play/controls'
 import { Human } from '../play/Human'
 import { PlayController } from '../play/PlayController'
+import { PlayLighting } from '../play/PlayLighting'
 import { DoorSwings } from './DoorSwings'
 import { Furniture, MeshBoundary } from './Furniture'
 import { KeyboardControls } from './KeyboardControls'
@@ -75,18 +81,31 @@ export function RoomView({
       // Fade in once the GL context exists so the editor doesn't flash an empty canvas.
       style={{ opacity: ready ? 1 : 0, transition: 'opacity 300ms ease-out' }}
       onCreated={() => setReady(true)}
-      gl={{ alpha: true, antialias: true }}
+      gl={{
+        alpha: true,
+        antialias: true,
+        toneMapping: ACESFilmicToneMapping,
+        toneMappingExposure: 1,
+        outputColorSpace: SRGBColorSpace,
+      }}
+      shadows={{ type: PCFShadowMap }}
       camera={cameraOptions}
       onPointerMissed={() => {
         if (useStore.getState().mode === 'edit') select(null)
       }}
-      dpr={[1, 2]}
+      dpr={[1, play ? 1.5 : 2]}
     >
-      <ambientLight intensity={1.6} />
-      <directionalLight
-        position={[centre[0] + 3, 8, centre[2] + 5]}
-        intensity={1.4}
-      />
+      {play ? (
+        <PlayLighting />
+      ) : (
+        <>
+          <ambientLight intensity={1.6} />
+          <directionalLight
+            position={[centre[0] + 3, 8, centre[2] + 5]}
+            intensity={1.4}
+          />
+        </>
+      )}
       <MeshBoundary fallback={<ShellFailed onFail={toast} />}>
         <Suspense fallback={null}>
           <Shell url={shellUrl} walls={walls} cutaway={!play} />

@@ -120,10 +120,46 @@ requests. The room perimeter remains closed, including at doorways. Placement an
 Play entry share these checks; furniture edits can invalidate an existing placement.
 
 Play switches to a separate camera at 1.6 m eye height and hides editing controls.
-The complete room shell is visible. Escape, pointer-lock loss or window focus loss
-saves the last human position/heading and restores the editor camera and orbit
+The complete room shell is visible. Escape, unexpected pointer-lock loss or window
+focus loss saves the last human position/heading and restores the editor camera and orbit
 target. Pointer-lock denial leaves the editor active with a retry message. Opening
 a room resets the actor; component cleanup releases capture and held keys.
+
+### Play lighting
+
+`frontend/src/lib/lighting.ts` derives an illustrative sun, wall-aligned window
+sources and up to four ceiling sources from the existing room geometry.
+`PlayLighting` renders a shadow-casting directional sun and one shadow-casting
+ceiling spotlight, with additional ceiling sources and window area lights as
+unshadowed fill. The full room shell and furniture cast and receive shadows;
+shadow-only door infills prevent sunlight from entering through missing adjacent
+rooms. Window apertures are treated as exposed to the exterior. No surrounding
+buildings, glazing transmission or astronomical location/date are modelled.
+
+Inputs are local `PlayLightingSettings` (artificial percentage and time in hours)
+plus `RoomScene`; outputs are renderer lights, a procedural reflection environment
+and play-only material clones. GLTF geometry, textures and cached source materials
+are left untouched. The shell receives neutral PBR materials; furniture keeps
+its source PBR textures when available. Lighting and the walking/lighting-panel
+substate remain outside `RoomScene`, revisions and audit requests. Opening another
+room resets lighting to 50% and 14:00; exiting play retains it for that room.
+
+L opens the lighting panel in place, clears movement and deliberately releases
+pointer lock. `PlaySession` distinguishes this release from an unexpected loss.
+Resume requests capture in a user gesture and preserves the camera. Denial leaves
+the panel open with a retry message; Esc, blur, hidden document and room changes
+clean up the session. Pending capture requests are guarded by room session and
+request identity. No backend endpoints, credentials or new packages are needed.
+
+Exposure stays fixed; natural sources are off at night and without valid windows.
+The local 128-pixel environment updates at most five times per second while direct
+lights follow slider input immediately. Reflection shapes and indirect fill are
+approximations, including some fill leakage in concave rooms. There are no exact
+furniture/mirror reflections or multi-bounce light transport. Daylight is a visual
+preview and does not populate the unassessed glare fields in the spatial audit.
+Shadow maps are cached while walking and invalidated when lighting or loaded
+geometry changes. Play caps pixel ratio at 1.5; real GPU frame rate still depends
+on source furniture complexity and the user's hardware.
 
 ## Backend-provided demo models
 

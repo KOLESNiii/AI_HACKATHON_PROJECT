@@ -119,6 +119,19 @@ a 50 cm body and 1.6 m eye height; it does not change the room layout or revisio
 Play requires mouse capture in a desktop browser. Jumping, stairs and leaving
 the room through doorways are not supported.
 
+In Play, press **L** to pause walking and open **Room lighting**. Adjust
+**Artificial light** (0–100%) independently of **Time of day** (15-minute steps),
+then click **Resume** to capture the mouse again. Esc or **Return to editor**
+restores the editor camera. Lighting starts at 50% artificial light and 14:00;
+settings survive play sessions until another room is opened.
+
+Play uses textured, physically based materials, window daylight, moving sunlight
+and furniture shadows. The editor retains its ink style. Daylight is an
+illustrative clear day, rising east at 06:00 and setting west at 18:00, using the
+floor-plan north when present (otherwise north is up the plan). Bounced light
+and broad reflections are approximated; this is not a measured daylight or glare
+assessment. No location, API key or external lighting assets are required.
+
 For smaller Python installs, use `uv sync --extra spatial`, `--extra reconstruction`,
 or `--extra media` instead of `--all-extras`. `uv sync` installs the common API and
 development tools. Frontend dependencies and lockfile live in `frontend/`;
