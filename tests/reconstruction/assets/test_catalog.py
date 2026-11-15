@@ -549,3 +549,43 @@ def test_cli_lists_search_results_and_reports_unusable_input(
     report = (out / "report.md").read_text()
     assert "catalog_search" in report and URL in report
     assert json.loads((out / "assets.json").read_text())[0]["id"] == catalog_id(URL)
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Desk chair", "chair"),
+        ("Table lamp", "other"),
+        ("Desk lamp", "other"),
+        ("Chair pad", "other"),
+        ("Table and 4 chairs", "table"),
+    ],
+)
+def test_review_categories(name, expected):
+    assert guess_category(name) == expected
+
+
+def test_download_pins_checked_address(monkeypatch):
+    import socket
+    from contextlib import contextmanager
+
+    import httpx
+
+    calls = []
+
+    def resolve(*args, **kwargs):
+        calls.append(args)
+        address = "93.184.216.34" if len(calls) == 1 else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, 443))]
+
+    @contextmanager
+    def stream(self, method, url, **kwargs):
+        assert url.host == "93.184.216.34"
+        assert kwargs["headers"]["Host"] == "shop.example"
+        assert kwargs["extensions"]["sni_hostname"] == "shop.example"
+        yield httpx.Response(200, content=b"ok", request=httpx.Request(method, url))
+
+    monkeypatch.setattr(retailer.socket, "getaddrinfo", resolve)
+    monkeypatch.setattr(retailer.httpx.Client, "stream", stream)
+    assert retailer.fetch_public("https://shop.example/product", 100)[0] == b"ok"
+    assert len(calls) == 1

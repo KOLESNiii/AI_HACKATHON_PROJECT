@@ -69,7 +69,7 @@ Fetch = Callable[[str, int], tuple[bytes, str]]
 """(url, byte limit) -> (body, final URL after redirects). Raises CatalogError."""
 
 
-def _check_public(url: str) -> None:
+def _check_public(url: str) -> str:
     """Refuse anything but http(s) to a public address: an imported URL is untrusted input."""
     target = urlsplit(url)
     if target.scheme not in ("http", "https") or not target.hostname or target.username:
@@ -82,19 +82,30 @@ def _check_public(url: str) -> None:
     if not found or not all(ipaddress.ip_address(entry[4][0]).is_global for entry in found):
         raise CatalogError("only public http(s) URLs can be imported")
 
+    return str(found[0][4][0])
+
 
 def fetch_public(url: str, limit: int, *, timeout_s: float = 20) -> tuple[bytes, str]:
     """Download a public URL with a size cap, re-checking every redirect hop."""
     for _ in range(MAX_REDIRECTS + 1):
-        _check_public(url)
+        address = _check_public(url)
+        target = httpx.URL(url)
         try:
-            with httpx.stream(
-                "GET",
-                url,
-                timeout=timeout_s,
-                follow_redirects=False,
-                headers={"User-Agent": USER_AGENT, "Accept-Language": "en-GB,en;q=0.8"},
-            ) as response:
+            with (
+                httpx.Client(trust_env=False) as client,
+                client.stream(
+                    "GET",
+                    target.copy_with(host=address),
+                    extensions={"sni_hostname": target.host},
+                    timeout=timeout_s,
+                    follow_redirects=False,
+                    headers={
+                        "Host": target.netloc.decode(),
+                        "User-Agent": USER_AGENT,
+                        "Accept-Language": "en-GB,en;q=0.8",
+                    },
+                ) as response,
+            ):
                 if response.is_redirect and "location" in response.headers:
                     url = urljoin(url, response.headers["location"])
                     continue
@@ -224,6 +235,12 @@ def guess_category(*texts: str) -> Category:
     """A category from the product's own words, most specific first; "other" when none fits."""
     for text in texts:
         lowered = text.lower()
+        if re.search(r"\b(lamps?|pads?|covers?|cushions?|accessories)\b", lowered):
+            return "other"
+        if re.search(r"\bdesk chairs?\b", lowered):
+            return "chair"
+        if re.search(r"\btable and \d+ chairs?\b", lowered):
+            return "table"
         for category, words in _CATEGORY_WORDS:
             if any(re.search(rf"\b{re.escape(word)}s?\b", lowered) for word in words):
                 return category
