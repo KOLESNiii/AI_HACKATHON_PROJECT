@@ -35,7 +35,7 @@ from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from contracts.schema import ParsedFloorPlan, RoomScene
 from services.reconstruction.assets.selection_models import (
@@ -47,6 +47,12 @@ from services.reconstruction.assets.selection_models import (
 )
 
 from .assemble import FurnitureSource, SceneFurniture
+
+if TYPE_CHECKING:
+    from services.reconstruction.assets.models import FurnitureAsset
+    from services.reconstruction.assets.proxies import KnownDimensions
+
+    from .sizing import FalSizeEstimator
 
 log = logging.getLogger(__name__)
 
@@ -94,6 +100,8 @@ class RoomMeshes:
     state: MeshState = "queued"
     started_at: float = field(default_factory=time.monotonic)
     error: str | None = None
+    phase: str = ""
+    """What the running build is doing, for progress."""
 
 
 @dataclass
@@ -115,6 +123,8 @@ class RoomWork:
     error: str | None = None
     meshes: RoomMeshes | None = None
     """Its 3D model build, started when the room is first opened."""
+    dimensions: dict[str, KnownDimensions] = field(default_factory=dict)
+    """Object ID -> its size, measured against the plan (`sizing.py`) once its mesh is built."""
 
 
 @dataclass
@@ -137,6 +147,14 @@ class ExtractionJob:
     """Room ID -> its work. Rooms no frame was matched to are absent."""
     rooms_known: bool = False
     """Steps 1-2 are done: `rooms` is complete."""
+
+    def room_scene(self, room_id: str) -> RoomScene | None:
+        """The room as parsed from the plan."""
+        for floor in self.plan.floors if self.plan else []:
+            for room in floor.rooms:
+                if room.room_id == room_id:
+                    return room.scene
+        return None
 
     def settled(self) -> int:
         return sum(w.state in ("ready", "failed") for w in self.rooms.values())
@@ -289,11 +307,13 @@ def find_live(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
 
 
 def mesh_live(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
-    """Step 4 for one room: its items' meshes."""
+    """Step 4 for one room: its items' meshes, then their sizes measured against the plan."""
     key = _key()
     from services.reconstruction.assets.mesh_providers import FalSam3dProvider
     from services.reconstruction.assets.reconstruction import reconstruct_furniture
 
+    if work.meshes is not None:
+        work.meshes.phase = f"building 3D models of {len(work.objects)} items in {work.name}"
     result = reconstruct_furniture(
         work.namespace,
         data_dir=data_dir,
@@ -305,6 +325,33 @@ def mesh_live(job: ExtractionJob, work: RoomWork, data_dir: Path) -> None:
     if failed := [i.object_id for i in result.items if i.failure is not None]:
         names = ", ".join(work.names.get(o, o) for o in failed)
         work.warnings.append(f"no 3D model for {names}: shown as sized boxes")
+    size_room(job, work, [i.asset or i.proxy for i in result.items], data_dir)
+
+
+def size_room(
+    job: ExtractionJob,
+    work: RoomWork,
+    assets: Sequence[FurnitureAsset],
+    data_dir: Path,
+    estimator: FalSizeEstimator | None = None,
+) -> None:
+    """Measure the room's items against the plan (`sizing.py`) into `work.dimensions`."""
+    from .observe_vision import selection_frames, selection_masks
+    from .sizing import FalSizeEstimator
+
+    scene = job.room_scene(work.room_id)
+    if scene is None or not assets:
+        return
+    if work.meshes is not None:
+        work.meshes.phase = f"measuring {len(assets)} items in {work.name} against the plan"
+    frames = (
+        selection_frames(work.segmentation, data_dir) if work.segmentation is not None else None
+    )
+    sizes = (estimator or FalSizeEstimator()).estimate(
+        scene, assets, frames, selection_masks(data_dir)
+    )
+    work.dimensions = sizes.dimensions
+    work.warnings += sizes.warnings
 
 
 class Extractions:
@@ -467,9 +514,13 @@ class Extractions:
             )
         else:
             assert work.meshes is not None
-            verb = "building" if work.meshes.state == "running" else "waiting to build"
             step = 4
-            stage = f"{verb} 3D models of {len(work.meshes.object_ids)} items in {work.name}"
+            stage = (
+                work.meshes.phase
+                if work.meshes.state == "running" and work.meshes.phase
+                else f"waiting to build 3D models of {len(work.meshes.object_ids)} items "
+                f"in {work.name}"
+            )
         return {
             "step": step,
             "steps": STEPS,
@@ -541,7 +592,10 @@ class VideoFurniture:
 
         # Offline: reads the meshes the build stored, normalised and checked, or proxies.
         result = reconstruct_furniture(
-            work.namespace, data_dir=self.data_dir, object_ids=build.object_ids
+            work.namespace,
+            data_dir=self.data_dir,
+            object_ids=build.object_ids,
+            dimensions=work.dimensions,
         )
         assets = [item.asset or item.proxy for item in result.items]
         warnings = [*job.warnings, *work.warnings, *result.warnings]

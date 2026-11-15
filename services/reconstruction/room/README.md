@@ -57,7 +57,14 @@ so most of the work runs in parallel:
    cannot duplicate each other. Answers are read leniently (a mistaken answer is repaired,
    not discarded; batches that still fail are counted in the room's warnings);
 4. SAM 3D meshes of a room's items when that room is first opened, as soon as that room has
-   finished step 3, even while other rooms are still being searched.
+   finished step 3, even while other rooms are still being searched. Then the items are
+   **measured against the floor plan** (`sizing.py`): a vision model is shown the room's plan
+   with every wall's length and height, door width and height and window width, sill and
+   head, and the marked frames, and measures each item against those references. A size that
+   cannot fit the item's category or the room is replaced by its category's size, scaled by
+   its longest horizontal side for low items (beds, tables, desks, sofas) and by its height
+   otherwise, keeping the mesh's proportions. Sizes are `estimated` and keep the
+   `dimensions` correction; the mesh is fitted to them (`normalise_mesh(target_bbox=…)`).
 
 Until a room's furniture is ready, `GET /scenes/<room>` returns the room without furniture, a
 warning, `X-Furniture-Pending: true` and `X-Furniture-Progress`, and the editor polls. Then the

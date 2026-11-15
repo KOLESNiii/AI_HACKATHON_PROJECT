@@ -16,18 +16,21 @@ pytest.importorskip("cv2")
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from contracts.schema import RoomScene  # noqa: E402
+from contracts.schema import BBoxM, ParsedFloorPlan, RoomScene  # noqa: E402
+from services.reconstruction.assets.proxies import KnownDimensions  # noqa: E402
 from services.reconstruction.main import app  # noqa: E402
 from services.reconstruction.room import video_jobs  # noqa: E402
 from services.reconstruction.room.annotate import FixedAnnotator, PlanAnnotations  # noqa: E402
 from services.reconstruction.room.assemble import NoFurniture, SceneFurniture, assets_of  # noqa: E402
 from services.reconstruction.room.routes import get_annotator, get_upload_dir  # noqa: E402
+from services.reconstruction.room.sizing import Sizes  # noqa: E402
 from services.reconstruction.room.video_jobs import (  # noqa: E402
     PENDING_HEADER,
     PROGRESS_HEADER,
     ExtractionError,
     ExtractionJob,
     Extractions,
+    RoomMeshes,
     RoomWork,
     VideoFurniture,
 )
@@ -35,6 +38,10 @@ from services.reconstruction.scenes import clear_cache  # noqa: E402
 from tests.test_room_parse import _label, _png, single_room  # noqa: E402
 
 MOCK_SCENE = Path(__file__).parents[1] / "contracts" / "mock_room" / "mock_scene.json"
+CACHED_PLAN = (
+    Path(__file__).parents[1]
+    / "services/reconstruction/room/fixtures/scene_cache/plan-83a12322e933.json"
+)
 
 
 def _wait(job: ExtractionJob, timeout: float = 5) -> None:
@@ -225,8 +232,13 @@ def test_video_furniture_by_room_state(tmp_path: Path, monkeypatch: pytest.Monke
     by_id = {a.id: a for a in assets}
     read: list[tuple[str, list[str] | None]] = []
 
-    def reconstruct(scene_id: str, data_dir: Path, object_ids: list[str] | None = None):  # type: ignore[no-untyped-def]
+    sized: list[object] = []
+
+    def reconstruct(  # type: ignore[no-untyped-def]
+        scene_id: str, data_dir: Path, object_ids: list[str] | None = None, dimensions=None
+    ):
         read.append((scene_id, object_ids))
+        sized.append(dimensions)
         items = [SimpleNamespace(asset=by_id[o], proxy=by_id[o]) for o in object_ids or []]
         return SimpleNamespace(items=items, warnings=[])
 
@@ -243,6 +255,8 @@ def test_video_furniture_by_room_state(tmp_path: Path, monkeypatch: pytest.Monke
     }
     job.rooms["floor-0-room-0"].state = "ready"
     job.rooms["floor-0-room-0"].objects = [mine]
+    measured = KnownDimensions(bbox_m=BBoxM(width=1.5, height=0.5, depth=2.0), source="estimated")
+    job.rooms["floor-0-room-0"].dimensions = {mine: measured}
     job.rooms["floor-0-room-1"].state = "finding"
     job.rooms["floor-0-room-2"].state, job.rooms["floor-0-room-2"].error = "failed", "no luck"
     job.rooms["floor-0-room-3"].state = "ready"  # searched, nothing found
@@ -273,6 +287,7 @@ def test_video_furniture_by_room_state(tmp_path: Path, monkeypatch: pytest.Monke
     done = source.furniture_for(_room())
     assert [a.id for a in done.assets] == [mine]  # only this room's items
     assert read == [("ns-floor-0-room-0", [mine])]  # from this room's own namespace
+    assert sized == [{mine: measured}]  # sized as measured against the plan
     assert done.complete and not done.pending
     assert type(done.observer).__name__ == "FalVisionObserver"
     assert not jobs.pending("plan-1-floor-0-room-0")
@@ -434,3 +449,25 @@ def test_a_room_assembled_from_a_replaced_source_is_not_kept(
     from services.reconstruction import scenes
 
     assert scenes._scenes[scene_id].warnings[-1] == "new source"
+
+
+def test_a_room_is_measured_against_its_own_plan_room(tmp_path: Path) -> None:
+    plan = ParsedFloorPlan.model_validate(json.loads(CACHED_PLAN.read_text())["plan"])
+    room = plan.floors[0].rooms[0]
+    job = ExtractionJob(plan.plan_id, "ns", [], plan=plan)
+    work = RoomWork(room.room_id, room.name, "ns-room", [])
+    work.meshes = RoomMeshes(["vid-000001"], state="running")
+    asset = assets_of(RoomScene.model_validate_json(MOCK_SCENE.read_text()))[0]
+    measured = KnownDimensions(bbox_m=BBoxM(width=1.5, height=0.5, depth=2.0), source="estimated")
+    seen: list[str] = []
+
+    class Estimator:
+        def estimate(self, scene, assets, frames, masks=None):  # type: ignore[no-untyped-def]
+            seen.append(scene.scene_id)
+            assert work.meshes is not None and "against the plan" in work.meshes.phase
+            return Sizes({asset.id: measured}, ["sized from their category: x"])
+
+    video_jobs.size_room(job, work, [asset], tmp_path, estimator=Estimator())  # type: ignore[arg-type]
+    assert seen == [room.scene.scene_id]
+    assert work.dimensions == {asset.id: measured}
+    assert work.warnings == ["sized from their category: x"]
