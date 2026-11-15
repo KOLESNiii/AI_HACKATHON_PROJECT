@@ -61,9 +61,10 @@ def test_unassessed_checks_stay_null_and_feng_shui_ignores_the_compass(
     assert response.status_code == 200
     report = response.json()
     assert report["overall_score"] is None
-    # Feng shui is judged from door and furniture geometry only, so north does not matter.
-    assert report["feng_shui"]["score"] == 100
-    assert {x["status"] for x in report["feng_shui"]["sightlines"]} == {"command_position"}
+    # The wardrobe obscures the bed's door view and the desk faces the entry head-on.
+    # Main's visibility checks mark both unclear (50), independently of north.
+    assert report["feng_shui"]["score"] == 50
+    assert report["feng_shui"]["sightlines"] == []
     assert report["glare_alerts"] is None
     assert report["glare_orientation_grounded"] is None
 

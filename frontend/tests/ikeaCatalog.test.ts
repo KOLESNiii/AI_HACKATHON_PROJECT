@@ -22,7 +22,7 @@ test('every product has a bundled GLB, thumbnail and complete retailer metadata'
     expect(item.price_gbp).toBeGreaterThan(0)
     expect(item.image_url).toMatch(/^\/catalog\/ikea\/images\//)
     expect(existsSync(resolve(publicDir, `.${item.image_url}`))).toBe(true)
-    const asset = item.asset!
+    const asset = item
     expect(asset.is_proxy).toBe(false)
     expect(asset.dimension_source).toBe('catalog')
     expect(asset.correction_needed).toEqual([])

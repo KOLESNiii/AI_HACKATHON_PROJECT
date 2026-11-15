@@ -1,4 +1,4 @@
-import { Html, Line, useGLTF } from '@react-three/drei'
+import { Html, Line } from '@react-three/drei'
 import { useThree, type ThreeEvent } from '@react-three/fiber'
 import {
   Component,
@@ -12,7 +12,6 @@ import {
 } from 'react'
 import {
   AdditiveBlending,
-  Box3,
   BoxGeometry,
   EdgesGeometry,
   Plane,
@@ -22,52 +21,11 @@ import type { FurnitureItem } from '../../lib/contracts'
 import { clampToFloor, DEG } from '../../lib/geometry'
 import { useStore } from '../../store'
 import { Tag } from '../ui'
-import { categoryWash, disposeInk, inkify, inkLine } from './ink'
-import { invalidatePlayShadows, preparePlayMaterials } from '../play/materials'
+import { categoryWash, inkLine } from './ink'
+import { FurnitureMesh } from './FurnitureMesh'
+import { invalidatePlayShadows } from '../play/materials'
 
 export const floorPlane = new Plane(new Vector3(0, 1, 0), 0)
-
-/** Loads the .glb and fits it to bbox_m (never trust raw mesh scale), bottom-centre at origin. */
-function Mesh({ item, play }: { item: FurnitureItem; play: boolean }) {
-  const gltf = useGLTF(item.glb_url)
-  const renderScene = useThree((s) => s.scene)
-  const { object, scale, offset, dispose } = useMemo(() => {
-    const clone = gltf.scene.clone(true)
-    const dispose = play ? preparePlayMaterials(clone) : () => disposeInk(clone)
-    if (!play) inkify(clone, () => categoryWash[item.category])
-    const box = new Box3().setFromObject(clone)
-    const size = box.getSize(new Vector3())
-    const s = new Vector3(
-      item.bbox_m.width / (size.x || 1),
-      item.bbox_m.height / (size.y || 1),
-      item.bbox_m.depth / (size.z || 1),
-    )
-    const centre = box.getCenter(new Vector3())
-    return {
-      object: clone,
-      dispose,
-      scale: s,
-      offset: new Vector3(-centre.x * s.x, -box.min.y * s.y, -centre.z * s.z),
-    }
-  }, [
-    gltf.scene,
-    item.category,
-    item.bbox_m.width,
-    item.bbox_m.height,
-    item.bbox_m.depth,
-    play,
-  ])
-  useEffect(() => dispose, [dispose])
-  useLayoutEffect(
-    () => invalidatePlayShadows(renderScene),
-    [renderScene, object],
-  )
-  return (
-    <group position={offset} scale={scale}>
-      <primitive object={object} dispose={null} />
-    </group>
-  )
-}
 
 /** Dimensioned, visibly labelled placeholder for is_proxy items or meshes that fail to load. */
 function ProxyBox({
@@ -299,7 +257,7 @@ export const Furniture = memo(function Furniture({
         {item.glb_url && !item.is_proxy ? (
           <MeshBoundary fallback={<ProxyBox item={item} showLabel={!play} />}>
             <Suspense fallback={<ProxyBox item={item} showLabel={!play} />}>
-              <Mesh item={item} play={play} />
+              <FurnitureMesh item={item} play={play} />
             </Suspense>
           </MeshBoundary>
         ) : (

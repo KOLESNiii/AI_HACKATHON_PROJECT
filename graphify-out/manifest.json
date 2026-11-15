@@ -1,14 +1,14 @@
 {
   "contracts/schema.py": {
-    "mtime": 1794728171.6727266,
-    "seen": 1794729940.886878,
-    "ast_hash": "937c8a694e9bf03d733c26eba4f337eb",
+    "mtime": 1794731554.870529,
+    "seen": 1794731748.392526,
+    "ast_hash": "5851625b5b42fbabeee566cc898b7972",
     "semantic_hash": ""
   },
   "contracts/schema.ts": {
-    "mtime": 1794728171.6729045,
-    "seen": 1794729940.8868916,
-    "ast_hash": "2f64f9742c2ee7e61488aa4616c12801",
+    "mtime": 1794731554.8711987,
+    "seen": 1794731748.3925354,
+    "ast_hash": "a94ddcb5c65aab7af097d693a0fae2a0",
     "semantic_hash": ""
   },
   "frontend/.oxlintrc.json": {
@@ -72,21 +72,21 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/EditorScreen.tsx": {
-    "mtime": 1794728171.6738362,
-    "seen": 1794729940.8869195,
-    "ast_hash": "29c9f0efc4bce88ae489c9b214415f38",
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3930376,
+    "ast_hash": "3d4042ab30aeb8169f8d9ba9939fdd70",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Furniture.tsx": {
-    "mtime": 1794728115.5101693,
-    "seen": 1794729940.8869214,
-    "ast_hash": "18d1d4b32f4e46022b475821379aee2f",
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3930428,
+    "ast_hash": "ef5dd285771dafb4dc0d27ac684df5e5",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/KeyboardControls.tsx": {
-    "mtime": 1794694681.8471122,
-    "seen": 1794729940.8869243,
-    "ast_hash": "3de2ed8b3ad8ddb0015e338a9c9262a7",
+    "mtime": 1794731554.8738403,
+    "seen": 1794731748.3930466,
+    "ast_hash": "65a2585fe0bf55d8e6398dd24b14461e",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/RoomView.tsx": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Sidebar.tsx": {
-    "mtime": 1794730240.9123402,
-    "seen": 1794731129.7251165,
-    "ast_hash": "a410c1a6421fecf00a6b15c4ed24bda9",
+    "mtime": 1794731608.9210658,
+    "seen": 1794731748.3931766,
+    "ast_hash": "877e35b9f578fc879834d5761bb76160",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/ink.ts": {
@@ -120,15 +120,15 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/keyboard.ts": {
-    "mtime": 1794694681.8478153,
-    "seen": 1794729940.8869355,
-    "ast_hash": "d987f75725b91f7d4e359178ca492ed8",
+    "mtime": 1794731554.8744614,
+    "seen": 1794731748.393222,
+    "ast_hash": "1ae7fdcd2f39ff62cce941947521c864",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/useLiveAudit.ts": {
-    "mtime": 1794728171.6740294,
-    "seen": 1794729940.8869376,
-    "ast_hash": "af0f67b184cf9f554aa573529f115d32",
+    "mtime": 1794731554.8748405,
+    "seen": 1794731748.3932242,
+    "ast_hash": "b26ff3df86475fe2cebd15a4b8eb7c74",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/FloorPlanScreen.tsx": {
@@ -216,9 +216,9 @@
     "semantic_hash": ""
   },
   "frontend/src/data/catalog.ts": {
-    "mtime": 1794730240.9107993,
-    "seen": 1794731129.7257829,
-    "ast_hash": "219244a95804f4b69d830c3dc36d8265",
+    "mtime": 1794731608.9198337,
+    "seen": 1794731748.3937886,
+    "ast_hash": "615d61a43211b4ca263e852397df98ee",
     "semantic_hash": ""
   },
   "frontend/src/data/demoHome.ts": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/agent.ts": {
-    "mtime": 1794728171.6741087,
-    "seen": 1794729940.8869655,
-    "ast_hash": "5b7c194780fd77d4b8fbb09b40f4c669",
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.393864,
+    "ast_hash": "d6ae452ef0636349972b5486015ab079",
     "semantic_hash": ""
   },
   "frontend/src/lib/contracts.ts": {
-    "mtime": 1794728171.674176,
-    "seen": 1794729940.8869703,
-    "ast_hash": "e1bcc48c2c8b8a36ebadc1bfc92bd2f5",
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.39387,
+    "ast_hash": "fd011b36e6f674f93a5e1788a437d858",
     "semantic_hash": ""
   },
   "frontend/src/lib/geometry.ts": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/spatial.ts": {
-    "mtime": 1794728171.6742496,
-    "seen": 1794729940.8869758,
-    "ast_hash": "affc2e7680cee4614d22b91e660a07f0",
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.393956,
+    "ast_hash": "5f9d1da24fd4d2da3809b1caad4c5235",
     "semantic_hash": ""
   },
   "frontend/src/lib/spatialPreview.ts": {
@@ -282,15 +282,15 @@
     "semantic_hash": ""
   },
   "frontend/src/store.ts": {
-    "mtime": 1794729931.924153,
-    "seen": 1794729940.8869824,
-    "ast_hash": "ae2cc589da566c3584b8566b2e3ee1bf",
+    "mtime": 1794731637.2581637,
+    "seen": 1794731748.394061,
+    "ast_hash": "747b43869f3aee8d605a05e1602efb6a",
     "semantic_hash": ""
   },
   "frontend/tests/agentAddItem.test.ts": {
-    "mtime": 1794730240.9150255,
-    "seen": 1794731129.726203,
-    "ast_hash": "6430888b8c1111d4b9cb30ea9b72a1cb",
+    "mtime": 1794731608.9269094,
+    "seen": 1794731748.3940625,
+    "ast_hash": "052c516c154d625ab854a6b1a0638332",
     "semantic_hash": ""
   },
   "frontend/tests/audio.test.ts": {
@@ -312,9 +312,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/editorControls.test.ts": {
-    "mtime": 1794687116.683567,
-    "seen": 1794729940.8869936,
-    "ast_hash": "f059cacd2125459988a0951917dd9db8",
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.3941967,
+    "ast_hash": "7740a898e3b258fdc63fea4db127fa32",
     "semantic_hash": ""
   },
   "frontend/tests/playLighting.test.ts": {
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/agent.py": {
-    "mtime": 1794728171.6910553,
-    "seen": 1794729940.8871112,
-    "ast_hash": "9fb5cfd1f9d6edcd5eac030aeb476245",
+    "mtime": 1794731554.8818405,
+    "seen": 1794731748.3964894,
+    "ast_hash": "df301350950c12f7a7b8f0ad8aaba155",
     "semantic_hash": ""
   },
   "services/spatial_engine/audit.py": {
@@ -720,21 +720,21 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/chat.py": {
-    "mtime": 1794728171.6912415,
-    "seen": 1794729940.887116,
-    "ast_hash": "a805bf5ea4c44caeb0e779798dfc672b",
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.396552,
+    "ast_hash": "fdb3bc425d6e2c77b9e8e30a28c4a480",
     "semantic_hash": ""
   },
   "services/spatial_engine/drafts.py": {
-    "mtime": 1794728115.5360992,
-    "seen": 1794729940.8871179,
-    "ast_hash": "aa25acba8c332800a764e78f9df4e20e",
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.3965538,
+    "ast_hash": "3312b5e09d31e9c1cd5a17a316cae92d",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui.py": {
-    "mtime": 1794728115.536178,
-    "seen": 1794729940.8871193,
-    "ast_hash": "8fb3db7d3a5129257f9a319ad429dce2",
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.3965557,
+    "ast_hash": "fbc2efd150c6996aee519ba74cd70ed2",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui_metric.py": {
@@ -744,27 +744,27 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/geometry.py": {
-    "mtime": 1794728171.691478,
-    "seen": 1794729940.8871229,
-    "ast_hash": "e62f506380033c41cfac7bc3e048d267",
+    "mtime": 1794731554.8838403,
+    "seen": 1794731748.3965955,
+    "ast_hash": "cbf3dc520bf73b00f614f28a8b25e1b7",
     "semantic_hash": ""
   },
   "services/spatial_engine/layout_tools.py": {
-    "mtime": 1794728171.6916258,
-    "seen": 1794729940.8871243,
-    "ast_hash": "a2f7e3b04f62e7c70388fe6917de8a05",
+    "mtime": 1794731554.8848403,
+    "seen": 1794731748.396597,
+    "ast_hash": "5587af3811f05c5ac0e42c52b4dcfc00",
     "semantic_hash": ""
   },
   "services/spatial_engine/main.py": {
-    "mtime": 1794728171.691714,
-    "seen": 1794729940.8871262,
-    "ast_hash": "4001451951dbce5645c45fed99452ee1",
+    "mtime": 1794731554.8848403,
+    "seen": 1794731748.3966007,
+    "ast_hash": "45853a8f0f60907816a4a27f9388e6a8",
     "semantic_hash": ""
   },
   "services/spatial_engine/objective.py": {
-    "mtime": 1794728171.6918647,
-    "seen": 1794729940.8871276,
-    "ast_hash": "bde4dfa3b8afea04b944d8cb16d94281",
+    "mtime": 1794731716.179473,
+    "seen": 1794731748.3966024,
+    "ast_hash": "84f66ef4c557ca1751318b4c25c07a5a",
     "semantic_hash": ""
   },
   "services/spatial_engine/proxy.py": {
@@ -846,9 +846,9 @@
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_api.py": {
-    "mtime": 1794728171.6921124,
-    "seen": 1794729940.8871505,
-    "ast_hash": "d86dc47a487949d07875dee56c19838e",
+    "mtime": 1794731554.8868403,
+    "seen": 1794731748.3971262,
+    "ast_hash": "7ef0f958053a2ef797275ea9e396b7aa",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_brightness.py": {
@@ -858,9 +858,9 @@
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_chat.py": {
-    "mtime": 1794728171.6922412,
-    "seen": 1794729940.8871543,
-    "ast_hash": "532fc7419846656ab4ed0c938be86d41",
+    "mtime": 1794731661.0275898,
+    "seen": 1794731748.3971593,
+    "ast_hash": "441bdd4044f2064aaee047feb212d212",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_clearance.py": {
@@ -936,9 +936,9 @@
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_objective.py": {
-    "mtime": 1794728171.6924882,
-    "seen": 1794729940.8871741,
-    "ast_hash": "ba149cb3d9cc825053fc4f24d46e8ae5",
+    "mtime": 1794731554.889422,
+    "seen": 1794731748.39754,
+    "ast_hash": "8b436bf751fdcf7badf05dfc8de1052b",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_reachability.py": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794730996.6996086,
-    "seen": 1794731129.7307131,
-    "ast_hash": "857b926385a97013b2b2eaac0bb7b18d",
+    "mtime": 1794731661.0013328,
+    "seen": 1794731748.3982146,
+    "ast_hash": "6557faa1f4696eee3c835524f26b6d27",
     "semantic_hash": ""
   },
   "contracts/mock_room/README.txt": {
@@ -1092,21 +1092,21 @@
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794730358.0463104,
-    "seen": 1794731129.7307508,
-    "ast_hash": "028632a769abe8f2fb564916f9413659",
+    "mtime": 1794731685.1955376,
+    "seen": 1794731748.3982527,
+    "ast_hash": "101f5e5e85d0f330766f89c180c0863b",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794730996.7011933,
-    "seen": 1794731129.7307527,
-    "ast_hash": "e5ae25e8d9f7285acd31180b47b1fc64",
+    "mtime": 1794731661.0025897,
+    "seen": 1794731748.3982542,
+    "ast_hash": "1c42a5bfc988a3001d4dcd9d5bb1efcd",
     "semantic_hash": ""
   },
   "docs/dev3-spatial-handoff.md": {
-    "mtime": 1794728171.673746,
-    "seen": 1794729940.8872254,
-    "ast_hash": "e8f99bc4db741973128269cd60eef686",
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3982558,
+    "ast_hash": "9bd236c98b683617bdb67bfa438a4d97",
     "semantic_hash": ""
   },
   "docs/dev4-plan.md": {
@@ -1248,15 +1248,15 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/README.md": {
-    "mtime": 1794728171.6907349,
-    "seen": 1794729940.8872726,
-    "ast_hash": "42c86d1c5029d3d682d4cd40b8599ac3",
+    "mtime": 1794731685.1966197,
+    "seen": 1794731748.39916,
+    "ast_hash": "e22d25ce9e63c607152625374d87de10",
     "semantic_hash": ""
   },
   "services/spatial_engine/skills/feng-shui/SKILL.md": {
-    "mtime": 1794728115.5385425,
-    "seen": 1794729940.8872743,
-    "ast_hash": "ecc633da27ba9da7fdc2448d5ee69e27",
+    "mtime": 1794731554.8858404,
+    "seen": 1794731748.3991616,
+    "ast_hash": "67fb20ba590b52e0e1c436217fda9108",
     "semantic_hash": ""
   },
   "examples/one_floor.jpg": {
@@ -1411,104 +1411,104 @@
   },
   ".graphify_ast.json": {
     "mtime": 1794644052.0582492,
-    "seen": 1794728220.8859913,
+    "seen": 1794731446.875703,
     "ast_hash": "",
     "semantic_hash": ""
   },
   ".graphify_cached.json": {
     "mtime": 1794644029.234256,
-    "seen": 1794728220.8860002,
+    "seen": 1794731446.875715,
     "ast_hash": "",
     "semantic_hash": ""
   },
   ".graphify_detect.json": {
     "mtime": 1794644020.845635,
-    "seen": 1794728220.886004,
+    "seen": 1794731446.8757207,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/mock_scene.json": {
     "mtime": 1794674703.9606164,
-    "seen": 1794728220.8860064,
+    "seen": 1794731446.875724,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/one_floor_scene.json": {
     "mtime": 1794687116.680454,
-    "seen": 1794728220.8860085,
+    "seen": 1794731446.8757267,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_first_scene.json": {
     "mtime": 1794687116.6806648,
-    "seen": 1794728220.8860104,
+    "seen": 1794731446.875729,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_ground_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794728220.8860116,
+    "seen": 1794731446.8757317,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_second_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794728220.886013,
+    "seen": 1794731446.875734,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/evidence.json": {
     "mtime": 1794674703.9634907,
-    "seen": 1794728220.8861494,
+    "seen": 1794731446.8789904,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/one_floor.annotations.json": {
     "mtime": 1794682055.4256458,
-    "seen": 1794728220.8861868,
+    "seen": 1794731446.8801064,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/real_rooms.json": {
     "mtime": 1794728115.5340552,
-    "seen": 1794728220.886188,
+    "seen": 1794731446.8801086,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.assets.json": {
     "mtime": 1794700786.8696582,
-    "seen": 1794728220.886189,
+    "seen": 1794731446.8801105,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.hints.json": {
     "mtime": 1794700786.8698816,
-    "seen": 1794728220.8861907,
+    "seen": 1794731446.880113,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/three_floor.annotations.json": {
     "mtime": 1794682055.4259014,
-    "seen": 1794728220.8861918,
+    "seen": 1794731446.8801148,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/spatial_engine/fixtures/audit_cases.json": {
     "mtime": 1794682055.4266927,
-    "seen": 1794728220.8862205,
+    "seen": 1794731446.8809364,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
     "mtime": 1794687676.6252723,
-    "seen": 1794728220.8862402,
+    "seen": 1794731446.8812094,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "frontend/src/lib/catalogImport.ts": {
-    "mtime": 1794729931.924153,
-    "seen": 1794729940.8869684,
-    "ast_hash": "e7a889fe2fe668dacf3cfe778a96f247",
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3938682,
+    "ast_hash": "074f3210edf31a63430859cbdf69780b",
     "semantic_hash": ""
   },
   "frontend/tests/catalogImport.test.ts": {
@@ -1530,9 +1530,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/ikeaCatalog.test.ts": {
-    "mtime": 1794730402.4494667,
-    "seen": 1794731129.7263672,
-    "ast_hash": "9f9692f1755bda6a433ca3c13f29f2b2",
+    "mtime": 1794731608.927816,
+    "seen": 1794731748.3942041,
+    "ast_hash": "e8ee1a8497f532005d224e3f2fca07a7",
     "semantic_hash": ""
   },
   "scripts/cache_ikea_library.py": {
@@ -2157,6 +2157,168 @@
     "mtime": 1794730594.736524,
     "seen": 1794731129.7319293,
     "ast_hash": "323fd65de065cd0e1a3a344ee82b439a",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/CatalogPreview.tsx": {
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3929875,
+    "ast_hash": "91a282496c7503c602066bb2c608d12e",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/FengShuiScoreCard.tsx": {
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3930402,
+    "ast_hash": "958b0b88daa35e2a3c9f72114d00f966",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/FurnitureMesh.tsx": {
+    "mtime": 1794731554.8738403,
+    "seen": 1794731748.393044,
+    "ast_hash": "f9ecfbb82f20b510c82a3957cee41102",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/LayoutProposalCard.tsx": {
+    "mtime": 1794731554.8738403,
+    "seen": 1794731748.3930476,
+    "ast_hash": "9c09b615adc5998bdd532698397c27fe",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/VersionTree.tsx": {
+    "mtime": 1794731554.8744614,
+    "seen": 1794731748.3931787,
+    "ast_hash": "2d9f5135282a1453245330e2f64baac9",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/api.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.393865,
+    "ast_hash": "03247aa01aeb33db0dbd20f64e69f125",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/editorServices.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3938713,
+    "ast_hash": "9bf9c3b8c7b7c953db2b266d3af4db49",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/fengShui.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3938732,
+    "ast_hash": "db5363e3f3560e682545ae2fb6dba983",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/layoutDiff.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3939173,
+    "ast_hash": "b3e2761d40451ca90a4c792203900895",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/roomVersions.ts": {
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.3939538,
+    "ast_hash": "3b1753ec53961a04d099473e170121ac",
+    "semantic_hash": ""
+  },
+  "frontend/tests/catalog.test.ts": {
+    "mtime": 1794731676.3315566,
+    "seen": 1794731748.3941305,
+    "ast_hash": "6e1c43432bc361cb942e4e0d4fc62c1d",
+    "semantic_hash": ""
+  },
+  "frontend/tests/fengShui.test.ts": {
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.3941982,
+    "ast_hash": "8f0308829bcefb95700d10b552a472e3",
+    "semantic_hash": ""
+  },
+  "frontend/tests/fengShuiFixtures.ts": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3941998,
+    "ast_hash": "f2088be7d1648e8a9e8125731a9a42fd",
+    "semantic_hash": ""
+  },
+  "frontend/tests/fengShuiScore.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3942015,
+    "ast_hash": "04a4ff1fe9c40de7ff62a203c5f15d41",
+    "semantic_hash": ""
+  },
+  "frontend/tests/layoutAgent.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3942053,
+    "ast_hash": "2c59c1a1728cf5d18fc2f944dd640fac",
+    "semantic_hash": ""
+  },
+  "frontend/tests/layoutProgress.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3942068,
+    "ast_hash": "fc965cf002b0d2ad8d5593ee8268461c",
+    "semantic_hash": ""
+  },
+  "frontend/tests/roomVersions.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3943045,
+    "ast_hash": "8c774d971689ed9920ac9f2d03258b74",
+    "semantic_hash": ""
+  },
+  "frontend/tests/solveStream.ts": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3943067,
+    "ast_hash": "5768f5944deb54b42ba0f30973401ea1",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/feng_shui_inputs.py": {
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.3965573,
+    "ast_hash": "8b8772b86610bb0e831a8c85014fecec",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/feng_shui_score.py": {
+    "mtime": 1794731554.8838403,
+    "seen": 1794731748.3965921,
+    "ast_hash": "3876c06c5ec58a2381cc6bfb21aa9218",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/feng_shui_skill.py": {
+    "mtime": 1794731554.8838403,
+    "seen": 1794731748.3965936,
+    "ast_hash": "137b80a8d42bfe266c1962eb8d876370",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/library.py": {
+    "mtime": 1794731609.018708,
+    "seen": 1794731748.3965988,
+    "ast_hash": "1c4fdd4bde18a916e6806a20005b73e1",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/streaming.py": {
+    "mtime": 1794731554.8858404,
+    "seen": 1794731748.3966994,
+    "ast_hash": "2105e98d97b45ca7f63b5627f06559df",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_feng_shui_optimisation.py": {
+    "mtime": 1794731554.8878403,
+    "seen": 1794731748.3974094,
+    "ast_hash": "4e3260be38cffa95c4acfdcc407a2435",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_feng_shui_score.py": {
+    "mtime": 1794731554.888403,
+    "seen": 1794731748.3974106,
+    "ast_hash": "5b9c1333a48259acff09136cbe7d0387",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_library.py": {
+    "mtime": 1794731637.2592328,
+    "seen": 1794731748.397539,
+    "ast_hash": "ebcc1a12c58f10412910f62798a95d91",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_streaming.py": {
+    "mtime": 1794731554.8897712,
+    "seen": 1794731748.3976345,
+    "ast_hash": "81d66e74351b07b95b86e6bbfa819c82",
     "semantic_hash": ""
   }
 }

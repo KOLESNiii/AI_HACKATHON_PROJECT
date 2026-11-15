@@ -71,12 +71,14 @@ class DraftSession:
         *,
         near_window_item_ids: Iterable[str] = (),
         measure_brightness: bool = True,
+        measure_feng_shui: bool = False,
         max_evaluations: int | None = None,
         session_token: str | None = None,
     ) -> None:
         if max_evaluations is not None and max_evaluations < 0:
             raise SpatialInputError("Evaluation budget must not be negative")
         self._measure_brightness = measure_brightness
+        self._measure_feng_shui = measure_feng_shui
         self._original = scene.model_copy(deep=True)
         self._near_window_item_ids = tuple(near_window_item_ids)
         self._max_evaluations = max_evaluations
@@ -114,6 +116,7 @@ class DraftSession:
             self._original,
             scene,
             measure_brightness=self._measure_brightness,
+            measure_feng_shui=self._measure_feng_shui,
             near_window_item_ids=self._near_window_item_ids,
         )
 

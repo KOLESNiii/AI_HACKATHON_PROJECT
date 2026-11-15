@@ -477,7 +477,8 @@ opposite way; a bed's front is its foot, and the sleeper lies facing it.
 `score` is the rounded average, 0 to 100, over the beds and desks that were judged. Rooms
 with no door, or no bed or desk, return `feng_shui: null`, never zero. The score ignores
 the compass and says nothing about the rest of the room. These are design traditions, not
-predictions of health or luck. The `feng_shui` layout goal ranks this score first, after the
+predictions of health or luck. This door-placement score remains an audit diagnostic. The `feng_shui` goal now ranks
+the full score described below, after the
 fit and door rules. Timofey's `feng-shui` branch is a separate, AI-written qualitative review;
 this metric is the small deterministic part that can be shown and ranked on every edit.
 
@@ -523,8 +524,8 @@ to `AuditReport.feng_shui` or the layout solver are introduced.
 ## Room chat: `POST /chat`
 
 The editor Chat tab now connects to this route. Send `{scene, instruction}` and
-receive `{text, poses, additions, report}`. `add_item` creates one estimated,
-dimensioned proxy and can move existing non-fixed furniture to make room. Failed
+receive `{text, poses, additions, report}`. `add_item` copies one existing real Library mesh by asset ID and can move existing
+non-fixed furniture to make room. Failed
 collision, boundary or door checks feed back to the model for correction; no
 unverified item is returned. Front-clearance warnings remain visible in the report.
 `rearrange_room` uses the existing layout solver. Apply is a separate editor action;
@@ -545,18 +546,114 @@ characters, no changes attached): an answer to a question, or why nothing fits. 
 reply also names items moved to make room, any change in reachable floor, and parts of
 the request the model reported as not handled, such as a second item.
 
-Checked live on 2026-11-15 with the default model: one addition requested in each of
+Before the Library-only restriction, proxy additions were checked live on
+2026-11-15 with the default model: one addition requested in each of
 the 18 selectable demo rooms gave 17 verified proposals and one refusal with a reason
 (an armchair in the 1.4 m by 1.3 m bathroom), each in 4 to 8 seconds. Results vary
-between runs.
+between runs; this historical run does not validate the current mesh-only inventory.
 
 Uses the existing Anthropic configuration. Maximum six model calls, 90 seconds,
 200k tokens, 60 scene items and 500 instruction characters; delegated solves use
 what remains of that allowance. No live calls are made by tests. New items are
-estimated proxies, not retailer-grounded products or generated furniture meshes.
+copies of existing Library meshes; their source dimensions and uncertainty flags are preserved.
 A missing key, provider failure or exhausted attempt produces text without changes.
 
 ```bash
 uv run --extra spatial pytest tests/spatial_engine/test_chat.py
 bun test ./frontend/tests/agentAddItem.test.ts
 ```
+
+## Feng shui score
+
+`POST /feng-shui/score` takes the same request as `/feng-shui` and returns a
+deterministic score with no model call (`feng_shui_score.py`). Each rule gives a
+sub-score `s` in [0, 1] with a weight `w`:
+
+    score    = round(100 · Σ w·s / Σ w)   over rules that could be assessed
+    coverage = Σ w(assessed) / Σ w(applicable to this room)
+
+| Rule | Measured as | Weight |
+|---|---|---|
+| `door_visible` | angle θ between occupant facing and the door centre: 1 at ≤ 60°, 0 at ≥ 120° | 3 per occupant |
+| `line_of_sight` | occupant→door segment stays on the floor and misses items taller than 1.2 m | 1 per occupant |
+| `door_axis` | 0.5 inside the door's line (door width/2 + 0.3 m); 0 for a bed whose foot points out of the door within 20° (`coffin_alignment`) | 2 per occupant |
+| `backing` | `clamp(1 − (gap − 0.1)/0.5)` for gap from back to wall, times the share of the back edge not against a window or doorway | 2 per occupant |
+| `bed_side_access` | free share of the smaller 0.6 m strip beside each long side | 1 per bed |
+| `sharp_corners` | 1 − 0.25 per furniture corner within 1.5 m whose bisector aims within 30° of the occupant | 1 per occupant |
+| `door_window_draught` | 1 − window overlap of the door's straight path across the room / door width; 1 if furniture shields it | 1 per door |
+| `entry_openness` | free share of the 1 m half-disc inside the door | 1 per door |
+| `balance` | 1 − distance from furniture centre of mass to room centre / half the room diagonal | 0.5 |
+| `mirror_reflection` | 0 when a mirror's face sees a bed occupant within 60° with nothing tall between | 1 per mirror |
+
+Occupants are activity anchors when supplied, otherwise defaults: the bed's head
+end (0.3 m in from the back edge, facing its front), the sofa's centre, and a seat
+0.45 m in front of a desk facing the desk. Doors are `main_entry_door_id` when
+given, otherwise every door, with per-door rules averaged. `sightlines` use the
+shared `FengShuiSightline` statuses (`command_position` when θ gives ≥ 0.8, the
+sightline is clear and the occupant is off the door's axis).
+
+`score` is null when the room has no door or no bed, desk, sofa or anchor.
+`mirrors: null` counts as unassessed weight; `[]` means none. Collisions, blocked
+doors or out-of-bounds items cap the score at 50 (`capped_by_audit`). Compass
+schools are not used, and beams, clutter, materials and lighting are listed in
+`unassessed`. The score describes traditional preferences, not safety or wellbeing.
+
+## Streaming execution progress
+
+`POST /solve/stream` takes the same `OptimiseRequest` as `/solve` and returns
+`text/event-stream`. Event names and JSON data payloads are defined in the shared
+contracts: `progress` contains `stage` and `message`; `result` contains a complete
+`LayoutProposal`; `error` contains `message` for unexpected failures. A connected
+request ends with exactly one result or error. Normal no-improvement, provider
+unavailability and limit outcomes still use the proposal's existing fields.
+
+Input and geometry errors are HTTP 422 before stream headers. Ten-second comment
+heartbeats keep idle connections active. Clients must use POST fetch streaming,
+keep the entire request deadline, validate the terminal proposal, and avoid
+retries. Disconnect stops subsequent calls/tools, but an active synchronous SDK
+call may complete within its original timeout. Reverse proxies must disable
+response buffering for this route. `/solve` continues to return ordinary JSON.
+
+`POST /chat/stream` streams the same addition/rearrangement handler as `/chat`, with
+progress/error events and a terminal `reply` event carrying a `ChatReply`. It is named
+`reply`, not `result`, because `LayoutStreamEvent`'s `result` is always a `LayoutProposal`.
+A missing or malformed Feng Shui skill is a 503 (an `error` event once streaming), never
+`assistant_unavailable`. Delegated rearrangements
+also retain their `LayoutProposal` in `proposal`, including goal and outcome. Input
+validation precedes SSE headers. Cancellation and heartbeat behaviour match solve
+streaming; existing JSON routes remain available.
+
+
+## Optimise Feng Shui with the shared skill
+
+Ask Chat “optimise the feng shui”, or send `goal: "feng_shui"` to solve. The layout
+harness loads `skills/feng-shui/SKILL.md` in `layout_optimisation` mode and uses
+the full score returned by `/feng-shui/score`, matching Stats and the proposal
+comparison. Each draft exposes rule scores/weights, coverage, cap and unassessed
+notes so the model can target measurable improvements. The full score is computed
+only for this goal, without an extra model call. The final candidate is re-audited
+and re-scored independently; hard fit/door constraints and locks still take priority.
+
+The skill's assessment mode remains read-only and returns no model-invented score.
+Default occupants and unknown mirror inventories remain explicit assumptions. A
+null score is not replaced with zero. If the skill cannot be loaded, optimisation
+returns `assistant_unavailable` without making exploration calls.
+
+
+## Library-only additions
+
+`add_item` takes `asset_id`, `x`, `z`, `yaw_deg`, optional `moves` and `not_handled`.
+The model receives the same canonical mesh inventory used by the editor Library,
+and its tool schema lists the allowed IDs. The server chooses the mesh, name,
+category, dimensions, collision parts and provenance from that inventory; tool
+arguments cannot replace them. A copy gets a new ID and the proposed pose, then
+passes the existing placement checks.
+
+Only movable, non-proxy IKEA entries with a valid bundled GLB under
+`frontend/public/catalog/ikea/assets` are available. The inventory comes from
+`frontend/src/data/ikeaCatalog.json`, the same snapshot used by the browser. Missing or corrupt meshes are excluded and availability
+is checked again when the tool runs. Unknown IDs and extra metadata fields are
+rejected; an empty Library removes the addition tool. No generated proxy fallback
+is available to chat. The old proxy route is retained only for existing clients
+and room references. The chat HTTP request shape and provider configuration are
+unchanged.

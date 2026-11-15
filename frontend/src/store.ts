@@ -5,9 +5,32 @@ import { roomScene } from './data/demoHome'
 import type {
   AuditReport,
   FurnitureItem,
+  LayoutProgress,
   Pose2D,
   RoomScene,
 } from './lib/contracts'
+import { MAX_LAYOUT_INSTRUCTION_CHARS } from './lib/contracts'
+import {
+  readProposal,
+  streamAgentMessage,
+  type EditorProposal,
+} from './lib/agent'
+import { errorMessage } from './lib/api'
+import { layoutChanges, matchingAudit } from './lib/layoutDiff'
+import { fetchAudit, fetchRoom } from './lib/spatial'
+import {
+  fetchFengShui,
+  fetchFengShuiScore,
+  type FengShuiResult,
+  type FengShuiScore,
+  type ScoreStatus,
+} from './lib/fengShui'
+import {
+  initialRoomHistory,
+  editRoomLayout,
+  recordRoomVersion,
+  type RoomVersion,
+} from './lib/roomVersions'
 import { bounds, clampToFloor, fitYaw, snapToNearestWall } from './lib/geometry'
 import type { Pt } from './lib/geometry'
 import { canStand, humanPoseAt } from './lib/walk'
@@ -24,17 +47,16 @@ export type EditorMode = 'edit' | 'play'
 export interface ChatMessage {
   role: 'user' | 'assistant'
   text: string
-  /** Proposed poses attached to an agent reply (item_id -> pose). */
-  poses?: Record<string, Pose2D>
-  additions?: FurnitureItem[]
-  report?: AuditReport | null
-  /** Scene revision the agent saw; poses only apply while the scene is still at it. */
-  baseRevision?: number
+  proposal?: EditorProposal
+  /** Immutable scene snapshot used to calculate and accept this proposal's diff. */
+  baseScene?: RoomScene
+  roomSession?: number
+  baseVersionId?: string
+  baseVersionLabel?: string
+  baselineAudit?: AuditReport
   applied?: boolean
-  /** The user chose not to apply this proposal. */
-  dismissed?: boolean
-  /** What the proposed layout would look like once audited, e.g. "0 collisions · feng shui 100". */
-  outlook?: string
+  rejected?: boolean
+  progress?: LayoutProgress[]
 }
 export interface Toast {
   id: number
@@ -47,6 +69,9 @@ interface State {
   scene: RoomScene
   /** Incremented when a room is (re)opened; async results from older sessions are dropped. */
   roomSession: number
+  versions: RoomVersion[]
+  currentVersionId: string
+  hasUnsavedChanges: boolean
   selectedId: string | null
   /** True while an item is being dragged or rotated. */
   interacting: boolean
@@ -58,12 +83,26 @@ interface State {
   human: Pose2D | null
   placingHuman: boolean
   humanPreview: Pose2D | null
-  /** Latest AuditReport from the spatial engine; shown only for the matching revision. */
+  roomLoading: boolean
+  roomWarnings: string[]
+  roomAbort: AbortController | null
+  /** Audit of the current committed scene only; candidate reports stay in chat. */
   audit: AuditReport | null
-  /** Why the last audit failed, or null. */
+  auditStatus: 'idle' | 'loading' | 'ready' | 'error'
   auditError: string | null
+  auditAbort: AbortController | null
+  /** Advisory `/feng-shui` assessment of the committed scene; cleared when the scene changes. */
+  fengShui: FengShuiResult | null
+  fengShuiStatus: 'idle' | 'loading' | 'ready' | 'error'
+  fengShuiError: string | null
+  fengShuiAbort: AbortController | null
+  fengShuiScore: FengShuiScore | null
+  fengShuiScoreStatus: ScoreStatus
+  fengShuiScoreError: string | null
+  fengShuiScoreAbort: AbortController | null
   chat: ChatMessage[]
   agentBusy: boolean
+  agentProgress: LayoutProgress[]
   /** In-flight agent request, aborted when the room is reopened. */
   agentAbort: AbortController | null
   toasts: Toast[]
@@ -71,6 +110,9 @@ interface State {
   setScreen: (s: Screen) => void
   selectSegment: (id: string | null) => void
   openRoom: () => void
+  selectVersion: (id: string) => void
+  saveVersion: () => void
+  discardChanges: () => void
   select: (id: string | null) => void
   setInteracting: (b: boolean) => void
   /** Live pose update while dragging/rotating; does not bump the revision. */
@@ -84,8 +126,13 @@ interface State {
   deleteItem: (id: string) => void
   addFromCatalog: (c: CatalogItem) => void
   applyPoses: (messageIndex: number) => void
-  dismissProposal: (messageIndex: number) => void
-  setAudit: (report: AuditReport | null, error?: string | null) => void
+  rejectProposal: (messageIndex: number) => void
+  sendChat: (text: string) => Promise<void>
+  cancelAgent: () => void
+  loadRoom: () => Promise<void>
+  refreshAudit: () => Promise<void>
+  refreshFengShuiScore: () => Promise<void>
+  assessFengShui: () => Promise<void>
   setTab: (t: Tab) => void
   beginHumanPlacement: () => boolean
   previewHuman: (p: Pt | null) => void
@@ -98,11 +145,13 @@ interface State {
   resumeWalking: () => boolean
   setArtificialLight: (percent: number) => void
   setTimeOfDay: (hour: number) => void
-  pushChat: (m: ChatMessage) => void
-  setAgentBusy: (b: boolean, abort?: AbortController | null) => void
   toast: (text: string) => void
   dismissToast: (id: number) => void
 }
+
+/** Results belong to a committed revision; uncommitted drag frames do not invalidate them. */
+const sameRevision = (a: RoomScene, b: RoomScene) =>
+  a.scene_id === b.scene_id && a.revision === b.revision
 
 let toastSeq = 0
 let itemSeq = 0
@@ -118,31 +167,50 @@ const mapItem = (
   f: (i: FurnitureItem) => FurnitureItem,
 ) => scene.furniture.map((i) => (i.id === id ? f(i) : i))
 
+/** Restoring always gets a fresh audit revision and invalidates pending proposals. */
+function restoreVersion(state: State, version: RoomVersion): Partial<State> {
+  state.agentAbort?.abort()
+  state.auditAbort?.abort()
+  state.fengShuiScoreAbort?.abort()
+  return {
+    scene: {
+      ...structuredClone(version.scene),
+      revision: state.scene.revision + 1,
+    },
+    currentVersionId: version.id,
+    hasUnsavedChanges: false,
+    selectedId: null,
+    audit: null,
+    auditStatus: 'idle',
+    auditError: null,
+    auditAbort: null,
+    fengShuiScore: null,
+    fengShuiScoreStatus: 'idle',
+    fengShuiScoreError: null,
+    fengShuiScoreAbort: null,
+    agentBusy: false,
+    agentProgress: [],
+    agentAbort: null,
+    chat: state.agentBusy
+      ? [
+          ...state.chat,
+          {
+            role: 'assistant',
+            text: 'Layout request cancelled. Ask again to branch from the selected version.',
+            progress: state.agentProgress,
+          },
+        ]
+      : state.chat,
+  }
+}
+
 function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
   itemSeq += 1
-  if (c.asset)
-    return { ...c.asset, id: `lib-${c.sku}-${itemSeq}`.slice(0, 64), pose }
+  const { sku, image_url: _image, ...asset } = c
   return {
-    id: `lib-${c.sku}-${itemSeq}`.slice(0, 64),
-    name: c.name,
-    category: c.category,
-    source: 'catalog_search',
-    // No reconstructed mesh yet, so the editor draws a labelled proxy box. The contract
-    // still requires a URL (services reject an empty one): the spatial service's
-    // dimensioned placeholder, the same one its agent uses for items it adds.
-    glb_url: `/api/spatial_engine/proxies/${c.bbox_m.width}/${c.bbox_m.height}/${c.bbox_m.depth}.glb`,
-    price_gbp: c.price_gbp,
-    product_url: c.product_url ?? null,
-    bbox_m: { ...c.bbox_m },
+    ...structuredClone(asset),
+    id: `lib-${itemSeq}-${sku}`.slice(0, 64),
     pose,
-    has_screen: false,
-    requires_front_clear_m: 0.6,
-    wall_flush_preferred: true,
-    is_proxy: true,
-    dimension_source: 'catalog',
-    correction_needed: [],
-    collision_parts: [],
-    collision_source: 'template',
     is_fixed: false,
   }
 }
@@ -165,10 +233,13 @@ function withEditCue(cue: SoundCue, change: () => void) {
     playCue(cue)
 }
 
+const initialScene = roomScene(null)
+
 export const useStore = create<State>((set, get) => ({
   screen: 'home',
   segmentId: null,
-  scene: roomScene(null),
+  scene: initialScene,
+  ...initialRoomHistory(initialScene),
   roomSession: 0,
   selectedId: null,
   interacting: false,
@@ -179,10 +250,24 @@ export const useStore = create<State>((set, get) => ({
   human: null,
   placingHuman: false,
   humanPreview: null,
+  roomLoading: false,
+  roomWarnings: [],
+  roomAbort: null,
   audit: null,
+  auditStatus: 'idle',
   auditError: null,
+  auditAbort: null,
+  fengShui: null,
+  fengShuiStatus: 'idle',
+  fengShuiError: null,
+  fengShuiAbort: null,
+  fengShuiScore: null,
+  fengShuiScoreStatus: 'idle',
+  fengShuiScoreError: null,
+  fengShuiScoreAbort: null,
   chat: [],
   agentBusy: false,
+  agentProgress: [],
   agentAbort: null,
   toasts: [],
 
@@ -198,25 +283,117 @@ export const useStore = create<State>((set, get) => ({
   selectSegment: (segmentId) => set({ segmentId }),
   openRoom: () => {
     get().agentAbort?.abort()
-    set((s) => ({
-      screen: 'building',
-      scene: roomScene(s.segmentId),
-      roomSession: s.roomSession + 1,
-      selectedId: null,
-      tab: 'chat',
-      mode: 'edit',
-      playPhase: 'walking',
-      playLighting: { ...DEFAULT_PLAY_LIGHTING },
-      human: null,
-      placingHuman: false,
-      humanPreview: null,
-      audit: null,
-      auditError: null,
-      interacting: false,
-      chat: [],
+    get().roomAbort?.abort()
+    get().auditAbort?.abort()
+    get().fengShuiAbort?.abort()
+    get().fengShuiScoreAbort?.abort()
+    set((s) => {
+      const scene = roomScene(s.segmentId)
+      return {
+        screen: 'building',
+        scene,
+        ...initialRoomHistory(scene),
+        roomSession: s.roomSession + 1,
+        selectedId: null,
+        tab: 'chat',
+        mode: 'edit',
+        playPhase: 'walking',
+        playLighting: { ...DEFAULT_PLAY_LIGHTING },
+        human: null,
+        placingHuman: false,
+        humanPreview: null,
+        audit: null,
+        auditStatus: 'idle',
+        auditError: null,
+        auditAbort: null,
+        fengShui: null,
+        fengShuiStatus: 'idle',
+        fengShuiError: null,
+        fengShuiAbort: null,
+        fengShuiScore: null,
+        fengShuiScoreStatus: 'idle',
+        fengShuiScoreError: null,
+        fengShuiScoreAbort: null,
+        roomLoading: false,
+        roomWarnings: [],
+        roomAbort: null,
+        interacting: false,
+        chat: [],
+        agentBusy: false,
+        agentProgress: [],
+        agentAbort: null,
+      }
+    })
+  },
+  selectVersion: (id) => {
+    const s = get()
+    if (
+      s.currentVersionId === id ||
+      s.roomLoading ||
+      s.interacting ||
+      s.mode !== 'edit'
+    )
+      return
+    const version = s.versions.find((v) => v.id === id)
+    if (!version || version.scene.scene_id !== s.scene.scene_id) return
+    if (s.hasUnsavedChanges)
+      return get().toast(
+        'Save with Ctrl+S or discard your changes before switching versions.',
+      )
+    set(restoreVersion(s, version))
+    playCue('select')
+  },
+  saveVersion: () => {
+    const s = get()
+    if (
+      s.screen !== 'editor' ||
+      s.mode !== 'edit' ||
+      s.roomLoading ||
+      s.interacting ||
+      !s.hasUnsavedChanges
+    )
+      return
+    const saved = recordRoomVersion(
+      s,
+      s.scene,
+      'Saved manual changes',
+      'manual',
+    )
+    if (saved.currentVersionId === s.currentVersionId) {
+      set(saved)
+      return
+    }
+    s.agentAbort?.abort()
+    set({
+      ...saved,
       agentBusy: false,
+      agentProgress: [],
       agentAbort: null,
-    }))
+      chat: s.agentBusy
+        ? [
+            ...s.chat,
+            {
+              role: 'assistant',
+              text: 'Layout request cancelled because a new version was saved. Ask again from this version.',
+              progress: s.agentProgress,
+            },
+          ]
+        : s.chat,
+    })
+    playCue('ready')
+  },
+  discardChanges: () => {
+    const s = get()
+    if (
+      s.screen !== 'editor' ||
+      s.mode !== 'edit' ||
+      s.roomLoading ||
+      s.interacting ||
+      !s.hasUnsavedChanges
+    )
+      return
+    const version = s.versions.find((v) => v.id === s.currentVersionId)
+    if (version) set(restoreVersion(s, version))
   },
   select: (selectedId) => {
     const s = get()
@@ -230,33 +407,39 @@ export const useStore = create<State>((set, get) => ({
   },
   setInteracting: (interacting) => set({ interacting }),
   setPose: (id, pose) =>
-    set((s) => ({
-      scene: {
-        ...s.scene,
-        furniture: mapItem(s.scene, id, (i) => ({
-          ...i,
-          pose: { ...i.pose, ...pose },
-        })),
-      },
-    })),
+    set((s) =>
+      s.roomLoading
+        ? {}
+        : {
+            scene: {
+              ...s.scene,
+              furniture: mapItem(s.scene, id, (i) => ({
+                ...i,
+                pose: { ...i.pose, ...pose },
+              })),
+            },
+          },
+    ),
   commitEdit: (cue = 'place') => {
-    set((s) => ({ scene: bump(s.scene) }))
+    if (get().roomLoading) return
+    set((s) => editRoomLayout(s, bump(s.scene)))
     if (cue) playCue(cue)
   },
   snapItem: (id) =>
     withEditCue('snap', () =>
       set((s) => {
         const item = s.scene.furniture.find((i) => i.id === id)
-        if (!item || item.is_fixed) return {}
-        return {
-          scene: bump(
+        if (!item || item.is_fixed || s.roomLoading) return {}
+        return editRoomLayout(
+          s,
+          bump(
             s.scene,
             mapItem(s.scene, id, (i) => ({
               ...i,
               pose: snapToNearestWall(s.scene.walls, s.scene.floor_polygon, i),
             })),
           ),
-        }
+        )
       }),
     ),
   rotateItem: (id, degrees) =>
@@ -266,6 +449,7 @@ export const useStore = create<State>((set, get) => ({
         if (
           !item ||
           item.is_fixed ||
+          s.roomLoading ||
           s.interacting ||
           !Number.isFinite(degrees)
         )
@@ -279,22 +463,24 @@ export const useStore = create<State>((set, get) => ({
           item.pose.x,
           item.pose.z,
         )
-        return {
-          scene: bump(
+        return editRoomLayout(
+          s,
+          bump(
             s.scene,
             mapItem(s.scene, id, (i) => ({
               ...i,
               pose: { x: p.x, z: p.z, yaw_deg: yaw },
             })),
           ),
-        }
+        )
       }),
     ),
   resetRotation: (id) =>
     withEditCue('rotate', () =>
       set((s) => {
         const item = s.scene.furniture.find((i) => i.id === id)
-        if (!item || item.is_fixed || item.pose.yaw_deg === 0) return {}
+        if (!item || item.is_fixed || s.roomLoading || item.pose.yaw_deg === 0)
+          return {}
         const upright = { ...item, pose: { ...item.pose, yaw_deg: 0 } }
         const c = clampToFloor(
           s.scene.floor_polygon,
@@ -302,32 +488,37 @@ export const useStore = create<State>((set, get) => ({
           item.pose.x,
           item.pose.z,
         )
-        return {
-          scene: bump(
+        return editRoomLayout(
+          s,
+          bump(
             s.scene,
             mapItem(s.scene, id, (i) => ({
               ...i,
               pose: { x: c.x, z: c.z, yaw_deg: 0 },
             })),
           ),
-        }
+        )
       }),
     ),
   deleteItem: (id) =>
     withEditCue('delete', () =>
       set((s) => {
         const item = s.scene.furniture.find((i) => i.id === id)
-        if (!item || item.is_fixed) return {}
+        if (!item || item.is_fixed || s.roomLoading) return {}
         return {
-          scene: bump(
-            s.scene,
-            s.scene.furniture.filter((i) => i.id !== id),
+          ...editRoomLayout(
+            s,
+            bump(
+              s.scene,
+              s.scene.furniture.filter((i) => i.id !== id),
+            ),
           ),
           selectedId: s.selectedId === id ? null : s.selectedId,
         }
       }),
     ),
   addFromCatalog: (c) => {
+    if (get().roomLoading) return
     const { scene } = get()
     const yaw = fitYaw(scene.floor_polygon, c.bbox_m.width, c.bbox_m.depth)
     if (yaw == null) {
@@ -344,7 +535,7 @@ export const useStore = create<State>((set, get) => ({
     )
     const item = { ...draft, pose: { x: p.x, z: p.z, yaw_deg: yaw } }
     set({
-      scene: bump(scene, [...scene.furniture, item]),
+      ...editRoomLayout(get(), bump(scene, [...scene.furniture, item])),
       selectedId: item.id,
     })
     get().toast(
@@ -353,56 +544,281 @@ export const useStore = create<State>((set, get) => ({
     playCue('add')
   },
   applyPoses: (index) => {
-    const { chat, scene } = get()
+    const {
+      chat,
+      scene,
+      roomSession,
+      currentVersionId,
+      interacting,
+      mode,
+      roomLoading,
+    } = get()
     const msg = chat[index]
     if (
-      !msg ||
-      (!msg.poses && !msg.additions?.length) ||
+      !msg?.proposal ||
+      !msg.baseScene ||
       msg.applied ||
-      msg.dismissed ||
-      get().interacting ||
-      get().mode !== 'edit'
+      msg.rejected ||
+      interacting ||
+      mode !== 'edit' ||
+      roomLoading
     )
       return
-    if (msg.baseRevision !== scene.revision) {
+    if (
+      msg.roomSession !== roomSession ||
+      scene !== msg.baseScene ||
+      msg.baseVersionId !== currentVersionId
+    ) {
       playCue('reject')
       return get().toast(
         'The room changed since this suggestion. Ask the agent again.',
       )
     }
-    // Fixed items (fixtures) are never moved by the agent or solver.
-    const additions = msg.additions ?? []
-    const ids = new Set(scene.furniture.map((item) => item.id))
-    for (const item of additions) {
-      if (ids.has(item.id)) return
-      ids.add(item.id)
+    let proposal: EditorProposal
+    try {
+      proposal = readProposal(msg.proposal, scene, msg.baselineAudit)
+      if (!proposal.improved || layoutChanges(scene, proposal).length === 0)
+        return
+    } catch (error) {
+      return get().toast(errorMessage(error))
     }
-    const poses = msg.poses ?? {}
+    const poses = proposal.poses
     const furniture = scene.furniture.map((i) =>
-      poses[i.id] && !i.is_fixed ? { ...i, pose: { ...poses[i.id] } } : i,
+      Object.hasOwn(poses, i.id) ? { ...i, pose: { ...poses[i.id] } } : i,
     )
     withEditCue('apply', () =>
       set({
-        scene: bump(scene, [...furniture, ...additions]),
-        audit:
-          msg.report?.scene_id === scene.scene_id &&
-          msg.report.scene_revision === scene.revision
-            ? { ...msg.report, scene_revision: scene.revision + 1 }
-            : null,
-        auditError: null,
+        ...recordRoomVersion(
+          get(),
+          bump(scene, [
+            ...furniture,
+            ...structuredClone(proposal.additions ?? []),
+          ]),
+          `Agent: ${proposal.explanation}`,
+          'agent',
+        ),
+        audit: null,
+        auditStatus: 'idle',
         chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
       }),
     )
   },
-  dismissProposal: (index) =>
+  rejectProposal: (index) =>
     set((s) => ({
       chat: s.chat.map((m, i) =>
-        i === index && (m.poses || m.additions?.length) && !m.applied
-          ? { ...m, dismissed: true }
-          : m,
+        i === index && m.proposal && !m.applied ? { ...m, rejected: true } : m,
       ),
     })),
-  setAudit: (audit, auditError = null) => set({ audit, auditError }),
+  sendChat: async (text) => {
+    const instruction = text.trim()
+    const {
+      scene,
+      roomSession,
+      currentVersionId,
+      audit,
+      agentBusy,
+      interacting,
+      mode,
+      roomLoading,
+    } = get()
+    if (
+      agentBusy ||
+      interacting ||
+      mode !== 'edit' ||
+      roomLoading ||
+      !instruction
+    )
+      return
+    if ([...instruction].length > MAX_LAYOUT_INSTRUCTION_CHARS) {
+      get().toast(
+        `Keep your request within ${MAX_LAYOUT_INSTRUCTION_CHARS} characters.`,
+      )
+      return
+    }
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession && get().agentAbort === controller
+    set((s) => ({
+      agentBusy: true,
+      agentProgress: [],
+      agentAbort: controller,
+      chat: [...s.chat, { role: 'user', text: instruction }],
+    }))
+    try {
+      const reply = await streamAgentMessage(
+        scene,
+        instruction,
+        controller.signal,
+        (update) => {
+          if (current())
+            set((s) => ({
+              agentProgress: [...s.agentProgress, update].slice(-200),
+            }))
+        },
+        matchingAudit(audit, scene) ? audit : undefined,
+      )
+      if (!current()) return
+      set((s) => ({
+        chat: [
+          ...s.chat,
+          {
+            role: 'assistant',
+            text: reply.text,
+            proposal: reply.proposal,
+            progress: s.agentProgress,
+            baseScene: scene,
+            roomSession,
+            baseVersionId: currentVersionId,
+            baseVersionLabel: get().versions.find(
+              (v) => v.id === currentVersionId,
+            )?.label,
+            baselineAudit: matchingAudit(audit, scene) ? audit : undefined,
+          },
+        ],
+      }))
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set((s) => ({
+          chat: [
+            ...s.chat,
+            {
+              role: 'assistant',
+              text: errorMessage(error),
+              progress: s.agentProgress,
+            },
+          ],
+        }))
+    } finally {
+      if (current())
+        set({ agentBusy: false, agentAbort: null, agentProgress: [] })
+    }
+  },
+  cancelAgent: () => {
+    if (!get().agentBusy) return
+    get().agentAbort?.abort()
+    set((s) => ({
+      agentBusy: false,
+      agentProgress: [],
+      agentAbort: null,
+      chat: [
+        ...s.chat,
+        {
+          role: 'assistant',
+          text: 'Request cancelled. Your room has not changed.',
+          progress: s.agentProgress,
+        },
+      ],
+    }))
+  },
+  loadRoom: async () => {
+    get().roomAbort?.abort()
+    const { scene, roomSession } = get()
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession && get().roomAbort === controller
+    set({
+      roomLoading: true,
+      roomAbort: controller,
+      roomWarnings: [],
+      audit: null,
+    })
+    try {
+      const result = await fetchRoom(scene.scene_id, controller.signal)
+      if (current() && get().scene === scene)
+        set({
+          scene: result.scene,
+          ...initialRoomHistory(result.scene),
+          roomWarnings: result.warnings,
+        })
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({
+          roomWarnings: [`Using the local demo room. ${errorMessage(error)}`],
+        })
+    } finally {
+      if (current()) set({ roomLoading: false, roomAbort: null })
+    }
+  },
+  refreshAudit: async () => {
+    const { scene, roomSession, interacting, roomLoading } = get()
+    if (interacting || roomLoading) return
+    get().auditAbort?.abort()
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession &&
+      sameRevision(get().scene, scene) &&
+      !get().interacting &&
+      get().auditAbort === controller
+    set({
+      audit: null,
+      auditStatus: 'loading',
+      auditError: null,
+      auditAbort: controller,
+    })
+    try {
+      const audit = await fetchAudit(scene, controller.signal)
+      if (current()) set({ audit, auditStatus: 'ready' })
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({ auditStatus: 'error', auditError: errorMessage(error) })
+    } finally {
+      if (get().auditAbort === controller) set({ auditAbort: null })
+    }
+  },
+  refreshFengShuiScore: async () => {
+    const { scene, roomSession, interacting, roomLoading } = get()
+    if (interacting || roomLoading) return
+    get().fengShuiScoreAbort?.abort()
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession &&
+      sameRevision(get().scene, scene) &&
+      !get().interacting &&
+      get().fengShuiScoreAbort === controller
+    set({
+      fengShuiScore: null,
+      fengShuiScoreStatus: 'loading',
+      fengShuiScoreError: null,
+      fengShuiScoreAbort: controller,
+    })
+    try {
+      const score = await fetchFengShuiScore(scene, controller.signal)
+      if (current()) set({ fengShuiScore: score, fengShuiScoreStatus: 'ready' })
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({
+          fengShuiScoreStatus: 'error',
+          fengShuiScoreError: errorMessage(error),
+        })
+    } finally {
+      if (get().fengShuiScoreAbort === controller)
+        set({ fengShuiScoreAbort: null })
+    }
+  },
+  assessFengShui: async () => {
+    const { scene, roomSession, interacting, roomLoading } = get()
+    if (interacting || roomLoading || get().fengShuiStatus === 'loading') return
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession &&
+      sameRevision(get().scene, scene) &&
+      get().fengShuiAbort === controller
+    set({
+      fengShui: null,
+      fengShuiStatus: 'loading',
+      fengShuiError: null,
+      fengShuiAbort: controller,
+    })
+    try {
+      const fengShui = await fetchFengShui(scene, controller.signal)
+      if (current()) set({ fengShui, fengShuiStatus: 'ready' })
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({ fengShuiStatus: 'error', fengShuiError: errorMessage(error) })
+    } finally {
+      if (get().fengShuiAbort === controller) set({ fengShuiAbort: null })
+    }
+  },
   setTab: (tab) => {
     if (get().tab === tab) return
     set({ tab })
@@ -410,7 +826,7 @@ export const useStore = create<State>((set, get) => ({
   },
   beginHumanPlacement: () => {
     const s = get()
-    if (s.mode !== 'edit' || s.interacting) return false
+    if (s.mode !== 'edit' || s.interacting || s.roomLoading) return false
     set({
       placingHuman: true,
       humanPreview: null,
@@ -501,9 +917,6 @@ export const useStore = create<State>((set, get) => ({
         },
       }))
   },
-  pushChat: (m) => set((s) => ({ chat: [...s.chat, m] })),
-  setAgentBusy: (agentBusy, agentAbort = null) =>
-    set({ agentBusy, agentAbort }),
   toast: (text) => {
     const id = ++toastSeq
     set((s) => ({ toasts: [...s.toasts, { id, text }] }))

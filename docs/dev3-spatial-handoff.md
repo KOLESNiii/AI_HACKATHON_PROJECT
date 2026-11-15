@@ -1,8 +1,7 @@
 # Spatial findings: Dev 3 / Dev 4 handoff
 
 Status: Dev 4's integration contract and reusable examples for issue #29.
-Record Dev 1/3 acknowledgement in the issue or PR. `POST /audit` is implemented;
-`POST /solve` remains a future implementation target.
+`POST /audit` and `POST /solve` are implemented and connected to the editor.
 The authoritative wire models remain `contracts/schema.py` and `schema.ts`.
 
 ## HTTP handoff contract
@@ -129,6 +128,13 @@ uv run --extra spatial pytest tests/spatial_engine/test_handoff_cases.py
 
 ## Layout suggestions (`POST /solve`)
 
+Chat now sends the typed instruction and current room to this route, then displays
+a Room diff with Accept layout / Reject. Stats independently audits the current
+scene on load and after committed edits. Candidate reports remain in the proposal
+until acceptance, followed by a fresh audit at the incremented revision. Loading,
+errors, null assessments, stale proposals and early/unavailable outcomes are
+handled explicitly. No backend score or goal changes are included in this wiring.
+
 Implemented. Send `OptimiseRequest`: the scene, `locked_item_ids`, and optionally
 the user's typed `instruction` (max 500 characters) and a `goal` chip
 (`balanced`, `brighter`, `roomier`, `minimal_changes`, `feng_shui`, `custom`; the chip overrides what
@@ -160,15 +166,74 @@ Wired in the editor (`frontend/src/lib/spatial.ts`, `components/editor/useLiveAu
   was computed for. The Stats tab shows "Checking the room..." or the service's error. Both
   services must be running (`bun run dev:spatial`); the editor shows the error otherwise.
 - **Chat to `/chat` (#35, #65):** `lib/agent.ts` sends the typed message; rearrangements
-  delegate to the solver, while additions return one dimensioned proxy. A proposal shows
+  delegate to the solver, while additions return one existing Library mesh. A proposal shows
   the server's explanation, a one-line outlook from the proposal's own audit, and Apply or
   Dismiss. Apply keeps the existing stale-revision check, bumps the revision, and the live
   audit then re-audits the result. Nothing changes the scene until Apply. Dismissed or
   applied proposals cannot be applied again. Errors, 422s and timeouts become readable chat
   messages.
-- Library items carry a dimensioned proxy URL. `toServiceScene` still substitutes a
+- Library items retain their actual model URL. `toServiceScene` still substitutes a
   placeholder URL for legacy items with an empty `glb_url`, for requests only.
 - The Stats tab lists each Feng Shui judgement with its reason.
 
 Not done yet: a 3D preview of a proposal before applying it, goal chips, and locking the
 selected item (`locked_item_ids` is always sent empty, so the user's wording is the only lock).
+
+## Live execution updates
+
+The editor now uses `POST /api/spatial_engine/solve/stream` with the same request
+body as `/solve`. Read SSE `progress` events (`stage`, `message`), followed by one
+`result` event containing the existing `LayoutProposal`. An unexpected failure
+instead terminates with `error` (`message`). Heartbeats are SSE comments. The
+JSON `/solve` endpoint remains available. Validate results before offering Accept;
+progress contains no applicable edits. Input errors still return HTTP 422 before
+streaming starts. No stream failure is retried automatically.
+
+The current status and expandable activity log use real harness updates. Logs stay
+with completed, failed and cancelled replies. Cancel/room changes close the stream
+and prevent subsequent harness work; an in-flight provider call may still finish.
+The browser's 120-second timeout remains a total deadline, not an idle timeout.
+
+## Deterministic Feng Shui score in the editor
+
+Stats now calls `/api/spatial_engine/feng-shui/score` with `{scene}` after room
+load and committed edits. It consumes the service-local score, coverage, cap,
+per-rule breakdown, sightlines and unassessed notes; `/audit` continues to return
+its existing nullable Feng Shui field. Loading and retries are independent of
+the audit and of the opt-in `/feng-shui` model assessment. No provider key is needed.
+
+The Room diff also scores both immutable snapshots, showing before/proposed
+scores and coverage without modifying the room or solver ranking. Score failure
+leaves the proposal review available, with a separate retry. Null scores display
+as not assessable; 0 remains a valid score. Missing mirrors and inferred occupant
+positions are shown using the backend's unassessed/assumption notes.
+
+## Main merge: active chat transport
+
+Editor Chat now sends `{scene, instruction}` to `/api/spatial_engine/chat/stream`.
+SSE progress/error framing is unchanged. A result contains main's `ChatReply`, with
+optional additions, poses, audit and nested solve proposal metadata. Additions are
+previewed, accepted/rejected atomically and recorded in room history. The JSON chat
+client remains exported for compatibility; direct solve streaming remains available.
+The `feng_shui` goal is supported, and its door-placement ranking score is labelled
+separately from the coverage-bearing `/feng-shui/score` result.
+
+## Skill-guided Feng Shui goal
+
+The `feng_shui` goal now optimises the full `/feng-shui/score` value displayed in
+Stats, using the shared Feng Shui skill and per-draft rule feedback. The streaming
+chat route supports “optimise the feng shui” without a new request shape. Progress
+identifies skill-guided exploration, and the final explanation reports measured
+before/after full scores and rule coverage. The audit's smaller door-placement
+score remains diagnostic; the preview no longer labels it as the goal's ranking.
+
+
+## Bot additions restricted to mesh Library assets
+
+The chat request/reply shapes are unchanged. The bot's addition tool now chooses
+a canonical `asset_id`, not a name or dimensions. It can only use current Library
+entries with real GLBs; the backend copies all asset metadata and only assigns a
+new item ID and pose. Missing models, proxies, fixed items and invented dimensions
+are rejected. The editor checks the returned asset metadata against `catalog`
+before allowing the existing preview and acceptance flow. No new API keys or
+frontend-owned allowlist request is required.
