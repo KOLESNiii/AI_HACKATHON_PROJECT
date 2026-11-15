@@ -467,8 +467,14 @@ def test_feng_shui_goal_ranks_the_score_first_and_is_never_traded_for_validity()
     original.furniture[0].pose = Pose2D(x=4.5, z=3, yaw_deg=180)  # back to the door
     turned = original.model_copy(deep=True)
     turned.furniture[0].pose = Pose2D(x=4.5, z=3, yaw_deg=0)  # now facing it
-    old, new = evaluate_layout(original, original), evaluate_layout(original, turned)
-    assert (old.metrics.feng_shui_score, new.metrics.feng_shui_score) == (0, 100)
+    old = evaluate_layout(original, original, measure_feng_shui=True)
+    new = evaluate_layout(original, turned, measure_feng_shui=True)
+    assert old.feng_shui is not None and new.feng_shui is not None
+    assert old.metrics.feng_shui_score == old.feng_shui.score
+    assert new.metrics.feng_shui_score == new.feng_shui.score
+    assert new.metrics.feng_shui_score > old.metrics.feng_shui_score
+    # The audit's legacy door metric remains a separate diagnostic.
+    assert (old.report.feng_shui.score, new.report.feng_shui.score) == (0, 100)
     better = compare_evaluations(old, new, "feng_shui")
     assert better.outcome == "better" and better.deciding_metric == "feng_shui_score"
     # Under the balanced goal the extra movement makes the same turn a loss.
@@ -476,7 +482,10 @@ def test_feng_shui_goal_ranks_the_score_first_and_is_never_traded_for_validity()
     outside = original.model_copy(deep=True)
     outside.furniture[0].pose = Pose2D(x=-5, z=3, yaw_deg=0)
     assert (
-        compare_evaluations(old, evaluate_layout(original, outside), "feng_shui").outcome == "worse"
+        compare_evaluations(
+            old, evaluate_layout(original, outside, measure_feng_shui=True), "feng_shui"
+        ).outcome
+        == "worse"
     )
 
 

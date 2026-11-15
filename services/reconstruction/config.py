@@ -32,3 +32,19 @@ def demo_cache_dir() -> Path:
     if configured:
         return Path(configured).resolve()
     return REPO_ROOT / "services" / "reconstruction" / "assets" / "fixtures" / "demo_cache"
+
+
+SCENE_DEMO_CACHE_DIR_ENV = "SCENE_DEMO_CACHE_DIR"
+
+
+def scene_cache_dir() -> Path:
+    """Where published scene caches are read from when the service starts (#12).
+
+    `$SCENE_DEMO_CACHE_DIR`, else the cache committed with the room code. Each file is one
+    floor plan as parsed plus its assembled demo scene (`room/scene_cache.py`); restoring one
+    needs no upload, provider, key or network.
+    """
+    configured = os.environ.get(SCENE_DEMO_CACHE_DIR_ENV)
+    if configured:
+        return Path(configured).resolve()
+    return REPO_ROOT / "services" / "reconstruction" / "room" / "fixtures" / "scene_cache"

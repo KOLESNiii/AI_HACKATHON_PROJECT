@@ -228,6 +228,18 @@ def _door_frame(door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec
     return _DoorFrame(hinge, endpoint, (-tz * interior_sign, tx * interior_sign), start, swing_sign)
 
 
+def door_opening_frame(
+    door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2]
+) -> tuple[tuple[float, float], tuple[float, float], LineString]:
+    """The opening's centre, unit inward (room-side) normal and closed-leaf segment."""
+    frame = _door_frame(door, wall, floor_points)
+    centre = (
+        (frame.hinge[0] + frame.endpoint[0]) / 2,
+        (frame.hinge[1] + frame.endpoint[1]) / 2,
+    )
+    return centre, frame.inward_normal, LineString([frame.hinge, frame.endpoint])
+
+
 def door_entry_segment(
     door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2], radius_m: float
 ) -> LineString:

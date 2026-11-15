@@ -7,28 +7,39 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Path, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import ValidationError
 from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
-from contracts.schema import AuditReport, LayoutProposal, OptimiseRequest, RoomScene
+from contracts.schema import (
+    AuditReport,
+    ChatRequest,
+    FengShuiRequest,
+    FengShuiScore,
+    LayoutProposal,
+    OptimiseRequest,
+    RoomScene,
+)
 from services.spatial_engine.agent import (
     DEFAULT_INTERPRET_MODEL,
     DEFAULT_MODEL,
     AnthropicLayoutModel,
     LayoutModel,
+    prepare_layout,
     propose_layout,
 )
-from services.spatial_engine.chat import ChatReply, ChatRequest, PlaceRequest, chat, place
+from services.spatial_engine.chat import ChatReply, PlaceRequest, chat, place
 from services.spatial_engine.feng_shui import (
-    FengShuiRequest,
     FengShuiResult,
     assess_feng_shui,
 )
+from services.spatial_engine.feng_shui_score import score_feng_shui
+from services.spatial_engine.feng_shui_skill import FengShuiSkillUnavailable
 from services.spatial_engine.furniture_search import LinkupPost, linkup_client
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.proxy import proxy_glb
 from services.spatial_engine.report import audit_scene
+from services.spatial_engine.streaming import chat_events, solve_events
 
 app = FastAPI(title="SpaceShift spatial_engine", version="0.1.0")
 app.add_middleware(
@@ -136,6 +147,36 @@ def solve(
         return propose_layout(request, model, interpreter=interpreter)
 
 
+@app.post("/solve/stream", response_class=StreamingResponse)
+def solve_stream(
+    request: OptimiseRequest,
+    http_request: Request,
+    model: LayoutModel | None = Depends(get_layout_model),
+    interpreter: LayoutModel | None = Depends(get_interpreter_model),
+) -> StreamingResponse:
+    """SSE progress followed by one validated result; invalid inputs remain HTTP 422."""
+    with _input_errors():
+        prepared = prepare_layout(request)
+    return StreamingResponse(
+        solve_events(
+            request, model, interpreter, prepared, disconnected=http_request.is_disconnected
+        ),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.exception_handler(FengShuiSkillUnavailable)
+async def feng_shui_skill_unavailable(
+    _request: Request, exc: FengShuiSkillUnavailable
+) -> JSONResponse:
+    """A missing or malformed skill file is a server configuration error, never a 500 or 422."""
+    return JSONResponse(
+        status_code=503,
+        content={"detail": [{"loc": [], "msg": str(exc), "type": "not_configured"}]},
+    )
+
+
 @app.exception_handler(Exception)
 async def unexpected_failure(_request: Request, _exc: Exception) -> JSONResponse:
     """Programming errors remain 500s; return structured output without leaking internals."""
@@ -187,6 +228,25 @@ def place_imported(request: PlaceRequest) -> ChatReply:
         return place(request)
 
 
+@app.post("/chat/stream", response_class=StreamingResponse)
+def room_chat_stream(
+    request: ChatRequest,
+    http_request: Request,
+    model: LayoutModel | None = Depends(get_layout_model),
+    linkup: LinkupPost | None = Depends(get_linkup),
+) -> StreamingResponse:
+    """Stream the same chat additions/rearrangements with factual progress updates."""
+    with _input_errors():
+        if len(request.scene.furniture) > 60:
+            raise SpatialInputError("At most 60 furniture items are supported")
+        prepared = audit_scene(request.scene)
+    return StreamingResponse(
+        chat_events(request, model, prepared, linkup, disconnected=http_request.is_disconnected),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.get("/proxies/{width}/{height}/{depth}.glb")
 def furniture_proxy(
     width: Annotated[float, Path(gt=0.01, le=20)],
@@ -198,3 +258,10 @@ def furniture_proxy(
         media_type="model/gltf-binary",
         headers={"Cache-Control": "public, max-age=31536000, immutable"},
     )
+
+
+@app.post("/feng-shui/score", response_model=FengShuiScore)
+def feng_shui_score(request: FengShuiRequest) -> FengShuiScore:
+    """Deterministic 0-100 Form School score with per-rule breakdown; no model call."""
+    with _input_errors():
+        return score_feng_shui(request)

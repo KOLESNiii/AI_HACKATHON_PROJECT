@@ -660,3 +660,70 @@ def test_download_deadline_stops_trickling_response(monkeypatch) -> None:
     with pytest.raises(CatalogError, match="time limit"):
         retailer.fetch_public("https://shop.example/x", 1000, timeout_s=1)
     assert now[0] == pytest.approx(1.2)
+
+
+class SamMaskDouble:
+    method = "sam3"
+
+    def __init__(self, *, fail=False):
+        self.calls = 0
+        self.fail = fail
+
+    def segment(self, frame, image, boxes, registry, *, budget=None):
+        from services.reconstruction.assets.mask_providers import GrabCutProvider, MaskError
+
+        self.calls += 1
+        if self.fail:
+            raise MaskError("fal unavailable")
+        return GrabCutProvider().segment(frame, image, boxes, registry, budget=budget)
+
+
+def test_live_import_upgrades_offline_masks_and_reuses_sam(tmp_path):
+    from services.reconstruction.assets.registry import Registry
+
+    import_catalog_asset(URL, "room", data_dir=tmp_path, fetch=Web())
+    sam = SamMaskDouble()
+    paid = MeshDouble()
+    for _ in range(2):
+        result = import_catalog_asset(
+            URL,
+            "room",
+            data_dir=tmp_path,
+            fetch=Web(),
+            mask_provider=sam,
+            mesh_provider=paid,
+        )
+        assert result.ok and result.mesh_source == "retailer_model"
+        assert not any("GrabCut masks are approximate" in w for w in result.warnings)
+    assert sam.calls == 1
+    assert not paid.calls
+    obj = Registry(tmp_path, namespace=catalog_scene("room")).load(catalog_scene("room"))
+    assert obj.objects[catalog_id(URL)].masks[0].method == "sam3"
+
+
+def test_live_mask_failure_falls_back_without_losing_retailer_model(tmp_path):
+    result = import_catalog_asset(
+        URL,
+        "room",
+        data_dir=tmp_path,
+        fetch=Web(),
+        mask_provider=SamMaskDouble(fail=True),
+    )
+    assert result.ok and result.mesh_source == "retailer_model"
+    assert any("fal unavailable" in w for w in result.warnings)
+    assert any("GrabCut masks are approximate" in w for w in result.warnings)
+
+
+def test_live_masks_and_generated_mesh_used_without_retailer_model(tmp_path):
+    generator = MeshDouble()
+    result = import_catalog_asset(
+        URL,
+        "room",
+        data_dir=tmp_path,
+        fetch=Web(page=page(model=False)),
+        mask_provider=SamMaskDouble(),
+        mesh_provider=generator,
+    )
+    assert result.ok and result.mesh_source == "generated"
+    assert len(generator.calls) == 1
+    assert result.asset.dimension_source == "catalog"

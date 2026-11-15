@@ -699,9 +699,9 @@ for the bound video, the room installs that video's cache and warns that it did.
 when present, always wins, so running the pipeline still takes effect on the next request. A
 broken cache gives the old empty room with `NOT_EXTRACTED` plus the reason, and is asked again.
 `tests/conftest.py` points `FURNITURE_DEMO_CACHE_DIR` at an empty directory, so other tests are
-unaffected. The plan's labels are still read with fal vision (`FAL_KEY`). Without them the room's
-geometry does not match its binding and gets no furniture. Recorded labels for a key-free demo are
-Dev 1's #12.
+unaffected. The demo plan's labels come from Dev 1's scene cache (#12,
+`../room/README.md`, "Demo scene cache"), so the room needs no `FAL_KEY`. Republishing this
+furniture cache changes that room: republish the scene cache as well.
 
 **Bounds agreement (Devs 1, 3, 4).** One size, three readers:
 
@@ -755,6 +755,7 @@ Every key is server-side, read from `.env` by `bun run dev:*` (`--env-file .env`
 | `FAL_VISION_ENDPOINT`, `FAL_VISION_MODEL` | Live frame selection and plan reading | `fal-ai/any-llm/vision`, `google/gemini-2.5-flash` |
 | `FURNITURE_DATA_DIR` | The service's registry, masks, meshes and asset store | `artifacts/furniture` (Git-ignored) |
 | `FURNITURE_DEMO_CACHE_DIR` | Published demo caches | `services/reconstruction/assets/fixtures/demo_cache` |
+| `SCENE_DEMO_CACHE_DIR` | Published floor plans and demo scenes (#12), restored at startup | `services/reconstruction/room/fixtures/scene_cache` |
 
 Leave unused variables out of `.env` instead of setting them empty: an empty
 `FAL_VISION_ENDPOINT` replaces the default with an empty string.

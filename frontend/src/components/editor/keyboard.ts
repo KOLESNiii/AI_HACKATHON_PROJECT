@@ -8,6 +8,25 @@ const rotationDegrees: Record<string, number> = {
   arrowright: -5,
 }
 
+/** Save the room draft globally, including while the chat input has focus. */
+export function handleSaveKey(event: KeyboardEvent): boolean {
+  const s = useStore.getState()
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.altKey ||
+    event.shiftKey ||
+    !(event.ctrlKey || event.metaKey) ||
+    event.key.toLowerCase() !== 's' ||
+    s.screen !== 'editor' ||
+    s.mode !== 'edit'
+  )
+    return false
+  event.preventDefault()
+  if (!event.repeat) s.saveVersion()
+  return true
+}
+
 /** Leave text entry, native form controls and browser shortcuts alone. */
 export function editorKey(event: KeyboardEvent): string | null {
   const el = event.target as HTMLElement | null

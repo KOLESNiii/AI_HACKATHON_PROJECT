@@ -1,23 +1,45 @@
 import { useRef } from 'react'
+import { useLiveAudit } from './useLiveAudit'
 import { useStore } from '../../store'
 import type { PlayControllerHandle } from '../play/controls'
 import { PlayOverlay } from '../play/PlayOverlay'
 import { Button } from '../ui'
 import { RoomView } from './RoomView'
 import { Sidebar } from './Sidebar'
-import { useLiveAudit } from './useLiveAudit'
+import { VersionTree } from './VersionTree'
 
 /** Room editor (edit mode): ink room view on the left, sidebar on the right. */
 export function EditorScreen() {
   const setScreen = useStore((s) => s.setScreen)
   const play = useStore((s) => s.mode === 'play')
+  const roomLoading = useStore((s) => s.roomLoading)
+  const warnings = useStore((s) => s.roomWarnings)
   const controller = useRef<PlayControllerHandle>(null)
   useLiveAudit()
 
   return (
     <div className="flex h-full">
+      {!play && <VersionTree />}
       <div className="relative min-w-0 flex-1">
         <RoomView controller={controller} />
+        {roomLoading && (
+          <div
+            role="status"
+            className="absolute inset-0 z-40 flex items-center justify-center bg-paper-base/80 text-[14px]"
+          >
+            Loading room…
+          </div>
+        )}
+        {!roomLoading && warnings.length > 0 && (
+          <div
+            role="status"
+            className="absolute top-20 left-6 z-10 max-h-28 max-w-sm overflow-y-auto scroll-panel p-3 text-[11px] text-accent-ochre"
+          >
+            {warnings.map((warning, i) => (
+              <p key={i}>{warning}</p>
+            ))}
+          </div>
+        )}
         {!play && (
           <div className="absolute top-6 left-6">
             <Button onClick={() => setScreen('floorplan')}>← Floor plan</Button>

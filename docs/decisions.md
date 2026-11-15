@@ -1,5 +1,34 @@
 # Decisions
 
+## Frontend layout proposals and Stats
+
+- Reuse `/solve`, `/audit` and `/scenes/{scene_id}` without changing backend scoring,
+  shared contracts or dependencies. Load canonical assembled scenes so fixture
+  door-rounding errors do not prevent audits or layout suggestions.
+- Review the full room diff before acceptance: current/proposed footprints, named
+  moves and rotations, and server-measured findings. Accept applies all moves once;
+  Reject preserves the scene. A later edit invalidates previous proposals.
+- Keep candidate reports separate from live Stats. Re-audit after acceptance and
+  committed edits, with a 250 ms debounce and room/session/snapshot guards. Never
+  display null as zero or infer that an unavailable agent found a good room.
+- Keep requests independent and leave interpretation, locks and tool calls to the
+  existing agent. Browser cancellation stops waiting; no automatic paid retries.
+- Library now uses the existing movable demo meshes instead of mock retail
+  products and a generic proxy URL. Preserve asset dimensions, collision parts and
+  uncertainty flags on each copy; do not invent product prices or claim estimated
+  dimensions are catalog measurements. Share the editor mesh renderer and use
+  one selected-model preview canvas. Live retailer search remains separate work.
+- Operator revision: manual edits remain unsaved until Ctrl+S/Cmd+S or the explicit
+  Save version action; group all edits since the selected snapshot into one node.
+  Accepted agent layouts still save immediately. Continue linearly from the newest
+  save, forking only when editing and saving an ancestor that already has a child.
+  Do not create nodes for unchanged saves or merely viewing history.
+- Operator choice: require Save or Discard before switching versions with unsaved
+  changes. Discard restores the selected snapshot. Keep API revisions increasing
+  across restores; saving unchanged geometry preserves its audit and cancels any
+  pending suggestion tied to the previous version. Store snapshots for the open
+  room only; persistence is outside this integration.
+
 ## Calm editor audio
 
 - Enable music and effects by default, as chosen by the operator, with immediate
@@ -290,8 +319,8 @@
   image, and the same image parsed without labels is a different room. A mismatch places no
   furniture and says so, rather than putting the reception's furniture in another room (PR #55
   review). Tolerance 5 % or 5 cm per wall, after fitting one scale (#11: a corrected scale is
-  the same room). Making the plan deterministic without labels (recorded labels) is left to
-  #12.
+  the same room). The demo plan no longer depends on reading its labels: the scene cache
+  (#12) holds the labelled parse.
 - The asset store is mounted with the same data directory the source reads (#52), so a proxy
   URL in a scene is always servable by the same process.
 
@@ -308,7 +337,8 @@
 - Both corrections need the scene the service keeps (409 while furniture is still being
   extracted), and the scale correction needs the kept revision, so unsaved edits are never
   dropped. Corrected shells get a new URL, keeping shell files immutable.
-- Kept in memory with the plan and scene; persistence across restarts is #12.
+- Kept in memory with the plan and scene, and lost on restart. #12 restores the published
+  demo scene, not corrections.
 - PR #59 review: one lock (`routes.STATE_LOCK`) serialises every check-then-write of plans and
   kept scenes, so an older in-flight save can no longer replace a newer revision; a GET only
   fills an empty slot and does not keep an assembly whose room was rescaled meanwhile.
@@ -396,8 +426,34 @@
   video). Do not commit retailer models (third-party files); catalog scenes are cached locally.
 - Bounds agreement includes the glTF's declared `POSITION` min/max. three.js fits the mesh from
   them, so `inspect_asset` checks them against `bbox_m` alongside the vertex bounds.
-- The cache does not remove the need for `FAL_KEY` to read plan labels; recorded labels are #12.
+- The furniture cache does not cover the plan's labels; the scene cache (#12) does, for the
+  demo plan.
   Layout answers (`/solve`) are not cached (the operator decision above).
+
+## Demo scene cache (#12)
+
+- Cache the parsed plan and the assembled demo scene in one committed JSON file per plan. The
+  plan labels were the only provider step left in the demo room's path: without them the same
+  image parses into another room and gets no furniture.
+- Restore the plan at startup and assemble through the existing path, rather than serving the
+  stored scene. One code path decides a scene, pipeline data still wins over Dev 2's cache
+  (#20), and shells, pose edits and scale corrections need no special case. The stored scene is
+  the published result that `verify` and a test prove the service reproduces.
+- Restore at startup, not on a miss: every route already reads the plan store, so no route
+  changes and no lock is taken on a new path. The cost is that a repaired cache needs a restart.
+- A restored plan answers an upload of the same image without the label provider, also when a
+  key is set. This extends the existing rule (a plan ID hashes the image bytes, so a repeated
+  upload is free); a live parse of the demo plan needs the cache disabled.
+- An unusable cache is skipped and logged, never fatal. No hash manifest as in #20: the file is
+  contract-validated JSON, checked for consistency on load and for reproduction in tests.
+- Publishing assembles from the committed furniture cache in an empty data directory, so local
+  pipeline output cannot reach a published scene. It refuses unless every bound item is placed
+  where it fits, the delivered assets are unchanged and the shell builds.
+- Comparison tolerance is 1 mm (the audit's position tolerance), so a platform's last-digit
+  float differences do not fail the reproduction check.
+- Not persisted: user corrections. That needs a rule for when new pipeline meshes invalidate a
+  kept scene, and the issue asks for the demo scene only.
+- No contract, route, dependency or frontend change.
 
 ## Agent furniture additions
 
@@ -425,3 +481,69 @@
 - Merge #35's live audit and proposal controls with #65's `/chat` route: keep audit
   previews and Dismiss for both additions and rearrangements, and reuse the same spatial
   transport for cancellation, timeouts and service errors.
+
+## Harness execution progress
+
+- Add `/solve/stream` without replacing `/solve` or changing layout acceptance criteria.
+  Reuse one harness with optional progress and cooperative-cancellation hooks.
+- Stream factual stage and tool-check updates, not model reasoning or fabricated progress
+  percentages. Keep provider calls buffered; progress does not require token streaming.
+- Use POST fetch with SSE framing, shared typed payloads and a terminal validated proposal.
+  Keep the current status compact, with an expandable activity history. Never apply edits
+  from progress events or automatically retry a disconnected request.
+- Preserve input errors as HTTP errors before headers. Disconnect stops subsequent work;
+  an active synchronous provider call remains bounded by its original timeout.
+
+## Editor deterministic Feng Shui scores
+
+- Consume the existing `/feng-shui/score` response without changing its rules or
+  merging it into the narrower `AuditReport.feng_shui` model. Keep AI advice optional.
+- Refresh score and audit independently after committed edits. Show coverage,
+  breakdown, audit caps and unassessed assumptions; preserve null versus zero.
+- Compare scores for exact original/proposed snapshots without applying them or
+  changing the solver's ranking. Score failures do not prevent reviewing a layout.
+- Keep mirror inventory and activity anchors unspecified until the editor can
+  collect them; display the backend's default-position and unknown-inventory notes.
+
+## Merge of main chat and Feng Shui integration
+
+- Keep main's additions and Feng Shui goal while preserving streaming, full proposal
+  review, real Library meshes and version history. The editor consumes `/chat/stream`;
+  existing JSON clients remain compatible.
+- Preserve main's addition-specific validation: unrelated existing problems remain
+  visible without rejecting a clean new item. Reject malformed additions atomically.
+- Show the solver's door-placement score separately from the full-rule score endpoint
+  with coverage. Neither metric is silently substituted for the other.
+
+## Skill-guided full-score Feng Shui goal
+
+- Operator choice (2026-11-15): “optimise the feng shui” uses the full Stats score
+  plus the Feng Shui skill, replacing the door-placement-only ranking for that goal.
+- Use one mode-aware skill for read-only assessments and pose exploration. The model
+  chooses moves; the existing deterministic scorer owns weights and numerical scores.
+- Return full rule feedback, coverage and assumptions on every evaluated draft.
+  Compute this only for the Feng Shui goal, then re-score the final candidate.
+- Separate shared inputs/validation from provider orchestration to avoid a circular
+  dependency when the objective reuses the full scorer. Preserve existing imports.
+- Skill-loading failure prevents unguided optimisation. Missing mirrors or confirmed
+  occupant anchors remain unknown/assumed, and fit, doors and locks remain hard rules.
+
+## Mesh Library additions only
+
+- Operator requirement (2026-11-15): the bot may add only actual mesh models from
+  the editor Library. Replace free-form proxy authoring with canonical asset IDs.
+- Use the shared fixture manifest as the server-owned inventory; check mesh files
+  and retain dimensions, collision evidence and uncertainty metadata on every copy.
+- Reject invented fields/IDs and remove the addition tool when no assets are available.
+  The client independently rejects additions outside its Library. No proxy fallback
+  or new provider integration is introduced, and existing room/history data is kept.
+
+## Library URL importer connection
+
+- Connect the existing retailer pipeline to the Library via a service-local HTTP
+  request model, without changing shared room contracts or adding dependencies.
+- Import on explicit button/Enter, preview before Add, and cancel obsolete browser
+  requests. Library imports enable the existing fal providers when `FAL_KEY` is set;
+  paid mesh generation is used only after retailer models fail.
+- Preserve meshes, collision geometry, dimension provenance and correction flags;
+  missing models remain labelled proxies and missing dimensions remain estimates.
