@@ -65,8 +65,9 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
 (`plan-83a12322e933-floor-0-room-3`) to the furniture Dev 2's pipeline extracts from
 `examples/three_floor_3.mp4` (`reviewed-opening-room`), with a reviewed hint per item.
 `video_furniture.RealRoomFurniture` reads that furniture offline from `$FURNITURE_DATA_DIR`
-(default `artifacts/furniture`) and places it from the hints; items are labelled proxies until
-#17. Runbook (needs FFmpeg; no provider requests, no charges):
+(default `artifacts/furniture`) and places it from the hints. Each item is its normalised mesh
+(#17) when the pipeline has made one, otherwise a labelled proxy (the runbook below makes
+none). Runbook (needs FFmpeg; no provider requests, no charges):
 
 ```bash
 # 1. Furniture of the video: reviewed recording (#14) and GrabCut masks (#15), offline
@@ -88,8 +89,10 @@ curl -H 'Content-Type: application/json' -d @scene.json localhost:8002/audit
 ```
 
 Tests parse the plan with the recorded labels (`fixtures/three_floor.annotations.json`). Live
-labels (`FAL_KEY`) are expected to give the same room; without a key the scale is estimated and
-the room may not match the binding. The hints are the #8 reviewed `g-reception` hints moved onto
+labels (`FAL_KEY`) are expected to give the same room. Without labels the image parses into a
+different room under the same scene ID: the binding's wall lengths (`walls_m`) catch that, and
+the room comes back without furniture and a warning saying its geometry does not match. A
+partial inventory (selection still running) is shown but not kept. The hints are the #8 reviewed `g-reception` hints moved onto
 this room's walls (north-west corners aligned); `tests/test_real_room.py` fails if the parser's
 wall IDs drift from them. The chair's hint lands in the entrance door's swing, which alignment
 flags and the audit reports until the chair is moved.

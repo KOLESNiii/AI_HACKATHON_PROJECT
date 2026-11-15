@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import shutil
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from pathlib import Path
 
 import pytest
@@ -27,19 +27,28 @@ from services.reconstruction.assets.selection import select_furniture_frames  # 
 from services.reconstruction.assets.selection_models import (  # noqa: E402
     Discovery,
     Frame,
+    ReconstructionResult,
     RegistryState,
     SelectedObject,
     SelectionOptions,
 )
 from services.reconstruction.config import furniture_data_dir  # noqa: E402
 from services.reconstruction.main import app  # noqa: E402
-from services.reconstruction.room.annotate import FixedAnnotator, PlanAnnotations  # noqa: E402
+from services.reconstruction.room import routes, video_furniture  # noqa: E402
+from services.reconstruction.room.annotate import (  # noqa: E402
+    FixedAnnotator,
+    NullAnnotator,
+    PlanAnnotations,
+)
 from services.reconstruction.room.assemble import assemble_scene  # noqa: E402
 from services.reconstruction.room.routes import get_annotator  # noqa: E402
 from services.reconstruction.room.video_furniture import (  # noqa: E402
     NOT_EXTRACTED,
     RealRoomFurniture,
+    geometry_mismatch,
     load_bindings,
+    proxy_warning,
+    still_extracting,
 )
 from services.spatial_engine.main import app as spatial_app  # noqa: E402
 
@@ -61,13 +70,15 @@ ALLOCATED = {
 NAMES = {item_id: name for name, item_id in ALLOCATED.items()}
 ITEM_IDS = sorted(NAMES)
 SOFA, OTHER_SOFA, TABLE, CHAIR = (hint.asset_id for hint in BINDING.hints)
+PLAN_ID = BINDING.scene_id.removesuffix(f"-{BINDING.room_id}")
 
 pytestmark = pytest.mark.skipif(not PLAN.exists(), reason="example plan missing")
 
 
-def register_reviewed_items(data_dir: Path) -> None:
+def register_reviewed_items(data_dir: Path, only: Collection[str] | None = None) -> None:
     """What frame selection (#14) records for the reviewed recording, without decoding the
-    video: one item per reviewed object, with the IDs the real run allocates."""
+    video: one item per reviewed object, with the IDs the real run allocates. `only` stops
+    part-way, as a request during selection sees it (selection stores batch by batch)."""
     discovery = Discovery.model_validate_json(RECORDING.read_text())
 
     def add(state: RegistryState) -> None:
@@ -85,6 +96,8 @@ def register_reviewed_items(data_dir: Path) -> None:
                     quality=0.8,
                 )
             item_id = ALLOCATED[obj.name]
+            if only is not None and item_id not in only:
+                continue
             state.objects[item_id] = SelectedObject(
                 id=item_id,
                 name=obj.name,
@@ -174,13 +187,13 @@ def _collides(report: dict[str, object], a: str, b: str) -> bool:
 
 
 def test_the_binding_names_a_room_and_walls_of_the_parsed_plan(client: TestClient) -> None:
-    plan_id = BINDING.scene_id.removesuffix(f"-{BINDING.room_id}")
-    res = client.get(f"/floor-plans/{plan_id}/rooms/{BINDING.room_id}")
+    res = client.get(f"/floor-plans/{PLAN_ID}/rooms/{BINDING.room_id}")
     assert res.status_code == 200, res.text
     room = RoomScene.model_validate(res.json())
     assert room.scene_id == BINDING.scene_id
     walls = {wall.id for wall in room.walls}
     assert {hint.wall_id for hint in BINDING.hints} <= walls  # parser drift fails here
+    assert geometry_mismatch(BINDING, room) is None  # the committed wall lengths are true
     reviewed = Discovery.model_validate_json(RECORDING.read_text()).objects
     assert sorted(obj.name for obj in reviewed) == sorted(ALLOCATED)
     assert sorted(hint.asset_id for hint in BINDING.hints) == ITEM_IDS  # one hint per item
@@ -203,7 +216,7 @@ def test_the_real_room_has_its_video_furniture_as_labelled_proxies(
         assert "immutable" in res.headers["cache-control"]
     assert client.get(scene.shell_glb_url.removeprefix(PROXY_PREFIX)).status_code == 200
     assert any(w.startswith("labelled proxies") and all(i in w for i in ITEM_IDS) for w in warnings)
-    assert not any("hints name items" in w for w in warnings)
+    assert warnings[-1] == proxy_warning(ITEM_IDS)  # every item is present, all are proxies
 
     room = scene.model_copy(update={"furniture": []})
     records = assemble_scene(room, RealRoomFurniture(load_bindings(), data_dir)).records
@@ -262,6 +275,94 @@ def test_a_room_whose_furniture_is_not_extracted_yet_is_asked_again(
     assert sorted(item.id for item in scene.furniture) == ITEM_IDS
 
 
+def test_a_partial_inventory_is_shown_but_asked_again(client: TestClient, data_dir: Path) -> None:
+    """A request while frame selection is still storing items must not freeze the room."""
+    register_reviewed_items(data_dir, only=[TABLE])
+    scene, warnings = _scene(client)
+    assert [item.id for item in scene.furniture] == [TABLE]
+    assert still_extracting(sorted({SOFA, OTHER_SOFA, CHAIR})) in warnings
+    assert BINDING.scene_id not in scenes._scenes
+
+    register_reviewed_items(data_dir)  # selection finishes
+    scene, warnings = _scene(client)
+    assert sorted(item.id for item in scene.furniture) == ITEM_IDS
+    assert not any(w.startswith("furniture still being extracted") for w in warnings)
+    assert scenes._scenes[BINDING.scene_id].scene == scene  # complete now, so kept
+
+
+def test_the_plan_parsed_without_its_labels_gets_no_video_furniture(data_dir: Path) -> None:
+    """Without labels (no FAL_KEY, or the call fails) the same image, and so the same scene
+    ID, parses into a different room: the reception furniture must not be put in it."""
+    recorded = routes._plans.pop(PLAN_ID, None)
+    app.dependency_overrides[get_annotator] = NullAnnotator
+    scenes.clear_cache()
+    try:
+        with TestClient(app) as client:
+            files = [("files", (PLAN.name, PLAN.read_bytes(), "image/png"))]
+            assert client.post("/floor-plans", files=files).status_code == 200
+            register_reviewed_items(data_dir)
+            scene, warnings = _scene(client)
+        assert scene.furniture == [] and len(warnings) == 1
+        assert "does not match" in warnings[0] and "walls, expected 18" in warnings[0]
+    finally:
+        routes._plans.pop(PLAN_ID, None)
+        if recorded is not None:
+            routes._plans[PLAN_ID] = recorded
+        app.dependency_overrides.clear()
+        scenes.clear_cache()
+
+
+def test_the_geometry_check_allows_a_small_scale_change_and_names_a_wrong_wall(
+    client: TestClient,
+) -> None:
+    room = RoomScene.model_validate(
+        client.get(f"/floor-plans/{PLAN_ID}/rooms/{BINDING.room_id}").json()
+    )
+
+    def scaled(factor: float) -> RoomScene:
+        walls = [
+            w.model_copy(
+                update={
+                    "start": w.start.model_copy(
+                        update={"x": w.start.x * factor, "z": w.start.z * factor}
+                    ),
+                    "end": w.end.model_copy(update={"x": w.end.x * factor, "z": w.end.z * factor}),
+                }
+            )
+            for w in room.walls
+        ]
+        return room.model_copy(update={"walls": walls})
+
+    assert geometry_mismatch(BINDING, scaled(1.03)) is None  # labels read slightly differently
+    assert geometry_mismatch(BINDING, scaled(1.10)) == "w0 is 1.19 m, expected 1.08 m"
+
+
+def test_a_normalised_mesh_is_served_instead_of_its_proxy(
+    client: TestClient, data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Once #17 normalises an item's mesh, the room shows that mesh, not the box."""
+    real = video_furniture.reconstruct_furniture
+
+    def with_chair_mesh(scene_id: str, *, data_dir: Path) -> ReconstructionResult:
+        result = real(scene_id, data_dir=data_dir)
+        items = [
+            item.model_copy(
+                update={"asset": item.proxy.model_copy(update={"is_proxy": False, "name": "mesh"})}
+            )
+            if item.object_id == CHAIR
+            else item
+            for item in result.items
+        ]
+        return result.model_copy(update={"items": items})
+
+    monkeypatch.setattr(video_furniture, "reconstruct_furniture", with_chair_mesh)
+    register_reviewed_items(data_dir)
+    scene, warnings = _scene(client)
+    chair = _item(scene, CHAIR)
+    assert not chair.is_proxy and chair.name == "mesh"
+    assert proxy_warning([TABLE, SOFA, OTHER_SOFA]) in warnings
+
+
 def test_furniture_files_are_served_only_by_content_hash(
     client: TestClient, data_dir: Path
 ) -> None:
@@ -297,7 +398,7 @@ def test_the_real_video_furnishes_the_real_room(
     scene, warnings = _scene(client)
     assert {item.id: item.name for item in scene.furniture} == NAMES  # the real allocation
     assert all(item.is_proxy for item in scene.furniture)
-    assert not any("hints name items" in w or "no mesh" in w for w in warnings)
+    assert warnings == [proxy_warning(ITEM_IDS)]  # all items present; no mesh failures
     furniture = RealRoomFurniture(load_bindings(), data_dir).furniture_for(scene)
     for asset in furniture.assets:
         primary = next(

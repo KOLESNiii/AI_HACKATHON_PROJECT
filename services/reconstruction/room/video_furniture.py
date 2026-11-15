@@ -4,17 +4,20 @@ A `RoomVideo` binds one parsed room (by scene ID) to the furniture Dev 2's pipel
 from a video of it (by furniture scene ID), with reviewed placement hints for those items.
 `RealRoomFurniture` is the `FurnitureSource` that reads that furniture from the pipeline's data
 directory. It is offline: it reuses what the pipeline stored and never submits a provider
-request. Until #17 normalises the raw meshes, every item is Dev 2's labelled proxy (a
-dimensioned box with a front marker, `is_proxy`).
+request. Each item is its normalised mesh (#17) when the pipeline has one, otherwise Dev 2's
+labelled proxy (a dimensioned box with a front marker, `is_proxy`).
 
-Rooms without a binding get `NoFurniture`. A bound room whose furniture is not extracted yet
-gets the room alone, a warning, and `complete = False`, so the scene is not kept and the next
-request looks again.
+Rooms without a binding get `NoFurniture`. A bound room is checked against the walls the
+binding was made for: a scene ID only names the plan image, and the same image parsed without
+its labels is a different room. Such a room gets no furniture and says why. A bound room
+whose furniture is not (fully) extracted yet gets what there is so far, a warning, and
+`complete = False`, so the scene is not kept and the next request looks again.
 """
 
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Mapping, Sequence
 from functools import lru_cache
 from pathlib import Path
@@ -30,6 +33,11 @@ from .observe import FixedObserver, PlacementHint
 log = logging.getLogger(__name__)
 
 BINDINGS_PATH = Path(__file__).parent / "fixtures" / "real_rooms.json"
+
+WALL_TOLERANCE = 0.05
+"""Relative wall-length tolerance: absorbs small scale differences between label readings."""
+WALL_TOLERANCE_M = 0.05
+"""Absolute floor for the tolerance, for very short walls."""
 
 NOT_EXTRACTED = (
     "No furniture extracted for this room yet: run the furniture pipeline for its video into "
@@ -52,6 +60,8 @@ class RoomVideo(BaseModel):
     furniture_scene_id: str
     """Dev 2's scene ID for the furniture extracted from that video."""
     note: str = ""
+    walls_m: dict[str, float]
+    """The bound room's wall IDs and lengths, as parsed when the hints were made."""
     hints: list[PlacementHint]
     """Where each extracted item stands, by Dev 2's item ID and the room's wall IDs."""
 
@@ -67,8 +77,31 @@ def default_bindings() -> dict[str, RoomVideo]:
     return load_bindings()
 
 
+def geometry_mismatch(binding: RoomVideo, room: RoomScene) -> str | None:
+    """Why `room` is not the room `binding` was made for, or None when it is."""
+    walls = {w.id: math.dist((w.start.x, w.start.z), (w.end.x, w.end.z)) for w in room.walls}
+    if walls.keys() != binding.walls_m.keys():
+        return f"{len(walls)} walls, expected {len(binding.walls_m)}"
+    for wall_id, expected in binding.walls_m.items():
+        if abs(walls[wall_id] - expected) > max(WALL_TOLERANCE * expected, WALL_TOLERANCE_M):
+            return f"{wall_id} is {walls[wall_id]:.2f} m, expected {expected:.2f} m"
+    return None
+
+
+def geometry_warning(reason: str) -> str:
+    return (
+        f"This room's geometry does not match the plan its furniture video was bound to "
+        f"({reason}), so no furniture was placed. Upload the plan with its labels read "
+        "(FAL_KEY)."
+    )
+
+
 def proxy_warning(ids: Sequence[str]) -> str:
-    return f"labelled proxies (sized boxes; no normalised mesh yet, #17): {', '.join(ids)}"
+    return f"labelled proxies (sized boxes; no normalised mesh): {', '.join(ids)}"
+
+
+def still_extracting(ids: Sequence[str]) -> str:
+    return f"furniture still being extracted: no {', '.join(ids)} yet"
 
 
 class RealRoomFurniture:
@@ -82,12 +115,14 @@ class RealRoomFurniture:
         binding = self.bindings.get(room.scene_id)
         if binding is None:
             return NoFurniture().furniture_for(room)
+        if (reason := geometry_mismatch(binding, room)) is not None:
+            return SceneFurniture(assets=[], warnings=[geometry_warning(reason)])
         try:
             result = reconstruct_furniture(binding.furniture_scene_id, data_dir=self.data_dir)
         except ValueError as exc:  # no registry yet, or nothing selected for that video
             log.info("no furniture for %s yet: %s", room.scene_id, exc)
             return SceneFurniture(assets=[], warnings=[NOT_EXTRACTED], complete=False)
-        assets = [item.proxy for item in result.items]
+        assets = [item.asset or item.proxy for item in result.items]
         warnings = list(result.warnings)
         # `not_attempted` is the normal offline state (meshes are made by the pipeline's CLI).
         warnings += [
@@ -97,9 +132,14 @@ class RealRoomFurniture:
         ]
         if proxies := [asset.id for asset in assets if asset.is_proxy]:
             warnings.append(proxy_warning(proxies))
+        # Frame selection stores items batch by batch: until every hinted item is there, this
+        # is a partial inventory and must not be kept.
         known = {asset.id for asset in assets}
         if missing := sorted(h.asset_id for h in binding.hints if h.asset_id not in known):
-            warnings.append(f"hints name items the video does not have: {', '.join(missing)}")
+            warnings.append(still_extracting(missing))
         return SceneFurniture(
-            assets=assets, observer=FixedObserver(binding.hints), warnings=warnings
+            assets=assets,
+            observer=FixedObserver(binding.hints),
+            warnings=warnings,
+            complete=not missing,
         )
