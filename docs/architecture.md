@@ -431,7 +431,7 @@ Until the pipeline has run for the video, and when no demo cache is published fo
 comes back alone with the warning "No furniture extracted for this room yet". While frame selection is still storing items, it comes
 back with the items so far and "furniture still being extracted: no ... yet". Neither is kept:
 the next request looks again. Once every hinted item is there, the scene is kept in memory
-until restart (re-running the pipeline needs a restart; a persistent cache is #12).
+until restart (re-running the pipeline needs a restart).
 
 The scene ID only names the plan image. Parsed without its labels (no `FAL_KEY`, or the label
 call fails), the same image gives a different room under the same ID ("Unlabelled space 4",
@@ -449,7 +449,8 @@ in `door0`'s swing, the table 0.12 m from the rear sofa and the right sofa 0.37 
 no collisions.
 
 **Handoff to Dev 3 (#25).** Load the room with the fetch above
-(`/api/reconstruction/scenes/plan-83a12322e933-floor-0-room-3`, after the plan is uploaded),
+(`/api/reconstruction/scenes/plan-83a12322e933-floor-0-room-3`; no upload is needed, see the
+demo scene cache below),
 draw `is_proxy` items as labelled boxes (name plus "proxy"), and after each move POST the
 edited scene with `revision + 1` to `/api/spatial_engine/audit`, ignoring reports for older
 revisions. Show the `X-Reconstruction-Warnings` list. **Dev 4 (#32):** the audit accepts this
@@ -461,7 +462,7 @@ replaces its proxy as soon as the pipeline stores one.
 
 The user corrects what the reconstruction flags: a floor's scale (`"dimensions"` on
 `ParsedRoom`) and where furniture stands (`placement`, `orientation` on `FurnitureItem`). The
-service keeps both, in memory, for as long as it keeps the scene (persistence is #12). No
+service keeps both, in memory, for as long as it keeps the scene (not across a restart). No
 contract model changed: the pose route takes a `RoomScene`, the scale route takes query
 parameters. Code: `services/reconstruction/room/correct.py`, routes in `scenes.py`.
 
@@ -518,6 +519,34 @@ editor already bumps). To correct scale, PUT first, then POST with the current r
 replace the scene with the response; reload the shell when `shell_glb_url` changes. Prompt for
 the flags that remain. On 409, reload the scene. **Dev 4:** nothing changes; the audit receives
 the corrected scene, and the tests check it accepts it with openings on their walls.
+
+## Demo scene cache (#12)
+
+The real-input room loads on a fresh checkout with no upload, key or network. Code:
+`services/reconstruction/room/scene_cache.py`; data:
+`services/reconstruction/room/fixtures/scene_cache/<plan_id>.json`.
+
+| | |
+|---|---|
+| Contents | `plan`: the `ParsedFloorPlan` as parsed with its recorded labels (3 floors, 23 rooms). `scenes`: the assembled `RoomScene` and warnings of each room bound to furniture (one: the real-input room) |
+| Load | At startup, `main.py` calls `restore_published(scene_cache_dir())`, which puts each valid plan into the plan store (`routes.restore_plan`) with one extra plan warning naming the cache. A plan already in the store is never replaced |
+| After that | Nothing is special. `GET /scenes/{scene_id}` assembles the room through the usual path (pipeline furniture, else Dev 2's furniture cache, #20) and keeps it; shells, `PUT` and the scale correction use the restored plan and its original parse |
+| Upload | Uploading the same image returns the restored plan without a provider call, because the plan ID is the hash of the image bytes |
+| Stored scene | The published result, not served directly. `verify` and the tests assemble the room again and compare within 1 mm, so a verified checkout serves exactly it |
+| Failure | An unreadable, misnamed or inconsistent file is skipped and logged; the service starts, and that plan's rooms are 404 until uploaded |
+| Setting | `SCENE_DEMO_CACHE_DIR`, default `services/reconstruction/room/fixtures/scene_cache` |
+
+Provider-dependent steps left in the demo room's path: none. The plan labels were the last one;
+furniture meshes come from Dev 2's cache and placement from reviewed hints.
+
+Not covered: corrections are still kept in memory only, so a restart returns to the published
+scene. Other plans are parsed on upload as before, with live labels.
+
+**Handoff to Dev 3 (#28).** `GET /api/reconstruction/scenes/plan-83a12322e933-floor-0-room-3`
+works as soon as the service is up. **Dev 4:** the first audit is the #20 baseline (`door0`
+blocked by `vid-000003` and `vid-000004`, no collisions); `tests/test_scene_cache.py` pins it.
+**Dev 2:** republishing the furniture cache changes the assembled scene, so republish the scene
+cache too (`room/fixtures/scene_cache/README.md`); the reproduction test fails until then.
 
 ## Chat additions and application
 

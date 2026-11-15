@@ -9,3 +9,5 @@ os.environ["FURNITURE_DATA_DIR"] = tempfile.mkdtemp(prefix="spaceshift-test-furn
 # Likewise the demo cache (#20): tests that use one point at it explicitly, so an empty room
 # stays empty unless a test says otherwise.
 os.environ["FURNITURE_DEMO_CACHE_DIR"] = tempfile.mkdtemp(prefix="spaceshift-test-demo-cache-")
+# And the scene cache (#12): no plan is known until a test uploads or restores one.
+os.environ["SCENE_DEMO_CACHE_DIR"] = tempfile.mkdtemp(prefix="spaceshift-test-scene-cache-")
