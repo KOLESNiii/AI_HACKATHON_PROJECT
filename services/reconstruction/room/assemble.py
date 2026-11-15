@@ -5,9 +5,9 @@ that says where each was seen. `assemble_scene` puts the doors exactly on their 
 every asset with `align.align_assets` (#8), and returns the room with its shell reference, its
 openings and one independently posed item per asset.
 
-Dev 2's video pipeline plugs in as a source: `extract_furniture` (#16) gives the assets, and
-`observe_vision.FalVisionObserver` with `selection_frames` reads where they stand. Until then,
-`NoFurniture` returns the room alone and says why.
+Dev 2's video pipeline plugs in as a source: `video_furniture.RealRoomFurniture` gives a room
+bound to a video its extracted items, placed from reviewed hints (#10). Rooms without a video
+get `NoFurniture`: the room alone, and a warning saying why.
 """
 
 from __future__ import annotations
@@ -26,8 +26,8 @@ from .openings import conform_openings
 log = logging.getLogger(__name__)
 
 NO_FURNITURE_YET = (
-    "No furniture yet: video furniture extraction (#16) is not available, so this room has "
-    "walls and openings only."
+    "No furniture yet: no furniture video is linked to this room, so it has walls and "
+    "openings only."
 )
 
 
@@ -39,6 +39,9 @@ class SceneFurniture:
     observer: PlacementObserver = field(default_factory=NullObserver)
     frames: FrameSource | None = None
     warnings: list[str] = field(default_factory=list)
+    complete: bool = True
+    """False when the source has less than it will have later (its furniture is not extracted
+    yet): the room is shown, but the assembly is not kept, so the next request asks again."""
 
 
 class FurnitureSource(Protocol):
@@ -59,13 +62,14 @@ class Assembly:
     """How each pose was decided, by asset ID. Stays inside the service."""
     warnings: list[str]
     complete: bool = True
-    """False when the furniture source or the placement observer failed: the room came back
-    with less than it should have, and a retry may give more, so callers should not keep it."""
+    """False when the furniture source failed or was not ready, or the placement observer
+    failed: the room came back with less than it should have, and a retry may give more, so
+    callers should not keep it."""
 
 
 def assemble_scene(room: RoomScene, source: FurnitureSource) -> Assembly:
-    """The room with its furniture placed. Never drops the room: a source that fails gives the
-    room without furniture and a warning, and `complete = False`.
+    """The room with its furniture placed. Never drops the room: a source that fails or is not
+    ready gives the room without furniture and a warning, and `complete = False`.
 
     Keeps the room's `scene_id`, shell and openings (doors conformed to their walls) and starts
     at revision 0. Furniture the room already has stays where it is.
@@ -88,7 +92,7 @@ def assemble_scene(room: RoomScene, source: FurnitureSource) -> Assembly:
         scene=scene,
         records=result.records,
         warnings=warnings,
-        complete=not (source_failed or result.observer_failed),
+        complete=furniture.complete and not (source_failed or result.observer_failed),
     )
 
 

@@ -209,3 +209,29 @@
   timeout) yields the room with a warning, but caching that would make the failure permanent for
   the process, so the next request retries. Retrying is safe for paid providers: Dev 2's registry
   re-reads saved requests instead of resubmitting them.
+
+## Real-input room (#10)
+
+- The M1 room is the parser's own room for `three_floor.png`, not the hand-made demo
+  `g-reception`, so the shell, openings and scale come from real input. It includes the kitchen
+  (an archway the parser does not split); that limit stays visible as a plan warning.
+- Furniture is each item's normalised mesh (#17) when the pipeline has one, otherwise Dev 2's
+  labelled proxy, never a raw mesh (provider scale and orientation). The issue allows proxies
+  when extraction is incomplete, and each one says so (`is_proxy`, estimated size, a warning
+  naming them).
+- The source runs Dev 2's reconstruction offline only. A scene request never pays for or waits
+  on a provider; meshes are made by the pipeline's CLI.
+- Placement uses reviewed hints, not the vision observer, which put this room's sofas on the
+  wrong walls (#8). They are the #8 reviewed hints moved onto the parsed room's walls with the
+  north-west corners aligned: a conversion, not a new judgement, still flagged for correction.
+- A bound room whose furniture is not extracted yet, or only partly (a hinted item is missing:
+  frame selection stores items batch by batch), is not cached (`SceneFurniture.complete =
+  False`), so running the pipeline while the server is up takes effect on the next request
+  (PR #55 review).
+- A binding is checked against the room's walls, not just its scene ID: the ID hashes the plan
+  image, and the same image parsed without labels is a different room. A mismatch places no
+  furniture and says so, rather than putting the reception's furniture in another room (PR #55
+  review). Tolerance 5 % or 5 cm per wall, for small differences in label-derived scale. Making
+  the plan deterministic without labels (recorded labels) is left to #12.
+- The asset store is mounted with the same data directory the source reads (#52), so a proxy
+  URL in a scene is always servable by the same process.

@@ -297,8 +297,14 @@ def test_an_assembly_is_incomplete_when_its_source_or_observer_fails() -> None:
         def furniture_for(self, room: RoomScene) -> SceneFurniture:
             return SceneFurniture(assets=[_box("a")], observer=self.observer)
 
+    class NotReady:
+        def furniture_for(self, room: RoomScene) -> SceneFurniture:
+            return SceneFurniture(assets=[], warnings=["later"], complete=False)
+
     assert not assemble_scene(_room(), Broken()).complete
     assert not assemble_scene(_room(), Seen(BrokenObserver())).complete
+    later = assemble_scene(_room(), NotReady())  # e.g. its furniture is not extracted yet
+    assert not later.complete and later.warnings == ["later"]
     assert assemble_scene(_room(), Seen(FixedObserver([]))).complete
 
 

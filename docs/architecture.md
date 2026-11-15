@@ -255,8 +255,8 @@ contract `RoomScene`, ready for the editor and `POST /audit`:
   its own pose and correction flags (`room/assemble.py` → `room/align.py`). Doors are put
   exactly on their walls first, so the audit accepts every room. `revision` is 0.
 - Furniture: demo rooms place the fixture furniture through the same path as video furniture.
-  Uploaded rooms have none until Dev 2's extraction (#16) exists; `get_furniture_source` is the
-  seam it plugs into.
+  An uploaded room bound to a video gets that video's furniture (#10, below); other uploaded
+  rooms have none, with a warning. `get_furniture_source` is the seam.
 - Warnings, such as why a room has no furniture, are in the `X-Reconstruction-Warnings`
   response header (a JSON list, exposed to CORS); the body stays a contract model. How each
   pose was decided is not exposed.
@@ -283,3 +283,46 @@ export async function fetchRoomScene(roomId: string): Promise<RoomScene> {
 
 The response matches `roomScene(roomId)` (same IDs, shell and model URLs, fixture poses) except
 that doors sit exactly on their walls. The editor still owns `revision` after load.
+
+## Real-input room (#10)
+
+The M1 room is real input end to end: the plan parser's own room for `examples/three_floor.png`
+and the furniture Dev 2's pipeline extracts from the opening room (0-6 s) of
+`examples/three_floor_3.mp4`.
+
+| | |
+|---|---|
+| Scene ID | `plan-83a12322e933-floor-0-room-3`, "Reception Room / Kitchen (1)" (an open archway merges the two; the plan warns) |
+| Binding | `services/reconstruction/room/fixtures/real_rooms.json`: scene ID, plan, video, Dev 2's furniture scene `reviewed-opening-room`, the room's 18 wall lengths, and a reviewed hint per item |
+| Source | `room/video_furniture.RealRoomFurniture`, the default `get_furniture_source`. Calls Dev 2's `reconstruct_furniture` **offline** (stored results only, never a provider request) |
+| Items | `vid-000001` table, `vid-000002` rear sofa, `vid-000003` right sofa, `vid-000004` office chair: the IDs frame selection allocates on the real video. Dev 2's IDs, names and evidence (masks included) |
+| Meshes | The item's normalised mesh (#17) when the pipeline has one; otherwise Dev 2's labelled proxy: a box of the item's size with a dark front strip, `is_proxy: true`, `dimension_source: "estimated"`, `"dimensions"` in `correction_needed`. The offline runbook below makes no meshes, so all four are proxies |
+| Placement | From the binding's hints (confidence 0.6-0.7), so every item also has `placement` in `correction_needed` |
+| Files | `GET /assets/<sha256>.glb` (browser `/api/reconstruction/assets/...`), Dev 2's content-addressed store, cached as immutable. Other names are 404 |
+| Data | `$FURNITURE_DATA_DIR`, default `artifacts/furniture` in the repository (Dev 2's CLI default) |
+
+Until the pipeline has run for the video, the room comes back alone with the warning "No
+furniture extracted for this room yet". While frame selection is still storing items, it comes
+back with the items so far and "furniture still being extracted: no ... yet". Neither is kept:
+the next request looks again. Once every hinted item is there, the scene is kept in memory
+until restart (re-running the pipeline needs a restart; a persistent cache is #12).
+
+The scene ID only names the plan image. Parsed without its labels (no `FAL_KEY`, or the label
+call fails), the same image gives a different room under the same ID ("Unlabelled space 4",
+11 walls). The source checks the room's walls against the binding (same IDs, lengths within
+5 % or 5 cm) and otherwise places no furniture, with a warning saying the geometry does not
+match and naming the difference.
+
+The first audit of the room reports two things the user can fix by moving furniture: the chair
+stands in the swing of the entrance door (`blocked_doors`: `door0` by `vid-000004`), and the
+table is 0.19 m in front of the rear sofa (a `clearance_issue`). Moving the chair against the
+east wall clears the door; dragging the table onto the sofa adds a collision.
+
+**Handoff to Dev 3 (#25).** Load the room with the fetch above
+(`/api/reconstruction/scenes/plan-83a12322e933-floor-0-room-3`, after the plan is uploaded),
+draw `is_proxy` items as labelled boxes (name plus "proxy"), and after each move POST the
+edited scene with `revision + 1` to `/api/spatial_engine/audit`, ignoring reports for older
+revisions. Show the `X-Reconstruction-Warnings` list. **Dev 4 (#32):** the audit accepts this
+room as is; the findings above are the expected baseline. **Dev 2 (#18):** item IDs and the
+`glb_url`s pass through unchanged; an item's normalised mesh (`ItemReconstruction.asset`)
+replaces its proxy as soon as the pipeline stores one.

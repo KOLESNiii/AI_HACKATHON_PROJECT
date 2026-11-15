@@ -14,18 +14,19 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
 
 from contracts.schema import RoomScene
+from services.reconstruction.config import furniture_data_dir
 from services.reconstruction.demo_assets import demo_room_scene, demo_rooms
 from services.reconstruction.room.align import wall_relative
 from services.reconstruction.room.assemble import (
     Assembly,
     FurnitureSource,
-    NoFurniture,
     SceneFurniture,
     assemble_scene,
     assets_of,
 )
 from services.reconstruction.room.observe import FixedObserver
 from services.reconstruction.room.routes import find_parsed_scene
+from services.reconstruction.room.video_furniture import RealRoomFurniture, default_bindings
 
 WARNINGS_HEADER = "X-Reconstruction-Warnings"
 SCENE_HEADERS = {"Cache-Control": "no-cache"}
@@ -53,9 +54,10 @@ class DemoFurniture:
 
 
 def get_furniture_source() -> FurnitureSource:
-    """Furniture for uploaded rooms. Overridden in tests (`app.dependency_overrides`); Dev 2's
-    video pipeline (#16) replaces the default."""
-    return NoFurniture()
+    """Furniture for uploaded rooms: the video furniture of rooms bound to a video
+    (`room/fixtures/real_rooms.json`), read from the furniture data directory; the room alone
+    otherwise. Overridden in tests (`app.dependency_overrides`)."""
+    return RealRoomFurniture(default_bindings(), furniture_data_dir())
 
 
 def clear_cache() -> None:
