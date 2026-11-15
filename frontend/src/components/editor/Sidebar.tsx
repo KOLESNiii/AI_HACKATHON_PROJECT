@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { catalog, catalogCategories } from '../../data/catalog'
-import { sendAgentMessage } from '../../lib/agent'
+import { proposalSummary, sendAgentMessage } from '../../lib/agent'
 import type { AuditReport, RoomScene } from '../../lib/contracts'
 import { fitsRoom } from '../../lib/geometry'
+import { SpatialError } from '../../lib/spatial'
 import { useStore, type Tab } from '../../store'
 import { Button, Chip, ScoreRing, StatusDot, type Status } from '../ui'
 
@@ -48,7 +49,8 @@ export function Sidebar() {
 function ChatTab() {
   const chat = useStore((s) => s.chat)
   const busy = useStore((s) => s.agentBusy)
-  const { pushChat, setAgentBusy, applyPoses } = useStore.getState()
+  const { pushChat, setAgentBusy, applyPoses, dismissProposal } =
+    useStore.getState()
   const [text, setText] = useState('')
   const end = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -58,7 +60,7 @@ function ChatTab() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const msg = text.trim()
-    if (!msg || busy) return
+    if (!msg || busy || useStore.getState().interacting) return
     setText('')
     const { scene, roomSession } = useStore.getState()
     const baseRevision = scene.revision
@@ -73,13 +75,19 @@ function ChatTab() {
           role: 'assistant',
           text: reply.text,
           poses: reply.poses,
+          additions: reply.additions,
+          report: reply.report,
+          outlook: reply.outlook,
           baseRevision,
         })
-    } catch {
+    } catch (error) {
       if (current() && !controller.signal.aborted)
         pushChat({
           role: 'assistant',
-          text: 'The agent could not be reached. Try again.',
+          text:
+            error instanceof SpatialError
+              ? error.message
+              : 'The agent could not be reached. Try again.',
         })
     } finally {
       if (current()) setAgentBusy(false)
@@ -114,14 +122,35 @@ function ChatTab() {
             >
               {m.text}
             </p>
-            {m.poses && (
-              <div className="flex w-full items-center justify-between gap-2.5 rounded-[2px] bg-paper-deep py-2 pr-2 pl-3">
-                <span className="text-[11px] font-medium text-ink-medium">
-                  Proposed layout · {Object.keys(m.poses).length} items
-                </span>
-                <Button disabled={m.applied} onClick={() => applyPoses(i)}>
-                  {m.applied ? 'Applied' : 'Apply'}
-                </Button>
+            {(m.poses || !!m.additions?.length) && (
+              <div className="flex w-full flex-col gap-2 rounded-[2px] bg-paper-deep py-2 pr-2 pl-3">
+                <div className="flex items-center justify-between gap-2.5">
+                  <span className="text-[11px] font-medium text-ink-medium">
+                    {proposalSummary(m)}
+                  </span>
+                  <span className="flex gap-1.5">
+                    {!m.applied && !m.dismissed && (
+                      <Button onClick={() => dismissProposal(i)}>
+                        Dismiss
+                      </Button>
+                    )}
+                    <Button
+                      disabled={m.applied || m.dismissed}
+                      onClick={() => applyPoses(i)}
+                    >
+                      {m.applied
+                        ? 'Applied'
+                        : m.dismissed
+                          ? 'Dismissed'
+                          : 'Apply'}
+                    </Button>
+                  </span>
+                </div>
+                {m.outlook && (
+                  <span className="text-[11px] text-ink-medium">
+                    Once applied: {m.outlook}
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -137,6 +166,7 @@ function ChatTab() {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
+          maxLength={500}
           placeholder="Ask Refresh to redesign the room…"
           className="min-w-0 flex-1 rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
         />
@@ -168,10 +198,11 @@ function Row({
   )
 }
 
-/** Renders the spatial engine's AuditReport; the request hookup comes in a later PR. */
+/** Renders the spatial engine's AuditReport, refreshed by `useLiveAudit` after each edit. */
 function StatsTab() {
   const scene = useStore((s) => s.scene)
   const raw = useStore((s) => s.audit)
+  const error = useStore((s) => s.auditError)
   // Never show a report for another room or an older revision.
   const audit =
     raw &&
@@ -179,15 +210,17 @@ function StatsTab() {
     raw.scene_revision === scene.revision
       ? raw
       : null
-  return <AuditStats audit={audit} scene={scene} />
+  return <AuditStats audit={audit} scene={scene} error={error} />
 }
 
 export function AuditStats({
   audit,
   scene,
+  error = null,
 }: {
   audit: AuditReport | null
   scene: RoomScene
+  error?: string | null
 }) {
   const name = (id: string) =>
     scene.furniture.find((i) => i.id === id)?.name ?? id
@@ -196,11 +229,11 @@ export function AuditStats({
     return (
       <div className="flex flex-col gap-3">
         <h3 className="font-serif text-[20px] leading-[23px] font-semibold">
-          No audit yet
+          {error ? 'Audit unavailable' : 'Checking the room…'}
         </h3>
         <p className="text-[14px] leading-[23px] text-ink-medium">
-          Spatial engine findings appear here: collisions, blocked doors,
-          clearance, glare and feng shui.
+          {error ??
+            'Spatial engine findings appear here: collisions, blocked doors, clearance and feng shui.'}
         </p>
       </div>
     )
@@ -302,13 +335,24 @@ export function AuditStats({
             />
           ))}
         {audit.feng_shui?.sightlines.map((s, i) => (
-          <Row
-            key={`fs-${i}`}
-            status={s.status === 'command_position' ? 'valid' : 'danger'}
-            label={`${name(s.from_item_id)} · ${s.status.replaceAll('_', ' ')}`}
-            value={s.to_door_id}
-          />
+          <div key={`fs-${i}`} className="border-b border-hairline-ink py-2">
+            <span className="flex items-center gap-2 text-[13px] font-medium">
+              <StatusDot
+                status={s.status === 'command_position' ? 'valid' : 'warning'}
+              />
+              {`${name(s.from_item_id)} · ${s.status.replaceAll('_', ' ')}`}
+            </span>
+            <p className="mt-1 pl-4 text-[11px] leading-[17px] text-ink-medium">
+              {s.reason}
+            </p>
+          </div>
         ))}
+        {audit.feng_shui != null && (
+          <p className="pt-2 text-[11px] leading-[17px] text-ink-mist">
+            Feng shui here is a traditional placement guide for beds and desks
+            (see the door, never sit with your back to it), not a prediction.
+          </p>
+        )}
       </div>
     </div>
   )

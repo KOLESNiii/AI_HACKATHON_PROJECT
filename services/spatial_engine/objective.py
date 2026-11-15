@@ -44,10 +44,11 @@ _SOFT_PRIORITIES: dict[LayoutGoal, tuple[str, ...]] = {
     # The user wants something we cannot measure, so movement is not penalised: only access
     # may not get worse. See `beats_original`.
     "custom": ("clearance_deficit", "reachable_floor_ratio"),
+    "feng_shui": ("feng_shui_score", "clearance_deficit", "reachable_floor_ratio", "movement_m"),
 }
 # A new measurable goal (e.g. Feng Shui) needs three things: a metric on LayoutMetrics, an
 # entry in this table, and a value in contracts.schema.LayoutGoal. Nothing else ranks layouts.
-_MAXIMISED = frozenset({"reachable_floor_ratio", "brightness_openness"})
+_MAXIMISED = frozenset({"reachable_floor_ratio", "brightness_openness", "feng_shui_score"})
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,9 @@ class LayoutMetrics:
     near_window_shortfall_m: float | None = None
     """Summed distance beyond NEAR_WINDOW_M for the requested items; zero means every one is
     near a window. None when no item was requested or the room has no windows."""
+
+    feng_shui_score: int | None = None
+    """AuditReport.feng_shui.score; None when the room has no bed or desk and door to judge."""
 
     @property
     def critical_issue_count(self) -> int:
@@ -239,6 +243,7 @@ def evaluate_layout(
             moved_item_count=moved,
             brightness_openness=brightness,
             near_window_shortfall_m=near_window,
+            feng_shui_score=None if report.feng_shui is None else report.feng_shui.score,
         ),
         brightness_measured=measure_brightness,
         near_window_item_ids=near_ids,
@@ -259,6 +264,7 @@ def compare_evaluations(
     - roomier: walking area, front clearance, least movement.
     - minimal_changes: front clearance, least movement, walking area.
     - custom: front clearance, walking area; movement is not penalised.
+    - feng_shui: Feng Shui score, front clearance, walking area, least movement.
 
     Any unavailable metric is skipped, never replaced by zero or infinity.
     All priorities use 1e-9 absolute/relative float tolerance. Counts are exact.

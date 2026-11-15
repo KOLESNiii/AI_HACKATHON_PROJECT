@@ -26,9 +26,15 @@ export interface ChatMessage {
   text: string
   /** Proposed poses attached to an agent reply (item_id -> pose). */
   poses?: Record<string, Pose2D>
+  additions?: FurnitureItem[]
+  report?: AuditReport | null
   /** Scene revision the agent saw; poses only apply while the scene is still at it. */
   baseRevision?: number
   applied?: boolean
+  /** The user chose not to apply this proposal. */
+  dismissed?: boolean
+  /** What the proposed layout would look like once audited, e.g. "0 collisions · feng shui 100". */
+  outlook?: string
 }
 export interface Toast {
   id: number
@@ -52,8 +58,10 @@ interface State {
   human: Pose2D | null
   placingHuman: boolean
   humanPreview: Pose2D | null
-  /** Latest AuditReport from the spatial engine (hooked up in a later PR). */
+  /** Latest AuditReport from the spatial engine; shown only for the matching revision. */
   audit: AuditReport | null
+  /** Why the last audit failed, or null. */
+  auditError: string | null
   chat: ChatMessage[]
   agentBusy: boolean
   /** In-flight agent request, aborted when the room is reopened. */
@@ -76,6 +84,8 @@ interface State {
   deleteItem: (id: string) => void
   addFromCatalog: (c: CatalogItem) => void
   applyPoses: (messageIndex: number) => void
+  dismissProposal: (messageIndex: number) => void
+  setAudit: (report: AuditReport | null, error?: string | null) => void
   setTab: (t: Tab) => void
   beginHumanPlacement: () => boolean
   previewHuman: (p: Pt | null) => void
@@ -115,7 +125,10 @@ function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
     name: c.name,
     category: c.category,
     source: 'catalog_search',
-    glb_url: '', // no reconstructed mesh yet: rendered as a labelled proxy box
+    // No reconstructed mesh yet, so the editor draws a labelled proxy box. The contract
+    // still requires a URL (services reject an empty one): the spatial service's
+    // dimensioned placeholder, the same one its agent uses for items it adds.
+    glb_url: `/api/spatial_engine/proxies/${c.bbox_m.width}/${c.bbox_m.height}/${c.bbox_m.depth}.glb`,
     price_gbp: c.price_gbp,
     product_url: c.product_url ?? null,
     bbox_m: { ...c.bbox_m },
@@ -165,6 +178,7 @@ export const useStore = create<State>((set, get) => ({
   placingHuman: false,
   humanPreview: null,
   audit: null,
+  auditError: null,
   chat: [],
   agentBusy: false,
   agentAbort: null,
@@ -195,6 +209,7 @@ export const useStore = create<State>((set, get) => ({
       placingHuman: false,
       humanPreview: null,
       audit: null,
+      auditError: null,
       interacting: false,
       chat: [],
       agentBusy: false,
@@ -336,7 +351,15 @@ export const useStore = create<State>((set, get) => ({
   applyPoses: (index) => {
     const { chat, scene } = get()
     const msg = chat[index]
-    if (!msg?.poses || msg.applied) return
+    if (
+      !msg ||
+      (!msg.poses && !msg.additions?.length) ||
+      msg.applied ||
+      msg.dismissed ||
+      get().interacting ||
+      get().mode !== 'edit'
+    )
+      return
     if (msg.baseRevision !== scene.revision) {
       playCue('reject')
       return get().toast(
@@ -344,17 +367,38 @@ export const useStore = create<State>((set, get) => ({
       )
     }
     // Fixed items (fixtures) are never moved by the agent or solver.
-    const poses = msg.poses
+    const additions = msg.additions ?? []
+    const ids = new Set(scene.furniture.map((item) => item.id))
+    for (const item of additions) {
+      if (ids.has(item.id)) return
+      ids.add(item.id)
+    }
+    const poses = msg.poses ?? {}
     const furniture = scene.furniture.map((i) =>
       poses[i.id] && !i.is_fixed ? { ...i, pose: { ...poses[i.id] } } : i,
     )
     withEditCue('apply', () =>
       set({
-        scene: bump(scene, furniture),
+        scene: bump(scene, [...furniture, ...additions]),
+        audit:
+          msg.report?.scene_id === scene.scene_id &&
+          msg.report.scene_revision === scene.revision
+            ? { ...msg.report, scene_revision: scene.revision + 1 }
+            : null,
+        auditError: null,
         chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
       }),
     )
   },
+  dismissProposal: (index) =>
+    set((s) => ({
+      chat: s.chat.map((m, i) =>
+        i === index && (m.poses || m.additions?.length) && !m.applied
+          ? { ...m, dismissed: true }
+          : m,
+      ),
+    })),
+  setAudit: (audit, auditError = null) => set({ audit, auditError }),
   setTab: (tab) => {
     if (get().tab === tab) return
     set({ tab })

@@ -179,6 +179,7 @@ def _metrics(evaluation: LayoutEvaluation) -> dict[str, Any]:
         "reachable_floor_ratio": _num(metrics.reachable_floor_ratio),
         "window_openness": _num(metrics.brightness_openness),
         "near_window_shortfall_m": _num(metrics.near_window_shortfall_m),
+        "feng_shui_score": metrics.feng_shui_score,
         "movement_m": _num(metrics.movement_m),
         "moved_item_count": metrics.moved_item_count,
     }

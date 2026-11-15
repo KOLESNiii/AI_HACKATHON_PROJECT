@@ -1,33 +1,70 @@
-import type { Pose2D, RoomScene } from './contracts'
+import type { AuditReport, FurnitureItem, Pose2D, RoomScene } from './contracts'
+import { postSpatial, SpatialError, toServiceScene } from './spatial'
 
 export interface AgentReply {
   text: string
-  /** Proposed poses keyed by item id, when the agent suggests a layout change. */
   poses?: Record<string, Pose2D>
+  additions?: FurnitureItem[]
+  report?: AuditReport | null
+  /** The proposed audit, shown before Apply. */
+  outlook?: string
 }
 
-/**
- * Redesign agent client. The only place the Chat tab talks to.
- *
- * No agent endpoint exists yet: it needs a contract (chat message + RoomScene in,
- * reply text + LayoutProposal-style poses out). Until then this returns a placeholder,
- * so swapping in the real call only changes this function.
- */
+/** What Apply would do, e.g. "Proposed layout · 1 new item · 2 moves". */
+export function proposalSummary(
+  m: Pick<AgentReply, 'poses' | 'additions'>,
+): string {
+  const moves = Object.keys(m.poses ?? {}).length
+  const added = m.additions?.length ?? 0
+  return [
+    'Proposed layout',
+    ...(added ? [`${added} new item${added === 1 ? '' : 's'}`] : []),
+    ...(moves || !added ? [`${moves} move${moves === 1 ? '' : 's'}`] : []),
+  ].join(' · ')
+}
+
+/** One line on what the audited proposal leaves, from the engine's own report. */
+export function describeOutlook(report: AuditReport): string {
+  const overlaps =
+    report.collisions.length + report.out_of_bounds_item_ids.length
+  const parts = [
+    overlaps === 0 ? 'nothing overlapping' : `${overlaps} overlap(s)`,
+    report.blocked_doors.length === 0
+      ? 'doors clear'
+      : `${report.blocked_doors.length} door(s) blocked`,
+    `${report.clearance_issues.length} access issue(s)`,
+  ]
+  if (report.walkable_floor_ratio != null)
+    parts.push(`${Math.round(report.walkable_floor_ratio * 100)}% walkable`)
+  if (report.feng_shui != null)
+    parts.push(`feng shui ${report.feng_shui.score}`)
+  return parts.join(' · ')
+}
+
+/** Return a proposal; application is a separate, revision-guarded user action. */
 export async function sendAgentMessage(
   scene: RoomScene,
   text: string,
   signal?: AbortSignal,
 ): Promise<AgentReply> {
-  void scene
-  void text
-  await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(resolve, 500)
-    signal?.addEventListener('abort', () => {
-      clearTimeout(t)
-      reject(new DOMException('Aborted', 'AbortError'))
-    })
-  })
+  const reply = await postSpatial<AgentReply>(
+    '/chat',
+    { scene: toServiceScene(scene), instruction: text },
+    100_000,
+    signal,
+  )
+  if (
+    reply.report &&
+    (reply.report.scene_id !== scene.scene_id ||
+      reply.report.scene_revision !== scene.revision)
+  )
+    throw new SpatialError('The room changed while I was thinking. Ask again.')
   return {
-    text: 'The redesign agent is not connected yet. Once its endpoint exists, I will suggest layout changes here that you can apply in one click.',
+    text: reply.text,
+    report: reply.report,
+    poses:
+      reply.poses && Object.keys(reply.poses).length ? reply.poses : undefined,
+    additions: reply.additions?.length ? reply.additions : undefined,
+    outlook: reply.report ? describeOutlook(reply.report) : undefined,
   }
 }

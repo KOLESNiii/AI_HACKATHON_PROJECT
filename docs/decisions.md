@@ -352,6 +352,17 @@
 - An instruction that could not be read is dropped with a note and the result is reported as
   `stopped_early`, so it is never presented as honouring what the user wrote.
 
+## Feng Shui placement metric
+
+- `AuditReport.feng_shui` is filled by a small deterministic rule set (desk or bed in
+  command position, back to the door, bed foot at the door) instead of staying null, so the
+  editor can show and the layout goals can rank it. It judges beds and desks only and is null
+  when nothing can be judged. It is labelled a traditional rule of thumb, never a prediction.
+- This differs from the qualitative AI assessment on the `feat/feng-shui-evaluation-agent`
+  branch, which deliberately has no score; the two are complementary and share no code.
+- A `feng_shui` goal was added to `LayoutGoal`: score first, then access, walking space and
+  movement. Fit, door and lock rules still come before it.
+
 ## Retailer import review (#60)
 
 - Classify the product's head phrase before `with`, `and` or a comma, using the last
@@ -387,3 +398,30 @@
   them, so `inspect_asset` checks them against `bbox_m` alongside the vertex bounds.
 - The cache does not remove the need for `FAL_KEY` to read plan labels; recorded labels are #12.
   Layout answers (`/solve`) are not cached (the operator decision above).
+
+## Agent furniture additions
+
+- Operator authorised backend tool, Chat connection and an explicit Apply action,
+  plus integration of the existing solver-fix branch with the Feng Shui base.
+- Keep inventory-changing proposals in service-local `/chat` models; the pose-only
+  solver keeps its comparison invariants and existing response contract.
+- Add one dimensioned, visibly labelled proxy per request. Agent dimensions remain
+  estimates requiring correction; retailer lookup and live asset generation are separate.
+- Audit additions and supporting moves together before returning a proposal. Never
+  trade collisions, floor containment, fixed items or clear door swings for extra furniture.
+- Hold an addition to account only for what it changes: the new item and moved items must
+  be clean, and the room must stay enterable. Problems among untouched items are reported,
+  not grounds for refusal. The first version refused on any finding in the audit, so a room
+  with a fixed item in a door swing could never receive an item, and the default demo room
+  could only when the model also fixed an unrelated blocked door. The solver's rule (no
+  overlaps at all, blocked doors only if already blocked) was not reused because an
+  addition cannot repair overlaps it did not cause.
+- Return the model's words when it proposes nothing, capped and with no changes attached.
+  A generic "no proposal" message hid correct explanations such as "the room is 2.1 m wide".
+- Library items use the spatial service's proxy URL instead of an empty `glb_url`. The
+  editor still draws them as labelled boxes; the scene now validates in every service.
+- Require explicit application against the submitted revision and preserve room-session
+  cancellation. No automatic scene mutations, persistence or new dependencies.
+- Merge #35's live audit and proposal controls with #65's `/chat` route: keep audit
+  previews and Dismiss for both additions and rearrangements, and reuse the same spatial
+  transport for cancellation, timeouts and service errors.

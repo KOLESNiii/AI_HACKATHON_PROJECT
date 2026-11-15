@@ -110,8 +110,8 @@ floor ratio using a 50 cm person and entry through any physically passable door.
 Door swing obstruction is reported separately: clipping the swing arc does not
 exclude an entry unless obstacles actually prevent passage through the doorway.
 
-Scoring, glare and Feng Shui remain unimplemented. `overall_score`, `glare_alerts`
-and `feng_shui` are nullable in both shared schemas. Consumers must display null
+Scoring and glare remain unimplemented; Feng Shui is a small rule-based placement metric.
+`overall_score`, `glare_alerts` and `feng_shui` are nullable in both shared schemas. Consumers must display null
 as unassessed, not zero/no issues. `glare_orientation_grounded` is also nullable:
 null means glare was not assessed, true means assessed with grounded orientation,
 and false means an assessment used the plan-normal/-Z fallback.
@@ -443,3 +443,37 @@ editor already bumps). To correct scale, PUT first, then POST with the current r
 replace the scene with the response; reload the shell when `shell_glb_url` changes. Prompt for
 the flags that remain. On 409, reload the scene. **Dev 4:** nothing changes; the audit receives
 the corrected scene, and the tests check it accepts it with openings on their walls.
+
+## Chat additions and application
+
+`POST /chat` on the spatial service accepts `{scene: RoomScene, instruction: string}`
+(up to 500 characters, 60 existing items) and returns `{text, poses, additions, report}`.
+These service-local models leave `/solve` and the shared scene contract unchanged.
+Chat offers `add_item` and `rearrange_room`; the latter delegates to the existing
+solver, including its custom goals. Both use the configured layout model. Chat and
+any delegated solve share a 90-second, six-call, 200k-token allowance.
+
+`add_item` proposes exactly one dimensioned proxy plus up to 32 moves of existing
+movable furniture. All new dimensions are explicitly estimated and need correction;
+this is not retailer search. The new item and every moved item must pass collision,
+floor containment and door-swing checks, and a room that could be entered must stay
+enterable. Findings among untouched items do not reject the addition; they remain in
+the report and are counted in the reply. Rejections name the offending items to the
+model for a bounded retry. Existing fixed items cannot move. Front-clearance warnings
+are returned for review. A turn that ends without a proposal returns the model's own
+words with no changes attached. The server never changes the submitted scene or persists a draft.
+Proxy GLBs are generated without dependencies at `/proxies/{width}/{height}/{depth}.glb`;
+they use metric bottom-centred coordinates and dimension-specific immutable URLs.
+The editor displays them through its existing labelled proxy renderer.
+
+The Chat tab calls `/api/spatial_engine/chat`. Apply appends additions and applies
+poses atomically with one revision bump; stale replies, duplicate IDs, repeated
+application, dismissed proposals and application during a gesture or Play are rejected. Room-session
+cancellation still discards responses from rooms that have been closed. The audited
+report provides a preview before Apply and follows the accepted revision into Stats;
+the live audit then checks the new revision. Chat reuses the spatial client's timeout,
+cancellation and readable error handling. Provider failure or no key returns
+an explanation with no changes. Library items carry the same proxy URL form as agent
+additions, because the services reject a scene whose item has an empty `glb_url`.
+No new configuration or dependencies are introduced;
+`ANTHROPIC_API_KEY` and `SPACESHIFT_LAYOUT_MODEL` are reused. Tests use scripted models.

@@ -5,12 +5,14 @@ import { PlayOverlay } from '../play/PlayOverlay'
 import { Button } from '../ui'
 import { RoomView } from './RoomView'
 import { Sidebar } from './Sidebar'
+import { useLiveAudit } from './useLiveAudit'
 
 /** Room editor (edit mode): ink room view on the left, sidebar on the right. */
 export function EditorScreen() {
   const setScreen = useStore((s) => s.setScreen)
   const play = useStore((s) => s.mode === 'play')
   const controller = useRef<PlayControllerHandle>(null)
+  useLiveAudit()
 
   return (
     <div className="flex h-full">
