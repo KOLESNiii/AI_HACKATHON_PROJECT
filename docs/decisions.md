@@ -257,6 +257,17 @@
   the process, so the next request retries. Retrying is safe for paid providers: Dev 2's registry
   re-reads saved requests instead of resubmitting them.
 
+## Feng shui evaluation agent
+
+- Keep traditional Form School assessment separate from deterministic audit scores
+  and layout ranking. Recommendations require a spatial re-audit before application.
+- Reuse full RoomScene geometry; add mirrors and occupant/headboard directions as
+  service-local supplemental inputs rather than changing the shared room contract.
+- Unknown mirror inventories and missing activity anchors remain explicit unknowns.
+  Furniture front orientation alone cannot establish an occupant's gaze or headboard.
+- Use a repository-owned skill as the runtime system instruction, one provider call,
+  validated structured findings and explicit unavailable outcomes; no new dependencies.
+
 ## Real-input room (#10)
 
 - The M1 room is the parser's own room for `three_floor.png`, not the hand-made demo
