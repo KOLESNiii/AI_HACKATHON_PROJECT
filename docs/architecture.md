@@ -125,8 +125,21 @@ Audit requests build a request-local geometry context once, reusing item volumes
 walking projections, broad-phase bounds and free-floor geometry across checks.
 It is rebuilt after each request and is never retained across scene revisions.
 
-Scoring/optimisation, persistence and live editor wiring are separate work. No
-`POST /solve` route exists yet. See the spatial README and Dev 3 handoff for examples.
+Persistence and live editor wiring are separate work. See the spatial README and
+Dev 3 handoff for examples.
+
+## Layout suggestion API
+
+`POST /solve` on port 8002 accepts `OptimiseRequest` and returns `LayoutProposal`.
+It is the only spatial route that calls a provider: Claude Sonnet through the
+official `anthropic` SDK (spatial extra), using `ANTHROPIC_API_KEY` and optional
+`SPACESHIFT_LAYOUT_MODEL` from root `.env`. The model proposes furniture poses
+through three validated tools; the service audits each draft, enforces fixed and
+locked items and per-request limits, re-audits the best draft and returns it only
+if it is valid and better. Assistant failures and limits are reported in the
+response's `outcome` with HTTP 200, never as a clean or successful proposal;
+invalid input is HTTP 422. Nothing is persisted and the editor's scene is not
+changed. Details and limits are in the spatial README.
 
 ## Editor play mode
 
