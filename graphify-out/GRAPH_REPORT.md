@@ -1,16 +1,16 @@
-# Graph Report - AI_HACKATHON_PROJECT  (2026-11-15)
+# Graph Report - hackathon-project  (2026-11-15)
 
 ## Corpus Check
-- 205 files · ~308,481 words
+- 213 files · ~327,028 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2996 nodes · 8538 edges · 122 communities (109 shown, 13 thin omitted)
-- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 973 edges (avg confidence: 0.95)
+- 3271 nodes · 9351 edges · 142 communities (113 shown, 29 thin omitted)
+- Extraction: 89% EXTRACTED · 11% INFERRED · 0% AMBIGUOUS · INFERRED: 1042 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `799bf666`
+- Built from commit: `5c3c0b84`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -18,65 +18,65 @@
 - test_catalog.py
 - test_room_shell.py
 - test_room_align_vision.py
-- test_real_room.py
+- RealRoomFurniture
 - RoomScene
 - audio.test.ts
 - catalog.py
 - footprint.py
 - test_segmentation.py
-- BBoxM
+- observe_vision.py
 - test_room_align.py
 - calculate_free_floor_ratio
 - test_delivery.py
-- RequestBudget
-- test_normalisation.py
+- Frame
+- BBoxM
 - test_selection.py
 - useStore
 - test_agent.py
 - FurnitureAsset
 - test_objective.py
-- DraftSession
+- layout_tools.py
 - regions.py
 - detect_collisions
-- Frame
+- test_demo_cache_room.py
 - test_room_parse.py
-- mesh_providers.py
-- layout_tools.py
+- test_reconstruction.py
+- objective.py
 - detect_blocked_doors
 - schema.ts
 - parse.py
 - calculate_brightness_approximation
-- align_debug.py
+- FurnitureAsset
 - walk.ts
-- SpatialInputError
+- spatial_engine/main.py
 - SpaceShift 3D representation and asset handoff — design
 - Furniture.tsx
 - RoomView.tsx
 - agent.py
-- annotate.py
-- LayoutToolbox
-- detect_front_clearance
-- demo_assets.py
-- ContractModel
-- compilerOptions
-- geometry.py
 - routes.py
-- Sidebar.tsx
+- RequestBudget
+- test_room_correct.py
+- demo_assets.py
+- detect_front_clearance
+- compilerOptions
+- test_demo_cache.py
+- scenes.py
+- store.ts
 - detect_out_of_bounds
 - FloorPlanScreen.tsx
 - generate_mock_glbs.py
-- Vec2
+- SpatialInputError
 - test_contract_occupancy.py
-- selection_models.py
+- model_validator
 - Xuan Ink & Scroll (*Shuǐmò*) Design System & AI Skill
-- test_contracts.py
+- test_api.py
 - Decisions
-- PlaySession
+- test_real_room.py
 - audit_scene
 - single_room
 - compilerOptions
 - Video frame selection and furniture identity — issue #14
-- test_api.py
+- Vec2
 - Dev 2 → Dev 1 asset handoff
 - dependencies
 - devDependencies
@@ -86,15 +86,15 @@
 - Dev 4 implementation and integration plan
 - ProviderError
 - Agent Instructions
-- Registry
+- retailer.py
 - test_fixture_scene.py
-- furniture_footprint
+- CollisionPart
 - Implementation plan: issue #14
 - Spatial engine
-- geometry.ts
+- test_feng_shui.py
 - keyboard.ts
 - scripts
-- openings.py
+- Param
 - SpaceShift — System Architecture & 4-Developer Execution DAG
 - Asset Handoff Agreement Implementation Plan
 - Review Focus
@@ -111,13 +111,13 @@
 - SpaceShift — Spatial Audit, Auto-Reconfiguration & Photoreal Room Twin
 - Spatial findings: Dev 3 / Dev 4 handoff
 - Furniture mesh normalisation — issue #17
-- _Page
+- Registry
 - .to_item
-- _door_overlap_area
+- Validated, cached demo assets (#20, Dev 2.8)
 - README.md
 - frontend/package.json
-- LayoutMetrics
-- divided_access_room
+- Context
+- _Page
 - health
 - .prettierrc.json
 - tsconfig.json
@@ -130,20 +130,42 @@
 - mock_room/README.md
 - tests/conftest.py
 - spaceshift
+- manifest.json
+- reconstruct_items.py
+- test_shared_handoff_case
+- divided_access_room
+- demo_cache/README.md
+- computed_field
+- BaseModel
+- test_demo_assets.py
+- ContractModel
+- .ok
+- Depends
+- description
+- get
+- post
+- Response
+- FakeNode
+- data_dir
+- KnownDimensions
+- Record
+- fixture
 
 ## God Nodes (most connected - your core abstractions)
-1. `RoomScene` - 155 edges
-2. `FurnitureAsset` - 80 edges
-3. `BBoxM` - 74 edges
+1. `RoomScene` - 178 edges
+2. `FurnitureAsset` - 75 edges
+3. `BBoxM` - 73 edges
 4. `Registry` - 67 edges
-5. `reconstruct_furniture()` - 57 edges
-6. `Pose2D` - 56 edges
-7. `useStore` - 55 edges
-8. `FurnitureItem` - 53 edges
+5. `Pose2D` - 61 edges
+6. `FurnitureItem` - 58 edges
+7. `reconstruct_furniture()` - 55 edges
+8. `useStore` - 55 edges
 9. `Frame` - 52 edges
 10. `SpatialInputError` - 52 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `test_dev1_consumes_fixtures_through_the_asset_interface()` --uses--> `FurnitureAsset`  [INFERRED]
+  tests/test_fixture_scene.py → services/reconstruction/assets/models.py
 - `test_field_docstrings_reach_openapi()` --uses--> `RoomScene`  [INFERRED]
   tests/test_contracts.py → contracts/schema.py
 - `test_scene_rules_are_validated()` --uses--> `RoomScene`  [INFERRED]
@@ -152,53 +174,51 @@
   tests/test_demo_assets.py → contracts/schema.py
 - `test_evidence_matches_the_agreed_shape()` --uses--> `AssetEvidence`  [INFERRED]
   tests/test_fixture_scene.py → services/reconstruction/assets/models.py
-- `test_dev1_consumes_fixtures_through_the_asset_interface()` --uses--> `FurnitureAsset`  [INFERRED]
-  tests/test_fixture_scene.py → services/reconstruction/assets/models.py
 
 ## Import Cycles
 - None detected.
 
-## Communities (122 total, 13 thin omitted)
+## Communities (142 total, 29 thin omitted)
 
 ### Community 0 - "test_catalog.py"
 Cohesion: 0.05
-Nodes (90): catalog_id(), catalog_scene(), import_catalog_asset(), Category, Import the product on a retailer page: read the page, then `import_product`.…, The registry key of a scene's retailer products, apart from its video…, One product URL is one item ID, so importing it again updates the same item., _binary_models() (+82 more)
+Nodes (86): catalog_id(), catalog_scene(), CatalogImport, import_catalog_asset(), import_product(), imported_assets(), Category, Fetch (+78 more)
 
 ### Community 1 - "test_room_shell.py"
 Cohesion: 0.05
 Nodes (84): int64, build_shell(), _clean(), _clip(), _cross(), _door_span(), _is_simple_quad(), _key() (+76 more)
 
 ### Community 2 - "test_room_align_vision.py"
-Cohesion: 0.05
-Nodes (77): Image, MaskSource, EvidenceFrame, One video frame an asset was seen in. Optional fields are null for fixtures., build_prompt(), directory_frames(), _distance_to_wall(), _draw_marks() (+69 more)
+Cohesion: 0.08
+Nodes (49): EvidenceFrame, One video frame an asset was seen in. Optional fields are null for fixtures., main(), Path, directory_frames(), FrameSource, Path, Frames of one video stored as `<frame_index>.jpg` or `.png` (upright, as… (+41 more)
 
-### Community 3 - "test_real_room.py"
-Cohesion: 0.06
-Nodes (69): Collection, furniture_data_dir(), Path, Runtime settings of the reconstruction service., Where Dev 2's furniture pipeline keeps its registry, masks, meshes and served…, health(), get, Process liveness only; does not probe external providers. (+61 more)
+### Community 3 - "RealRoomFurniture"
+Cohesion: 0.14
+Nodes (17): BaseModel, geometry_mismatch(), geometry_warning(), FurnitureAsset, Path, RoomScene, SceneFurniture, Furniture for rooms bound to a video, read from Dev 2's pipeline data directory. (+9 more)
 
 ### Community 4 - "RoomScene"
-Cohesion: 0.07
-Nodes (65): RoomScene, model_validator, floor_polygon is clockwise in plan view and every wall has the room on its…, assemble_scene(), Assembly, assets_of(), FurnitureSource, NoFurniture (+57 more)
+Cohesion: 0.12
+Nodes (43): RoomScene, assemble_scene(), Assembly, FurnitureSource, NoFurniture, Protocol, RoomScene, What a furniture source supplies for one room. (+35 more)
 
 ### Community 5 - "audio.test.ts"
-Cohesion: 0.05
-Nodes (26): listeners, onSoundCue(), PartialTone, playCue(), renderCue(), SoundCue, tones, AudioEngine (+18 more)
+Cohesion: 0.09
+Nodes (23): listeners, onSoundCue(), PartialTone, playCue(), renderCue(), SoundCue, tones, AudioEngine (+15 more)
 
 ### Community 6 - "catalog.py"
-Cohesion: 0.05
-Nodes (60): Content-addressed store for servable furniture `.glb` files (spec 7.3). A file…, Readers never see a partial file., write_atomic(), _along_mesh(), CatalogImport, _decode(), ImageProvenance, import_product() (+52 more)
+Cohesion: 0.06
+Nodes (58): Content-addressed store for servable furniture `.glb` files (spec 7.3). A file…, Readers never see a partial file., write_atomic(), _along_mesh(), _decode(), ImageProvenance, item_box(), _normalises() (+50 more)
 
 ### Community 7 - "footprint.py"
 Cohesion: 0.06
-Nodes (61): DoorOpening, A hinged door in a wall. `hinge_pos` lies on the wall's interior-face line. The…, any_overlap(), boundary_distance(), _bounds_apart(), clip_convex(), closed_leaf(), covered_by() (+53 more)
+Nodes (61): any_overlap(), boundary_distance(), _bounds_apart(), clip_convex(), closed_leaf(), covered_by(), _crosses_interior(), door_approach() (+53 more)
 
 ### Community 8 - "test_segmentation.py"
 Cohesion: 0.11
-Nodes (63): Rect, main(), Path, Review images plus the two machine-readable handoffs: the result and the…, write_report(), Store a mask and cut-out for every selected view of the scene's (or the named)…, Resolve an `EvidenceFrame.mask_url` (relative to the asset data directory)., read_mask() (+55 more)
+Nodes (62): Rect, main(), Path, Review images plus the two machine-readable handoffs: the result and the…, write_report(), Store a mask and cut-out for every selected view of the scene's (or the named)…, Resolve an `EvidenceFrame.mask_url` (relative to the asset data directory)., read_mask() (+54 more)
 
-### Community 9 - "BBoxM"
+### Community 9 - "observe_vision.py"
 Cohesion: 0.08
-Nodes (55): BBoxM, Canonical metric bounds in the item's local frame: width along X, height along…, inspect_mesh(), MeshError, Exception, Safe user-facing provider diagnostic; never reflects credentials or raw HTTP…, (triangles, extents) of a usable glTF 2.0 binary; MeshError("invalid_mesh")…, KnownDimensions (+47 more)
+Nodes (37): Image, MaskSource, build_prompt(), _distance_to_wall(), _draw_marks(), _encode(), _facing(), FalVisionObserver (+29 more)
 
 ### Community 10 - "test_room_align.py"
 Cohesion: 0.12
@@ -206,71 +226,71 @@ Nodes (56): align_assets(), FrameSource, Place every asset in the room. Determin
 
 ### Community 11 - "calculate_free_floor_ratio"
 Cohesion: 0.10
-Nodes (52): calculate_free_floor_ratio(), Return the usable floor fraction not blocked under the shared headroom rule.…, calculate_reachable_floor_ratio(), RoomScene, Fraction of room floor coverable by a person entering through any door. Model…, item(), FurnitureItem, parametrize (+44 more)
+Nodes (54): DoorOpening, A hinged door in a wall. `hinge_pos` lies on the wall's interior-face line. The…, calculate_free_floor_ratio(), Return the usable floor fraction not blocked under the shared headroom rule.…, calculate_reachable_floor_ratio(), RoomScene, Fraction of room floor coverable by a person entering through any door. Model…, item() (+46 more)
 
 ### Community 12 - "test_delivery.py"
-Cohesion: 0.11
-Nodes (52): APIRouter, asset_router(), Path, Store a finished, profile-conforming `.glb` and return its `glb_url`., `GET /assets/<sha256>.glb` for the files `store_asset` wrote under `data_dir`., store_asset(), check_placed(), deliver_furniture() (+44 more)
+Cohesion: 0.10
+Nodes (60): Store a finished, profile-conforming `.glb` and return its `glb_url`., store_asset(), check_placed(), deliver_furniture(), FurnitureAsset, KnownDimensions, Path, RoomScene (+52 more)
 
-### Community 13 - "RequestBudget"
-Cohesion: 0.08
-Nodes (42): ArtifactTooLarge, box_pixels(), FalSamProvider, _fetch(), GrabCutProvider, MaskError, MaskProvider, Any (+34 more)
+### Community 13 - "Frame"
+Cohesion: 0.09
+Nodes (39): box_pixels(), FalSamProvider, _fetch(), GrabCutProvider, MaskError, MaskProvider, Any, Exception (+31 more)
 
-### Community 14 - "test_normalisation.py"
-Cohesion: 0.11
-Nodes (51): Front, BBoxM, CollisionPart, The category's parts inside `bbox`, or `[]` (one solid box) for solid…, template_parts(), _bounds(), _cap_textures(), _load() (+43 more)
+### Community 14 - "BBoxM"
+Cohesion: 0.12
+Nodes (51): BBoxM, Canonical metric bounds in the item's local frame: width along X, height along…, Front, BBoxM, CollisionPart, The category's parts inside `bbox`, or `[]` (one solid box) for solid…, template_parts(), normalise_mesh() (+43 more)
 
 ### Community 15 - "test_selection.py"
-Cohesion: 0.13
-Nodes (46): FalVisionProvider, Reviewed detections keyed by full source frame keys, never by batch position., RecordedProvider, main(), Path, Local #14 CLI. Defaults to offline sampling; --live explicitly permits provider…, Full-resolution source artifacts stay separate; the report shows boxes and IDs., write_report() (+38 more)
+Cohesion: 0.11
+Nodes (56): DiscoveryError, FalVisionProvider, parse_discovery(), Exception, Safe user-facing provider diagnostic; never reflects credentials or raw HTTP…, Reviewed detections keyed by full source frame keys, never by batch position., RecordedProvider, main() (+48 more)
 
 ### Community 16 - "useStore"
-Cohesion: 0.08
-Nodes (38): App(), ORDER, screenVariants, EditorScreen(), Furniture, Sidebar(), HomeScreen(), rise (+30 more)
+Cohesion: 0.09
+Nodes (33): App(), ORDER, screenVariants, EditorScreen(), floorPlane, SelectionTools(), Sidebar(), FloorPlanScreen() (+25 more)
 
 ### Community 17 - "test_agent.py"
-Cohesion: 0.16
-Nodes (47): OptimiseRequest, Pose2D, Floor placement of an item's bounding-box bottom-centre. See module doc for yaw., propose_layout(), LayoutProposal, Explore within the request's limits and return a re-audited proposal or an…, Step, interpret() (+39 more)
+Cohesion: 0.17
+Nodes (45): OptimiseRequest, propose_layout(), LayoutProposal, Explore within the request's limits and return a re-audited proposal or an…, Step, interpret(), item(), move() (+37 more)
 
 ### Community 18 - "FurnitureAsset"
-Cohesion: 0.09
-Nodes (41): FurnitureItem, Correction, Facing, FurnitureAsset, What Dev 2 returns: every `FurnitureItem` field except `pose`, plus evidence., _access(), _Choice, _extents() (+33 more)
+Cohesion: 0.05
+Nodes (70): FurnitureItem, Pose2D, Floor placement of an item's bounding-box bottom-centre. See module doc for yaw., Correction, Facing, FurnitureAsset, What Dev 2 returns: every `FurnitureItem` field except `pose`, plus evidence., _access() (+62 more)
 
 ### Community 19 - "test_objective.py"
 Cohesion: 0.15
-Nodes (45): WindowOpening, compare_layouts(), evaluate_layout(), Measure a candidate against the immutable original, without modifying either.…, Compare to baseline (default original); movement always references original.…, item(), FurnitureItem, parametrize (+37 more)
+Nodes (44): compare_layouts(), evaluate_layout(), Measure a candidate against the immutable original, without modifying either.…, Compare to baseline (default original); movement always references original.…, item(), FurnitureItem, parametrize, RoomScene (+36 more)
 
-### Community 20 - "DraftSession"
-Cohesion: 0.11
-Nodes (35): _arrangement(), DraftSession, _echo(), LayoutMoveError, PoseChange, RoomScene, A fresh scene at the base revision, so its audit identifies the submitted scene., None means unlimited. (+27 more)
+### Community 20 - "layout_tools.py"
+Cohesion: 0.05
+Nodes (83): _arrangement(), DraftSession, _echo(), LayoutDraft, LayoutMoveError, PoseChange, RoomScene, Request-local immutable layout drafts: pose-only edits audited against one… (+75 more)
 
 ### Community 21 - "regions.py"
-Cohesion: 0.11
-Nodes (38): int32, _fallback_scale(), ImageFloor, No usable labels: assume interior door gaps are ESTIMATED_DOOR_M wide, else…, Raster, _accept(), Bridge, _cast() (+30 more)
+Cohesion: 0.12
+Nodes (34): int32, Raster, _accept(), Bridge, _cast(), _dedupe(), draw_bridges(), _end_direction() (+26 more)
 
 ### Community 22 - "detect_collisions"
-Cohesion: 0.11
-Nodes (39): CollisionIssue, detect_collisions(), _height_overlaps(), FurnitureItem, Report each overlapping pair once, in stable item-ID order. Whole bounding…, furniture_collision_volumes(), Transform validated local collision boxes; absent parts mean one solid bbox.…, item() (+31 more)
+Cohesion: 0.19
+Nodes (21): CollisionIssue, detect_collisions(), _height_overlaps(), FurnitureItem, Report each overlapping pair once, in stable item-ID order. Whole bounding…, item(), FurnitureItem, parametrize (+13 more)
 
-### Community 23 - "Frame"
-Cohesion: 0.12
-Nodes (32): DiscoveryError, DiscoveryProvider, OfflineProvider, parse_discovery(), Exception, Path, Protocol, fal vision proposes instances across full images; reviewed recordings run… (+24 more)
+### Community 23 - "test_demo_cache_room.py"
+Cohesion: 0.10
+Nodes (42): FurnitureItem, clear_corrections(), Serve every plan as parsed again (tests)., broken_cache(), from_demo_cache(), load_bindings(), proxy_warning(), Video furniture for a real plan room (#10): Dev 2's extracted items, placed… (+34 more)
 
 ### Community 24 - "test_room_parse.py"
-Cohesion: 0.14
-Nodes (38): ParsedFloorPlan, Every floor and room parsed from 1..MAX_FLOOR_PLAN_IMAGES floor-plan images.…, ParsedRoom, _extract_json(), PlanAnnotations, _close(), _example(), _has_vertex() (+30 more)
+Cohesion: 0.10
+Nodes (46): ParsedFloorPlan, Every floor and room parsed from 1..MAX_FLOOR_PLAN_IMAGES floor-plan images.…, ParsedRoom, AnnotationResult, _extract_json(), FixedAnnotator, NullAnnotator, PlanAnnotations (+38 more)
 
-### Community 25 - "mesh_providers.py"
-Cohesion: 0.08
-Nodes (29): FailureKind, main(), Path, Check the furniture a scene delivers to Dev 1: normalisation and proxy fallback…, write_report(), Delivery, computed_field, Every delivered asset passed its checks. Proxies are allowed; they are listed. (+21 more)
+### Community 25 - "test_reconstruction.py"
+Cohesion: 0.07
+Nodes (44): APIRouter, asset_router(), Path, `GET /assets/<sha256>.glb` for the files `store_asset` wrote under `data_dir`., ArtifactTooLarge, fal_media_url(), fetch_bounded(), A provider artifact exceeded its size cap; nothing was kept. (+36 more)
 
-### Community 26 - "layout_tools.py"
-Cohesion: 0.12
-Nodes (27): LayoutDraft, Request-local immutable layout drafts: pose-only edits audited against one…, _Arguments, _CompareArguments, _EvaluateArguments, _findings(), _InspectArguments, _metrics() (+19 more)
+### Community 26 - "objective.py"
+Cohesion: 0.13
+Nodes (16): beats_original(), _check_comparable(), compare_evaluations(), _door_overlap_area(), LayoutComparison, LayoutMetrics, _near_window_shortfall(), AuditReport (+8 more)
 
 ### Community 27 - "detect_blocked_doors"
-Cohesion: 0.15
-Nodes (35): BlockedDoorIssue, BlockedDoorIssue, detect_blocked_doors(), Report furniture intersecting door sweeps, sorted by door and item ID. Tests…, item(), FurnitureItem, parametrize, RoomScene (+27 more)
+Cohesion: 0.20
+Nodes (30): BlockedDoorIssue, detect_blocked_doors(), Report furniture intersecting door sweeps, sorted by door and item ID. Tests…, item(), FurnitureItem, parametrize, RoomScene, Door sweep checks using the shared stored hinge and opening conventions. (+22 more)
 
 ### Community 28 - "schema.ts"
 Cohesion: 0.07
@@ -278,119 +298,111 @@ Nodes (36): GLB_BBOX_TOLERANCE_M, ITEM_ID_PATTERN, LayoutGoal, MAX_COLLISION_PAR
 
 ### Community 29 - "parse.py"
 Cohesion: 0.12
-Nodes (36): FloorCaption, RoomLabel, _assign_labels(), _bearing(), _bridge_sides(), _build_scene(), _caption_distance(), _consensus() (+28 more)
+Nodes (38): FloorCaption, BaseModel, RoomLabel, _assign_labels(), _bearing(), _bridge_sides(), _build_scene(), _caption_distance() (+30 more)
 
 ### Community 30 - "calculate_brightness_approximation"
 Cohesion: 0.13
-Nodes (35): BrightnessApproximation, calculate_brightness_approximation(), RoomScene, A window-openness proxy for layout comparison, not a lighting simulation., Ratios describe geometric openness, never percentage brightness or lux., Project nearby occupied parts onto each window and union their shadows. The…, WindowOpenness, item() (+27 more)
-
-### Community 31 - "align_debug.py"
-Cohesion: 0.09
-Nodes (27): AlignmentRecord, AlignmentResult, _Capture, main(), pose_error(), FrameSource, FurnitureItem, RoomScene (+19 more)
+Nodes (36): WindowOpening, BrightnessApproximation, calculate_brightness_approximation(), RoomScene, A window-openness proxy for layout comparison, not a lighting simulation., Ratios describe geometric openness, never percentage brightness or lux., Project nearby occupied parts onto each window and union their shadows. The…, WindowOpenness (+28 more)
 
 ### Community 32 - "walk.ts"
-Cohesion: 0.13
-Nodes (26): captureEditorView(), EditorOrbit, EditorView, floor, pointOnFloor(), resizePlayCamera(), restoreEditorView(), Human() (+18 more)
+Cohesion: 0.08
+Nodes (35): RotationRing(), captureEditorView(), EditorOrbit, EditorView, floor, PlayControllerHandle, pointOnFloor(), resizePlayCamera() (+27 more)
 
-### Community 33 - "SpatialInputError"
-Cohesion: 0.11
-Nodes (31): ActivityAnchor, assess_feng_shui(), Assessment, DetailModel, FengShuiRequest, FengShuiResult, Finding, Mirror (+23 more)
+### Community 33 - "spatial_engine/main.py"
+Cohesion: 0.12
+Nodes (27): LayoutProposal, Proposed furniture poses. Only poses change: shell, openings, item IDs and…, ActivityAnchor, assess_feng_shui(), Assessment, DetailModel, FengShuiRequest, FengShuiResult (+19 more)
 
 ### Community 34 - "SpaceShift 3D representation and asset handoff — design"
 Cohesion: 0.06
 Nodes (32): 10. How each consumer uses it, 11. Contract changes requested, 12. Order of work, 13. Left to the builder, 1. Intent, 2. Goals, non-goals, anti-goals, 3. Constraints, 4.1 What is the geometric truth? (+24 more)
 
 ### Community 35 - "Furniture.tsx"
-Cohesion: 0.16
-Nodes (23): Mesh(), ProxyBox(), categoryWash, disposeInk(), inkify(), inkLine, Shell, invalidatePlayShadows() (+15 more)
+Cohesion: 0.13
+Nodes (25): Mesh(), MeshBoundary, ProxyBox(), categoryWash, disposeInk(), inkify(), inkLine, Shell (+17 more)
 
 ### Community 36 - "RoomView.tsx"
-Cohesion: 0.14
-Nodes (22): DoorSwings(), MeshBoundary, flaggedFor(), Navigation(), RoomView(), doorSwing(), footprint(), toWorld() (+14 more)
+Cohesion: 0.13
+Nodes (27): DoorSwings(), Furniture, flaggedFor(), Navigation(), RoomView(), LibraryTab(), clampToFloor(), doorSwing() (+19 more)
 
 ### Community 37 - "agent.py"
+Cohesion: 0.12
+Nodes (17): Outcome, AgentLimits, _Budget, _explain_result(), _explore(), _interpret(), _Interpretation, LayoutModel (+9 more)
+
+### Community 38 - "routes.py"
+Cohesion: 0.05
+Nodes (52): File, HTTPException, Compass, FalVisionAnnotator, PlanAnnotator, Protocol, What computer vision cannot read off a floor plan: room labels with their…, Reads labels with a vision LLM on fal.ai (`FAL_KEY`). The endpoint and model… (+44 more)
+
+### Community 39 - "RequestBudget"
 Cohesion: 0.11
-Nodes (20): Outcome, _Budget, _explain_result(), _explore(), _interpret(), _Interpretation, LayoutModel, ModelReply (+12 more)
+Nodes (27): DiscoveryProvider, OfflineProvider, Path, Protocol, fal vision proposes instances across full images; reviewed recordings run…, Per-run inference submission attempts; cache reads and handle recovery are free., RequestBudget, The stored mask for a sighting, unless its box has changed since. (+19 more)
 
-### Community 38 - "annotate.py"
-Cohesion: 0.10
-Nodes (21): ParsedFloor, AnnotationResult, Compass, FalVisionAnnotator, FixedAnnotator, NullAnnotator, BaseModel, Path (+13 more)
-
-### Community 39 - "LayoutToolbox"
-Cohesion: 0.18
-Nodes (27): LayoutPreferences, LayoutToolbox, What the user asked for, already validated by the server., The three exploration tools for one request, over one `DraftSession`. `call`…, evaluate(), item(), move(), Any (+19 more)
-
-### Community 40 - "detect_front_clearance"
-Cohesion: 0.25
-Nodes (27): ClearanceIssue, detect_front_clearance(), Check full-width front access strips, returning one issue per blocker. actual_m…, item(), obstacle(), FurnitureItem, parametrize, RoomScene (+19 more)
+### Community 40 - "test_room_correct.py"
+Cohesion: 0.06
+Nodes (64): model_validator, floor_polygon is clockwise in plan view and every wall has the room on its…, apply_pose_edit(), carry_furniture(), corrected_shell_url(), geometry_digest(), InvalidEdit, InvalidScale (+56 more)
 
 ### Community 41 - "demo_assets.py"
 Cohesion: 0.12
 Nodes (26): FileResponse, demo_floors(), demo_room_scene(), demo_rooms(), demo_shell(), furniture_model(), legacy_model(), _model_file() (+18 more)
 
-### Community 42 - "ContractModel"
-Cohesion: 0.12
-Nodes (25): ContractModel, BaseModel, ClearanceIssue, CollisionIssue, CollisionPart, FengShuiReport, FengShuiSightline, GlareAlert (+17 more)
+### Community 42 - "detect_front_clearance"
+Cohesion: 0.25
+Nodes (27): ClearanceIssue, detect_front_clearance(), Check full-width front access strips, returning one issue per blocker. actual_m…, item(), obstacle(), FurnitureItem, parametrize, RoomScene (+19 more)
 
 ### Community 43 - "compilerOptions"
 Cohesion: 0.08
 Nodes (25): compilerOptions, allowArbitraryExtensions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection (+17 more)
 
-### Community 44 - "geometry.py"
-Cohesion: 0.15
-Nodes (21): Spatial checks independent of HTTP, mesh loading and provider services., CollisionVolume, front_clearance_zone(), FurnitureGeometry, prepare_furniture(), prepare_scene(), FurnitureItem, RoomScene (+13 more)
+### Community 44 - "test_demo_cache.py"
+Cohesion: 0.07
+Nodes (76): CaptureFixture, fixture, FurnitureAsset, KnownDimensions, MonkeyPatch, Record, _declared_bounds(), _declared_bounds_problems() (+68 more)
 
-### Community 45 - "routes.py"
-Cohesion: 0.11
-Nodes (24): description, File, PlanAnnotator, Protocol, plan_id_for(), find_parsed_scene(), get_annotator(), get_plan() (+16 more)
+### Community 45 - "scenes.py"
+Cohesion: 0.08
+Nodes (38): Assembly, Depends, description, FurnitureSource, ge, get, gt, post (+30 more)
 
-### Community 46 - "Sidebar.tsx"
-Cohesion: 0.11
-Nodes (18): AuditStats(), ChatTab(), StatsTab(), tabs, ButtonProps, Chip(), dotColor, Panel() (+10 more)
+### Community 46 - "store.ts"
+Cohesion: 0.09
+Nodes (23): AuditStats(), ChatTab(), StatsTab(), tabs, Chip(), ScoreRing(), Status, StatusDot() (+15 more)
 
 ### Community 47 - "detect_out_of_bounds"
-Cohesion: 0.22
-Nodes (24): detect_out_of_bounds(), RoomScene, Return sorted item IDs whose rectangular footprint leaves the interior floor.…, item(), FurnitureItem, parametrize, RoomScene, Whole-footprint containment against the authoritative usable floor boundary. (+16 more)
+Cohesion: 0.23
+Nodes (23): detect_out_of_bounds(), RoomScene, Return sorted item IDs whose rectangular footprint leaves the interior floor.…, item(), FurnitureItem, parametrize, RoomScene, Whole-footprint containment against the authoritative usable floor boundary. (+15 more)
 
 ### Community 48 - "FloorPlanScreen.tsx"
-Cohesion: 0.18
-Nodes (21): FloorPlanScreen(), Openings(), PlanRoom(), plural(), points(), px(), area(), DEFAULT_ROOM_ID (+13 more)
+Cohesion: 0.19
+Nodes (18): Openings(), PlanRoom(), points(), px(), area(), DEFAULT_ROOM_ID, DemoFloor, demoFloors (+10 more)
 
 ### Community 49 - "generate_mock_glbs.py"
 Cohesion: 0.17
 Nodes (23): coloured_box(), convex_vertices(), cross2(), furniture_mesh(), main(), mm_key(), ndarray, Scene (+15 more)
 
-### Community 50 - "Vec2"
-Cohesion: 0.16
-Nodes (21): Vec2, WallSegment, A point on the floor plan (Y omitted)., LineString, Polygon, door_entry_segment(), _door_frame(), door_swing_sector() (+13 more)
+### Community 50 - "SpatialInputError"
+Cohesion: 0.10
+Nodes (40): Polygon, Spatial checks independent of HTTP, mesh loading and provider services., CollisionVolume, front_clearance_zone(), furniture_collision_volumes(), furniture_footprint(), FurnitureGeometry, prepare_furniture() (+32 more)
 
 ### Community 51 - "test_contract_occupancy.py"
 Cohesion: 0.16
 Nodes (21): RoomCaptureInputs, inputs(), item(), part(), Any, BaseModel, FurnitureItem, parametrize (+13 more)
 
-### Community 52 - "selection_models.py"
-Cohesion: 0.13
-Nodes (16): DiscoveredObject, MissingMask, BaseModel, model_validator, Internal #14-#16 records. Source evidence is deliberately separate from…, Record, SegmentationResult, SelectionResult (+8 more)
-
 ### Community 53 - "Xuan Ink & Scroll (*Shuǐmò*) Design System & AI Skill"
 Cohesion: 0.09
 Nodes (20): 1. Core Aesthetic Philosophy, 2. Design Tokens (`tokens.css`), 3. Typography & Bilingual Hierarchy Rules, 4. Paper Grain, Vignette & Ink-Bleed Effects, 5. Signature UI Component Specifications, 6. Three.js & 3D Spatial Viewport Guidelines, 7. AI Agent Implementation Guardrails (Do / Don't), A. Vermilion Chop Seal Button (`.chop-seal`) (+12 more)
 
-### Community 54 - "test_contracts.py"
-Cohesion: 0.14
-Nodes (21): AuditReport, load_generator(), load_mock(), parametrize, RoomScene, plan_normal_deg is derived from the wall's outward normal (dz, -dx)., True when the point lies inside one of the mesh's boxes (all mock parts are…, schema.ts treats every non-nullable field as present, so the fixture must… (+13 more)
+### Community 54 - "test_api.py"
+Cohesion: 0.09
+Nodes (37): AuditReport, payload(), Any, Exception, MonkeyPatch, parametrize, HTTP integration for the audit contract and shared frontend handoff cases., test_geometry_library_errors_are_safe_422() (+29 more)
 
 ### Community 55 - "Decisions"
-Cohesion: 0.09
-Nodes (22): 3D representation and asset handoff, Acceptable layout proposals, Agent-driven layout recommendations, Backend-owned mock meshes, Bootstrap, Calm editor audio, Custom requests, Decisions (+14 more)
+Cohesion: 0.08
+Nodes (24): 3D representation and asset handoff, Acceptable layout proposals, Agent-driven layout recommendations, Backend-owned mock meshes, Bootstrap, Calm editor audio, Corrections (#11), Custom requests (+16 more)
 
-### Community 56 - "PlaySession"
-Cohesion: 0.16
-Nodes (5): PlaySession, fixture, mockScene, initial, setup()
+### Community 56 - "test_real_room.py"
+Cohesion: 0.10
+Nodes (67): Collection, _audit(), auditor(), client(), _collides(), _findings(), _get_in_thread(), _HeldSource (+59 more)
 
 ### Community 57 - "audit_scene"
-Cohesion: 0.13
-Nodes (19): demo_room_scenes(), profile(), Any, RoomScene, Check the spatial engine against the shared demo home. Free (no network): audit…, Each demo room with the furniture standing in it, as the editor builds them., solve(), Timed (+11 more)
+Cohesion: 0.10
+Nodes (22): demo_room_scenes(), profile(), Any, RoomScene, Check the spatial engine against the shared demo home. Free (no network): audit…, Each demo room with the furniture standing in it, as the editor builds them., solve(), Timed (+14 more)
 
 ### Community 58 - "single_room"
 Cohesion: 0.16
@@ -404,13 +416,13 @@ Nodes (19): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib
 Cohesion: 0.11
 Nodes (18): 1. Source identity and local frame processing, 2. Frame choice has two independent purposes, 3. Discovery and conservative association, 4. Durable per-scene registry, 5. Camera recovery and placement against the room design, 6. Preserve materials as well as meshes, 7. Fixed handoff compatibility and multiple videos, 8. Provider boundaries, configuration and failures (+10 more)
 
-### Community 61 - "test_api.py"
-Cohesion: 0.20
-Nodes (16): payload(), Any, Exception, MonkeyPatch, parametrize, HTTP integration for the audit contract and shared frontend handoff cases., test_geometry_library_errors_are_safe_422(), test_invalid_scenes_return_actionable_422() (+8 more)
+### Community 61 - "Vec2"
+Cohesion: 0.18
+Nodes (20): Vec2, WallSegment, A point on the floor plan (Y omitted)., LineString, door_entry_segment(), _door_frame(), door_swing_sector(), _DoorFrame (+12 more)
 
 ### Community 62 - "Dev 2 → Dev 1 asset handoff"
-Cohesion: 0.11
-Nodes (18): 10. Room inputs (#5), 1. IDs, 2. What Dev 2 returns, 3. Evidence, 4. Mesh references, 5. Normalisation guarantee, 6. Occupied volume, 7. Dimension provenance (+10 more)
+Cohesion: 0.10
+Nodes (20): 10. Room inputs (#5), 1. IDs, 2. What Dev 2 returns, 3. Evidence, 4. Mesh references, 5. Normalisation guarantee, 6. Occupied volume, 7. Dimension provenance (+12 more)
 
 ### Community 63 - "dependencies"
 Cohesion: 0.12
@@ -425,36 +437,36 @@ Cohesion: 0.17
 Nodes (16): Gray, decode(), estimate_wall_px(), flatten_illumination(), Mask, NDArray, uint8, ValueError (+8 more)
 
 ### Community 66 - "polygon.py"
-Cohesion: 0.22
-Nodes (16): area(), _drop_collinear(), _fit_edge(), _intersect(), is_simple(), float64, Mask, NDArray (+8 more)
+Cohesion: 0.23
+Nodes (15): _drop_collinear(), _fit_edge(), _intersect(), is_simple(), float64, Mask, NDArray, Point (+7 more)
 
 ### Community 67 - "Architecture"
 Cohesion: 0.12
-Nodes (16): Architecture, Backend-provided demo models, Editor play mode, Frontend audio, Furniture evidence selection (#14), Furniture masks and placement evidence (#15), Furniture normalisation (#17, PR #54 review), Home screen and intake presentation (+8 more)
+Nodes (17): Architecture, Backend-provided demo models, Corrections (#11), Editor play mode, Frontend audio, Furniture evidence selection (#14), Furniture masks and placement evidence (#15), Furniture normalisation (#17, PR #54 review) (+9 more)
 
 ### Community 68 - "Dev 4 implementation and integration plan"
 Cohesion: 0.12
 Nodes (15): 1. What you own, 2. What a good outcome looks like, 3. Agree the small shared surface first, 4. Files and ownership, 5. Small implementation steps and suggested commit boundaries, 6. Integration checkpoints with other developers, 7. Verification and commit discipline, 8. Instructions to give an AI coding agent (+7 more)
 
 ### Community 69 - "ProviderError"
-Cohesion: 0.13
-Nodes (13): AgentLimits, AnthropicLayoutModel, ProviderError, Exception, Claude through the official SDK. The loop above owns retries, so the SDK makes…, One allowance per request. Retries and the interpretation call spend the same…, A failed model call. `kind` is safe to log; no key or payload is kept., Request (+5 more)
+Cohesion: 0.25
+Nodes (9): ProviderError, Exception, A failed model call. `kind` is safe to log; no key or payload is kept., Request, Response, sdk_model(), test_sdk_adapter_maps_http_failures_without_leaking_the_key(), test_sdk_adapter_maps_timeouts() (+1 more)
 
 ### Community 70 - "Agent Instructions"
 Cohesion: 0.13
 Nodes (14): 10. Documentation and handoff, 11. Decision-making priorities, 12. Hackathon-specific guidance, 1. Primary objectives, 2. Repository orientation, 3. Agent collaboration rules, 4. Architecture and design, 5. Implementation standards (+6 more)
 
-### Community 71 - "Registry"
-Cohesion: 0.20
-Nodes (7): Connection, Any, Path, Local SQLite transactions for scene identities and recoverable provider…, Only the winner submits; a crash before recording its handle is explicit…, Only a known pre-submit failure is safe to release; never remove a saved handle., Registry
+### Community 71 - "retailer.py"
+Cohesion: 0.13
+Nodes (25): _binary_models(), _dimensions(), _first_url(), _is_type(), _metres(), _model_urls(), _nodes(), parse_product_page() (+17 more)
 
 ### Community 72 - "test_fixture_scene.py"
 Cohesion: 0.14
 Nodes (9): _plan_parts(), Any, FurnitureItem, The one fixture scene: Dev 2's fixture assets placed in the mock room (issues…, Each collision part as (rotated plan polygon, y_min, y_max) in room coordinates., The module-doc collision rule: touching is allowed, overlapping is not., test_dev1_consumes_fixtures_through_the_asset_interface(), test_evidence_matches_the_agreed_shape() (+1 more)
 
-### Community 73 - "furniture_footprint"
-Cohesion: 0.32
-Nodes (13): furniture_footprint(), Return the rotated width/depth rectangle in room X/Z coordinates. Pose is the…, make_item(), FurnitureItem, parametrize, Footprint examples independent of meshes, providers and HTTP routes., test_45_degree_corners_follow_threejs_yaw(), test_does_not_mutate_item() (+5 more)
+### Community 73 - "CollisionPart"
+Cohesion: 0.22
+Nodes (18): CollisionPart, One box of an item's occupied volume, in the item's local frame (the .glb…, item(), part(), CollisionPart, FurnitureItem, parametrize, Occupied-volume integration with the merged Dev 2 contract and fixture. (+10 more)
 
 ### Community 74 - "Implementation plan: issue #14"
 Cohesion: 0.15
@@ -464,9 +476,9 @@ Nodes (12): Execution record, Follow-on issue gates (planned here, implemented s
 Cohesion: 0.15
 Nodes (13): Audit endpoint, Brightness approximation for layout comparison, Demo home checks (issue #36), Feng shui assessment, Free floor area, Front clearance, Internal layout comparison (issue #33), Layout drafts for proposed moves (issue #33) (+5 more)
 
-### Community 76 - "geometry.ts"
-Cohesion: 0.23
-Nodes (9): floorPlane, RotationRing(), SelectionTools(), LibraryTab(), DEG, fitsRoom(), fitYaw(), planAngle() (+1 more)
+### Community 76 - "test_feng_shui.py"
+Cohesion: 0.29
+Nodes (7): ModelReply, ToolCall, Any, RecordedModel, test_payload_preserves_geometry_and_unknowns(), test_route(), test_unknown_references_and_missing_provider()
 
 ### Community 77 - "keyboard.ts"
 Cohesion: 0.32
@@ -475,10 +487,6 @@ Nodes (7): editorKey(), handleItemKey(), panCamera(), rotationDegrees, KeyboardC
 ### Community 78 - "scripts"
 Cohesion: 0.17
 Nodes (11): name, packageManager, private, scripts, build, check, dev, dev:media (+3 more)
-
-### Community 79 - "openings.py"
-Cohesion: 0.24
-Nodes (11): attach(), door_leaf(), EdgeHit, _ink_along(), kind(), Leaf, Mask, Point (+3 more)
 
 ### Community 80 - "SpaceShift — System Architecture & 4-Developer Execution DAG"
 Cohesion: 0.18
@@ -497,8 +505,8 @@ Cohesion: 0.20
 Nodes (9): Execution record, Furniture Segmentation Implementation Plan, Global Constraints, Review Focus, Task 1: Mask records, Task 2: Pipeline with the offline provider, Task 3: Evidence handoff, Task 4: Live SAM 3 provider (+1 more)
 
 ### Community 84 - "Floor-plan parser (Dev 1)"
-Cohesion: 0.22
-Nodes (7): Floor-plan parser (Dev 1), Furniture alignment (#8), How it works, Real-input room (#10), Scene assembly (#9), Status and limits, Use
+Cohesion: 0.20
+Nodes (8): Corrections (#11), Floor-plan parser (Dev 1), Furniture alignment (#8), How it works, Real-input room (#10), Scene assembly (#9), Status and limits, Use
 
 ### Community 85 - "Furniture masks and placement evidence — issue #15"
 Cohesion: 0.22
@@ -544,49 +552,77 @@ Nodes (6): Completion and follow-up, Consuming the findings, HTTP handoff contra
 Cohesion: 0.29
 Nodes (6): Approaches, Calls made by the author, open to correction, Design, Furniture mesh normalisation — issue #17, Intent, What the stored meshes showed (2026-11-15, no provider requests)
 
-### Community 96 - "_Page"
-Cohesion: 0.29
-Nodes (3): HTMLParser, _Page, The few things a product page is read for: JSON-LD, meta tags, title and…
+### Community 96 - "Registry"
+Cohesion: 0.18
+Nodes (8): Connection, Mask, The next published model that is usable and within the triangle budget. Each…, Any, Path, Only the winner submits; a crash before recording its handle is explicit…, Only a known pre-submit failure is safe to release; never remove a saved handle., Registry
 
 ### Community 97 - ".to_item"
 Cohesion: 0.33
 Nodes (4): FurnitureItem, model_validator, Pose2D, Dev 1 places the asset: add the pose it aligned from the floor plan.
 
-### Community 98 - "_door_overlap_area"
-Cohesion: 0.29
-Nodes (7): _check_comparable(), _door_overlap_area(), _near_window_shortfall(), AuditReport, RoomScene, Do not improve metrics by changing the room, removing items or shrinking them., Grade progress while a door is still blocked, using the audit's same thresholds.
+### Community 98 - "Validated, cached demo assets (#20, Dev 2.8)"
+Cohesion: 0.25
+Nodes (7): Approaches, Design, Goals, Intent, Non-goals, Tests, Validated, cached demo assets (#20, Dev 2.8)
 
 ### Community 100 - "frontend/package.json"
 Cohesion: 0.40
 Nodes (4): name, private, type, version
 
-### Community 102 - "divided_access_room"
-Cohesion: 0.40
-Nodes (4): divided_access_room(), RoomScene, Shared regression geometry for custom layout access checks., Clearing a wardrobe by moving its blocker behind the divider cuts circulation.
+### Community 102 - "_Page"
+Cohesion: 0.29
+Nodes (3): HTMLParser, _Page, The few things a product page is read for: JSON-LD, meta tags, title and…
 
 ### Community 103 - "health"
 Cohesion: 0.50
 Nodes (3): health(), get, Process liveness only; does not probe external providers.
 
+### Community 122 - "manifest.json"
+Cohesion: 0.29
+Nodes (6): assets, files, format, registry_revision, scene_id, source
+
+### Community 123 - "reconstruct_items.py"
+Cohesion: 0.13
+Nodes (18): computed_field, FailureKind, main(), Path, Check the furniture a scene delivers to Dev 1: normalisation and proxy fallback…, write_report(), Delivery, Record (+10 more)
+
+### Community 124 - "test_shared_handoff_case"
+Cohesion: 0.33
+Nodes (4): Any, parametrize, Reusable scene variants and expected findings for Dev 3/4 integration., test_shared_handoff_case()
+
+### Community 125 - "divided_access_room"
+Cohesion: 0.40
+Nodes (4): divided_access_room(), RoomScene, Shared regression geometry for custom layout access checks., Clearing a wardrobe by moving its blocker behind the divider cuts circulation.
+
+### Community 129 - "test_demo_assets.py"
+Cohesion: 0.21
+Nodes (10): MonkeyPatch, parametrize, Path, Demo GLBs are backend-provided; the browser needs no copied asset directory., test_all_home_furniture_urls_have_canonical_models(), test_each_demo_room_shell_preserves_geometry_and_nodes(), test_legacy_models_live_in_the_backend(), test_shell_is_generated_once_per_room_and_cached_in_memory() (+2 more)
+
+### Community 130 - "ContractModel"
+Cohesion: 0.15
+Nodes (20): ContractModel, BaseModel, BlockedDoorIssue, ClearanceIssue, CollisionIssue, FengShuiReport, FengShuiSightline, GlareAlert (+12 more)
+
+### Community 138 - "data_dir"
+Cohesion: 0.67
+Nodes (3): _clear(), data_dir(), The app's furniture data directory: a throwaway one (tests/conftest.py),…
+
 ## Knowledge Gaps
-- **386 isolated node(s):** `GLB_BBOX_TOLERANCE_M`, `ITEM_ID_PATTERN`, `MAX_COLLISION_PARTS`, `MIN_PART_DIMENSION_M`, `MAX_FLOOR_PLAN_IMAGES` (+381 more)
+- **405 isolated node(s):** `Calm editor audio`, `Bootstrap`, `Revised execution plan`, `3D representation and asset handoff`, `Frame selection and identity (#14)` (+400 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **29 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `RoomScene` connect `RoomScene` to `test_room_shell.py`, `test_room_align_vision.py`, `test_real_room.py`, `test_room_align.py`, `calculate_free_floor_ratio`, `test_delivery.py`, `test_agent.py`, `FurnitureAsset`, `test_objective.py`, `DraftSession`, `detect_collisions`, `test_room_parse.py`, `layout_tools.py`, `detect_blocked_doors`, `parse.py`, `calculate_brightness_approximation`, `align_debug.py`, `SpatialInputError`, `LayoutToolbox`, `detect_front_clearance`, `demo_assets.py`, `ContractModel`, `geometry.py`, `routes.py`, `detect_out_of_bounds`, `generate_mock_glbs.py`, `test_contracts.py`, `audit_scene`, `single_room`, `test_api.py`, `_door_overlap_area`, `divided_access_room`?**
-  _High betweenness centrality (0.126) - this node is a cross-community bridge._
-- **Why does `BBoxM` connect `BBoxM` to `test_catalog.py`, `catalog.py`, `footprint.py`, `calculate_free_floor_ratio`, `test_delivery.py`, `test_normalisation.py`, `test_agent.py`, `FurnitureAsset`, `test_objective.py`, `DraftSession`, `detect_collisions`, `detect_blocked_doors`, `calculate_brightness_approximation`, `LayoutToolbox`, `detect_front_clearance`, `ContractModel`, `detect_out_of_bounds`, `furniture_footprint`, `divided_access_room`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
-- **Why does `FurnitureAsset` connect `FurnitureAsset` to `.to_item`, `test_room_align_vision.py`, `RoomScene`, `catalog.py`, `test_fixture_scene.py`, `BBoxM`, `ContractModel`, `test_room_align.py`, `test_delivery.py`, `demo_assets.py`, `test_normalisation.py`, `test_agent.py`, `test_contract_occupancy.py`, `selection_models.py`, `mesh_providers.py`, `align_debug.py`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **Are the 152 inferred relationships involving `RoomScene` (e.g. with `demo_room_scenes()` and `profile()`) actually correct?**
-  _`RoomScene` has 152 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 48 inferred relationships involving `FurnitureAsset` (e.g. with `CatalogImport` and `_relabel()`) actually correct?**
-  _`FurnitureAsset` has 48 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 71 inferred relationships involving `BBoxM` (e.g. with `_along_mesh()` and `template_parts()`) actually correct?**
-  _`BBoxM` has 71 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `RoomScene` connect `RoomScene` to `test_room_shell.py`, `ContractModel`, `test_room_align_vision.py`, `test_demo_assets.py`, `RealRoomFurniture`, `observe_vision.py`, `test_room_align.py`, `calculate_free_floor_ratio`, `test_delivery.py`, `test_agent.py`, `FurnitureAsset`, `test_objective.py`, `layout_tools.py`, `test_room_parse.py`, `objective.py`, `detect_blocked_doors`, `parse.py`, `calculate_brightness_approximation`, `spatial_engine/main.py`, `routes.py`, `test_room_correct.py`, `demo_assets.py`, `detect_front_clearance`, `detect_out_of_bounds`, `generate_mock_glbs.py`, `SpatialInputError`, `test_api.py`, `test_real_room.py`, `audit_scene`, `single_room`, `CollisionPart`, `test_shared_handoff_case`, `divided_access_room`?**
+  _High betweenness centrality (0.142) - this node is a cross-community bridge._
+- **Why does `BBoxM` connect `BBoxM` to `test_catalog.py`, `ContractModel`, `catalog.py`, `footprint.py`, `calculate_free_floor_ratio`, `test_delivery.py`, `test_agent.py`, `FurnitureAsset`, `test_objective.py`, `layout_tools.py`, `detect_collisions`, `test_reconstruction.py`, `detect_blocked_doors`, `calculate_brightness_approximation`, `detect_front_clearance`, `detect_out_of_bounds`, `SpatialInputError`, `retailer.py`, `CollisionPart`, `divided_access_room`?**
+  _High betweenness centrality (0.038) - this node is a cross-community bridge._
+- **Why does `FurnitureAsset` connect `FurnitureAsset` to `test_catalog.py`, `.to_item`, `ContractModel`, `test_room_align_vision.py`, `RoomScene`, `catalog.py`, `test_fixture_scene.py`, `CollisionPart`, `test_room_align.py`, `observe_vision.py`, `test_delivery.py`, `demo_assets.py`, `BBoxM`, `test_contract_occupancy.py`, `test_reconstruction.py`, `reconstruct_items.py`?**
+  _High betweenness centrality (0.037) - this node is a cross-community bridge._
+- **Are the 175 inferred relationships involving `RoomScene` (e.g. with `demo_room_scenes()` and `profile()`) actually correct?**
+  _`RoomScene` has 175 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 44 inferred relationships involving `FurnitureAsset` (e.g. with `CatalogImport` and `_relabel()`) actually correct?**
+  _`FurnitureAsset` has 44 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 70 inferred relationships involving `BBoxM` (e.g. with `_along_mesh()` and `template_parts()`) actually correct?**
+  _`BBoxM` has 70 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 13 inferred relationships involving `Registry` (e.g. with `RetailerModelProvider` and `FalSamProvider`) actually correct?**
   _`Registry` has 13 INFERRED edges - model-reasoned connections that need verification._
