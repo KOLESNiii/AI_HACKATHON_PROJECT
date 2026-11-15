@@ -31,14 +31,21 @@ MAX_TRIANGLES = 30_000
 MAX_BYTES = 3_000_000
 MAX_PRIMITIVES = 4
 MAX_TEXTURE_PX = 1024
+TEXTURE_STEPS_PX = (MAX_TEXTURE_PX, 768, 512)
+"""A file over `MAX_BYTES` is written again with smaller textures before it is refused: a
+retailer model with four full-size texture maps is otherwise lost for a few hundred kilobytes
+(IKEA's SKOGSTA table, 2026-11-15)."""
 MAX_DISTORTION = 0.15
 """Fitting stated dimensions may stretch one axis this much more than another before the
 mesh's shape is taken to disagree with them."""
 MAX_ESTIMATED_SIZE_RATIO = 3.0
 """Refuse height-based estimates with any side over this multiple of its category size."""
-PROVIDER_FRONT: dict[str, Front] = {"sam3d": "+z"}
+PROVIDER_FRONT: dict[str, Front] = {"sam3d": "+z", "retailer": "+z"}
 """Where each mesh provider puts the front. SAM 3D Objects: observed 2026-11-15 on the four
-reviewed opening-room meshes (+Y up, axis-aligned, both sofas and the armchair facing +Z)."""
+reviewed opening-room meshes (+Y up, axis-aligned, both sofas and the armchair facing +Z).
+Retailer models: +Z is glTF's own front, and what IKEA's models showed on 2026-11-15 (MICKE
+desk drawers, BILLY bookcase opening and the foot of the MALM bed at +Z). Another retailer's
+model may differ and is not checked."""
 
 _YAW_TO_PLUS_Z: dict[Front, float] = {"+z": 0.0, "+x": -90.0, "-z": 180.0, "-x": 90.0}
 _TEXTURES = ("baseColorTexture", "metallicRoughnessTexture", "normalTexture",
@@ -74,12 +81,12 @@ def _load(raw_glb: Path) -> list[trimesh.Trimesh]:
     return meshes
 
 
-def _cap_textures(mesh: trimesh.Trimesh) -> None:
+def _cap_textures(mesh: trimesh.Trimesh, limit: int = MAX_TEXTURE_PX) -> None:
     material = getattr(mesh.visual, "material", None)
     for name in _TEXTURES:
         image = getattr(material, name, None)
-        if isinstance(image, Image.Image) and max(image.size) > MAX_TEXTURE_PX:
-            share = MAX_TEXTURE_PX / max(image.size)
+        if isinstance(image, Image.Image) and max(image.size) > limit:
+            share = limit / max(image.size)
             size = (max(1, round(image.width * share)), max(1, round(image.height * share)))
             setattr(material, name, image.resize(size, Image.Resampling.LANCZOS))
 
@@ -97,6 +104,7 @@ def normalise_mesh(
     target_bbox: BBoxM | None,
     data_dir: Path,
     front: Front | None = None,
+    preserve_scale: bool = False,
     url_base: str = ASSET_URL_BASE,
 ) -> NormalisedMesh:
     """Fit a raw glTF 2.0 binary to the furniture profile, store it and return its `glb_url`.
@@ -110,6 +118,9 @@ def normalise_mesh(
     height and the returned `bbox_m` is an estimate that always requests `"dimensions"`: the
     caller records it as `dimension_source: "estimated"`. An estimated side exceeding
     `MAX_ESTIMATED_SIZE_RATIO` times its category size is refused; supply dimensions instead.
+
+    `preserve_scale=True` keeps metre-scale retailer extents when no target is supplied,
+    with the same estimated provenance, dimension correction and size limits.
 
     Raises NormalisationError when the file is unusable or over the profile's budgets, and
     ValueError for an unknown category. Nothing is stored in either case.
@@ -136,7 +147,7 @@ def normalise_mesh(
     if target_bbox is None:
         # Millimetre-rounded so the recorded size is a clean number the mesh then matches.
         typical_size = np.array(CATEGORY_SIZE_M[cast(Category, category)])
-        size = np.round(extents * (typical_size[1] / extents[1]), 3)
+        size = np.round(extents if preserve_scale else extents * (typical_size[1] / extents[1]), 3)
         if np.any(size / typical_size > MAX_ESTIMATED_SIZE_RATIO):
             raise NormalisationError(
                 f"estimated side exceeds {MAX_ESTIMATED_SIZE_RATIO:g} times the category size; "
@@ -158,12 +169,16 @@ def normalise_mesh(
     fit[:3, 3] = -scale * [(low[0] + high[0]) / 2, low[1], (low[2] + high[2]) / 2]
     for mesh in meshes:
         mesh.apply_transform(fit)
-        _cap_textures(mesh)
     bbox = BBoxM(width=float(size[0]), height=float(size[1]), depth=float(size[2]))
 
     try:
-        glb = trimesh.Scene(meshes).export(file_type="glb")  # type: ignore[no-untyped-call]
-        assert isinstance(glb, bytes)
+        for limit in TEXTURE_STEPS_PX:
+            for mesh in meshes:
+                _cap_textures(mesh, limit)
+            glb = trimesh.Scene(meshes).export(file_type="glb")  # type: ignore[no-untyped-call]
+            assert isinstance(glb, bytes)
+            if len(glb) <= MAX_BYTES:
+                break
         written = np.asarray(trimesh.load_scene(io.BytesIO(glb), file_type="glb").bounds)
     except Exception as exc:
         raise NormalisationError("normalised mesh could not be written") from exc

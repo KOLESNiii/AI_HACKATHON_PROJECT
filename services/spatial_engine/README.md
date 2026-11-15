@@ -435,6 +435,30 @@ The additive Python/TypeScript contract changes in PR #49 still require explicit
 team sign-off, particularly from frontend, before merge (the review by bananadado on 14 November 2026).
 This implementation follow-up does not constitute that sign-off.
 
+## Demo home checks (issue #36)
+
+`scripts/check_layout_demo.py` builds each room of the shared three-floor demo
+home the way the editor does and audits it. Without arguments it is free and
+offline; `--solve ROOM_ID "request"` makes one paid live request.
+
+```bash
+uv run --extra spatial --extra reconstruction python scripts/check_layout_demo.py
+```
+
+Measured on 2026-11-14 on a developer laptop: all 25 demo rooms audit, median
+1.5 ms and at most 3.0 ms per audit. Live requests with the default models:
+
+| Room | Request | Time | Result |
+| --- | --- | --- | --- |
+| `g-bed2` | Give me more usable walking space. | 10.5 s | 3 items moved; door cleared; reachable floor 0% to 42% |
+| `f-bed4` | Make the room feel brighter. | 5.8 s | 1 item moved; door cleared; windows were already unobstructed |
+| `g-kitchen` | Improve access without moving much furniture. | 4.9 s | No change proposed; the only problem is a fixed item in a door swing |
+| `s-bed8` | Add more storage and keep the bed where it is, but make it roomier. | 15.3 s | 2 items moved; bed kept; "more storage" reported as not handled |
+
+Each row is a single run of 2 model calls and 4,000 to 5,500 tokens. Results
+vary between runs. There is no cached or fallback answer: if the assistant is
+unavailable the response says so.
+
 ## Feng shui assessment
 
 `POST /feng-shui` accepts `{ "scene": <RoomScene> }` and optional fields:
@@ -469,30 +493,6 @@ evidence, confidence, recommendation), and missing information. Advice is model
 reasoning, not a deterministic visibility/reflection calculation. Proposed moves
 need a separate geometry audit. No persistence, editor wiring, scoring or changes
 to `AuditReport.feng_shui` or the layout solver are introduced.
-
-## Demo home checks (issue #36)
-
-`scripts/check_layout_demo.py` builds each room of the shared three-floor demo
-home the way the editor does and audits it. Without arguments it is free and
-offline; `--solve ROOM_ID "request"` makes one paid live request.
-
-```bash
-uv run --extra spatial --extra reconstruction python scripts/check_layout_demo.py
-```
-
-Measured on 2026-11-14 on a developer laptop: all 25 demo rooms audit, median
-1.5 ms and at most 3.0 ms per audit. Live requests with the default models:
-
-| Room | Request | Time | Result |
-| --- | --- | --- | --- |
-| `g-bed2` | Give me more usable walking space. | 10.5 s | 3 items moved; door cleared; reachable floor 0% to 42% |
-| `f-bed4` | Make the room feel brighter. | 5.8 s | 1 item moved; door cleared; windows were already unobstructed |
-| `g-kitchen` | Improve access without moving much furniture. | 4.9 s | No change proposed; the only problem is a fixed item in a door swing |
-| `s-bed8` | Add more storage and keep the bed where it is, but make it roomier. | 15.3 s | 2 items moved; bed kept; "more storage" reported as not handled |
-
-Each row is a single run of 2 model calls and 4,000 to 5,500 tokens. Results
-vary between runs. There is no cached or fallback answer: if the assistant is
-unavailable the response says so.
 
 ## Room chat: `POST /chat`
 
