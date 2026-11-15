@@ -12,7 +12,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
-from contracts.schema import RoomScene
+from contracts.schema import LayoutGoal, RoomScene
 from services.spatial_engine.drafts import DraftSession, LayoutDraft, LayoutMoveError, PoseChange
 from services.spatial_engine.geometry import (
     SpatialInputError,
@@ -24,7 +24,6 @@ from services.spatial_engine.objective import (
     NEAR_WINDOW_M,
     LayoutComparison,
     LayoutEvaluation,
-    LayoutGoal,
     compare_evaluations,
 )
 
@@ -229,6 +228,7 @@ class LayoutToolbox:
             scene,
             locked_item_ids,
             near_window_item_ids=self.preferences.near_window_item_ids,
+            measure_brightness=(self.preferences.goal == "brighter"),
             max_evaluations=max_evaluations,
             session_token=session_token,
         )

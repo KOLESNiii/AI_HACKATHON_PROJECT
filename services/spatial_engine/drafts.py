@@ -70,11 +70,13 @@ class DraftSession:
         locked_item_ids: Iterable[str] = (),
         *,
         near_window_item_ids: Iterable[str] = (),
+        measure_brightness: bool = True,
         max_evaluations: int | None = None,
         session_token: str | None = None,
     ) -> None:
         if max_evaluations is not None and max_evaluations < 0:
             raise SpatialInputError("Evaluation budget must not be negative")
+        self._measure_brightness = measure_brightness
         self._original = scene.model_copy(deep=True)
         self._near_window_item_ids = tuple(near_window_item_ids)
         self._max_evaluations = max_evaluations
@@ -111,7 +113,7 @@ class DraftSession:
         return evaluate_layout(
             self._original,
             scene,
-            measure_brightness=True,
+            measure_brightness=self._measure_brightness,
             near_window_item_ids=self._near_window_item_ids,
         )
 

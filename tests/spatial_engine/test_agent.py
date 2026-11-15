@@ -362,3 +362,54 @@ def test_accepting_a_proposal_then_reauditing_reproduces_its_report() -> None:
     assert response.status_code == 200 and reaudit["scene_revision"] == room.revision + 1
     expected = proposal.report.model_dump(mode="json")
     assert {**reaudit, "scene_revision": room.revision} == expected
+
+
+@pytest.mark.parametrize("retryable", [True, False])
+def test_interpreter_failure_keeps_explorer_available(retryable: bool) -> None:
+    error = ProviderError("request_rejected", retryable=retryable)
+    reader = Scripted(error, error)
+    explorer = Scripted(GOOD)
+    result = propose_layout(
+        OptimiseRequest(scene=scene(), instruction="Keep the box still"),
+        explorer,
+        interpreter=reader,
+    )
+    assert result.improved
+    assert "not applied" in result.explanation
+    assert len(reader.requests) == (2 if retryable else 1)
+
+
+def test_interpreter_retry_preserves_locks_and_tolerates_extra_output() -> None:
+    reading = interpret("balanced", ["box"], [], ["extra"] * 9)
+    reading.tool_calls[0].arguments["extra_key"] = True
+    reader = Scripted(ProviderError("timeout", retryable=True), reading)
+    explorer = Scripted(GOOD)
+    result = propose_layout(
+        OptimiseRequest(scene=scene(), instruction="Keep the box still"),
+        explorer,
+        interpreter=reader,
+    )
+    assert not result.improved
+    assert len(reader.requests) == 2
+    assert "not applied" not in result.explanation
+
+
+@pytest.mark.parametrize("goal", ["balanced", "roomier", "minimal_changes"])
+def test_non_brightness_goals_accept_audit_valid_windows(goal: str) -> None:
+    from contracts.schema import WindowOpening
+
+    original = scene()
+    original.windows = [
+        WindowOpening(
+            id="w",
+            wall_id="north",
+            offset_along_wall_m=7,
+            width_m=2,
+            sill_height_m=1,
+            head_height_m=2,
+            plan_normal_deg=0,
+        )
+    ]
+    audit_scene(original)
+    result = propose_layout(OptimiseRequest(scene=original, goal=goal), Scripted(GOOD))
+    assert result.improved

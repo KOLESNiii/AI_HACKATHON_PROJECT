@@ -1,6 +1,7 @@
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
+from functools import lru_cache
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -86,22 +87,29 @@ def audit(scene: RoomScene) -> AuditReport:
         return audit_scene(scene)
 
 
+@lru_cache(maxsize=8)
+def _cached_model(api_key: str, model: str, effort: str = "medium") -> AnthropicLayoutModel:
+    return AnthropicLayoutModel(api_key, model, effort=effort)
+
+
 def get_layout_model() -> LayoutModel | None:
     """The configured assistant, or None when no API key is set. The key is never logged."""
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         return None
     model = os.environ.get("SPACESHIFT_LAYOUT_MODEL", "").strip() or DEFAULT_MODEL
-    return AnthropicLayoutModel(api_key, model)
+    return _cached_model(api_key, model)
 
 
-def get_interpreter_model() -> LayoutModel | None:
+def get_interpreter_model(request: OptimiseRequest) -> LayoutModel | None:
     """The faster model that reads the typed request; None falls back to the main model."""
+    if not (request.instruction or "").strip():
+        return None
     api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         return None
     model = os.environ.get("SPACESHIFT_INTERPRET_MODEL", "").strip() or DEFAULT_INTERPRET_MODEL
-    return AnthropicLayoutModel(api_key, model, effort="low")
+    return _cached_model(api_key, model, effort="low")
 
 
 @app.post("/solve", response_model=LayoutProposal)

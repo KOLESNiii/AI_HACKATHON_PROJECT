@@ -229,3 +229,12 @@ def test_duplicate_window_ids_and_unknown_wall_rejected() -> None:
     scene.windows[0].wall_id = "missing"
     with pytest.raises(ValueError, match="unknown wall"):
         calculate_brightness_approximation(scene)
+
+
+def test_reconstruction_rounding_is_tolerated() -> None:
+    scene = room()
+    scene.walls[0].start.z = -0.001
+    scene.walls[0].end.z = -0.001
+    scene.windows[0].offset_along_wall_m = 2.001
+    scene.windows[0].head_height_m = scene.walls[0].height_m + 0.001
+    assert calculate_brightness_approximation(scene).openness_ratio == 1

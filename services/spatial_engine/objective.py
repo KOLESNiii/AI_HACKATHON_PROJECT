@@ -7,7 +7,13 @@ from typing import Literal, get_args
 
 from shapely.ops import unary_union  # type: ignore[import-untyped]
 
-from contracts.schema import MIN_HEIGHT_OVERLAP_M, MIN_PLAN_OVERLAP_M2, AuditReport, RoomScene
+from contracts.schema import (
+    MIN_HEIGHT_OVERLAP_M,
+    MIN_PLAN_OVERLAP_M2,
+    AuditReport,
+    LayoutGoal,
+    RoomScene,
+)
 from services.spatial_engine.brightness import calculate_brightness_approximation
 from services.spatial_engine.geometry import (
     SceneGeometry,
@@ -18,7 +24,6 @@ from services.spatial_engine.geometry import (
 )
 from services.spatial_engine.report import audit_scene
 
-LayoutGoal = Literal["balanced", "brighter", "roomier", "minimal_changes"]
 """What the user asked for. It reorders soft priorities only; see `compare_evaluations`."""
 LAYOUT_GOALS: tuple[LayoutGoal, ...] = get_args(LayoutGoal)
 

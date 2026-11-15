@@ -11,7 +11,7 @@ import time
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, get_args
 
 import anthropic
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -177,7 +177,7 @@ _INTERPRET_TOOL: dict[str, Any] = {
         "properties": {
             "goal": {
                 "type": "string",
-                "enum": ["balanced", "brighter", "roomier", "minimal_changes"],
+                "enum": list(get_args(LayoutGoal)),
             },
             "locked_item_ids": {"type": "array", "items": {"type": "string"}},
             "near_window_item_ids": {"type": "array", "items": {"type": "string"}},
@@ -209,7 +209,7 @@ _EXPLORE_SYSTEM = (
 
 
 class _Interpretation(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+    model_config = ConfigDict(extra="ignore", strict=True)
 
     goal: LayoutGoal
     locked_item_ids: list[str] = Field(max_length=MAX_FURNITURE)
@@ -252,22 +252,31 @@ def _interpret(
             for i in request.scene.furniture
         ],
     }
-    try:
-        reply = budget.call(
-            model,
-            system=_INTERPRET_SYSTEM,
-            messages=[{"role": "user", "content": json.dumps(payload)}],
-            tools=[_INTERPRET_TOOL],
-        )
-    except ProviderError as exc:
-        logger.warning("layout interpretation failed: %s", exc.kind)
-        return None, exc.retryable
-    for call in reply.tool_calls:
-        if call.name == "record_request":
-            try:
-                return _Interpretation.model_validate(call.arguments), True
-            except ValidationError:
-                break
+    for attempt in range(2):
+        if not budget.can_call():
+            break
+        try:
+            reply = budget.call(
+                model,
+                system=_INTERPRET_SYSTEM,
+                messages=[{"role": "user", "content": json.dumps(payload)}],
+                tools=[_INTERPRET_TOOL],
+            )
+        except ProviderError as exc:
+            logger.warning("layout interpretation failed: %s", exc.kind)
+            if exc.retryable and attempt == 0:
+                continue
+            break
+        for call in reply.tool_calls:
+            if call.name == "record_request":
+                arguments = call.arguments
+                if isinstance(arguments, dict) and isinstance(arguments.get("unsupported"), list):
+                    arguments = {**arguments, "unsupported": arguments["unsupported"][:8]}
+                try:
+                    return _Interpretation.model_validate(arguments), True
+                except ValidationError:
+                    break
+        break
     return None, True
 
 
@@ -401,7 +410,8 @@ def propose_layout(
 
     if model is not None and instruction:
         # Validate the caller's own input before spending a model call on it.
-        LayoutToolbox(scene, locked_item_ids=request.locked_item_ids, max_evaluations=0)
+        if locked - known:
+            raise SpatialInputError("Locked item is not known")
         reading, usable = _interpret(request, interpreter or model, budget)
         if reading is None:
             notes.append("Your written request could not be interpreted, so it was not applied.")
@@ -432,13 +442,16 @@ def propose_layout(
     # Independent final check: rebuild the best draft's scene and audit it from scratch.
     session = toolbox.session
     base = session.scene(session.original_draft_id)
-    before = evaluate_layout(base, base, measure_brightness=True, near_window_item_ids=near_window)
+    before = session.draft(session.original_draft_id).evaluation
     after: LayoutEvaluation | None = None
     poses: dict[str, Pose2D] = {}
     if toolbox.improved:
         candidate = session.scene(toolbox.best_draft_id)
         checked = evaluate_layout(
-            base, candidate, measure_brightness=True, near_window_item_ids=near_window
+            base,
+            candidate,
+            measure_brightness=(goal == "brighter"),
+            near_window_item_ids=near_window,
         )
         if (
             checked.metrics.passes_critical_checks

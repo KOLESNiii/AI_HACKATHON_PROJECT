@@ -408,3 +408,14 @@ the revision (covered by a test).
 ```bash
 uv run --extra spatial pytest tests/spatial_engine/test_agent.py
 ```
+
+PR #49 review follow-up: instruction interpretation retries a transient provider error
+once within the shared request budget. If interpretation still fails, exploration
+continues with explicit caller settings and the explanation says the written request
+was not applied. Extra interpreter keys and excess unsupported phrases do not discard
+valid locks. Brightness runs only for the brighter goal; its geometry checks allow
+5 mm of reconstruction rounding. Provider clients are reused by configuration.
+
+The additive Python/TypeScript contract changes in PR #49 still require explicit
+team sign-off, particularly from frontend, before merge (review 5907503436).
+This implementation follow-up does not constitute that sign-off.

@@ -7,7 +7,12 @@ from shapely.geometry import LineString, Point, Polygon, box  # type: ignore[imp
 from shapely.ops import unary_union  # type: ignore[import-untyped]
 
 from contracts.schema import RoomScene
-from services.spatial_engine.geometry import SceneGeometry, SpatialInputError, scene_geometry
+from services.spatial_engine.geometry import (
+    SceneGeometry,
+    SpatialInputError,
+    scene_geometry,
+    window_plan_segment,
+)
 
 
 @dataclass(frozen=True)
@@ -78,25 +83,24 @@ def calculate_brightness_approximation(
             raise SpatialInputError("Window wall must have nonzero finite length")
         if (
             window.width_m <= 0
-            or window.offset_along_wall_m < 0
-            or window.offset_along_wall_m + window.width_m > length + 1e-8
+            or window.offset_along_wall_m < -0.005
+            or window.offset_along_wall_m + window.width_m > length + 0.005
         ):
             raise SpatialInputError(
                 "Window opening must have positive width and fit within its wall"
             )
-        if not 0 <= window.sill_height_m < window.head_height_m <= wall.height_m:
+        if not 0 <= window.sill_height_m < window.head_height_m <= wall.height_m + 0.005:
             raise SpatialInputError("Window sill/head heights must fit within its wall")
         wall_line = LineString([(wall.start.x, wall.start.z), (wall.end.x, wall.end.z)])
-        if not prepared.floor.boundary.buffer(1e-8).covers(wall_line):
+        if not prepared.floor.boundary.buffer(0.005).covers(wall_line):
             raise SpatialInputError("Window wall must lie on the room floor boundary")
         tx, tz = dx / length, dz / length
         nx, nz = -tz, tx  # Canonical wall winding: interior is on its left in X/Z.
-        start = (
-            wall.start.x + tx * window.offset_along_wall_m,
-            wall.start.z + tz * window.offset_along_wall_m,
+        start, end = window_plan_segment(window, wall).coords
+        midpoint = Point(
+            (start[0] + end[0]) / 2 + nx * 0.006,
+            (start[1] + end[1]) / 2 + nz * 0.006,
         )
-        end = (start[0] + tx * window.width_m, start[1] + tz * window.width_m)
-        midpoint = Point((start[0] + end[0]) / 2 + nx * 1e-8, (start[1] + end[1]) / 2 + nz * 1e-8)
         if not prepared.floor.contains(midpoint):
             raise SpatialInputError(
                 "Window wall must follow the canonical interior-side convention"
