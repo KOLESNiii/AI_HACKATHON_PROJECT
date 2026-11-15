@@ -260,13 +260,24 @@ shadow-only door infills prevent sunlight from entering through missing adjacent
 rooms. Window apertures are treated as exposed to the exterior. No surrounding
 buildings, glazing transmission or astronomical location/date are modelled.
 
-Inputs are local `PlayLightingSettings` (artificial percentage and time in hours)
+Inputs are local `PlayLightingSettings` (artificial percentage, time in hours,
+2200–6500 K colour temperature and an optional artificial-source list)
 plus `RoomScene`; outputs are renderer lights, a procedural reflection environment
 and play-only material clones. GLTF geometry, textures and cached source materials
 are left untouched. The shell receives neutral PBR materials; furniture keeps
 its source PBR textures when available. Lighting and the walking/lighting-panel
 substate remain outside `RoomScene`, revisions and audit requests. Opening another
-room resets lighting to 50% and 14:00; exiting play retains it for that room.
+room resets lighting to 50%, 3000 K and 14:00; exiting play retains it for that room.
+A null source list derives the original ceiling lights; the first addition or
+removal materialises the list, and an empty list keeps all artificial lights off.
+The paused lighting panel offers add/remove tools. Canvas raycasts place points
+18 cm toward the viewer from the nearest surface, clamped within room height;
+finite coordinates and the actual floor polygon are validated by the store.
+Removal hits only visible source markers, respecting intervening geometry. Sources
+are capped at 12; custom point lights are unshadowed to bound GPU cost. Both direct
+and procedural reflection lighting use the temperature and edited sources. Invalid
+placements leave state unchanged and show a toast; no persistence or backend
+contract changes are involved.
 
 L opens the lighting panel in place, clears movement and deliberately releases
 pointer lock. `PlaySession` distinguishes this release from an unexpected loss.

@@ -6,11 +6,15 @@ import { canStand } from './walk'
 export interface PlayLightingSettings {
   artificialPercent: number
   timeOfDay: number
+  warmthKelvin: number
+  sources: ArtificialSource[] | null
 }
 
 export const DEFAULT_PLAY_LIGHTING: Readonly<PlayLightingSettings> = {
   artificialPercent: 50,
   timeOfDay: 14,
+  warmthKelvin: 3000,
+  sources: null,
 }
 
 export type LightPosition = [number, number, number]
@@ -147,4 +151,66 @@ export function formatTimeOfDay(hour: number): string {
   return `${Math.floor(minutes / 60)
     .toString()
     .padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}`
+}
+
+export interface ArtificialSource {
+  id: string
+  position: LightPosition
+  kind: 'ceiling' | 'point'
+}
+
+export const MAX_LIGHT_SOURCES = 12
+
+export function artificialSources(
+  scene: RoomScene,
+  settings: PlayLightingSettings,
+): ArtificialSource[] {
+  return (
+    settings.sources ??
+    ceilingLights(scene).map((position, i) => ({
+      id: `ceiling-${i}`,
+      position,
+      kind: 'ceiling',
+    }))
+  )
+}
+
+/** Approximate black-body colour for the supported indoor lighting range. */
+export function lightColor(kelvin: number): Color {
+  const t =
+    Math.max(2200, Math.min(6500, Number.isFinite(kelvin) ? kelvin : 3000)) /
+    100
+  const clamp = (v: number) => Math.max(0, Math.min(255, v))
+  return new Color().setRGB(
+    1,
+    clamp(99.4708 * Math.log(t) - 161.1196) / 255,
+    clamp(138.5177 * Math.log(t - 10) - 305.0448) / 255,
+    'srgb',
+  )
+}
+
+export function validLightPosition(
+  scene: RoomScene,
+  position: LightPosition,
+): boolean {
+  const [x, y, z] = position
+  if (
+    !position.every(Number.isFinite) ||
+    y < 0.1 ||
+    y > roomHeight(scene) - 0.02
+  )
+    return false
+  // Ray crossing supports concave floor plans, without a walking-body clearance margin.
+  const polygon = scene.floor_polygon
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const a = polygon[i],
+      b = polygon[j]
+    if (
+      a.z > z !== b.z > z &&
+      x < ((b.x - a.x) * (z - a.z)) / (b.z - a.z) + a.x
+    )
+      inside = !inside
+  }
+  return inside
 }

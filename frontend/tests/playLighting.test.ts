@@ -10,6 +10,9 @@ import {
 import { preparePlayMaterials } from '../src/components/play/materials'
 import { freshMockScene } from '../src/data/mockScene'
 import {
+  artificialSources,
+  lightColor,
+  MAX_LIGHT_SOURCES,
   ceilingLights,
   DEFAULT_PLAY_LIGHTING,
   formatTimeOfDay,
@@ -153,6 +156,7 @@ describe('local lighting state', () => {
     before.setTimeOfDay(21.25)
     const after = useStore.getState()
     expect(after.playLighting).toEqual({
+      ...DEFAULT_PLAY_LIGHTING,
       artificialPercent: 0,
       timeOfDay: 21.25,
     })
@@ -164,6 +168,7 @@ describe('local lighting state', () => {
     after.setArtificialLight(120)
     after.setTimeOfDay(27)
     expect(useStore.getState().playLighting).toEqual({
+      ...DEFAULT_PLAY_LIGHTING,
       artificialPercent: 100,
       timeOfDay: 24,
     })
@@ -177,6 +182,7 @@ describe('local lighting state', () => {
     useStore.setState({ mode: 'play' })
     s.finishPlay()
     expect(useStore.getState().playLighting).toEqual({
+      ...DEFAULT_PLAY_LIGHTING,
       artificialPercent: 20,
       timeOfDay: 8,
     })
@@ -238,4 +244,85 @@ test('unlit GLTF textures are retained when converted to lit play materials', ()
   source.map!.dispose()
   source.dispose()
   mesh.geometry.dispose()
+})
+
+describe('editable artificial lights', () => {
+  test('warmth is bounded, ignores invalid input, and changes the emitted colour', () => {
+    const s = useStore.getState()
+    s.setLightWarmth(2200)
+    expect(lightColor(2200).b).toBeLessThan(lightColor(6500).b)
+    expect(lightColor(2200).g).toBeLessThan(lightColor(6500).g)
+    s.setLightWarmth(9000)
+    expect(useStore.getState().playLighting.warmthKelvin).toBe(6500)
+    s.setLightWarmth(-10)
+    expect(useStore.getState().playLighting.warmthKelvin).toBe(2200)
+    s.setLightWarmth(NaN)
+    expect(useStore.getState().playLighting.warmthKelvin).toBe(2200)
+  })
+
+  test('add and remove default and custom lights without changing scene or audit', () => {
+    const before = useStore.getState()
+    useStore.setState({ mode: 'play', playPhase: 'lighting' })
+    const defaults = artificialSources(before.scene, before.playLighting)
+    const position = defaults[0].position
+    expect(before.addLightSource(position)).toBe(true)
+    let sources = artificialSources(
+      before.scene,
+      useStore.getState().playLighting,
+    )
+    expect(sources).toHaveLength(defaults.length + 1)
+    const custom = sources.at(-1)!
+    expect(custom.kind).toBe('point')
+    expect(before.removeLightSource(defaults[0].id)).toBe(true)
+    expect(before.removeLightSource(custom.id)).toBe(true)
+    expect(before.removeLightSource(custom.id)).toBe(false)
+    sources = artificialSources(before.scene, useStore.getState().playLighting)
+    for (const source of sources) before.removeLightSource(source.id)
+    expect(
+      artificialSources(before.scene, useStore.getState().playLighting),
+    ).toEqual([])
+    expect(useStore.getState().scene).toBe(before.scene)
+    expect(useStore.getState().audit).toBe(before.audit)
+  })
+
+  test('reject invalid positions, wrong modes and excess sources', () => {
+    const s = useStore.getState()
+    const position = ceilingLights(s.scene)[0]
+    expect(s.addLightSource(position)).toBe(false)
+    useStore.setState({ mode: 'play', playPhase: 'walking' })
+    expect(s.addLightSource(position)).toBe(false)
+    useStore.setState({ playPhase: 'lighting' })
+    for (const invalid of [
+      [NaN, 1, 1],
+      [1, -1, 1],
+      [1, 999, 1],
+      [-999, 1, -999],
+    ]) {
+      expect(s.addLightSource(invalid as [number, number, number])).toBe(false)
+    }
+    for (
+      let i = artificialSources(s.scene, s.playLighting).length;
+      i < MAX_LIGHT_SOURCES;
+      i++
+    ) {
+      expect(s.addLightSource(position)).toBe(true)
+    }
+    expect(s.addLightSource(position)).toBe(false)
+  })
+
+  test('custom lights survive play exit, tools clear, and a new room resets lighting', () => {
+    const s = useStore.getState()
+    useStore.setState({ mode: 'play', playPhase: 'lighting' })
+    s.setLightTool('add')
+    s.setLightWarmth(4500)
+    s.addLightSource(ceilingLights(s.scene)[0])
+    const settings = useStore.getState().playLighting
+    s.resumeWalking()
+    expect(useStore.getState().playLightTool).toBe('none')
+    s.finishPlay()
+    expect(useStore.getState().playLighting).toBe(settings)
+    s.openRoom()
+    expect(useStore.getState().playLighting).toEqual(DEFAULT_PLAY_LIGHTING)
+    expect(useStore.getState().playLightTool).toBe('none')
+  })
 })

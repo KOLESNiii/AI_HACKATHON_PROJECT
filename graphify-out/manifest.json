@@ -1,1411 +1,1411 @@
 {
   "contracts/schema.py": {
-    "mtime": 1794731554.870529,
-    "seen": 1794731748.392526,
-    "ast_hash": "5851625b5b42fbabeee566cc898b7972",
+    "mtime": 1794732424.279397,
+    "seen": 1794733837.6497698,
+    "ast_hash": "0df7807793b49774a431624fdd1a3568",
     "semantic_hash": ""
   },
   "contracts/schema.ts": {
-    "mtime": 1794731554.8711987,
-    "seen": 1794731748.3925354,
-    "ast_hash": "a94ddcb5c65aab7af097d693a0fae2a0",
+    "mtime": 1794732404.3066247,
+    "seen": 1794733837.6497824,
+    "ast_hash": "0b615d0e6e37d2ad766248aefe3c1cd4",
     "semantic_hash": ""
   },
   "frontend/.oxlintrc.json": {
-    "mtime": 1794666576.5316646,
-    "seen": 1794729940.886897,
+    "mtime": 1794682118.103767,
+    "seen": 1794733837.649788,
     "ast_hash": "029f4905006c1fffd96bc863e2d98d3e",
     "semantic_hash": ""
   },
   "frontend/.prettierrc.json": {
-    "mtime": 1794666677.7663224,
-    "seen": 1794729940.8869007,
+    "mtime": 1794682118.103767,
+    "seen": 1794733837.649792,
     "ast_hash": "cc24ea51edff69d96b6cdc39b55cc647",
     "semantic_hash": ""
   },
   "frontend/package.json": {
-    "mtime": 1794666672.3276942,
-    "seen": 1794729940.886903,
+    "mtime": 1794682118.103767,
+    "seen": 1794733837.6497948,
     "ast_hash": "aaea4496dc9b9182a36ebccee5d46260",
     "semantic_hash": ""
   },
   "frontend/scripts/generate-landscapes.ts": {
-    "mtime": 1794702601.165229,
-    "seen": 1794729940.8869054,
+    "mtime": 1794706786.8227217,
+    "seen": 1794733837.6497982,
     "ast_hash": "b407a5da11510bc3b58830748d98c9d9",
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1794728115.5100183,
-    "seen": 1794729940.8869076,
+    "mtime": 1794706786.8227217,
+    "seen": 1794733837.6498008,
     "ast_hash": "dbc35f4494724d8ccb61e4ede971599e",
     "semantic_hash": ""
   },
   "frontend/src/audio/cues.ts": {
-    "mtime": 1794728115.5100183,
-    "seen": 1794729940.8869097,
+    "mtime": 1794706786.8227217,
+    "seen": 1794733837.649803,
     "ast_hash": "8d39179253374a5ae2675957f3f8033b",
     "semantic_hash": ""
   },
   "frontend/src/audio/engine.ts": {
-    "mtime": 1794728115.5101693,
-    "seen": 1794729940.8869114,
+    "mtime": 1794706786.8239033,
+    "seen": 1794733837.6498053,
     "ast_hash": "52b25cf7c3f31d6a68bd07984bbb13d6",
     "semantic_hash": ""
   },
   "frontend/src/audio/preferences.ts": {
-    "mtime": 1794728115.5101693,
-    "seen": 1794729940.8869135,
+    "mtime": 1794706786.8239033,
+    "seen": 1794733837.649808,
     "ast_hash": "2748d3904f5a2b9dc99554d0873edfab",
     "semantic_hash": ""
   },
   "frontend/src/components/SoundControls.tsx": {
-    "mtime": 1794728115.5101693,
-    "seen": 1794729940.8869157,
+    "mtime": 1794706786.8239033,
+    "seen": 1794733837.6498103,
     "ast_hash": "71b29239bb5efb0ce3ca068c6ac3ede1",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/DoorSwings.tsx": {
-    "mtime": 1794687116.682012,
-    "seen": 1794729940.8869174,
+    "mtime": 1794706786.8241587,
+    "seen": 1794733837.6498158,
     "ast_hash": "3252f5cf0454f1941a9f695aad9418e3",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/EditorScreen.tsx": {
-    "mtime": 1794731554.8733408,
-    "seen": 1794731748.3930376,
+    "mtime": 1794731911.608889,
+    "seen": 1794733837.6498184,
     "ast_hash": "3d4042ab30aeb8169f8d9ba9939fdd70",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Furniture.tsx": {
-    "mtime": 1794731554.8733408,
-    "seen": 1794731748.3930428,
+    "mtime": 1794731911.6091251,
+    "seen": 1794733837.6498225,
     "ast_hash": "ef5dd285771dafb4dc0d27ac684df5e5",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/KeyboardControls.tsx": {
-    "mtime": 1794731554.8738403,
-    "seen": 1794731748.3930466,
+    "mtime": 1794731911.6091251,
+    "seen": 1794733837.6498268,
     "ast_hash": "65a2585fe0bf55d8e6398dd24b14461e",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/RoomView.tsx": {
-    "mtime": 1794728115.5101693,
-    "seen": 1794729940.8869264,
+    "mtime": 1794706786.8242085,
+    "seen": 1794733837.6498315,
     "ast_hash": "e3a53bd9c7b9a5f1a21c467f41a67491",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/SelectionTools.tsx": {
-    "mtime": 1794728115.5101693,
-    "seen": 1794729940.8869278,
+    "mtime": 1794706786.8242085,
+    "seen": 1794733837.6498332,
     "ast_hash": "3ba360d5257caf829e5acec0f087b98c",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Shell.tsx": {
-    "mtime": 1794728115.5110903,
-    "seen": 1794729940.8869302,
+    "mtime": 1794706786.8242085,
+    "seen": 1794733837.6498353,
     "ast_hash": "65b48b31880fbbae0cac69977e2ce305",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Sidebar.tsx": {
-    "mtime": 1794731608.9210658,
-    "seen": 1794731748.3931766,
-    "ast_hash": "877e35b9f578fc879834d5761bb76160",
+    "mtime": 1794732541.9968917,
+    "seen": 1794733837.6498377,
+    "ast_hash": "23f35884bec4efa6aa4052713f6d4395",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/ink.ts": {
-    "mtime": 1794687116.6824539,
-    "seen": 1794729940.8869338,
+    "mtime": 1794706786.8242085,
+    "seen": 1794733837.6498435,
     "ast_hash": "57f71afe4e7e8b0d0278d441e9b6ea78",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/keyboard.ts": {
-    "mtime": 1794731554.8744614,
-    "seen": 1794731748.393222,
+    "mtime": 1794731911.6098852,
+    "seen": 1794733837.6498454,
     "ast_hash": "1ae7fdcd2f39ff62cce941947521c864",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/useLiveAudit.ts": {
-    "mtime": 1794731554.8748405,
-    "seen": 1794731748.3932242,
+    "mtime": 1794731911.6098852,
+    "seen": 1794733837.6498475,
     "ast_hash": "b26ff3df86475fe2cebd15a4b8eb7c74",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/FloorPlanScreen.tsx": {
-    "mtime": 1794702601.1660862,
-    "seen": 1794729940.886939,
+    "mtime": 1794706786.8242085,
+    "seen": 1794733837.6498497,
     "ast_hash": "b4f9a2965b5b36d45e8056633953b7a6",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/HomeScreen.tsx": {
-    "mtime": 1794702601.1661394,
-    "seen": 1794729940.8869407,
+    "mtime": 1794706786.8249846,
+    "seen": 1794733837.6498513,
     "ast_hash": "03220ec3a3ee4b3567ee7fc5034956d4",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/Landscape.tsx": {
-    "mtime": 1794702601.1661956,
-    "seen": 1794729940.8869421,
+    "mtime": 1794706786.8249846,
+    "seen": 1794733837.6498535,
     "ast_hash": "e44fe906af60283d5f1f035c84d42f14",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/ProgressScreen.tsx": {
-    "mtime": 1794702601.1662292,
-    "seen": 1794729940.8869438,
+    "mtime": 1794706786.8249846,
+    "seen": 1794733837.6498554,
     "ast_hash": "9c175d4fa70dccc5ba976761e2f3ddc0",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/UploadScreen.tsx": {
-    "mtime": 1794728115.5114863,
-    "seen": 1794729940.886945,
+    "mtime": 1794706786.8249846,
+    "seen": 1794733837.6498575,
     "ast_hash": "7b86c7bb11f6bed26658dca721d6c236",
     "semantic_hash": ""
   },
   "frontend/src/components/play/Human.tsx": {
-    "mtime": 1794694681.8481007,
-    "seen": 1794729940.8869462,
+    "mtime": 1794706786.8249846,
+    "seen": 1794733837.6498594,
     "ast_hash": "b20b54de327ee4dfb8b62dd3d8180955",
     "semantic_hash": ""
   },
   "frontend/src/components/play/LightingPanel.tsx": {
-    "mtime": 1794728115.5117161,
-    "seen": 1794729940.8869479,
-    "ast_hash": "766469a20d426e7dc4dba9b615637a3b",
+    "mtime": 1794733841.6930444,
+    "seen": 1794733984.4797297,
+    "ast_hash": "e35c0ac29ade3470419fde6337539346",
     "semantic_hash": ""
   },
   "frontend/src/components/play/PlayController.tsx": {
-    "mtime": 1794728115.51195,
-    "seen": 1794729940.8869493,
+    "mtime": 1794706786.8253775,
+    "seen": 1794733837.6498642,
     "ast_hash": "b8d82ddbcfdc3d50aebaae5df453de94",
     "semantic_hash": ""
   },
   "frontend/src/components/play/PlayLighting.tsx": {
-    "mtime": 1794728115.512386,
-    "seen": 1794729940.886951,
-    "ast_hash": "a7f3db9c46aa7404e300ac79366b136f",
+    "mtime": 1794733981.1400957,
+    "seen": 1794733984.4797957,
+    "ast_hash": "12693b79081ed94b253d36f0911a27c5",
     "semantic_hash": ""
   },
   "frontend/src/components/play/PlayOverlay.tsx": {
-    "mtime": 1794728115.5125217,
-    "seen": 1794729940.8869524,
+    "mtime": 1794706786.8253775,
+    "seen": 1794733837.6498682,
     "ast_hash": "b340a4b70673f80bd97a1b16383cba79",
     "semantic_hash": ""
   },
   "frontend/src/components/play/controls.ts": {
-    "mtime": 1794728115.512785,
-    "seen": 1794729940.886954,
+    "mtime": 1794706786.8253775,
+    "seen": 1794733837.6498702,
     "ast_hash": "e70d4c189cc80eedfcdb59380a8fac63",
     "semantic_hash": ""
   },
   "frontend/src/components/play/materials.ts": {
-    "mtime": 1794728115.5129828,
-    "seen": 1794729940.8869555,
+    "mtime": 1794706786.8253775,
+    "seen": 1794733837.649872,
     "ast_hash": "ba53d394bd3ef9d076baecf978396b63",
     "semantic_hash": ""
   },
   "frontend/src/components/play/session.ts": {
-    "mtime": 1794728115.513209,
-    "seen": 1794729940.8869574,
+    "mtime": 1794706786.8253775,
+    "seen": 1794733837.649874,
     "ast_hash": "962f5c16a26ae37c657887235f6e3791",
     "semantic_hash": ""
   },
   "frontend/src/components/ui.tsx": {
-    "mtime": 1794687116.682731,
-    "seen": 1794729940.8869588,
+    "mtime": 1794706786.8253775,
+    "seen": 1794733837.6498766,
     "ast_hash": "cb8ffee1f823eaeb2bc6ce96e3d686c6",
     "semantic_hash": ""
   },
   "frontend/src/data/catalog.ts": {
-    "mtime": 1794731608.9198337,
-    "seen": 1794731748.3937886,
+    "mtime": 1794732531.1839437,
+    "seen": 1794733837.649878,
     "ast_hash": "615d61a43211b4ca263e852397df98ee",
     "semantic_hash": ""
   },
   "frontend/src/data/demoHome.ts": {
-    "mtime": 1794694681.848426,
-    "seen": 1794729940.8869622,
+    "mtime": 1794706786.8258724,
+    "seen": 1794733837.6498797,
     "ast_hash": "0290ac6b5c104cc7b5246d3687494863",
     "semantic_hash": ""
   },
   "frontend/src/data/mockScene.ts": {
-    "mtime": 1794694681.848426,
-    "seen": 1794729940.886964,
+    "mtime": 1794706786.8258724,
+    "seen": 1794733837.6498816,
     "ast_hash": "7523efdd0ba1264f52f59068081f979f",
     "semantic_hash": ""
   },
   "frontend/src/lib/agent.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.393864,
-    "ast_hash": "d6ae452ef0636349972b5486015ab079",
+    "mtime": 1794732299.7295997,
+    "seen": 1794733837.6498837,
+    "ast_hash": "163334591c0324136ad3d34037ea08ba",
     "semantic_hash": ""
   },
   "frontend/src/lib/contracts.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.39387,
-    "ast_hash": "fd011b36e6f674f93a5e1788a437d858",
+    "mtime": 1794732404.3067214,
+    "seen": 1794733837.64989,
+    "ast_hash": "5bf582536d14fd445cf3c2caf697245f",
     "semantic_hash": ""
   },
   "frontend/src/lib/geometry.ts": {
-    "mtime": 1794687116.6831665,
-    "seen": 1794729940.8869722,
+    "mtime": 1794706786.8260944,
+    "seen": 1794733837.6498964,
     "ast_hash": "2f300b4896c20fc31bcbaca82b4755d3",
     "semantic_hash": ""
   },
   "frontend/src/lib/lighting.ts": {
-    "mtime": 1794728115.5140297,
-    "seen": 1794729940.886974,
-    "ast_hash": "85c2a832be1c80e6226b9dc092965856",
+    "mtime": 1794733812.6926534,
+    "seen": 1794733837.649901,
+    "ast_hash": "e05a0c9722511474d18d9ebf60ba0643",
     "semantic_hash": ""
   },
   "frontend/src/lib/spatial.ts": {
-    "mtime": 1794731554.8768404,
-    "seen": 1794731748.393956,
+    "mtime": 1794731911.610523,
+    "seen": 1794733837.6499093,
     "ast_hash": "5f9d1da24fd4d2da3809b1caad4c5235",
     "semantic_hash": ""
   },
   "frontend/src/lib/spatialPreview.ts": {
-    "mtime": 1794687116.6831665,
-    "seen": 1794729940.8869774,
+    "mtime": 1794706786.8260944,
+    "seen": 1794733837.6499116,
     "ast_hash": "5128e23961eb5552b4626dde5d8b3364",
     "semantic_hash": ""
   },
   "frontend/src/lib/walk.ts": {
-    "mtime": 1794728115.5141878,
-    "seen": 1794729940.8869793,
+    "mtime": 1794706786.8260944,
+    "seen": 1794733837.6499135,
     "ast_hash": "03618ef972986fb1634f145666b78eab",
     "semantic_hash": ""
   },
   "frontend/src/main.tsx": {
-    "mtime": 1794666576.5326617,
-    "seen": 1794729940.8869808,
+    "mtime": 1794682118.104511,
+    "seen": 1794733837.6499152,
     "ast_hash": "787e5a07efeb2bf6209d5937195f2f68",
     "semantic_hash": ""
   },
   "frontend/src/store.ts": {
-    "mtime": 1794731637.2581637,
-    "seen": 1794731748.394061,
-    "ast_hash": "747b43869f3aee8d605a05e1602efb6a",
+    "mtime": 1794733812.8346534,
+    "seen": 1794733837.6499171,
+    "ast_hash": "8d90993d2ac75cd0945a784dd3319049",
     "semantic_hash": ""
   },
   "frontend/tests/agentAddItem.test.ts": {
-    "mtime": 1794731608.9269094,
-    "seen": 1794731748.3940625,
+    "mtime": 1794731911.611185,
+    "seen": 1794733837.649922,
     "ast_hash": "052c516c154d625ab854a6b1a0638332",
     "semantic_hash": ""
   },
   "frontend/tests/audio.test.ts": {
-    "mtime": 1794728115.5145805,
-    "seen": 1794729940.8869858,
+    "mtime": 1794706786.8266196,
+    "seen": 1794733837.6499238,
     "ast_hash": "b0bf8c66e72e8fc2a8312ada0e282b5c",
     "semantic_hash": ""
   },
   "frontend/tests/auditStats.test.tsx": {
-    "mtime": 1794687116.683454,
-    "seen": 1794729940.8869874,
+    "mtime": 1794706786.8273253,
+    "seen": 1794733837.6499257,
     "ast_hash": "7a44cc2bd790256ebdeefebb7da98292",
     "semantic_hash": ""
   },
   "frontend/tests/demoAssets.test.ts": {
-    "mtime": 1794694681.850162,
-    "seen": 1794729940.8869915,
+    "mtime": 1794706786.8273253,
+    "seen": 1794733837.6499321,
     "ast_hash": "48b9b49978449548acad19f625547ea6",
     "semantic_hash": ""
   },
   "frontend/tests/editorControls.test.ts": {
-    "mtime": 1794731554.8768404,
-    "seen": 1794731748.3941967,
+    "mtime": 1794731911.611435,
+    "seen": 1794733837.649934,
     "ast_hash": "7740a898e3b258fdc63fea4db127fa32",
     "semantic_hash": ""
   },
   "frontend/tests/playLighting.test.ts": {
-    "mtime": 1794728115.5149565,
-    "seen": 1794729940.8869956,
-    "ast_hash": "df03d0a4639d843c878a277558892a7b",
+    "mtime": 1794733812.9596536,
+    "seen": 1794733837.6499496,
+    "ast_hash": "d5c7c99136a185a9b8a6ee1997942837",
     "semantic_hash": ""
   },
   "frontend/tests/playMode.test.ts": {
-    "mtime": 1794728115.515079,
-    "seen": 1794729940.8869975,
+    "mtime": 1794706786.8273253,
+    "seen": 1794733837.6499512,
     "ast_hash": "b1ec7c654a006102b2822bef0913dae9",
     "semantic_hash": ""
   },
   "frontend/tests/playSession.test.ts": {
-    "mtime": 1794728115.5152924,
-    "seen": 1794729940.8869996,
+    "mtime": 1794706786.8273253,
+    "seen": 1794733837.6499531,
     "ast_hash": "fb7be311591f49b30ea0d202f059e522",
     "semantic_hash": ""
   },
   "frontend/tsconfig.app.json": {
-    "mtime": 1794687116.683567,
-    "seen": 1794729940.8870013,
+    "mtime": 1794706786.8273253,
+    "seen": 1794733837.6499596,
     "ast_hash": "dd4008bfcf8c3d261ec9f8a1cae8b05b",
     "semantic_hash": ""
   },
   "frontend/tsconfig.json": {
-    "mtime": 1794666576.532771,
-    "seen": 1794729940.8870032,
+    "mtime": 1794682118.104511,
+    "seen": 1794733837.6499617,
     "ast_hash": "a3d39fa780ebff65444de257f291ce6c",
     "semantic_hash": ""
   },
   "frontend/tsconfig.node.json": {
-    "mtime": 1794666576.5328188,
-    "seen": 1794729940.8870049,
+    "mtime": 1794682118.104511,
+    "seen": 1794733837.6499636,
     "ast_hash": "f9cb81ddcea69ffdab672fc8c48dca66",
     "semantic_hash": ""
   },
   "frontend/vite.config.ts": {
-    "mtime": 1794687116.683567,
-    "seen": 1794729940.8870068,
+    "mtime": 1794706786.8273253,
+    "seen": 1794733837.6499655,
     "ast_hash": "fb1fa8f70cc910e909fa97b555e5d6ab",
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1794666636.8154657,
-    "seen": 1794729940.8870087,
+    "mtime": 1794682118.106845,
+    "seen": 1794733837.6499672,
     "ast_hash": "107e4dd399e6e1d636cf1aa01c66d72b",
     "semantic_hash": ""
   },
   "pyproject.toml": {
-    "mtime": 1794728115.5301175,
-    "seen": 1794729940.8870106,
+    "mtime": 1794706786.8417213,
+    "seen": 1794733837.6499693,
     "ast_hash": "650ff400c8cfef4b4195c14f3fdb4fe6",
     "semantic_hash": ""
   },
   "scripts/check_layout_demo.py": {
-    "mtime": 1794728115.5302472,
-    "seen": 1794729940.8870132,
+    "mtime": 1794731887.3581583,
+    "seen": 1794733837.6499734,
     "ast_hash": "daa5f870b48819f0fc96b5491c9146cb",
     "semantic_hash": ""
   },
   "scripts/generate_mock_glbs.py": {
-    "mtime": 1794694681.8585207,
-    "seen": 1794729940.887015,
+    "mtime": 1794706786.8417213,
+    "seen": 1794733837.6499753,
     "ast_hash": "3b9bf5feacc008546b4c5f951e77c87e",
     "semantic_hash": ""
   },
   "services/__init__.py": {
-    "mtime": 1794666636.8154657,
-    "seen": 1794729940.8870175,
+    "mtime": 1794682118.106845,
+    "seen": 1794733837.6499772,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "services/media_gen/__init__.py": {
-    "mtime": 1794666636.8154657,
-    "seen": 1794729940.8870196,
+    "mtime": 1794682118.1078868,
+    "seen": 1794733837.6499794,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "services/media_gen/main.py": {
-    "mtime": 1794666636.8157532,
-    "seen": 1794729940.8870218,
+    "mtime": 1794682118.1079123,
+    "seen": 1794733837.6499815,
     "ast_hash": "c249c03efc413381c0e4b9ebf8d06780",
     "semantic_hash": ""
   },
   "services/reconstruction/__init__.py": {
-    "mtime": 1794666636.8154657,
-    "seen": 1794729940.8870237,
+    "mtime": 1794682118.1079123,
+    "seen": 1794733837.6499836,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/__init__.py": {
-    "mtime": 1794674703.9632232,
-    "seen": 1794729940.8870256,
+    "mtime": 1794682118.107983,
+    "seen": 1794733837.6499858,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/asset_store.py": {
-    "mtime": 1794700786.8662581,
-    "seen": 1794729940.8870275,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.649988,
     "ast_hash": "e00464a1a619c234614f805cd3079816",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/catalog.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794729940.8870292,
+    "mtime": 1794731911.637135,
+    "seen": 1794733837.6499903,
     "ast_hash": "a6cf7bab3e56acab412327937c23d3d6",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/check_delivery.py": {
-    "mtime": 1794728115.5312936,
-    "seen": 1794729940.887031,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.6499949,
     "ast_hash": "10d4086e144b889a4f5a37c000cada85",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/collision_templates.py": {
-    "mtime": 1794702601.1752574,
-    "seen": 1794729940.8870325,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.649997,
     "ast_hash": "9800311a4fe90d87c0b874523f2e1f55",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/delivery.py": {
-    "mtime": 1794728133.8240304,
-    "seen": 1794729940.8870344,
+    "mtime": 1794731887.3598597,
+    "seen": 1794733837.6499991,
     "ast_hash": "1f020e31b983012027d5f854fdf48318",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/demo_cache.py": {
-    "mtime": 1794728133.824185,
-    "seen": 1794729940.8870363,
+    "mtime": 1794731887.3600514,
+    "seen": 1794733837.6500008,
     "ast_hash": "603690ae4f23ed7b4264b0e30af26a59",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/manifest.json": {
-    "mtime": 1794728133.8367913,
-    "seen": 1794729940.8870382,
+    "mtime": 1794731887.3751583,
+    "seen": 1794733837.6500041,
     "ast_hash": "630cc4a46664a6e2000afbd374736fd7",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/import_product.py": {
-    "mtime": 1794728115.531512,
-    "seen": 1794729940.8870397,
+    "mtime": 1794724709.9665387,
+    "seen": 1794733837.6500065,
     "ast_hash": "c3ba318eeab50b5d1390aeb1bc55fd5b",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/mask_providers.py": {
-    "mtime": 1794700786.866639,
-    "seen": 1794729940.8870423,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.6500087,
     "ast_hash": "74d0bca94a5715c2f27a1cc4e9754518",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/mesh_providers.py": {
-    "mtime": 1794700786.8667858,
-    "seen": 1794729940.8870444,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.6500106,
     "ast_hash": "3aea74a044277a93b05772e8d18c2b69",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/models.py": {
-    "mtime": 1794700786.866883,
-    "seen": 1794729940.8870459,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.6500175,
     "ast_hash": "2ab0e25e0592037e561dcedb7ad23949",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/normalisation.py": {
-    "mtime": 1794728115.5318108,
-    "seen": 1794729940.8870475,
+    "mtime": 1794724709.9665387,
+    "seen": 1794733837.65002,
     "ast_hash": "0683eeaf4c9cec7354d0e4a745974bfe",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/providers.py": {
-    "mtime": 1794700786.8670917,
-    "seen": 1794729940.887049,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.650022,
     "ast_hash": "2cc9a23a2dd32c3bfc2877563c00a27f",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/proxies.py": {
-    "mtime": 1794702601.1754534,
-    "seen": 1794729940.8870504,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.6500242,
     "ast_hash": "ec5819ef732c6c25039be6683a91a1d3",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/reconstruct_items.py": {
-    "mtime": 1794728115.531918,
-    "seen": 1794729940.8870523,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.6500263,
     "ast_hash": "bbd520aefab132b874eb92d356a94142",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/reconstruction.py": {
-    "mtime": 1794728115.5323448,
-    "seen": 1794729940.8870537,
+    "mtime": 1794724709.9665387,
+    "seen": 1794733837.6500282,
     "ast_hash": "2fdeeba5e0e9163a6385c8c2fc605149",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/registry.py": {
-    "mtime": 1794687676.6247442,
-    "seen": 1794729940.8870552,
+    "mtime": 1794706786.8437214,
+    "seen": 1794733837.6500306,
     "ast_hash": "0ebe704c6999799b6a85755301cc203b",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/retailer.py": {
-    "mtime": 1794728115.5326133,
-    "seen": 1794729940.8870566,
+    "mtime": 1794724709.9675386,
+    "seen": 1794733837.650032,
     "ast_hash": "17ea0286e05dfd38c0cc181f485b66fc",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/segment_items.py": {
-    "mtime": 1794694681.8585207,
-    "seen": 1794729940.8870583,
+    "mtime": 1794706786.8437214,
+    "seen": 1794733837.6500344,
     "ast_hash": "98340d0f88a070116056dbad629279fb",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/segmentation.py": {
-    "mtime": 1794694681.8587499,
-    "seen": 1794729940.8870597,
+    "mtime": 1794706786.8437214,
+    "seen": 1794733837.6500366,
     "ast_hash": "69b83e7e5758b1ddb5f4fad0ba953dd6",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/select_frames.py": {
-    "mtime": 1794687676.6249087,
-    "seen": 1794729940.8870614,
+    "mtime": 1794706786.8437214,
+    "seen": 1794733837.6500385,
     "ast_hash": "289ee96ded36def5701a9f825224c791",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/selection.py": {
-    "mtime": 1794700786.8676295,
-    "seen": 1794729940.8870633,
+    "mtime": 1794706786.8437214,
+    "seen": 1794733837.6500401,
     "ast_hash": "91c5ef140cac9f7c5ce98e6f3e95d513",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/selection_models.py": {
-    "mtime": 1794728115.5328217,
-    "seen": 1794729940.8870652,
+    "mtime": 1794724709.9675386,
+    "seen": 1794733837.6500418,
     "ast_hash": "772839f823be20e28de9bea731e1c2f1",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/video.py": {
-    "mtime": 1794687676.6252723,
-    "seen": 1794729940.8870668,
+    "mtime": 1794706786.8437214,
+    "seen": 1794733837.650044,
     "ast_hash": "246e41b36bd909529a0896b983e61710",
     "semantic_hash": ""
   },
   "services/reconstruction/config.py": {
-    "mtime": 1794731958.9204974,
-    "seen": 1794731993.7461567,
+    "mtime": 1794731911.637262,
+    "seen": 1794733837.6500478,
     "ast_hash": "8164d11eb5a08dbe9a2dac1fedf1086d",
     "semantic_hash": ""
   },
   "services/reconstruction/demo_assets.py": {
-    "mtime": 1794700786.8677886,
-    "seen": 1794729940.8870728,
+    "mtime": 1794706786.8437214,
+    "seen": 1794733837.6500494,
     "ast_hash": "8724dfb442d5c06f32e4ca5e7cc013de",
     "semantic_hash": ""
   },
   "services/reconstruction/main.py": {
-    "mtime": 1794731958.9204974,
-    "seen": 1794731993.7462058,
-    "ast_hash": "4a14596af33ebb1551bd145cba1ac463",
+    "mtime": 1794732082.0746684,
+    "seen": 1794733837.6500516,
+    "ast_hash": "47e9708668e44e5ff617f1397919cdf2",
     "semantic_hash": ""
   },
   "services/reconstruction/room/__init__.py": {
-    "mtime": 1794682055.425401,
-    "seen": 1794729940.8870764,
+    "mtime": 1794682118.108152,
+    "seen": 1794733837.6500537,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "services/reconstruction/room/__main__.py": {
-    "mtime": 1794700786.8688219,
-    "seen": 1794729940.8870776,
+    "mtime": 1794706786.8452892,
+    "seen": 1794733837.6500556,
     "ast_hash": "1b1fcd453e98e64573c0c29600743a27",
     "semantic_hash": ""
   },
   "services/reconstruction/room/align.py": {
-    "mtime": 1794728115.5334044,
-    "seen": 1794729940.8870795,
+    "mtime": 1794731887.3785436,
+    "seen": 1794733837.6500576,
     "ast_hash": "decdad7129a5f200ebe24e27dddd8656",
     "semantic_hash": ""
   },
   "services/reconstruction/room/align_debug.py": {
-    "mtime": 1794700786.869399,
-    "seen": 1794729940.8870811,
+    "mtime": 1794706786.8452892,
+    "seen": 1794733837.6500592,
     "ast_hash": "09e1117660706e821625fd377e6aff91",
     "semantic_hash": ""
   },
   "services/reconstruction/room/annotate.py": {
-    "mtime": 1794682055.4256458,
-    "seen": 1794729940.887083,
+    "mtime": 1794682118.1083136,
+    "seen": 1794733837.6500611,
     "ast_hash": "dc4d1b5751ffbef8d256dd031a500a21",
     "semantic_hash": ""
   },
   "services/reconstruction/room/assemble.py": {
-    "mtime": 1794728115.5336976,
-    "seen": 1794729940.8870845,
+    "mtime": 1794706786.8452892,
+    "seen": 1794733837.6500628,
     "ast_hash": "a039746d5e0b57c9ce6131c2bb505926",
     "semantic_hash": ""
   },
   "services/reconstruction/room/correct.py": {
-    "mtime": 1794728115.5338273,
-    "seen": 1794729940.8870864,
+    "mtime": 1794731887.3789368,
+    "seen": 1794733837.6500647,
     "ast_hash": "faf6b79cf41d76d12ee2282d3059e8a7",
     "semantic_hash": ""
   },
   "services/reconstruction/room/footprint.py": {
-    "mtime": 1794700786.8701212,
-    "seen": 1794729940.8870876,
+    "mtime": 1794706786.8452892,
+    "seen": 1794733837.6500666,
     "ast_hash": "f53aa5b1638241d00f1cf0486265f8f9",
     "semantic_hash": ""
   },
   "services/reconstruction/room/observe.py": {
-    "mtime": 1794700786.8703709,
-    "seen": 1794729940.8870893,
+    "mtime": 1794706786.8457212,
+    "seen": 1794733837.6500683,
     "ast_hash": "9426a61d852c799a0b4bc5150b1f6d4f",
     "semantic_hash": ""
   },
   "services/reconstruction/room/observe_vision.py": {
-    "mtime": 1794700786.8705752,
-    "seen": 1794729940.8870912,
+    "mtime": 1794706786.8457212,
+    "seen": 1794733837.65007,
     "ast_hash": "0d157637cf24573dde0b19d75f79742f",
     "semantic_hash": ""
   },
   "services/reconstruction/room/openings.py": {
-    "mtime": 1794700786.8705752,
-    "seen": 1794729940.887093,
+    "mtime": 1794706786.8457212,
+    "seen": 1794733837.6500719,
     "ast_hash": "014f4a86df1d17b0732e42773763bfeb",
     "semantic_hash": ""
   },
   "services/reconstruction/room/parse.py": {
-    "mtime": 1794700786.8705752,
-    "seen": 1794729940.8870947,
+    "mtime": 1794706786.8457212,
+    "seen": 1794733837.6500738,
     "ast_hash": "32c67ebf0e97de9da6e5e3891fa71a71",
     "semantic_hash": ""
   },
   "services/reconstruction/room/plan_view.py": {
-    "mtime": 1794700786.8713236,
-    "seen": 1794729940.8870964,
+    "mtime": 1794706786.8457212,
+    "seen": 1794733837.6500757,
     "ast_hash": "3914c60f68940db0a6564e28657b0f17",
     "semantic_hash": ""
   },
   "services/reconstruction/room/polygon.py": {
-    "mtime": 1794682055.4261467,
-    "seen": 1794729940.887098,
+    "mtime": 1794682118.108845,
+    "seen": 1794733837.6500773,
     "ast_hash": "d4793d29dd65925a6e9bc00cdec0213c",
     "semantic_hash": ""
   },
   "services/reconstruction/room/raster.py": {
-    "mtime": 1794682055.4263668,
-    "seen": 1794729940.8870997,
+    "mtime": 1794682118.108845,
+    "seen": 1794733837.6500795,
     "ast_hash": "fdb224a685cedf40c8b0c2081fc8893c",
     "semantic_hash": ""
   },
   "services/reconstruction/room/regions.py": {
-    "mtime": 1794682055.4265254,
-    "seen": 1794729940.8871012,
+    "mtime": 1794682118.108845,
+    "seen": 1794733837.650081,
     "ast_hash": "c8b693355b3c6bc0935a8b554b60df27",
     "semantic_hash": ""
   },
   "services/reconstruction/room/routes.py": {
-    "mtime": 1794731958.9240444,
-    "seen": 1794731993.747031,
+    "mtime": 1794731911.638407,
+    "seen": 1794733837.6500828,
     "ast_hash": "b4d7ea4e0e6bbdd6d022075897bba0d9",
     "semantic_hash": ""
   },
   "services/reconstruction/room/shell.py": {
-    "mtime": 1794687116.6910882,
-    "seen": 1794729940.8871045,
+    "mtime": 1794706786.8457212,
+    "seen": 1794733837.6500869,
     "ast_hash": "c05aef8ee29d5db1fdc494b848494991",
     "semantic_hash": ""
   },
   "services/reconstruction/room/video_furniture.py": {
-    "mtime": 1794728133.8385334,
-    "seen": 1794729940.8871064,
+    "mtime": 1794731887.3798907,
+    "seen": 1794733837.6500888,
     "ast_hash": "d54c6f4e5bad48e7b2a1bf87403fbe78",
     "semantic_hash": ""
   },
   "services/reconstruction/scenes.py": {
-    "mtime": 1794731958.9240444,
-    "seen": 1794731993.7471392,
+    "mtime": 1794731911.6386757,
+    "seen": 1794733837.6500907,
     "ast_hash": "fa77b897d72c8b911ae7b812e09513ef",
     "semantic_hash": ""
   },
   "services/spatial_engine/__init__.py": {
-    "mtime": 1794666636.8154657,
-    "seen": 1794729940.8871095,
+    "mtime": 1794682118.108845,
+    "seen": 1794733837.6500926,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
   "services/spatial_engine/agent.py": {
-    "mtime": 1794731554.8818405,
-    "seen": 1794731748.3964894,
+    "mtime": 1794731911.639078,
+    "seen": 1794733837.650094,
     "ast_hash": "df301350950c12f7a7b8f0ad8aaba155",
     "semantic_hash": ""
   },
   "services/spatial_engine/audit.py": {
-    "mtime": 1794687116.6913517,
-    "seen": 1794729940.8871129,
-    "ast_hash": "b8435ec309235a0dad72bd22f64e43c2",
+    "mtime": 1794731903.2748892,
+    "seen": 1794733837.6500962,
+    "ast_hash": "bbebb84e8c4ccafc3b7c8804c4b46c25",
     "semantic_hash": ""
   },
   "services/spatial_engine/brightness.py": {
-    "mtime": 1794728115.5355518,
-    "seen": 1794729940.8871145,
+    "mtime": 1794706786.8467212,
+    "seen": 1794733837.6500978,
     "ast_hash": "1ad08681922724674383d4c06bf67777",
     "semantic_hash": ""
   },
   "services/spatial_engine/chat.py": {
-    "mtime": 1794731554.8828404,
-    "seen": 1794731748.396552,
-    "ast_hash": "fdb3bc425d6e2c77b9e8e30a28c4a480",
+    "mtime": 1794732410.138402,
+    "seen": 1794733837.6501,
+    "ast_hash": "941d87c90948ef32fa236a69b7e3b13b",
     "semantic_hash": ""
   },
   "services/spatial_engine/drafts.py": {
-    "mtime": 1794731554.8828404,
-    "seen": 1794731748.3965538,
+    "mtime": 1794731911.6398587,
+    "seen": 1794733837.6501017,
     "ast_hash": "3312b5e09d31e9c1cd5a17a316cae92d",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui.py": {
-    "mtime": 1794731554.8828404,
-    "seen": 1794731748.3965557,
+    "mtime": 1794731911.6399603,
+    "seen": 1794733837.650104,
     "ast_hash": "fbc2efd150c6996aee519ba74cd70ed2",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui_metric.py": {
-    "mtime": 1794728171.6913242,
-    "seen": 1794729940.8871212,
+    "mtime": 1794731887.381746,
+    "seen": 1794733837.650108,
     "ast_hash": "a51590ef3d03fb20efb575e394f39b3e",
     "semantic_hash": ""
   },
   "services/spatial_engine/geometry.py": {
-    "mtime": 1794731554.8838403,
-    "seen": 1794731748.3965955,
+    "mtime": 1794731911.640416,
+    "seen": 1794733837.6501172,
     "ast_hash": "cbf3dc520bf73b00f614f28a8b25e1b7",
     "semantic_hash": ""
   },
   "services/spatial_engine/layout_tools.py": {
-    "mtime": 1794731554.8848403,
-    "seen": 1794731748.396597,
+    "mtime": 1794731911.6405787,
+    "seen": 1794733837.650119,
     "ast_hash": "5587af3811f05c5ac0e42c52b4dcfc00",
     "semantic_hash": ""
   },
   "services/spatial_engine/main.py": {
-    "mtime": 1794731554.8848403,
-    "seen": 1794731748.3966007,
-    "ast_hash": "45853a8f0f60907816a4a27f9388e6a8",
+    "mtime": 1794732460.939286,
+    "seen": 1794733837.6501236,
+    "ast_hash": "232c9cbc29b6eb797a3562f4f9e9c0f8",
     "semantic_hash": ""
   },
   "services/spatial_engine/objective.py": {
-    "mtime": 1794731716.179473,
-    "seen": 1794731748.3966024,
+    "mtime": 1794732531.2122025,
+    "seen": 1794733837.6501255,
     "ast_hash": "84f66ef4c557ca1751318b4c25c07a5a",
     "semantic_hash": ""
   },
   "services/spatial_engine/proxy.py": {
-    "mtime": 1794728171.6918647,
-    "seen": 1794729940.8871295,
+    "mtime": 1794731887.38236,
+    "seen": 1794733837.650129,
     "ast_hash": "93af9f3e938be36dd42f16743f5520b2",
     "semantic_hash": ""
   },
   "services/spatial_engine/reachability.py": {
-    "mtime": 1794728115.5384042,
-    "seen": 1794729940.8871312,
+    "mtime": 1794731887.38236,
+    "seen": 1794733837.650131,
     "ast_hash": "8ed9d47059bf304825601ffe8b18ae5e",
     "semantic_hash": ""
   },
   "services/spatial_engine/report.py": {
-    "mtime": 1794728171.6919868,
-    "seen": 1794729940.887133,
+    "mtime": 1794731887.38236,
+    "seen": 1794733837.650133,
     "ast_hash": "ff3e055f81f7bd25200334df959a1afd",
     "semantic_hash": ""
   },
   "tests/conftest.py": {
-    "mtime": 1794731958.9264212,
-    "seen": 1794731993.7480464,
+    "mtime": 1794731911.6407518,
+    "seen": 1794733837.650137,
     "ast_hash": "eb0c93761bed087fe91c603591492b78",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_catalog.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794729940.8871362,
+    "mtime": 1794731911.6407518,
+    "seen": 1794733837.6501386,
     "ast_hash": "c80fb82d4a309af7ec9ac8cbe9a7d29a",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_delivery.py": {
-    "mtime": 1794728115.5397084,
-    "seen": 1794729940.887138,
+    "mtime": 1794706786.8477213,
+    "seen": 1794733837.6501424,
     "ast_hash": "4dac196192a2ad8f42af691066279afd",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_demo_cache.py": {
-    "mtime": 1794728133.8412097,
-    "seen": 1794729940.8871396,
+    "mtime": 1794731887.38236,
+    "seen": 1794733837.6501446,
     "ast_hash": "134eddd3354c247f2cff7452f41a5791",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_normalisation.py": {
-    "mtime": 1794702601.175943,
-    "seen": 1794729940.8871412,
+    "mtime": 1794706786.8477213,
+    "seen": 1794733837.6501513,
     "ast_hash": "cdab2bf0a09b3bccf5ec504911c363cb",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_reconstruction.py": {
-    "mtime": 1794700786.871892,
-    "seen": 1794729940.8871427,
+    "mtime": 1794706786.8477213,
+    "seen": 1794733837.650153,
     "ast_hash": "c581bdc2315a868e150d408f7f3363fc",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_segmentation.py": {
-    "mtime": 1794694681.85976,
-    "seen": 1794729940.887144,
+    "mtime": 1794706786.8477213,
+    "seen": 1794733837.650155,
     "ast_hash": "c3da8f6e7978bfb9fd8ec9f8a8bec2ed",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_selection.py": {
-    "mtime": 1794687676.62536,
-    "seen": 1794729940.887146,
+    "mtime": 1794706786.8487213,
+    "seen": 1794733837.650157,
     "ast_hash": "dc8a6d18b1a50a41ad251e5f3f47ef0c",
     "semantic_hash": ""
   },
   "tests/spatial_engine/conftest.py": {
-    "mtime": 1794728115.539857,
-    "seen": 1794729940.8871474,
+    "mtime": 1794731887.3831582,
+    "seen": 1794733837.6501591,
     "ast_hash": "5f88c551e58ab003c153b13a9231f506",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_agent.py": {
-    "mtime": 1794728115.5400333,
-    "seen": 1794729940.8871493,
+    "mtime": 1794731887.3831582,
+    "seen": 1794733837.6501608,
     "ast_hash": "854ac202417da13d94147f1b96b08e5e",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_api.py": {
-    "mtime": 1794731554.8868403,
-    "seen": 1794731748.3971262,
+    "mtime": 1794731911.6407518,
+    "seen": 1794733837.650163,
     "ast_hash": "7ef0f958053a2ef797275ea9e396b7aa",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_brightness.py": {
-    "mtime": 1794728115.5404108,
-    "seen": 1794729940.8871527,
+    "mtime": 1794706786.8487213,
+    "seen": 1794733837.650165,
     "ast_hash": "7ca623c37172044ef33f29b292672836",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_chat.py": {
-    "mtime": 1794731824.3832667,
-    "seen": 1794731939.442866,
-    "ast_hash": "bb9a7d988445e97765f9bcb315efb651",
+    "mtime": 1794732541.9972527,
+    "seen": 1794733837.6501667,
+    "ast_hash": "558535e8af94cece73df37eee2336877",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_clearance.py": {
-    "mtime": 1794687116.6918995,
-    "seen": 1794729940.8871558,
+    "mtime": 1794706786.8487213,
+    "seen": 1794733837.650169,
     "ast_hash": "36c065b1f522ca2316cb00273ad049a6",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_collision_parts.py": {
-    "mtime": 1794682055.4266927,
-    "seen": 1794729940.8871574,
+    "mtime": 1794689344.8428435,
+    "seen": 1794733837.6501706,
     "ast_hash": "cb05a5000e8b8bec5990ac461a4b666b",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_collisions.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794729940.887159,
+    "mtime": 1794689344.8428435,
+    "seen": 1794733837.6501725,
     "ast_hash": "0893ba8aa1f34abf3899d1328b67b5fd",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_containment.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794729940.8871605,
+    "mtime": 1794689344.8428435,
+    "seen": 1794733837.6501744,
     "ast_hash": "ea5907921ed974f590e0c9cefbf98729",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_doors.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794729940.8871622,
+    "mtime": 1794689344.8428435,
+    "seen": 1794733837.6501765,
     "ast_hash": "781500345577ae75b5778b946fc8938b",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_drafts.py": {
-    "mtime": 1794728115.5410643,
-    "seen": 1794729940.8871636,
+    "mtime": 1794706786.8487213,
+    "seen": 1794733837.6501787,
     "ast_hash": "30e2616b134d18f9ca2a34e2dfa867e7",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_feng_shui.py": {
-    "mtime": 1794728115.5410643,
-    "seen": 1794729940.887165,
+    "mtime": 1794709036.5009313,
+    "seen": 1794733837.6501803,
     "ast_hash": "bf51cec769e27ebb09c0aa4620a88d64",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_feng_shui_metric.py": {
-    "mtime": 1794728171.6922412,
-    "seen": 1794729940.8871667,
+    "mtime": 1794731887.3831582,
+    "seen": 1794733837.6501822,
     "ast_hash": "5dc63a712533f7e6728e0d2c9dcf9f97",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_free_floor.py": {
-    "mtime": 1794687116.6919646,
-    "seen": 1794729940.887168,
+    "mtime": 1794706786.8487213,
+    "seen": 1794733837.6501884,
     "ast_hash": "c0eafb33ee777ca91e2db1b7ccdd8b90",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_geometry.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794729940.8871696,
+    "mtime": 1794689344.8428435,
+    "seen": 1794733837.6501925,
     "ast_hash": "63ae6e219e1a23d4624b136be9175a1f",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_handoff_cases.py": {
-    "mtime": 1794682055.4269712,
-    "seen": 1794729940.887171,
+    "mtime": 1794689344.8428435,
+    "seen": 1794733837.6501944,
     "ast_hash": "d7a5d4c9a5f722d8932df165afd34c17",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_layout_tools.py": {
-    "mtime": 1794728115.5416129,
-    "seen": 1794729940.8871727,
+    "mtime": 1794731887.3841584,
+    "seen": 1794733837.6501963,
     "ast_hash": "bb9559be2db5f57086ea2d1bdcd25d96",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_objective.py": {
-    "mtime": 1794731554.889422,
-    "seen": 1794731748.39754,
+    "mtime": 1794731911.6426606,
+    "seen": 1794733837.6502004,
     "ast_hash": "8b436bf751fdcf7badf05dfc8de1052b",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_reachability.py": {
-    "mtime": 1794687116.6920485,
-    "seen": 1794729940.8871758,
+    "mtime": 1794706786.8487213,
+    "seen": 1794733837.650204,
     "ast_hash": "78ac8f382d4ec4e5716f5dd8db2cf589",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_report.py": {
-    "mtime": 1794687116.6920485,
-    "seen": 1794729940.8871775,
+    "mtime": 1794706786.8487213,
+    "seen": 1794733837.6502059,
     "ast_hash": "c72363604b2ddf4f0d26a743fbef0a90",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_rounded_coordinates.py": {
-    "mtime": 1794728115.5422256,
-    "seen": 1794729940.8871796,
+    "mtime": 1794731887.3841584,
+    "seen": 1794733837.650208,
     "ast_hash": "909fc4821d0d65d759681f4a97165bb3",
     "semantic_hash": ""
   },
   "tests/test_contract_occupancy.py": {
-    "mtime": 1794674703.9634907,
-    "seen": 1794729940.8871832,
+    "mtime": 1794682118.1102371,
+    "seen": 1794733837.6502135,
     "ast_hash": "6fcf3ae6c5184a62ce01f2deb831bd95",
     "semantic_hash": ""
   },
   "tests/test_contracts.py": {
-    "mtime": 1794694681.860727,
-    "seen": 1794729940.8871846,
+    "mtime": 1794706786.8497212,
+    "seen": 1794733837.6502154,
     "ast_hash": "c96845d16e36a51ce6fea1a4313cfd73",
     "semantic_hash": ""
   },
   "tests/test_demo_assets.py": {
-    "mtime": 1794694681.860727,
-    "seen": 1794729940.8871865,
+    "mtime": 1794706786.8497212,
+    "seen": 1794733837.6502175,
     "ast_hash": "a667c5dd7c027696c4a860b107e0ed53",
     "semantic_hash": ""
   },
   "tests/test_demo_cache_room.py": {
-    "mtime": 1794728133.8417366,
-    "seen": 1794729940.8871882,
+    "mtime": 1794731887.3841584,
+    "seen": 1794733837.6502192,
     "ast_hash": "ec43927780066f7623abe704f4a69b20",
     "semantic_hash": ""
   },
   "tests/test_fixture_scene.py": {
-    "mtime": 1794694681.860727,
-    "seen": 1794729940.88719,
+    "mtime": 1794706786.8497212,
+    "seen": 1794733837.650221,
     "ast_hash": "2fba9ccea129e9ae5e1912c3abc8b7d8",
     "semantic_hash": ""
   },
   "tests/test_health.py": {
-    "mtime": 1794666636.8158052,
-    "seen": 1794729940.8871915,
+    "mtime": 1794682118.1102371,
+    "seen": 1794733837.6502233,
     "ast_hash": "fc1a2ef946d4b40ca17a42a0d42f5a80",
     "semantic_hash": ""
   },
   "tests/test_real_room.py": {
-    "mtime": 1794728115.5425599,
-    "seen": 1794729940.8871937,
+    "mtime": 1794731887.3851583,
+    "seen": 1794733837.6502254,
     "ast_hash": "372693fa8bc0c5a4d5185d3652b2db89",
     "semantic_hash": ""
   },
   "tests/test_room_align.py": {
-    "mtime": 1794700786.8727763,
-    "seen": 1794729940.8871953,
+    "mtime": 1794706786.8497212,
+    "seen": 1794733837.6502273,
     "ast_hash": "55f23d32110ac16198461f76fb2f8508",
     "semantic_hash": ""
   },
   "tests/test_room_align_vision.py": {
-    "mtime": 1794700786.872987,
-    "seen": 1794729940.887197,
+    "mtime": 1794706786.8497212,
+    "seen": 1794733837.6502292,
     "ast_hash": "9c766f25a933436d5cf671b960d896de",
     "semantic_hash": ""
   },
   "tests/test_room_correct.py": {
-    "mtime": 1794728115.542715,
-    "seen": 1794729940.8871984,
+    "mtime": 1794731887.3851583,
+    "seen": 1794733837.6502311,
     "ast_hash": "2d3481b236f2adaa9e86a0efb0711391",
     "semantic_hash": ""
   },
   "tests/test_room_parse.py": {
-    "mtime": 1794700786.8734024,
-    "seen": 1794729940.8872004,
+    "mtime": 1794706786.8497212,
+    "seen": 1794733837.650233,
     "ast_hash": "eba37cc180f1da169a5fa6a05571a102",
     "semantic_hash": ""
   },
   "tests/test_room_routes.py": {
-    "mtime": 1794682055.4274359,
-    "seen": 1794729940.8872023,
+    "mtime": 1794682118.1102371,
+    "seen": 1794733837.6502347,
     "ast_hash": "f1d63a37bd40686d73bf696c85a393b8",
     "semantic_hash": ""
   },
   "tests/test_room_shell.py": {
-    "mtime": 1794687116.6924,
-    "seen": 1794729940.887204,
+    "mtime": 1794706786.8507211,
+    "seen": 1794733837.6502368,
     "ast_hash": "c607dc79382de09f594cb441e2c72790",
     "semantic_hash": ""
   },
   "tests/test_scene_routes.py": {
-    "mtime": 1794728115.5429106,
-    "seen": 1794729940.8872056,
+    "mtime": 1794731887.3861582,
+    "seen": 1794733837.6502411,
     "ast_hash": "e8febb4ffbd454799cf0052ddf8b23aa",
     "semantic_hash": ""
   },
   ".claude/skills/XUAN_INK_SCROLL_DESIGN.md": {
-    "mtime": 1794666820.0880492,
-    "seen": 1794729940.8872073,
+    "mtime": 1794682116.8800733,
+    "seen": 1794733837.650243,
     "ast_hash": "be7465ee75f4768c5c378cb16b9a21f5",
     "semantic_hash": ""
   },
   ".graphify_uncached.txt": {
-    "mtime": 1794644029.2348397,
-    "seen": 1794729940.887209,
+    "mtime": 1794682116.8800733,
+    "seen": 1794733837.6502447,
     "ast_hash": "c313f37f2b3c5e6b6db9b6bd8e54b087",
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1794728115.48296,
-    "seen": 1794729940.8872106,
+    "mtime": 1794706786.785722,
+    "seen": 1794733837.6502464,
     "ast_hash": "01d5b401fbace8badb4a80a437775333",
     "semantic_hash": ""
   },
   "ARCHITECTURE_DAG.md": {
-    "mtime": 1794667356.541462,
-    "seen": 1794729940.8872125,
+    "mtime": 1794682116.8800733,
+    "seen": 1794733837.6502488,
     "ast_hash": "3f941209bea9b4fb289fdd6e8fcfeaad",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1794700786.864212,
-    "seen": 1794729940.8872142,
+    "mtime": 1794706786.785722,
+    "seen": 1794733837.6502504,
     "ast_hash": "0039414bc49f1327cefad966f9d49bcd",
     "semantic_hash": ""
   },
   "FIGMA_DESIGN_SPEC.md": {
-    "mtime": 1794687116.6720798,
-    "seen": 1794729940.8872163,
+    "mtime": 1794706786.785722,
+    "seen": 1794733837.6502526,
     "ast_hash": "9544e259e290f1d84501c3264e1aa8c6",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794731958.9185221,
-    "seen": 1794731993.7498415,
-    "ast_hash": "04ba32b2a16bb15f478d16220b09f586",
+    "mtime": 1794733812.4154408,
+    "seen": 1794733837.650254,
+    "ast_hash": "a475549228659d17cbb052ba869a4bb8",
     "semantic_hash": ""
   },
   "contracts/mock_room/README.txt": {
-    "mtime": 1794687116.6722183,
-    "seen": 1794729940.8872194,
+    "mtime": 1794706786.7867222,
+    "seen": 1794733837.6502566,
     "ast_hash": "070049c8d197c0f428248060015fa9c1",
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794731958.9195073,
-    "seen": 1794731993.7498808,
-    "ast_hash": "f5cd045156259d0c9dbd5b8e6c2f2161",
+    "mtime": 1794733812.4168022,
+    "seen": 1794733837.6502585,
+    "ast_hash": "46f5dfb82c8cce52242cb4a3820f61ab",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794731958.9204974,
-    "seen": 1794731993.7498832,
+    "mtime": 1794732530.5140712,
+    "seen": 1794733837.6502602,
     "ast_hash": "1c5659a0a328e92fa0f92d4751f23de5",
     "semantic_hash": ""
   },
   "docs/dev3-spatial-handoff.md": {
-    "mtime": 1794731554.8733408,
-    "seen": 1794731748.3982558,
+    "mtime": 1794731911.608627,
+    "seen": 1794733837.6502624,
     "ast_hash": "9bd236c98b683617bdb67bfa438a4d97",
     "semantic_hash": ""
   },
   "docs/dev4-plan.md": {
-    "mtime": 1794682054.1780903,
-    "seen": 1794729940.8872273,
+    "mtime": 1794689344.8280137,
+    "seen": 1794733837.6502643,
     "ast_hash": "5726d029ad78ebfc9bcefee97fcc844f",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-14-asset-handoff-and-collision-parts.md": {
-    "mtime": 1794674703.9612093,
-    "seen": 1794729940.8872292,
+    "mtime": 1794682116.8827612,
+    "seen": 1794733837.6502664,
     "ast_hash": "ebea73ae0aa3080b1af5d06441cf19e1",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-14-furniture-mesh-reconstruction.md": {
-    "mtime": 1794700786.8652933,
-    "seen": 1794729940.8872309,
+    "mtime": 1794706786.793722,
+    "seen": 1794733837.6502683,
     "ast_hash": "fe1f0d993645dd232bd8ea3e1f61883c",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-14-furniture-segmentation.md": {
-    "mtime": 1794694681.8463917,
-    "seen": 1794729940.887233,
+    "mtime": 1794706786.793722,
+    "seen": 1794733837.6502705,
     "ast_hash": "99257f4deeaae9b778cdb3df45a3b18c",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-11-14-video-frame-selection.md": {
-    "mtime": 1794687676.6179392,
-    "seen": 1794729940.887241,
+    "mtime": 1794706786.793722,
+    "seen": 1794733837.6502728,
     "ast_hash": "83d8e0c0ef89c7afcf6a5fd356049b34",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-14-3d-representation-design.md": {
-    "mtime": 1794700786.865589,
-    "seen": 1794729940.887243,
+    "mtime": 1794706786.793722,
+    "seen": 1794733837.6502743,
     "ast_hash": "89f557219f3e7527f1fdd1563017ddb2",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-14-furniture-mesh-reconstruction-design.md": {
-    "mtime": 1794700786.8658144,
-    "seen": 1794729940.887245,
+    "mtime": 1794706786.794722,
+    "seen": 1794733837.6502762,
     "ast_hash": "4a71a105e9ec083b1461135689bb5aad",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-14-furniture-segmentation-design.md": {
-    "mtime": 1794700786.865969,
-    "seen": 1794729940.8872468,
+    "mtime": 1794706786.794722,
+    "seen": 1794733837.6502776,
     "ast_hash": "7e26c246bd60a526c6fcc2f0418daa35",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-14-video-frame-selection-design.md": {
-    "mtime": 1794687676.618256,
-    "seen": 1794729940.8872488,
+    "mtime": 1794706786.794722,
+    "seen": 1794733837.6502798,
     "ast_hash": "c8d21afa1135dee609eedba9d8d1a9ac",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-15-demo-asset-cache-design.md": {
-    "mtime": 1794728133.808588,
-    "seen": 1794729940.8872504,
+    "mtime": 1794731887.3355417,
+    "seen": 1794733837.6502812,
     "ast_hash": "f435648aa788ee3a637aeb81a25c0b1f",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-15-furniture-asset-delivery-design.md": {
-    "mtime": 1794728115.4849021,
-    "seen": 1794729940.8872519,
+    "mtime": 1794706786.794722,
+    "seen": 1794733837.650283,
     "ast_hash": "47b879420603fa54a12f0b4af2db16fb",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-15-furniture-mesh-normalisation-design.md": {
-    "mtime": 1794702601.159396,
-    "seen": 1794729940.8872538,
+    "mtime": 1794706786.794722,
+    "seen": 1794733837.650285,
     "ast_hash": "f0f8689f692d81544af583028a6b4909",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-15-retailer-asset-import-design.md": {
-    "mtime": 1794728115.4849021,
-    "seen": 1794729940.8872552,
+    "mtime": 1794724709.9535387,
+    "seen": 1794733837.6502872,
     "ast_hash": "762892ad2d4835f64ed5c4be3c3a88b0",
     "semantic_hash": ""
   },
   "frontend/index.html": {
-    "mtime": 1794702601.1602292,
-    "seen": 1794729940.887257,
+    "mtime": 1794706786.794722,
+    "seen": 1794733837.650289,
     "ast_hash": "7c5207b6b6c37ec1e4a0fc9dac151ae2",
     "semantic_hash": ""
   },
   "frontend/public/audio/NOTICE.md": {
-    "mtime": 1794728115.4849021,
-    "seen": 1794729940.8872585,
+    "mtime": 1794706786.7961588,
+    "seen": 1794733837.650291,
     "ast_hash": "0ee56b4d6b0915b525c7012bdc479ebd",
     "semantic_hash": ""
   },
   "frontend/public/landscapes/LICENSE-shan-shui.txt": {
-    "mtime": 1794702601.160885,
-    "seen": 1794729940.8872602,
+    "mtime": 1794706786.8177216,
+    "seen": 1794733837.6502948,
     "ast_hash": "569e8571ea84e5e675fbe88036d8e981",
     "semantic_hash": ""
   },
   "frontend/src/vendor/shan-shui/README.md": {
-    "mtime": 1794702601.166675,
-    "seen": 1794729940.8872614,
+    "mtime": 1794706786.8266196,
+    "seen": 1794733837.6502967,
     "ast_hash": "7435c4c87e6b9906410ea6d88f901b76",
     "semantic_hash": ""
   },
   "frontend/src/vendor/shan-shui/index.html": {
-    "mtime": 1794702601.1672292,
-    "seen": 1794729940.887263,
+    "mtime": 1794706786.8266196,
+    "seen": 1794733837.6502984,
     "ast_hash": "448e06ed8f6cd822fc56ff8b62b67602",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/README.md": {
-    "mtime": 1794731958.9204974,
-    "seen": 1794731993.7506406,
+    "mtime": 1794731911.6368132,
+    "seen": 1794733837.6503003,
     "ast_hash": "989f3585b4a66a5fdabddd4066efd3a0",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/README.md": {
-    "mtime": 1794694681.8585207,
-    "seen": 1794729940.8872664,
+    "mtime": 1794706786.8427212,
+    "seen": 1794733837.650302,
     "ast_hash": "2c70e026dfb86fec986a1fcf92752ccb",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/README.md": {
-    "mtime": 1794728133.824185,
-    "seen": 1794729940.887268,
+    "mtime": 1794731887.3600514,
+    "seen": 1794733837.6503036,
     "ast_hash": "127317597bfbd81a2658dce6c0911798",
     "semantic_hash": ""
   },
   "services/reconstruction/fixtures/mock_room/README.md": {
-    "mtime": 1794694681.8596547,
-    "seen": 1794729940.8872697,
+    "mtime": 1794706786.8452191,
+    "seen": 1794733837.6503057,
     "ast_hash": "f5c02bc3ba9472ff3229e4e87acdc432",
     "semantic_hash": ""
   },
   "services/reconstruction/room/README.md": {
-    "mtime": 1794731958.9210443,
-    "seen": 1794731993.750778,
+    "mtime": 1794731911.637262,
+    "seen": 1794733837.650308,
     "ast_hash": "72e97ebf4eace776a0feaa3e167cea35",
     "semantic_hash": ""
   },
   "services/spatial_engine/README.md": {
-    "mtime": 1794731685.1966197,
-    "seen": 1794731748.39916,
+    "mtime": 1794732531.2119517,
+    "seen": 1794733837.6503115,
     "ast_hash": "e22d25ce9e63c607152625374d87de10",
     "semantic_hash": ""
   },
   "services/spatial_engine/skills/feng-shui/SKILL.md": {
-    "mtime": 1794731554.8858404,
-    "seen": 1794731748.3991616,
+    "mtime": 1794731911.6407518,
+    "seen": 1794733837.6503134,
     "ast_hash": "67fb20ba590b52e0e1c436217fda9108",
     "semantic_hash": ""
   },
   "examples/one_floor.jpg": {
-    "mtime": 1794682054.1780903,
-    "seen": 1794729940.8872757,
+    "mtime": 1794682116.8828418,
+    "seen": 1794733837.6503155,
     "ast_hash": "2d23fc62a098fd37775ac3a97745e278",
     "semantic_hash": ""
   },
   "examples/three_floor.png": {
-    "mtime": 1794682054.1849253,
-    "seen": 1794729940.8872776,
+    "mtime": 1794682116.8868418,
+    "seen": 1794733837.6503174,
     "ast_hash": "b228360dda07089a5092965f3fb76184",
     "semantic_hash": ""
   },
   "frontend/public/landscapes/landscape-1.webp": {
-    "mtime": 1794702601.1612291,
-    "seen": 1794729940.8872793,
+    "mtime": 1794706786.819134,
+    "seen": 1794733837.6504986,
     "ast_hash": "315d2dd067e7b1b1777944a9bac45bcf",
     "semantic_hash": ""
   },
   "frontend/public/landscapes/landscape-2.webp": {
-    "mtime": 1794702601.1622293,
-    "seen": 1794729940.8872807,
+    "mtime": 1794706786.8197217,
+    "seen": 1794733837.6505005,
     "ast_hash": "e7ef0b3c25af762876f583bf452561f4",
     "semantic_hash": ""
   },
   "frontend/public/landscapes/landscape-3.webp": {
-    "mtime": 1794702601.1632617,
-    "seen": 1794729940.8872824,
+    "mtime": 1794706786.8207216,
+    "seen": 1794733837.6505027,
     "ast_hash": "9a2560cbf34b15132a7f6a69047a419d",
     "semantic_hash": ""
   },
   "frontend/public/landscapes/landscape-4.webp": {
-    "mtime": 1794702601.165229,
-    "seen": 1794729940.887284,
+    "mtime": 1794706786.8227217,
+    "seen": 1794733837.6505044,
     "ast_hash": "42bea8b317ec0bc1b545f11d5e61fb4d",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-0-0072e51e7d.png": {
-    "mtime": 1794728133.8378935,
-    "seen": 1794729940.887286,
+    "mtime": 1794731887.3765156,
+    "seen": 1794733837.6505067,
     "ast_hash": "a0a53ae046f400f3e82953b20411a3e7",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-30-3c4c80da6c.png": {
-    "mtime": 1794728133.8379917,
-    "seen": 1794729940.887288,
+    "mtime": 1794731887.3766186,
+    "seen": 1794733837.6505086,
     "ast_hash": "4eae7b10c9e6f494fe93acefca56172a",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000001/ca4b73c2c597-0-59-229a7e484b.png": {
-    "mtime": 1794728133.8379917,
-    "seen": 1794729940.8872895,
+    "mtime": 1794731887.3766186,
+    "seen": 1794733837.6505105,
     "ast_hash": "848bb2a5a9189c10e96fd96d9ce73f68",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-0-d97fa32f54.png": {
-    "mtime": 1794728133.8379917,
-    "seen": 1794729940.8872914,
+    "mtime": 1794731887.3766186,
+    "seen": 1794733837.6505125,
     "ast_hash": "ced8027a44af7ee2f66e826bb69ad0ec",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-30-09fa8a2ca5.png": {
-    "mtime": 1794728133.8381553,
-    "seen": 1794729940.887293,
+    "mtime": 1794731887.3770108,
+    "seen": 1794733837.6505144,
     "ast_hash": "715f67fb29eec063e4cd96d9f61687b8",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000002/ca4b73c2c597-0-59-81da8ecabe.png": {
-    "mtime": 1794728133.8381553,
-    "seen": 1794729940.8872948,
+    "mtime": 1794731887.3770108,
+    "seen": 1794733837.6505165,
     "ast_hash": "72dd2af71c62287403ea89e5c92841cc",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-0-ac5fad3531.png": {
-    "mtime": 1794728133.8381553,
-    "seen": 1794729940.8872964,
+    "mtime": 1794731887.3770108,
+    "seen": 1794733837.6505182,
     "ast_hash": "4d1018f7107eb905bce2ea4aa7d8013d",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-105-55089ab21e.png": {
-    "mtime": 1794728133.8383014,
-    "seen": 1794729940.887298,
+    "mtime": 1794731887.3771656,
+    "seen": 1794733837.6505198,
     "ast_hash": "72c05c85854b32a12ad93112cf0d1077",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-134-90913fd52a.png": {
-    "mtime": 1794728133.8383014,
-    "seen": 1794729940.8872995,
+    "mtime": 1794731887.3772206,
+    "seen": 1794733837.6505215,
     "ast_hash": "017f1b089e15dbe77452609f6cf065a9",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000003/ca4b73c2c597-0-150-d9c11fcd6a.png": {
-    "mtime": 1794728133.8383014,
-    "seen": 1794729940.8873012,
+    "mtime": 1794731887.3772206,
+    "seen": 1794733837.6505232,
     "ast_hash": "25fe6f1cc410319bf66b7956fd823fbf",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-0-e5ed95d8dc.png": {
-    "mtime": 1794728133.8383014,
-    "seen": 1794729940.8873026,
+    "mtime": 1794731887.3772206,
+    "seen": 1794733837.650525,
     "ast_hash": "513b69b2c32567c00da860e144331396",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-105-090dc2107a.png": {
-    "mtime": 1794728133.8385334,
-    "seen": 1794729940.8873038,
+    "mtime": 1794731887.3774123,
+    "seen": 1794733837.6505268,
     "ast_hash": "03c7eb518a4ff69359c1f8f32bceeded",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-134-a668756a9f.png": {
-    "mtime": 1794728133.8385334,
-    "seen": 1794729940.8873055,
+    "mtime": 1794731887.377525,
+    "seen": 1794733837.6505284,
     "ast_hash": "efd78ec6b5e2f1315b09e26f4f4524c2",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/demo_cache/reviewed-opening-room-a68c301f/g-5eb02891c8cd00a9/masks/a68c301fe648b55a/vid-000004/ca4b73c2c597-0-150-210622d67a.png": {
-    "mtime": 1794728133.8385334,
-    "seen": 1794729940.887307,
+    "mtime": 1794731887.377525,
+    "seen": 1794733837.6505303,
     "ast_hash": "e2e19510c148e2142a345f9f81d35f0d",
     "semantic_hash": ""
   },
   "examples/three_floor_1.mp4": {
-    "mtime": 1794682054.5706766,
-    "seen": 1794729940.8873088,
+    "mtime": 1794682117.2458427,
+    "seen": 1794733837.650532,
     "ast_hash": "934887046327128df480c09c8a64cfce",
     "semantic_hash": ""
   },
   "examples/three_floor_2.mp4": {
-    "mtime": 1794682054.8086772,
-    "seen": 1794729940.8873103,
+    "mtime": 1794682117.4748433,
+    "seen": 1794733837.650534,
     "ast_hash": "9cfcabf309c992e7fbeb19c4c6cc1c9c",
     "semantic_hash": ""
   },
   "examples/three_floor_3.mp4": {
-    "mtime": 1794682055.055678,
-    "seen": 1794729940.8873122,
+    "mtime": 1794682117.715844,
+    "seen": 1794733837.6505358,
     "ast_hash": "45fa7a5e45e001a7f1f19001375023f9",
     "semantic_hash": ""
   },
   "examples/three_floor_4.mp4": {
-    "mtime": 1794682055.416679,
-    "seen": 1794729940.8873136,
+    "mtime": 1794682118.092845,
+    "seen": 1794733837.6505377,
     "ast_hash": "f85edfafaf2e4f9c6cced624641c3ad4",
     "semantic_hash": ""
   },
   "frontend/public/audio/reverie.mp3": {
-    "mtime": 1794728115.5077305,
-    "seen": 1794729940.8873153,
+    "mtime": 1794706786.8167217,
+    "seen": 1794733837.6505396,
     "ast_hash": "0fa5912a7507345c6c0d8707cf58ec8d",
     "semantic_hash": ""
   },
@@ -1506,837 +1506,885 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/catalogImport.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.3938682,
+    "mtime": 1794731911.610265,
+    "seen": 1794733837.649888,
     "ast_hash": "074f3210edf31a63430859cbdf69780b",
     "semantic_hash": ""
   },
   "frontend/tests/catalogImport.test.ts": {
-    "mtime": 1794729931.924153,
-    "seen": 1794729940.8869896,
+    "mtime": 1794731911.611259,
+    "seen": 1794733837.6499302,
     "ast_hash": "7f30877e75c54b239545261ca20235cf",
     "semantic_hash": ""
   },
   "services/reconstruction/catalog_routes.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794729940.8870687,
+    "mtime": 1794731911.637135,
+    "seen": 1794733837.6500459,
     "ast_hash": "0bd40634d8ca5f84738a26b72fb26407",
     "semantic_hash": ""
   },
   "tests/test_catalog_routes.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794729940.8871813,
+    "mtime": 1794731911.6428862,
+    "seen": 1794733837.6502116,
     "ast_hash": "fcd872bd5d2c0e5655c26c2ff5af4eff",
     "semantic_hash": ""
   },
   "frontend/tests/ikeaCatalog.test.ts": {
-    "mtime": 1794731608.927816,
-    "seen": 1794731748.3942041,
+    "mtime": 1794732531.1854012,
+    "seen": 1794733837.649943,
     "ast_hash": "e8ee1a8497f532005d224e3f2fca07a7",
     "semantic_hash": ""
   },
   "scripts/cache_ikea_library.py": {
-    "mtime": 1794730996.1361008,
-    "seen": 1794731129.7266252,
+    "mtime": 1794732531.2115777,
+    "seen": 1794733837.6499715,
     "ast_hash": "fdc86a5edd1f9675c951206ceeb6d001",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_ikea_library.py": {
-    "mtime": 1794730270.6801922,
-    "seen": 1794731129.729317,
+    "mtime": 1794732531.2122025,
+    "seen": 1794733837.6501467,
     "ast_hash": "c3dbc2670205341032fc5071e96e3f5e",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_ikea_unpack.py": {
-    "mtime": 1794731052.7467663,
-    "seen": 1794731129.7293189,
+    "mtime": 1794732531.2123234,
+    "seen": 1794733837.650149,
     "ast_hash": "fda2b9e5be1d38918f79930f8659162f",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/NOTICE.md": {
-    "mtime": 1794730996.6999264,
-    "seen": 1794731129.7313287,
+    "mtime": 1794732530.5144715,
+    "seen": 1794733837.6502926,
     "ast_hash": "fb44446e7c0003c939d76c326cbaf619",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00104291.webp": {
-    "mtime": 1794730414.8272436,
-    "seen": 1794731129.731784,
+    "mtime": 1794732531.1783595,
+    "seen": 1794733837.6503196,
     "ast_hash": "74fd899ce9883470d0cde19cf7fdc143",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00217797.webp": {
-    "mtime": 1794730384.9207914,
-    "seen": 1794731129.7317858,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503217,
     "ast_hash": "f4658d868643b863320c1b64d98094ea",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00228705.webp": {
-    "mtime": 1794730290.5357368,
-    "seen": 1794731129.7317867,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503234,
     "ast_hash": "8ad4d09a772ec7a2cf3d7472523fff53",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00263850.webp": {
-    "mtime": 1794730612.9742959,
-    "seen": 1794731129.7317884,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503253,
     "ast_hash": "6d25ab6212dbd8101092c62ea42af88e",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00320134.webp": {
-    "mtime": 1794730304.897418,
-    "seen": 1794731129.7317894,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.650327,
     "ast_hash": "534fd95dfbf0ddde21eb34ee4a389e52",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00324518.webp": {
-    "mtime": 1794730704.0552638,
-    "seen": 1794731129.7317905,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.650329,
     "ast_hash": "1058bc353358cc4e37e491bc40f9f83d",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00396242.webp": {
-    "mtime": 1794731019.982956,
-    "seen": 1794731129.7317922,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503305,
     "ast_hash": "bf59bceaca7467a6a5b07cc58a7ba549",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00441758.webp": {
-    "mtime": 1794730431.5399508,
-    "seen": 1794731129.7317934,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503325,
     "ast_hash": "a496a8105d93291c3311fb4f5d445cd9",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00457235.webp": {
-    "mtime": 1794730385.3867826,
-    "seen": 1794731129.7317946,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503348,
     "ast_hash": "c73c80c134d9aec16656aec40abd8b3e",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00506231.webp": {
-    "mtime": 1794730594.665525,
-    "seen": 1794731129.7317958,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503365,
     "ast_hash": "46c496421a53e06dd0e2d88b74d29384",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00595086.webp": {
-    "mtime": 1794730361.9392335,
-    "seen": 1794731129.7317967,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503386,
     "ast_hash": "bf095ff61d0e9c13c8161e3bedbc48a3",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00609125.webp": {
-    "mtime": 1794730416.827208,
-    "seen": 1794731129.7317982,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503403,
     "ast_hash": "96b2d1178e718a0a70833e7e52264574",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-00635167.webp": {
-    "mtime": 1794730382.6718338,
-    "seen": 1794731129.7317994,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503425,
     "ast_hash": "2d6d1d0e6d04528f21554027e61891c8",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-10401931.webp": {
-    "mtime": 1794730727.7120228,
-    "seen": 1794731129.7318003,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503444,
     "ast_hash": "16be3c54933611ffe5daf966754cd39d",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-10473555.webp": {
-    "mtime": 1794730372.0120373,
-    "seen": 1794731129.7318013,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503463,
     "ast_hash": "51ad2a94ecaba3ff1763587081ac7fa0",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-10576718.webp": {
-    "mtime": 1794730379.916886,
-    "seen": 1794731129.731803,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503482,
     "ast_hash": "cb2a0f3fd7706852f6a52597fbbfe558",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-10603547.webp": {
-    "mtime": 1794730277.490034,
-    "seen": 1794731129.731804,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503506,
     "ast_hash": "41d9d28f014bb44761c899ac4d0d3ce5",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-10605424.webp": {
-    "mtime": 1794730378.2479177,
-    "seen": 1794731129.731805,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503525,
     "ast_hash": "068d92efad1bb5b95f16f3b2f140aa71",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-10608998.webp": {
-    "mtime": 1794730419.2151659,
-    "seen": 1794731129.731806,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503541,
     "ast_hash": "5c40ad36ab1b4662156975de675f75d9",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-20436713.webp": {
-    "mtime": 1794730693.8133714,
-    "seen": 1794731129.7318077,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503563,
     "ast_hash": "c3b312aeedf8fbed05ad93a5930427b5",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-20487873.webp": {
-    "mtime": 1794730418.5661774,
-    "seen": 1794731129.7318094,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503582,
     "ast_hash": "822878d2baa82d6caa09fb0da1f35c89",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-20530065.webp": {
-    "mtime": 1794730421.9761174,
-    "seen": 1794731129.7318106,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.65036,
     "ast_hash": "c6f85fabb2f3260ab0e0c234d1c9f627",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-20530621.webp": {
-    "mtime": 1794730381.1028636,
-    "seen": 1794731129.731812,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503615,
     "ast_hash": "c0ed71c870db4066c591f35a685eadcc",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-20532743.webp": {
-    "mtime": 1794731013.6679938,
-    "seen": 1794731129.7318134,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503634,
     "ast_hash": "01dd3d7886fddac8424c35371f7d33da",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-30213076.webp": {
-    "mtime": 1794730367.3521278,
-    "seen": 1794731129.7318149,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.650365,
     "ast_hash": "03cf96285576a9d063e55b9c16b7df2f",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-30263844.webp": {
-    "mtime": 1794730612.9742959,
-    "seen": 1794731129.7318163,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.650367,
     "ast_hash": "be9ca93bd6f20c29b1b4815d961da831",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-30298396.webp": {
-    "mtime": 1794731021.483947,
-    "seen": 1794731129.7318175,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503687,
     "ast_hash": "d8dadae48c655199fd81559c0b5f40fd",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-30582445.webp": {
-    "mtime": 1794730365.9161556,
-    "seen": 1794731129.7318187,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503706,
     "ast_hash": "0f6bad95faae64738b849c018e395015",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-30602429.webp": {
-    "mtime": 1794730358.4033034,
-    "seen": 1794731129.73182,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.650372,
     "ast_hash": "d893fe41db3cad723e48f0574ed7d30b",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40104294.webp": {
-    "mtime": 1794730415.373234,
-    "seen": 1794731129.731822,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503742,
     "ast_hash": "430792a2e96ef2cdbefe4741dee0e4b1",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40301223.webp": {
-    "mtime": 1794730703.3492713,
-    "seen": 1794731129.7318227,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.650376,
     "ast_hash": "8cc5c73b1d1bb93505ce21f107cde653",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40407922.webp": {
-    "mtime": 1794730429.6329837,
-    "seen": 1794731129.7318244,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.650378,
     "ast_hash": "f6f1e71d7b09734e7863a8206a4bbbb1",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40415465.webp": {
-    "mtime": 1794730713.6861644,
-    "seen": 1794731129.7318258,
+    "mtime": 1794732531.1798642,
+    "seen": 1794733837.6503794,
     "ast_hash": "717a10e5861c5928a264c2dcd9e521d3",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40492675.webp": {
-    "mtime": 1794730989.4291427,
-    "seen": 1794731129.7318275,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.650381,
     "ast_hash": "11a6227dafc46a4fb09c904c79f86eb6",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40500005.webp": {
-    "mtime": 1794730423.7710857,
-    "seen": 1794731129.7318285,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.6503825,
     "ast_hash": "3bea833fc028c3d44433e3a36d445df8",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40503546.webp": {
-    "mtime": 1794730714.3701575,
-    "seen": 1794731129.7318296,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.6503844,
     "ast_hash": "1a64a584ecaf0d6ec89354c1d4fca9d7",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40534152.webp": {
-    "mtime": 1794730419.089168,
-    "seen": 1794731129.7318313,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.6503863,
     "ast_hash": "4696fedf4dd49aa29a5b7eeebb37b18f",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40554381.webp": {
-    "mtime": 1794731028.0459082,
-    "seen": 1794731129.731832,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.6503882,
     "ast_hash": "5b8ee7189fda3e3e53a51cb9b1d80531",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40566751.webp": {
-    "mtime": 1794730406.7583885,
-    "seen": 1794731129.7318337,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.65039,
     "ast_hash": "1558eb8c6b6d04482f0199056be86845",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40598610.webp": {
-    "mtime": 1794730435.898876,
-    "seen": 1794731129.7318347,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.6503918,
     "ast_hash": "f38befce4ce8503d1a34cfa4aa68ecbc",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-40613677.webp": {
-    "mtime": 1794730369.183092,
-    "seen": 1794731129.731836,
+    "mtime": 1794732531.1803594,
+    "seen": 1794733837.6503932,
     "ast_hash": "328ec9e8365f7aec39fddde475ebf684",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50161321.webp": {
-    "mtime": 1794730419.9781525,
-    "seen": 1794731129.731837,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6503952,
     "ast_hash": "ea035ec4c1d7370c3286e675be876bd6",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50250713.webp": {
-    "mtime": 1794730374.0279984,
-    "seen": 1794731129.7318382,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6503968,
     "ast_hash": "3019bb3010ade83a4b790faddac5976b",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50263838.webp": {
-    "mtime": 1794730693.8133714,
-    "seen": 1794731129.7318394,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6503985,
     "ast_hash": "ee60043da5903105336bf931ea46ccd8",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50403669.webp": {
-    "mtime": 1794730378.6679099,
-    "seen": 1794731129.731841,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504002,
     "ast_hash": "f414176d682f6c6086b30f642f508c2c",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50453758.webp": {
-    "mtime": 1794730437.0978553,
-    "seen": 1794731129.7318425,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.650402,
     "ast_hash": "f7c6c50d9d1cd5162fa2611c917f9779",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50530988.webp": {
-    "mtime": 1794731029.3939004,
-    "seen": 1794731129.7318442,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504037,
     "ast_hash": "ac2b0fa7ab49cb54a725332f18ec7789",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50569103.webp": {
-    "mtime": 1794730381.0078652,
-    "seen": 1794731129.7318454,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504054,
     "ast_hash": "759d9be02cc234068c49c629cbec1076",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-50586145.webp": {
-    "mtime": 1794731028.8609035,
-    "seen": 1794731129.7318466,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504068,
     "ast_hash": "8bf9169eaf9177808dfc96c8f7bf87fe",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-60456916.webp": {
-    "mtime": 1794730438.8948247,
-    "seen": 1794731129.731848,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504087,
     "ast_hash": "eb74ecbf2fd2687e08c753c5c22cc54e",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-60483255.webp": {
-    "mtime": 1794730439.2028196,
-    "seen": 1794731129.7318492,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504102,
     "ast_hash": "0c12240dfd3499d2a1787144181d2fcf",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-60518274.webp": {
-    "mtime": 1794730345.0765705,
-    "seen": 1794731129.7318509,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504118,
     "ast_hash": "86a0bb7518d0cdf509ef164b391312db",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-60538205.webp": {
-    "mtime": 1794730372.556027,
-    "seen": 1794731129.7318516,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504135,
     "ast_hash": "df3e6ddc32f3413dbd91617754756c2d",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-60607171.webp": {
-    "mtime": 1794730987.958152,
-    "seen": 1794731129.731853,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504154,
     "ast_hash": "700c55477e0873a68065e59b72f99d18",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-60627980.webp": {
-    "mtime": 1794730421.3801277,
-    "seen": 1794731129.7318547,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504169,
     "ast_hash": "db952d1ddd23f1db158e36366b22a7f0",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-70239710.webp": {
-    "mtime": 1794730414.694246,
-    "seen": 1794731129.7318559,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504188,
     "ast_hash": "c8b98e7d4505f3eb019e8eeab5a77d20",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-70453762.webp": {
-    "mtime": 1794730431.4909515,
-    "seen": 1794731129.7318566,
+    "mtime": 1794732531.181288,
+    "seen": 1794733837.6504202,
     "ast_hash": "eb622cfc72739e5cae93499ef8612b8c",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-70458203.webp": {
-    "mtime": 1794730437.4468493,
-    "seen": 1794731129.7318583,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504219,
     "ast_hash": "c43b93fdaa82a36428d73c6080333fcb",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-70515915.webp": {
-    "mtime": 1794731016.5989761,
-    "seen": 1794731129.731859,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504235,
     "ast_hash": "953e02a486a081f3a45540ee3f627321",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-70530609.webp": {
-    "mtime": 1794730435.9258754,
-    "seen": 1794731129.7318604,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504254,
     "ast_hash": "ef502bfb4d9d94bfc7d0d03aec5db58e",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-70544866.webp": {
-    "mtime": 1794730382.9308288,
-    "seen": 1794731129.7318618,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504266,
     "ast_hash": "cea4366c4743eb9bd1e3d9cfb720ef1f",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-80213074.webp": {
-    "mtime": 1794730365.9841545,
-    "seen": 1794731129.7318633,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504285,
     "ast_hash": "297308c712ba52c61ad0b40d83a24392",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-80437234.webp": {
-    "mtime": 1794730431.530951,
-    "seen": 1794731129.731865,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.65043,
     "ast_hash": "3fb43d17435a1e1cdf353b117607e0d4",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-80458231.webp": {
-    "mtime": 1794730441.9177735,
-    "seen": 1794731129.731866,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504316,
     "ast_hash": "6bf98eb669f47988f1d4f303f2982f26",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-80506393.webp": {
-    "mtime": 1794730986.4891613,
-    "seen": 1794731129.7318673,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504333,
     "ast_hash": "ba363622a18ff5f861c1a19803551ce0",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-80507627.webp": {
-    "mtime": 1794730375.8549635,
-    "seen": 1794731129.7318687,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504352,
     "ast_hash": "2e97c3d28907c459a9afdb85710625a5",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-80569998.webp": {
-    "mtime": 1794730406.6343906,
-    "seen": 1794731129.7318702,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.650437,
     "ast_hash": "8c9662310b11c7dd677fd219d906dd1a",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-80608103.webp": {
-    "mtime": 1794730344.6535792,
-    "seen": 1794731129.7318716,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.650439,
     "ast_hash": "5c46c3cb33be41ad8a4c9cda6840ec63",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90214308.webp": {
-    "mtime": 1794730370.6020646,
-    "seen": 1794731129.7318728,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504407,
     "ast_hash": "683de31f4d4f56e34d7d0caec6f58f8e",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90349326.webp": {
-    "mtime": 1794730265.6033115,
-    "seen": 1794731129.731874,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504428,
     "ast_hash": "a4142e77a5290eafc155224bc17e9ce8",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90399316.webp": {
-    "mtime": 1794730594.0245333,
-    "seen": 1794731129.731876,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504443,
     "ast_hash": "851e182e17fac315ab73764b013f0903",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90401932.webp": {
-    "mtime": 1794730715.09215,
-    "seen": 1794731129.731877,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504462,
     "ast_hash": "522b9f610e3d1761174dd5b9bce17d26",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90437238.webp": {
-    "mtime": 1794730432.8499281,
-    "seen": 1794731129.731878,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.650448,
     "ast_hash": "90c586847bb274b1173c43ed06254a72",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90493955.webp": {
-    "mtime": 1794730368.518105,
-    "seen": 1794731129.7318795,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.65045,
     "ast_hash": "02f47797bafdbe9792de1aa8b90dca46",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90540706.webp": {
-    "mtime": 1794730423.3260937,
-    "seen": 1794731129.7318802,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.650452,
     "ast_hash": "15c1484275b82133c4d18c75da50d30a",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90551120.webp": {
-    "mtime": 1794730379.5148935,
-    "seen": 1794731129.731882,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504538,
     "ast_hash": "2eed1a77e78c756a4e479e3d7a89d2d7",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90562246.webp": {
-    "mtime": 1794730423.2790945,
-    "seen": 1794731129.7318828,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504552,
     "ast_hash": "d4f485beaf70bbf5936c776e71f60935",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-90606820.webp": {
-    "mtime": 1794730407.4583757,
-    "seen": 1794731129.7318842,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504574,
     "ast_hash": "31c6d92875cb2cffcdc2f0134599db96",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s09489637.webp": {
-    "mtime": 1794730586.3726313,
-    "seen": 1794731129.7318857,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504588,
     "ast_hash": "44c971c898e8e6a0c500ea7a8df934c4",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s09536177.webp": {
-    "mtime": 1794731013.6999936,
-    "seen": 1794731129.7318869,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504607,
     "ast_hash": "957d8293beaea4043859b125f7e7fa3f",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s09903014.webp": {
-    "mtime": 1794730367.5871232,
-    "seen": 1794731129.7318945,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504626,
     "ast_hash": "9fb0d76a13a74beea863802e9894540d",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s19031704.webp": {
-    "mtime": 1794730588.5396035,
-    "seen": 1794731129.7318962,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504645,
     "ast_hash": "ba0d0023faab313d3c24024d2053debb",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s19270313.webp": {
-    "mtime": 1794730585.644641,
-    "seen": 1794731129.7318976,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.650466,
     "ast_hash": "31cc15b4f819b6dca749ca5dd1c202cc",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s19306294.webp": {
-    "mtime": 1794730597.3564909,
-    "seen": 1794731129.7319007,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504679,
     "ast_hash": "51bd16bcdb9ad28f6d36a2157a34fc2f",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s19508862.webp": {
-    "mtime": 1794730596.8294976,
-    "seen": 1794731129.7319024,
+    "mtime": 1794732531.1813595,
+    "seen": 1794733837.6504695,
     "ast_hash": "920240bcbfaccf34da5c11273b964763",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s29006940.webp": {
-    "mtime": 1794730270.8031895,
-    "seen": 1794731129.731904,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504714,
     "ast_hash": "ff06e0f9b0782da3ad8d85fdce2fb958",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s29006978.webp": {
-    "mtime": 1794730220.9227567,
-    "seen": 1794731129.7319055,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504729,
     "ast_hash": "823f7780a47a9ee331c52e458c587bd1",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s29281066.webp": {
-    "mtime": 1794730714.3581576,
-    "seen": 1794731129.7319071,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504748,
     "ast_hash": "0cf483d81731bbcde9aaecf86e77f9e7",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s29416758.webp": {
-    "mtime": 1794730371.9000394,
-    "seen": 1794731129.7319088,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504765,
     "ast_hash": "c61cdd3b8f4a08dae883d355fc215cb2",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s39284998.webp": {
-    "mtime": 1794730703.2152727,
-    "seen": 1794731129.7319138,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504781,
     "ast_hash": "a2152a121faeb78b871a51b18414ab9d",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s39494760.webp": {
-    "mtime": 1794730444.0447376,
-    "seen": 1794731129.7319157,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504796,
     "ast_hash": "f47e52654f6414e72ffdf19f2d5fa7fd",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s39514683.webp": {
-    "mtime": 1794731012.953998,
-    "seen": 1794731129.731918,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504815,
     "ast_hash": "fef266ce9df3313fea2296a1709f309c",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s49431927.webp": {
-    "mtime": 1794730369.80908,
-    "seen": 1794731129.7319195,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504834,
     "ast_hash": "80934fc6bd28496580b474087855be1a",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s59399031.webp": {
-    "mtime": 1794730587.872612,
-    "seen": 1794731129.7319214,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504855,
     "ast_hash": "da85fef6ab6f02ce2820d3056caf5e5e",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s69440596.webp": {
-    "mtime": 1794730584.318658,
-    "seen": 1794731129.7319229,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504872,
     "ast_hash": "8119b68b4b498257563079ee9a1b7991",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s69537409.webp": {
-    "mtime": 1794730593.2075436,
-    "seen": 1794731129.7319243,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504889,
     "ast_hash": "e236098dcdaca606de1df76b8f374dff",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s79017837.webp": {
-    "mtime": 1794730708.477218,
-    "seen": 1794731129.7319255,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504905,
     "ast_hash": "d5c75b5b2432ca8285f81cbfbe964a68",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s79270273.webp": {
-    "mtime": 1794730594.4585276,
-    "seen": 1794731129.7319264,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504924,
     "ast_hash": "93a5a5c1384e37e0234f3697de2d70f0",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s89246862.webp": {
-    "mtime": 1794730454.6545606,
-    "seen": 1794731129.731928,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504946,
     "ast_hash": "e66cf3363ea56043007c8665b08e7c8d",
     "semantic_hash": ""
   },
   "frontend/public/catalog/ikea/images/ikea-s99270291.webp": {
-    "mtime": 1794730594.736524,
-    "seen": 1794731129.7319293,
+    "mtime": 1794732531.1823595,
+    "seen": 1794733837.6504962,
     "ast_hash": "323fd65de065cd0e1a3a344ee82b439a",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/CatalogPreview.tsx": {
-    "mtime": 1794731554.8733408,
-    "seen": 1794731748.3929875,
+    "mtime": 1794731911.608765,
+    "seen": 1794733837.649813,
     "ast_hash": "91a282496c7503c602066bb2c608d12e",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/FengShuiScoreCard.tsx": {
-    "mtime": 1794731554.8733408,
-    "seen": 1794731748.3930402,
+    "mtime": 1794731911.6089857,
+    "seen": 1794733837.6498206,
     "ast_hash": "958b0b88daa35e2a3c9f72114d00f966",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/FurnitureMesh.tsx": {
-    "mtime": 1794731554.8738403,
-    "seen": 1794731748.393044,
+    "mtime": 1794731911.6091251,
+    "seen": 1794733837.6498246,
     "ast_hash": "f9ecfbb82f20b510c82a3957cee41102",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/LayoutProposalCard.tsx": {
-    "mtime": 1794731554.8738403,
-    "seen": 1794731748.3930476,
+    "mtime": 1794731911.6093683,
+    "seen": 1794733837.6498291,
     "ast_hash": "9c09b615adc5998bdd532698397c27fe",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/VersionTree.tsx": {
-    "mtime": 1794731554.8744614,
-    "seen": 1794731748.3931787,
+    "mtime": 1794731911.6097915,
+    "seen": 1794733837.6498406,
     "ast_hash": "2d9f5135282a1453245330e2f64baac9",
     "semantic_hash": ""
   },
   "frontend/src/lib/api.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.393865,
+    "mtime": 1794731911.610265,
+    "seen": 1794733837.649886,
     "ast_hash": "03247aa01aeb33db0dbd20f64e69f125",
     "semantic_hash": ""
   },
   "frontend/src/lib/editorServices.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.3938713,
+    "mtime": 1794731911.610265,
+    "seen": 1794733837.649892,
     "ast_hash": "9bf9c3b8c7b7c953db2b266d3af4db49",
     "semantic_hash": ""
   },
   "frontend/src/lib/fengShui.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.3938732,
+    "mtime": 1794731911.610523,
+    "seen": 1794733837.6498947,
     "ast_hash": "db5363e3f3560e682545ae2fb6dba983",
     "semantic_hash": ""
   },
   "frontend/src/lib/layoutDiff.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.3939173,
+    "mtime": 1794731911.610523,
+    "seen": 1794733837.6498988,
     "ast_hash": "b3e2761d40451ca90a4c792203900895",
     "semantic_hash": ""
   },
   "frontend/src/lib/roomVersions.ts": {
-    "mtime": 1794731554.8768404,
-    "seen": 1794731748.3939538,
+    "mtime": 1794731911.610523,
+    "seen": 1794733837.6499069,
     "ast_hash": "3b1753ec53961a04d099473e170121ac",
     "semantic_hash": ""
   },
   "frontend/tests/catalog.test.ts": {
-    "mtime": 1794731676.3315566,
-    "seen": 1794731748.3941305,
+    "mtime": 1794732531.1854012,
+    "seen": 1794733837.649928,
     "ast_hash": "6e1c43432bc361cb942e4e0d4fc62c1d",
     "semantic_hash": ""
   },
   "frontend/tests/fengShui.test.ts": {
-    "mtime": 1794731554.8768404,
-    "seen": 1794731748.3941982,
+    "mtime": 1794731911.611435,
+    "seen": 1794733837.6499362,
     "ast_hash": "8f0308829bcefb95700d10b552a472e3",
     "semantic_hash": ""
   },
   "frontend/tests/fengShuiFixtures.ts": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3941998,
+    "mtime": 1794731911.611435,
+    "seen": 1794733837.649938,
     "ast_hash": "f2088be7d1648e8a9e8125731a9a42fd",
     "semantic_hash": ""
   },
   "frontend/tests/fengShuiScore.test.tsx": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3942015,
+    "mtime": 1794731911.6116345,
+    "seen": 1794733837.6499407,
     "ast_hash": "04a4ff1fe9c40de7ff62a203c5f15d41",
     "semantic_hash": ""
   },
   "frontend/tests/layoutAgent.test.tsx": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3942053,
+    "mtime": 1794731911.611816,
+    "seen": 1794733837.649945,
     "ast_hash": "2c59c1a1728cf5d18fc2f944dd640fac",
     "semantic_hash": ""
   },
   "frontend/tests/layoutProgress.test.tsx": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3942068,
+    "mtime": 1794731911.611816,
+    "seen": 1794733837.6499472,
     "ast_hash": "fc965cf002b0d2ad8d5593ee8268461c",
     "semantic_hash": ""
   },
   "frontend/tests/roomVersions.test.tsx": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3943045,
+    "mtime": 1794731911.61204,
+    "seen": 1794733837.6499555,
     "ast_hash": "8c774d971689ed9920ac9f2d03258b74",
     "semantic_hash": ""
   },
   "frontend/tests/solveStream.ts": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3943067,
+    "mtime": 1794731911.61204,
+    "seen": 1794733837.6499574,
     "ast_hash": "5768f5944deb54b42ba0f30973401ea1",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui_inputs.py": {
-    "mtime": 1794731554.8828404,
-    "seen": 1794731748.3965573,
+    "mtime": 1794731911.64002,
+    "seen": 1794733837.6501064,
     "ast_hash": "8b8772b86610bb0e831a8c85014fecec",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui_score.py": {
-    "mtime": 1794731554.8838403,
-    "seen": 1794731748.3965921,
+    "mtime": 1794731911.6402059,
+    "seen": 1794733837.6501105,
     "ast_hash": "3876c06c5ec58a2381cc6bfb21aa9218",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui_skill.py": {
-    "mtime": 1794731554.8838403,
-    "seen": 1794731748.3965936,
+    "mtime": 1794731911.6402059,
+    "seen": 1794733837.6501129,
     "ast_hash": "137b80a8d42bfe266c1962eb8d876370",
     "semantic_hash": ""
   },
   "services/spatial_engine/library.py": {
-    "mtime": 1794731609.018708,
-    "seen": 1794731748.3965988,
+    "mtime": 1794732531.212048,
+    "seen": 1794733837.6501217,
     "ast_hash": "1c4fdd4bde18a916e6806a20005b73e1",
     "semantic_hash": ""
   },
   "services/spatial_engine/streaming.py": {
-    "mtime": 1794731554.8858404,
-    "seen": 1794731748.3966994,
-    "ast_hash": "2105e98d97b45ca7f63b5627f06559df",
+    "mtime": 1794732073.0328667,
+    "seen": 1794733837.650135,
+    "ast_hash": "014c4059efc019289ef08f2cd5518c6a",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_feng_shui_optimisation.py": {
-    "mtime": 1794731554.8878403,
-    "seen": 1794731748.3974094,
+    "mtime": 1794731911.642195,
+    "seen": 1794733837.6501844,
     "ast_hash": "4e3260be38cffa95c4acfdcc407a2435",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_feng_shui_score.py": {
-    "mtime": 1794731554.888403,
-    "seen": 1794731748.3974106,
+    "mtime": 1794731911.642301,
+    "seen": 1794733837.6501865,
     "ast_hash": "5b9c1333a48259acff09136cbe7d0387",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_library.py": {
-    "mtime": 1794731637.2592328,
-    "seen": 1794731748.397539,
-    "ast_hash": "ebcc1a12c58f10412910f62798a95d91",
+    "mtime": 1794732531.2126303,
+    "seen": 1794733837.6501985,
+    "ast_hash": "cb41bc7e5516eb7bad5e500436eac18e",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_streaming.py": {
-    "mtime": 1794731554.8897712,
-    "seen": 1794731748.3976345,
+    "mtime": 1794731911.6428056,
+    "seen": 1794733837.65021,
     "ast_hash": "81d66e74351b07b95b86e6bbfa819c82",
     "semantic_hash": ""
   },
   "services/reconstruction/room/scene_cache.py": {
-    "mtime": 1794731958.9240444,
-    "seen": 1794731993.7470345,
+    "mtime": 1794731911.63855,
+    "seen": 1794733837.6500852,
     "ast_hash": "5461b6f9459569bb012f892df2bd616e",
     "semantic_hash": ""
   },
   "tests/test_scene_cache.py": {
-    "mtime": 1794731958.9266195,
-    "seen": 1794731993.7496393,
+    "mtime": 1794731911.643088,
+    "seen": 1794733837.6502392,
     "ast_hash": "b90e2caeba874ba5894522f9824a478a",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/scene_cache/README.md": {
-    "mtime": 1794731958.9226375,
-    "seen": 1794731993.7507796,
+    "mtime": 1794731911.637262,
+    "seen": 1794733837.6503096,
     "ast_hash": "871f256c6fac4eb22d4885ef0f135565",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/products.ts": {
+    "mtime": 1794732424.7164655,
+    "seen": 1794733837.6499045,
+    "ast_hash": "19380c07d0c5feefffe26923d38073c3",
+    "semantic_hash": ""
+  },
+  "frontend/tests/addProduct.test.ts": {
+    "mtime": 1794731903.2451808,
+    "seen": 1794733837.6499193,
+    "ast_hash": "64bfa33b9eb9d365684f7b77bcf39019",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/catalog_routes.py": {
+    "mtime": 1794731903.2711322,
+    "seen": 1794733837.6499925,
+    "ast_hash": "ab2c17f5e720202ed8a9ddcefc42e021",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/furniture_search.py": {
+    "mtime": 1794732410.1364806,
+    "seen": 1794733837.6501148,
+    "ast_hash": "0b751d5db9ff3da69796407ead1ce3e4",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/placement.py": {
+    "mtime": 1794731903.2778528,
+    "seen": 1794733837.6501272,
+    "ast_hash": "342d85060705e3dd7b8aa3c0eaa9f700",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/test_catalog_imports.py": {
+    "mtime": 1794731903.2789848,
+    "seen": 1794733837.65014,
+    "ast_hash": "9bd451573ad28a76cfb1dce3b396c564",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_furniture_search.py": {
+    "mtime": 1794731903.2795262,
+    "seen": 1794733837.6501904,
+    "ast_hash": "66863874cc6f32fd652a018ad7d2e279",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_placement.py": {
+    "mtime": 1794731903.2800398,
+    "seen": 1794733837.650202,
+    "ast_hash": "2d736fd9c620f839ccc8c93fa703c135",
     "semantic_hash": ""
   }
 }

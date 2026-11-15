@@ -46,6 +46,10 @@ import {
 import { SpatialError } from './lib/spatial'
 import {
   DEFAULT_PLAY_LIGHTING,
+  artificialSources,
+  MAX_LIGHT_SOURCES,
+  validLightPosition,
+  type LightPosition,
   type PlayLightingSettings,
 } from './lib/lighting'
 
@@ -90,6 +94,7 @@ interface State {
   tab: Tab
   mode: EditorMode
   playPhase: 'walking' | 'lighting'
+  playLightTool: 'none' | 'add' | 'remove'
   playLighting: PlayLightingSettings
   /** Local preview actor, never included in RoomScene or its revision. */
   human: Pose2D | null
@@ -163,6 +168,10 @@ interface State {
   resumeWalking: () => boolean
   setArtificialLight: (percent: number) => void
   setTimeOfDay: (hour: number) => void
+  setLightWarmth: (kelvin: number) => void
+  setLightTool: (tool: 'none' | 'add' | 'remove') => void
+  addLightSource: (position: LightPosition) => boolean
+  removeLightSource: (id: string) => boolean
   toast: (text: string) => void
   dismissToast: (id: number) => void
 }
@@ -171,6 +180,7 @@ interface State {
 const sameRevision = (a: RoomScene, b: RoomScene) =>
   a.scene_id === b.scene_id && a.revision === b.revision
 
+let lightSeq = 0
 let toastSeq = 0
 let itemSeq = 0
 
@@ -265,6 +275,7 @@ export const useStore = create<State>((set, get) => ({
   mode: 'edit',
   playPhase: 'walking',
   playLighting: { ...DEFAULT_PLAY_LIGHTING },
+  playLightTool: 'none',
   human: null,
   placingHuman: false,
   humanPreview: null,
@@ -319,6 +330,7 @@ export const useStore = create<State>((set, get) => ({
         mode: 'edit',
         playPhase: 'walking',
         playLighting: { ...DEFAULT_PLAY_LIGHTING },
+        playLightTool: 'none',
         human: null,
         placingHuman: false,
         humanPreview: null,
@@ -977,6 +989,7 @@ export const useStore = create<State>((set, get) => ({
     set({
       mode: 'edit',
       playPhase: 'walking',
+      playLightTool: 'none',
       human: valid && s.human ? { ...pose } : s.human,
     })
   },
@@ -987,7 +1000,7 @@ export const useStore = create<State>((set, get) => ({
   },
   resumeWalking: () => {
     if (get().mode !== 'play' || get().playPhase !== 'lighting') return false
-    set({ playPhase: 'walking' })
+    set({ playPhase: 'walking', playLightTool: 'none' })
     return true
   },
   setArtificialLight: (percent) => {
@@ -998,6 +1011,62 @@ export const useStore = create<State>((set, get) => ({
           artificialPercent: Math.max(0, Math.min(100, percent)),
         },
       }))
+  },
+  setLightWarmth: (kelvin) => {
+    if (Number.isFinite(kelvin))
+      set((s) => ({
+        playLighting: {
+          ...s.playLighting,
+          warmthKelvin:
+            Math.round(Math.max(2200, Math.min(6500, kelvin)) / 100) * 100,
+        },
+      }))
+  },
+  setLightTool: (tool) => {
+    if (get().mode === 'play' && get().playPhase === 'lighting')
+      set({ playLightTool: tool })
+  },
+  addLightSource: (position) => {
+    const s = get()
+    const sources = artificialSources(s.scene, s.playLighting)
+    if (
+      s.mode !== 'play' ||
+      s.playPhase !== 'lighting' ||
+      sources.length >= MAX_LIGHT_SOURCES ||
+      !validLightPosition(s.scene, position)
+    )
+      return false
+    set({
+      playLighting: {
+        ...s.playLighting,
+        sources: [
+          ...sources,
+          {
+            id: `point-${++lightSeq}`,
+            position: [...position],
+            kind: 'point',
+          },
+        ],
+      },
+    })
+    return true
+  },
+  removeLightSource: (id) => {
+    const s = get()
+    const sources = artificialSources(s.scene, s.playLighting)
+    if (
+      s.mode !== 'play' ||
+      s.playPhase !== 'lighting' ||
+      !sources.some((light) => light.id === id)
+    )
+      return false
+    set({
+      playLighting: {
+        ...s.playLighting,
+        sources: sources.filter((light) => light.id !== id),
+      },
+    })
+    return true
   },
   setTimeOfDay: (hour) => {
     if (Number.isFinite(hour))

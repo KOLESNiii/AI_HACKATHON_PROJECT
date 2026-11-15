@@ -182,6 +182,13 @@ In Play, press **L** to pause walking and open **Room lighting**. Adjust
 then click **Resume** to capture the mouse again. Esc or **Return to editor**
 restores the editor camera. Lighting starts at 50% artificial light and 14:00;
 settings survive play sessions until another room is opened.
+Use **Light warmth** (2200–6500 K) to move from warm amber to cool white.
+Choose **Add light point**, then click a room surface to place a source just in
+front of it. Choose **Remove light**, then click an amber source marker, including
+an original ceiling source. Up to 12 artificial sources are supported. Resume
+walking to choose another view, then press L to keep editing. Warmth and brightness
+apply to all artificial sources; added points are unshadowed fill lights. Light
+edits stay local to the open room and reset on reload or opening another room.
 
 Music and editor sounds are on by default. Browsers may wait for the first click
 or keypress before playing audio. Use the speaker button or **M** to mute; open

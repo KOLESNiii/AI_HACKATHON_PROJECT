@@ -8,12 +8,15 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Object3D, RectAreaLight, Vector3 } from 'three'
+import { Object3D, Raycaster, RectAreaLight, Vector2, Vector3 } from 'three'
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js'
 import type { RoomScene } from '../../lib/contracts'
 import { bounds, inwardNormal } from '../../lib/geometry'
 import {
-  ceilingLights,
+  artificialSources,
+  DEFAULT_PLAY_LIGHTING,
+  lightColor,
+  type ArtificialSource,
   roomHeight,
   sunlightAt,
   windowLights,
@@ -24,7 +27,6 @@ import {
 import { useStore } from '../../store'
 import { invalidatePlayShadows } from './materials'
 
-const WARM_LIGHT = '#ffdbad'
 // These shared lookup textures belong to the lighting library, not to each window.
 RectAreaLightUniformsLib.init()
 
@@ -50,7 +52,17 @@ export function PlayLighting() {
   const scene = useStore((s) => s.scene)
   const settings = useStore((s) => s.playLighting)
   const windows = useMemo(() => windowLights(scene), [scene])
-  const ceiling = useMemo(() => ceilingLights(scene), [scene])
+  const defaults = useMemo(
+    () => artificialSources(scene, DEFAULT_PLAY_LIGHTING),
+    [scene],
+  )
+  const sources = settings.sources ?? defaults
+  const ceiling = useMemo(
+    () => sources.filter((s) => s.kind === 'ceiling'),
+    [sources],
+  )
+  const color = lightColor(settings.warmthKelvin)
+  const editing = useStore((s) => s.playPhase === 'lighting')
   const sun = sunlightAt(settings.timeOfDay, scene.north_compass_deg ?? 0)
   const daylight = windows.length ? sun.brightness : 0
   const artificial = settings.artificialPercent / 100
@@ -80,7 +92,7 @@ export function PlayLighting() {
   }, [centre])
   const ceilingTargets = useMemo(
     () =>
-      ceiling.map(([x, , z]) => {
+      ceiling.map(({ position: [x, , z] }) => {
         const object = new Object3D()
         object.position.set(x, 0, z)
         return object
@@ -115,14 +127,17 @@ export function PlayLighting() {
       {windows.map((win) => (
         <WindowFill key={win.id} window={win} intensity={daylight * 1.8} />
       ))}
-      <ambientLight color={WARM_LIGHT} intensity={artificial * 0.16} />
-      {ceiling.map((point, i) => (
-        <group key={i}>
+      <ambientLight
+        color={color}
+        intensity={sources.length ? artificial * 0.08 : 0}
+      />
+      {ceiling.map(({ id, position: point }, i) => (
+        <group key={id}>
           <primitive object={ceilingTargets[i]} />
           <spotLight
             position={point}
             target={ceilingTargets[i]}
-            color={WARM_LIGHT}
+            color={color}
             intensity={artificial * 65}
             angle={1.35}
             penumbra={0.65}
@@ -142,18 +157,43 @@ export function PlayLighting() {
             <circleGeometry args={[0.14, 24]} />
             <meshStandardMaterial
               color="#eee8de"
-              emissive={WARM_LIGHT}
+              emissive={color}
               emissiveIntensity={artificial * 4}
               roughness={0.65}
             />
           </mesh>
         </group>
       ))}
+      {sources
+        .filter((s) => s.kind === 'point')
+        .map((source) => (
+          <pointLight
+            key={source.id}
+            position={source.position}
+            color={color}
+            intensity={artificial * 35}
+            decay={2}
+            distance={radius * 4}
+          />
+        ))}
+      {sources
+        .filter((s) => editing || s.kind === 'point')
+        .map((source) => (
+          <mesh
+            key={source.id}
+            position={source.position}
+            userData={{ lightSourceId: source.id }}
+          >
+            <sphereGeometry args={[editing ? 0.12 : 0.055, 16, 12]} />
+            <meshBasicMaterial color={editing ? '#ffbd59' : color} />
+          </mesh>
+        ))}
+      <LightSourceInteraction />
       <DoorLightBlockers scene={scene} />
       <LightingEnvironment
         settings={sampled}
         windows={windows}
-        ceiling={ceiling}
+        sources={sources}
         centre={centre}
         north={scene.north_compass_deg ?? 0}
       />
@@ -226,18 +266,19 @@ function DoorLightBlockers({ scene }: { scene: RoomScene }) {
 const LightingEnvironment = memo(function LightingEnvironment({
   settings,
   windows,
-  ceiling,
+  sources,
   centre,
   north,
 }: {
   settings: PlayLightingSettings
   windows: WindowLight[]
-  ceiling: LightPosition[]
+  sources: ArtificialSource[]
   centre: Vector3
   north: number
 }) {
   const sun = sunlightAt(settings.timeOfDay, north)
   const artificial = settings.artificialPercent / 100
+  const color = lightColor(settings.warmthKelvin)
   return (
     <Environment resolution={128} frames={1} environmentIntensity={0.3}>
       {windows.map((win) => (
@@ -254,9 +295,9 @@ const LightingEnvironment = memo(function LightingEnvironment({
           intensity={sun.brightness * 3}
         />
       ))}
-      {ceiling.map((point, i) => (
+      {sources.map(({ id, position: point }) => (
         <Lightformer
-          key={i}
+          key={id}
           position={[
             point[0] - centre.x,
             point[1] - centre.y,
@@ -264,10 +305,59 @@ const LightingEnvironment = memo(function LightingEnvironment({
           ]}
           rotation={[Math.PI / 2, 0, 0]}
           scale={[0.7, 0.7]}
-          color={WARM_LIGHT}
+          color={color}
           intensity={artificial * 5}
         />
       ))}
     </Environment>
   )
 })
+
+/** Native canvas hits keep DOM panel clicks out of the placement path. */
+function LightSourceInteraction() {
+  const { gl, camera, scene } = useThree()
+  const tool = useStore((s) => s.playLightTool)
+  const editing = useStore((s) => s.playPhase === 'lighting')
+  useEffect(() => {
+    if (!editing || tool === 'none') return
+    const canvas = gl.domElement
+    const click = (event: MouseEvent) => {
+      if (event.button !== 0) return
+      const state = useStore.getState()
+      const rect = canvas.getBoundingClientRect()
+      const ray = new Raycaster()
+      ray.setFromCamera(
+        new Vector2(
+          ((event.clientX - rect.left) / rect.width) * 2 - 1,
+          -((event.clientY - rect.top) / rect.height) * 2 + 1,
+        ),
+        camera,
+      )
+      const hit = ray.intersectObjects(scene.children, true)[0]
+      if (!hit) return
+      if (tool === 'remove') {
+        const id = hit.object.userData.lightSourceId
+        if (typeof id === 'string') state.removeLightSource(id)
+        else state.toast('Point at an amber light marker to remove it.')
+      } else {
+        // Pull the source into the room, away from the clicked surface.
+        const point = hit.point
+          .clone()
+          .addScaledVector(ray.ray.direction, -0.18)
+        point.y = Math.max(
+          0.12,
+          Math.min(roomHeight(state.scene) - 0.12, point.y),
+        )
+        if (!state.addLightSource([point.x, point.y, point.z]))
+          state.toast(
+            'Choose a surface inside the room. Up to 12 sources are supported.',
+          )
+      }
+    }
+    canvas.addEventListener('click', click)
+    return () => {
+      canvas.removeEventListener('click', click)
+    }
+  }, [gl, camera, scene, tool, editing])
+  return null
+}
