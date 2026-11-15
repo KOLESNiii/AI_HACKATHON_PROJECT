@@ -44,20 +44,25 @@ Walkthrough videos are optional: up to `MAX_ROOM_VIDEOS` may be posted with the 
 (`curl -F files=@plan.png -F videos=@a.mp4 -F videos=@b.mov ...`). They are saved as
 `<upload dir>/<plan_id>/videos/<sha256[:16]>.<ext>` (`$RECONSTRUCTION_UPLOAD_DIR`, default
 `artifacts/uploads`), at most 500 MB each, and their furniture is **extracted live with fal.ai
-in the background** (`video_jobs.py`; needs `FAL_KEY` and FFmpeg):
+in the background** (`video_jobs.py`; needs `FAL_KEY` and FFmpeg). The videos are cut up by room
+so most of the work runs in parallel:
 
-1. frame selection with fal vision, read leniently (a mistaken answer is repaired, not
-   discarded; batches that still fail are counted in the job's warnings);
-2. every sampled frame matched to a numbered plan room by fal vision, smoothed by walkthrough
-   continuity (rooms change through shared doors), then each item to the room most of its
-   sightings show (`room_frames.py`). Whole-home walkthroughs are fine;
-3. SAM 3 masks of the matched items;
-4. SAM 3D meshes of a room's items when that room is first opened.
+1. every video is sampled at once (32 frames each);
+2. every frame is matched to a numbered plan room by fal vision, all 8-frame chunks at once,
+   then smoothed per video by walkthrough continuity (rooms change through shared doors;
+   `room_frames.py`). Whole-home walkthroughs are fine;
+3. each room's frames (at most 16, spread over every video) are searched for furniture and
+   its items cut out (SAM 3), all rooms at once (6 at a time), each in its own registry
+   namespace. Batches within a room stay in order, so a sofa seen twice is one item; rooms
+   cannot duplicate each other. Answers are read leniently (a mistaken answer is repaired,
+   not discarded; batches that still fail are counted in the room's warnings);
+4. SAM 3D meshes of a room's items when that room is first opened, as soon as that room has
+   finished step 3, even while other rooms are still being searched.
 
 Until a room's furniture is ready, `GET /scenes/<room>` returns the room without furniture, a
 warning, `X-Furniture-Pending: true` and `X-Furniture-Progress`, and the editor polls. Then the
 items are placed by the vision observer (`observe_vision.py`), flagged where it cannot tell.
-Requests are capped per job and per room, and every paid result is cached in the furniture data
+Requests are capped per room, and every paid result is cached in the furniture data
 directory, so re-uploading the same videos costs nothing. VGGT cameras/depth (probed in #14)
 are not used: they are unscaled and not integrated.
 
