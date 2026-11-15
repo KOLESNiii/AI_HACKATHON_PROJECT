@@ -35,10 +35,11 @@ FRONT_MARKER_RGBA = [30, 30, 35, 255]
 
 
 class KnownDimensions(Record):
-    """A size someone can vouch for, with where it came from."""
+    """A size with where it came from. `estimated` is a judged size (e.g. measured by eye against
+    the floor plan by a vision model): it is used, but still asks the user to confirm it."""
 
     bbox_m: BBoxM
-    source: Literal["measured", "catalog", "user_corrected"]
+    source: Literal["measured", "catalog", "user_corrected", "estimated"]
 
     @model_validator(mode="after")
     def _usable(self) -> KnownDimensions:
@@ -97,7 +98,7 @@ def proxy_asset(
         bbox_m=bbox,
         is_proxy=True,
         dimension_source="estimated" if known is None else known.source,
-        correction_needed=["dimensions"] if known is None else [],
+        correction_needed=["dimensions"] if known is None or known.source == "estimated" else [],
         collision_parts=template_parts(category, bbox),
         is_fixed=category == "fixture",
         evidence=evidence,
