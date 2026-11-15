@@ -257,6 +257,17 @@
   the process, so the next request retries. Retrying is safe for paid providers: Dev 2's registry
   re-reads saved requests instead of resubmitting them.
 
+## Feng shui evaluation agent
+
+- Keep traditional Form School assessment separate from deterministic audit scores
+  and layout ranking. Recommendations require a spatial re-audit before application.
+- Reuse full RoomScene geometry; add mirrors and occupant/headboard directions as
+  service-local supplemental inputs rather than changing the shared room contract.
+- Unknown mirror inventories and missing activity anchors remain explicit unknowns.
+  Furniture front orientation alone cannot establish an occupant's gaze or headboard.
+- Use a repository-owned skill as the runtime system instruction, one provider call,
+  validated structured findings and explicit unavailable outcomes; no new dependencies.
+
 ## Real-input room (#10)
 
 - The M1 room is the parser's own room for `three_floor.png`, not the hand-made demo
@@ -310,3 +321,18 @@
   in the priority table.
 - An instruction that could not be read is dropped with a note and the result is reported as
   `stopped_early`, so it is never presented as honouring what the user wrote.
+
+## Retailer import review (#60)
+
+- Classify the product's head phrase before `with`, `and` or a comma, using the last
+  furniture/accessory noun and preserving compound names such as bedside table. This
+  keeps classification offline, deterministic and free; no Anthropic key is required.
+- Retailer GLBs use their metre-scale extents when published/user dimensions are absent.
+  Their dimensions remain estimated and request correction; generated meshes still use
+  category height. Both paths retain the normaliser's size and geometry checks.
+- Product IDs discard query strings, fragments and trailing slashes. Read image dimensions
+  with Pillow before OpenCV decode and refuse images over 25 million pixels. Downloads
+  share a monotonic deadline across redirects and body chunks, with each network operation
+  also limited by the remaining budget at the start of its request.
+- Keep the CLI's normalisation preflight and delivery check: the duplicate work is accepted
+  for now to preserve the single delivery validation path.

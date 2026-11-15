@@ -269,7 +269,8 @@ JSON/Markdown reports; see the asset README for configuration and retry commands
 
 `assets/normalisation.py` fits raw meshes to metric bounds before serving them. Known
 dimensions are matched exactly; unknown dimensions use the category height and require
-correction. If any estimated side exceeds 3 times its category size, normalisation refuses
+correction. Retailer GLBs instead keep their metre-scale extents, still marked estimated
+and requiring dimension correction. If any estimated side exceeds 3 times its category size, normalisation refuses
 the mesh and reconstruction retains its proxy with a warning. Supplying dimensions allows
 the stored raw mesh to be retried offline. Unused vertices are removed before fitting;
 providers without a known front convention request an orientation correction.
@@ -320,6 +321,18 @@ export async function fetchRoomScene(roomId: string): Promise<RoomScene> {
 
 The response matches `roomScene(roomId)` (same IDs, shell and model URLs, fixture poses) except
 that doors sit exactly on their walls. The editor still owns `revision` after load.
+
+## Read-only feng shui evaluation
+
+The spatial service exposes `POST /feng-shui`; service-local request/result models
+in `feng_shui.py` wrap the unchanged `RoomScene` with optional mirror surfaces,
+activity anchors and observations. The complete scene and deterministic audit feed
+one bounded model call using the repository skill at
+`services/spatial_engine/skills/feng-shui/SKILL.md` as the system instruction.
+Existing Anthropic configuration is reused. Output is schema-validated and finding
+IDs are checked against the input; failure remains explicitly unassessed. It does
+not feed layout ranking or populate the deterministic audit's feng shui field.
+See the spatial service README for input semantics and failure behaviour.
 
 ## Real-input room (#10)
 
