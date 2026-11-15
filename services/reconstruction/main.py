@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from services.reconstruction.assets.asset_store import asset_router
+from services.reconstruction.catalog_routes import router as catalog_router
 from services.reconstruction.config import furniture_data_dir
 from services.reconstruction.demo_assets import legacy_router
 from services.reconstruction.demo_assets import router as demo_router
@@ -21,6 +22,7 @@ app.add_middleware(
 app.include_router(floor_plan_router)
 app.include_router(shell_router)
 app.include_router(scene_router)
+app.include_router(catalog_router)
 # Dev 2's content-addressed furniture files (proxies now, normalised meshes after #17).
 app.include_router(asset_router(furniture_data_dir()))
 app.include_router(demo_router)

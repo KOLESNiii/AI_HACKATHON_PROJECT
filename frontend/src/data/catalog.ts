@@ -9,7 +9,8 @@ export interface CatalogItem {
   name: string
   category: FurnitureItem['category']
   bbox_m: BBoxM
-  price_gbp: number
+  price_gbp: number | null
+  asset?: Omit<FurnitureItem, 'pose'>
   product_url?: string
 }
 

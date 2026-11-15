@@ -404,3 +404,13 @@
 - Merge #35's live audit and proposal controls with #65's `/chat` route: keep audit
   previews and Dismiss for both additions and rearrangements, and reuse the same spatial
   transport for cancellation, timeouts and service errors.
+
+## Library URL importer connection
+
+- Connect the existing retailer pipeline to the Library via a service-local HTTP
+  request model, without changing shared room contracts or adding dependencies.
+- Import on explicit button/Enter, preview before Add, and cancel obsolete browser
+  requests. Library imports enable the existing fal providers when `FAL_KEY` is set;
+  paid mesh generation is used only after retailer models fail.
+- Preserve meshes, collision geometry, dimension provenance and correction flags;
+  missing models remain labelled proxies and missing dimensions remain estimates.

@@ -120,6 +120,8 @@ const mapItem = (
 
 function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
   itemSeq += 1
+  if (c.asset)
+    return { ...c.asset, id: `lib-${c.sku}-${itemSeq}`.slice(0, 64), pose }
   return {
     id: `lib-${c.sku}-${itemSeq}`.slice(0, 64),
     name: c.name,
@@ -345,7 +347,9 @@ export const useStore = create<State>((set, get) => ({
       scene: bump(scene, [...scene.furniture, item]),
       selectedId: item.id,
     })
-    get().toast(`Added ${c.name} as a proxy box. Drag it into place.`)
+    get().toast(
+      `Added ${c.name}${item.is_proxy ? ' as a proxy box' : ''}. Drag it into place.`,
+    )
     playCue('add')
   },
   applyPoses: (index) => {

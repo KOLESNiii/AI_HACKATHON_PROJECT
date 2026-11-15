@@ -473,3 +473,22 @@ an explanation with no changes. Library items carry the same proxy URL form as a
 additions, because the services reject a scene whose item has an empty `glb_url`.
 No new configuration or dependencies are introduced;
 `ANTHROPIC_API_KEY` and `SPACESHIFT_LAYOUT_MODEL` are reused. Tests use scripted models.
+
+## Library URL imports
+
+`POST /catalog/import` on reconstruction accepts `{url, scene_id}` and returns the
+existing `CatalogImport` model (asset, provenance, checks and warnings). The editor
+uses `/api/reconstruction/catalog/import`, previews the result and adds it only on
+**Add**. The existing retailer pipeline fetches public HTTP(S) addresses only,
+including redirects, and bounds downloads. Imports are serialized within the
+service process to protect registry updates. With `FAL_KEY`, masks use fal SAM 3 (`fal-ai/sam-3/image`) and missing or
+unusable retailer models fall back to SAM 3D (`fal-ai/sam-3/3d-objects`).
+Without a key, segmentation stays local and geometry falls back to a proxy.
+Failed live segmentation falls back to stored masks or GrabCut with warnings; failed
+generation returns a labelled proxy. Existing GrabCut masks are upgraded on reimport;
+successful SAM masks and meshes reuse the registry cache to avoid duplicate charges.
+Published dimensions remain authoritative. Each stage permits at most two requests,
+with existing provider timeouts (120 seconds for masks, 420 seconds for meshes).
+Unusable pages return 422; storage/processing failures return 502. Dimension
+correction flags and provenance survive addition to the room. Imported assets use
+the same configured furniture data directory and asset-serving route as video assets.

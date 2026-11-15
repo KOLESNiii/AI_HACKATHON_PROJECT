@@ -172,3 +172,11 @@ and on anything moved to make room, before it is proposed. Problems the room alr
 had are reported rather than blocking the addition. Stats shows the accepted audit, including any front-clearance
 warnings. Editing the room invalidates older proposals. Retailer search and live
 furniture-mesh generation are separate from this flow.
+
+In the editor's **Library**, paste an IKEA or other retailer product URL, click
+**Import product** (or press Enter), then **Add** on the imported result. Run the
+reconstruction service on port 8001. This uses published product dimensions and
+models first. With `FAL_KEY` configured, SAM 3 creates masks and SAM 3D
+generates geometry when retailer models are unusable; otherwise it shows a labelled
+proxy. Check any dimension warnings before relying on the fit indicator. Retailer
+blocking or unreadable pages are reported in the Library so you can retry.

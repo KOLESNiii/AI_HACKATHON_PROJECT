@@ -397,12 +397,31 @@ def import_product(
             )
 
         registry.update(scene_key, register)
+        # Upgrade earlier offline imports, but keep successful SAM masks cached.
+        existing = registry.load(scene_key).objects[item_id]
+        upgrade_masks = (
+            mask_provider is not None
+            and mask_provider.method == "sam3"
+            and any(mask.method == "grabcut" for mask in existing.masks)
+        )
         try:
             masks = segment_furniture(
                 scene_key, data_dir=data_dir, provider=mask_provider,
-                object_ids=[item_id], max_requests=max_requests,
+                object_ids=[item_id], max_requests=max_requests, replace=upgrade_masks,
             )  # fmt: skip
             warnings += [f"mask: {m.reason}" for m in masks.missing] + masks.warnings
+            if masks.missing and mask_provider is not None:
+                # Failed live requests must not prevent published models or proxy delivery.
+                warnings.append(
+                    "Live segmentation failed; using an existing mask or local GrabCut."
+                )
+                local = segment_furniture(
+                    scene_key,
+                    data_dir=data_dir,
+                    object_ids=[item_id],
+                    max_requests=max_requests,
+                )
+                warnings += [f"mask: {m.reason}" for m in local.missing] + local.warnings
         except MaskError as exc:
             warnings.append(f"mask: {exc}")
 
