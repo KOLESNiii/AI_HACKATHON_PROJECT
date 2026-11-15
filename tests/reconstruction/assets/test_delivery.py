@@ -397,6 +397,7 @@ def test_cli_runs_the_checks_and_reports(
         FurnitureAsset.model_validate(a) for a in json.loads((out / "assets.json").read_text())
     ]
     assert [a.id for a in assets] == IDS and [a.is_proxy for a in assets] == [False, True]
+    assert json.loads((out / "delivery.json").read_text())["ok"] is True
     assert json.loads((out / "delivery.json").read_text())["checks"][1]["delivered"] == "proxy"
     report = (out / "report.md").read_text()
     assert "| pass |" in report and "not_attempted" in report
@@ -412,3 +413,23 @@ def test_cli_runs_the_checks_and_reports(
     capsys.readouterr()
     assert main(argv) == 2
     assert json.loads(capsys.readouterr().out)["failed"] == IDS
+
+
+@pytest.mark.parametrize("location", ["document", "node"])
+def test_lights_are_rejected(tmp_path: Path, location: str) -> None:
+    two_meshes(tmp_path)
+    asset = deliver_furniture("scene", data_dir=tmp_path).assets[0]
+
+    def add_light(document: dict) -> None:
+        target = document if location == "document" else document["nodes"][0]
+        target["extensions"] = {
+            "KHR_lights_punctual": (
+                {"lights": [{"type": "point"}]} if location == "document" else {"light": 0}
+            )
+        }
+
+    glb = trimesh.exchange.gltf.export_glb(
+        trimesh.Scene(trimesh.creation.box()), tree_postprocessor=add_light
+    )
+    lit = asset.model_copy(update={"glb_url": store_asset(tmp_path, glb)})
+    assert "has lights" in problems(tmp_path, lit)

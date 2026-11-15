@@ -508,11 +508,14 @@ least `--min-items` (default 2); 2: a check failed or too few items; 1: unknown 
 item, or unusable input or storage. `--dimensions` and `--object-id` work as in
 `reconstruct_items`.
 
-**Dev 1 handoff.** In `room/video_furniture.RealRoomFurniture` (PR #55) replace
-`[item.proxy for item in result.items]` with `deliver_furniture(...).assets` to serve meshes;
-its `warnings` already name the fallbacks. Nothing else changes: same IDs and evidence, and
-the `/assets` route #55 mounts serves both kinds of file. No contract, entry point, manifest,
-`room/` or frontend file changes in this issue.
+**Dev 1 handoff.** Run delivery as offline batch preparation with the CLI above and
+`--out`, after reconstruction or changes to masks, selected items or dimensions. Check
+`delivery.json`'s `ok` and warnings before publishing its prepared `assets.json`.
+`RealRoomFurniture` (PR #55) should load that list with `FurnitureAsset.model_validate`,
+then place those assets. Never call `deliver_furniture` during scene assembly: every call
+re-normalises and inspects every mesh. The integrator must regenerate and atomically
+publish the list when inputs change; retain the proxy path until that integration exists.
+IDs and evidence are unchanged; the asset route serves both meshes and proxies.
 
 **Verification (2026-11-15), stored data, no provider request.** The check CLI on the four
 reviewed opening-room items: four meshes delivered, all checks pass, bounds error under

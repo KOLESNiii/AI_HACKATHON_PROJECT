@@ -21,7 +21,7 @@ from typing import Any, Literal
 
 import numpy as np
 import trimesh
-from pydantic import ValidationError
+from pydantic import ValidationError, computed_field
 
 from contracts.schema import GLB_BBOX_TOLERANCE_M, BBoxM, RoomScene
 
@@ -72,6 +72,7 @@ class Delivery(Record):
     problems: list[str] = []
     """Faults of the delivery as a whole (duplicate IDs)."""
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def ok(self) -> bool:
         """Every delivered asset passed its checks. Proxies are allowed; they are listed."""
@@ -90,6 +91,10 @@ def _gltf_problems(glb: bytes) -> list[str]:
     except (struct.error, ValueError):
         return ["not a binary glTF 2.0 file"]
     problems = [f"has {name}" for name in ("skins", "animations", "cameras") if document.get(name)]
+    if "KHR_lights_punctual" in document.get("extensions", {}) or any(
+        "KHR_lights_punctual" in node.get("extensions", {}) for node in document.get("nodes", [])
+    ):
+        problems.append("has lights")
     for node in document.get("nodes", []):
         for name, default in _NODE_DEFAULTS.items():
             if name in node and not np.allclose(node[name], default, atol=1e-9):
@@ -170,6 +175,9 @@ def deliver_furniture(
     url_base: str = ASSET_URL_BASE,
 ) -> Delivery:
     """A scene's furniture for Dev 1 to place: per item, its checked mesh or its labelled proxy.
+
+    Batch preparation only: persist the CLI output and load assets.json during scene
+    assembly. This function re-normalises and inspects meshes on every call.
 
     Offline. An item whose mesh is missing, could not be normalised or fails `inspect_asset`
     is delivered as its proxy, with the reason on its check and in `warnings`; a mesh is never

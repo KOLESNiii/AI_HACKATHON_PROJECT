@@ -20,8 +20,8 @@ nothing re-checks a file before it is handed over. This issue adds that step and
 
 - No provider request. Delivery is offline: it reuses what the pipeline stored.
 - No change to `contracts/`, the app entry point, `room/` or the frontend. Dev 1's
-  `RealRoomFurniture` (PR #55) switches from `item.proxy` to `deliver_furniture(...).assets`;
-  that one-line change is theirs. The editor already draws non-proxy items from `glb_url`
+  `RealRoomFurniture` (PR #55) loads prepared `assets.json` from the offline delivery CLI;
+  never run delivery during scene assembly. Regenerate the list after input changes. The editor already draws non-proxy items from `glb_url`
   fitted to `bbox_m` and falls back to a labelled box when a file fails to load.
 - No mesh-quality work (#19) and no persistent cache (#12, #20).
 
