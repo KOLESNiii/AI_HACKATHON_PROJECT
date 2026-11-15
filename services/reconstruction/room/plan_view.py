@@ -129,3 +129,60 @@ def render_room(
         left = min(max(2, at[0] - text_w // 2), max(2, width - text_w - 2))
         cv2.putText(img, label, (left, at[1] - 6), cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 0), 1)
     return view
+
+
+def render_floor(
+    rooms: Sequence[tuple[int, RoomScene]], px_per_m: float = 70.0, max_px: int = 1400
+) -> Image:
+    """One storey with its rooms numbered: what the room classifier (`room_frames.py`) shows
+    the vision model beside the video frames. Rooms share the floor's frame (`ParsedFloor`).
+
+    Walls in ink, windows in amber, doors as gaps with their swing, and each room's number at
+    its most interior point. Scaled down to at most `max_px` on the long side.
+    """
+    points = [(p.x, p.z) for _, scene in rooms for p in scene.floor_polygon]
+    if not points:
+        raise ValueError("a floor needs at least one room to render")
+    xs, zs = [p[0] for p in points], [p[1] for p in points]
+    span = max(max(xs) - min(xs), max(zs) - min(zs), 1.0) + 2 * _PAD_M
+    px_per_m = min(px_per_m, max_px / span)
+    origin = (min(xs) - _PAD_M, min(zs) - _PAD_M)
+    height = int((max(zs) - origin[1] + _PAD_M) * px_per_m)
+    width = int((max(xs) - origin[0] + _PAD_M) * px_per_m)
+    view = PlanView(np.full((height, width, 3), 255, np.uint8), origin, px_per_m)
+    img = view.image
+
+    def pts(poly: Sequence[fp.Point]) -> NDArray[np.int32]:
+        return np.array([view.to_pixel(p) for p in poly], np.int32)
+
+    for _, scene in rooms:
+        cv2.fillPoly(img, [pts([(p.x, p.z) for p in scene.floor_polygon])], (240, 240, 232))
+    for _, scene in rooms:
+        frames = {w.id: f for w in scene.walls if (f := fp.wall_frame(w)) is not None}
+        for frame in frames.values():
+            start, end = view.to_pixel(frame.point(0)), view.to_pixel(frame.point(frame.length))
+            cv2.line(img, start, end, _WALL, 3)
+        for window in scene.windows:
+            on = frames.get(window.wall_id)
+            if on is not None:
+                a = on.point(window.offset_along_wall_m)
+                b = on.point(window.offset_along_wall_m + window.width_m)
+                cv2.line(img, view.to_pixel(a), view.to_pixel(b), _WINDOW, 5)
+        for door in scene.doors:
+            on = frames.get(door.wall_id)
+            sweep = fp.door_sweep(door, on) if on is not None else None
+            if sweep is not None:
+                hinge, closed = sweep.points[0], sweep.points[1]
+                cv2.line(img, view.to_pixel(hinge), view.to_pixel(closed), (255, 255, 255), 5)
+                cv2.polylines(img, [pts(sweep.points)], False, _DOOR, 1)
+    for number, scene in rooms:
+        mask = np.zeros(img.shape[:2], np.uint8)
+        cv2.fillPoly(mask, [pts([(p.x, p.z) for p in scene.floor_polygon])], 255)
+        distance = cv2.distanceTransform(mask, cv2.DIST_L2, 3)
+        y, x = np.unravel_index(int(np.argmax(distance)), distance.shape)
+        label = str(number)
+        scale = 0.9 if distance[y, x] > 22 else 0.6
+        (text_w, text_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, scale, 2)
+        at = (int(x) - text_w // 2, int(y) + text_h // 2)
+        cv2.putText(img, label, at, cv2.FONT_HERSHEY_SIMPLEX, scale, _LABEL, 2)
+    return img

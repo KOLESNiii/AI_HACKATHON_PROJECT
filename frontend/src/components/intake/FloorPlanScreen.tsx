@@ -365,7 +365,7 @@ export function FloorPlanScreen() {
                 </div>
                 <p className="text-[14px] leading-[23px] text-ink-medium">
                   {uploaded
-                    ? 'Next, Refresh builds this room in 3D from your plan. Furniture in your walkthrough videos is being extracted with fal.ai and appears in the room once ready, a few minutes after upload.'
+                    ? 'Next, Refresh builds this room in 3D from your plan. Furniture found in your walkthrough videos is matched to its room automatically, and this room’s 3D models are built when you open it: allow a few minutes.'
                     : "Next, Refresh extracts this room's furniture from your walkthrough video and assembles it in 3D. Other rooms stay untouched until you pick them."}
                 </p>
                 <div className="flex-1" />
