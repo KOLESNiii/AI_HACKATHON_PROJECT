@@ -12,32 +12,31 @@ from services.spatial_engine.geometry import SpatialInputError
 from tests.spatial_engine.test_agent import scene
 from tests.spatial_engine.test_chat import Scripted, arguments
 
-ASSET_ID = "g-bed3-o03"
+ASSET_ID = "ikea-50263838"
 
 
 @pytest.fixture
 def isolated_library(tmp_path, monkeypatch):
-    root = library.FIXTURE_ROOT
-    for floor in library.FLOORS:
-        shutil.copyfile(
-            root / f"three_floor_{floor}_scene.json", tmp_path / f"three_floor_{floor}_scene.json"
-        )
     asset = library.library_assets()[ASSET_ID]
+    manifest = tmp_path / "catalog.json"
+    item = asset.model_dump(exclude={"pose"})
+    manifest.write_text(json.dumps([{"sku": ASSET_ID, "asset": item}]))
     (tmp_path / "assets").mkdir()
     model = tmp_path / "assets" / asset.glb_url.rsplit("/", 1)[1]
-    shutil.copyfile(root / "assets" / model.name, model)
-    monkeypatch.setattr(library, "FIXTURE_ROOT", tmp_path)
+    shutil.copyfile(library.ASSET_ROOT / "assets" / model.name, model)
+    monkeypatch.setattr(library, "CATALOG_PATH", manifest)
+    monkeypatch.setattr(library, "ASSET_ROOT", tmp_path)
     return tmp_path, model
 
 
 def test_library_uses_real_meshes_and_preserves_asset_evidence():
     assets = library.library_assets()
     assert assets
-    assert {"g-bed3-o04", "f-bed4-o04", "f-bed5-o03"} <= assets.keys()
+    assert len(assets) == 100
     for asset in assets.values():
         assert not asset.is_proxy and not asset.is_fixed
-        assert asset.glb_url.startswith("/api/reconstruction/mock-room/assets/")
-    source = assets["g-bed3-o04"]
+        assert asset.glb_url.startswith("/catalog/ikea/assets/")
+    source = assets[ASSET_ID]
     before = source.model_dump()
     result = add_item(scene(), arguments(asset_id=source.id, x=4.5, z=2.0))
     copy = result.additions[0]
@@ -61,9 +60,9 @@ def test_missing_or_broken_files_are_excluded_without_a_proxy_fallback(isolated_
 @pytest.mark.parametrize("flags", [{"is_proxy": True}, {"is_fixed": True}])
 def test_proxy_and_fixed_assets_are_not_available_even_with_a_glb_file(isolated_library, flags):
     root, _ = isolated_library
-    manifest = root / "three_floor_ground_scene.json"
+    manifest = root / "catalog.json"
     data = json.loads(manifest.read_text())
-    item = next(item for item in data["furniture"] if item["id"] == ASSET_ID)
+    item = data[0]["asset"]
     item.update(flags)
     manifest.write_text(json.dumps(data))
     assert not library.library_assets()

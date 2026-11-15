@@ -6,16 +6,17 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from contracts.schema import BBoxM, DoorOpening, FurnitureItem, Pose2D, RoomScene, Vec2, WallSegment
-from services.reconstruction.main import app as reconstruction_app
 from services.spatial_engine.agent import ModelReply, ProviderError, ToolCall
 from services.spatial_engine.chat import ChatRequest, add_item, chat
 from services.spatial_engine.furniture_search import ProductOption
 from services.spatial_engine.geometry import SpatialInputError
-from services.spatial_engine.library import library_assets
+from services.spatial_engine.library import ASSET_ROOT, library_assets
 from services.spatial_engine.main import app, get_layout_model
 from services.spatial_engine.proxy import proxy_glb
 from services.spatial_engine.report import audit_scene
@@ -48,7 +49,7 @@ def room() -> RoomScene:
 
 def arguments(**changes: Any) -> dict[str, Any]:
     return {
-        "asset_id": "g-bed3-o03",
+        "asset_id": "ikea-50263838",
         "x": 4.0,
         "z": 4.0,
         "yaw_deg": 0.0,
@@ -215,7 +216,7 @@ def test_moves_may_be_omitted_and_unhandled_wishes_are_reported(room: RoomScene)
 def test_an_addition_may_not_seal_the_room(room: RoomScene) -> None:
     """An outward door has no swing inside the room, so only the entry check sees this."""
     room.doors[0].swings_into_room = False
-    chest = arguments(asset_id="g-master-o02", x=0.5, z=0.275)
+    chest = arguments(asset_id="ikea-80437234", x=0.5, z=0.275)
     with pytest.raises(SpatialInputError, match="no floor can be reached from the doors"):
         add_item(room, chest)
     reply = add_item(room, {**chest, "z": 4.0})
@@ -226,7 +227,7 @@ def test_agent_corrects_a_collision(room: RoomScene) -> None:
     model = Scripted(arguments(x=7.0, z=7.0), arguments())
     reply = chat(ChatRequest(scene=room, instruction="Add a table"), model)
     assert len(reply.additions) == 1 and len(model.requests) == 2
-    assert tool_error(model) == "Placement rejected: the new item overlaps fixed by 0.17 m2"
+    assert tool_error(model) == "Placement rejected: the new item overlaps fixed by 0.11 m2"
     assert {tool["name"] for tool in model.requests[0]["tools"]} == {
         "add_item",
         "rearrange_room",
@@ -292,8 +293,10 @@ def test_chat_route_and_library_mesh(room: RoomScene) -> None:
             assert response.status_code == 200
             data = response.json()
             assert not data["additions"][0]["is_proxy"] and data["report"]["scene_revision"] == 3
-            path = data["additions"][0]["glb_url"].removeprefix("/api/reconstruction")
-            with TestClient(reconstruction_app) as models:
+            path = data["additions"][0]["glb_url"]
+            static_app = FastAPI()
+            static_app.mount("/", StaticFiles(directory=ASSET_ROOT.parents[1]))
+            with TestClient(static_app) as models:
                 mesh = models.get(path)
             assert mesh.status_code == 200 and mesh.content[:4] == b"glTF"
             assert client.get("/proxies/nan/1/1.glb").status_code == 422

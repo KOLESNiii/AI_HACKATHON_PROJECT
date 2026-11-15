@@ -575,7 +575,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Library mesh assets, plus retailer URL import. */
+/** Furniture library with retailer URL import and an offline IKEA catalog. */
 function LibraryTab() {
   const roomLoading = useStore((s) => s.roomLoading)
   const floor = useStore((s) => s.scene.floor_polygon)
@@ -685,7 +685,7 @@ function LibraryTab() {
         ))}
       </div>
       <span className="text-[11px] font-medium text-ink-medium">
-        {results.length + shopItems.length} results · Estimated dimensions
+        {results.length + shopItems.length} results
       </span>
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-2">
         {shopItems.length > 0 && (
@@ -711,6 +711,16 @@ function LibraryTab() {
               key={c.sku}
               className={`flex items-center gap-3 rounded-[2px] border bg-paper-card/65 p-2.5 ${preview?.sku === c.sku ? 'border-seal-vermilion/60' : 'border-hairline-ink'}`}
             >
+              {c.image_url ? (
+                <img
+                  src={c.image_url}
+                  alt={c.name}
+                  loading="lazy"
+                  className="size-14 shrink-0 rounded-[2px] bg-white object-contain"
+                />
+              ) : (
+                <div className="size-14 shrink-0 rounded-[2px] bg-ink-medium/16" />
+              )}
               <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
                 <button
                   type="button"
@@ -721,6 +731,16 @@ function LibraryTab() {
                 >
                   {c.name}
                 </button>
+                {c.product_url && (
+                  <a
+                    href={c.product_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-ink-medium underline"
+                  >
+                    View product
+                  </a>
+                )}
                 <span className="mono text-[11px] text-ink-medium">
                   {c.bbox_m.width.toFixed(2)}m × {c.bbox_m.depth.toFixed(2)}m ×{' '}
                   {c.bbox_m.height.toFixed(2)}m

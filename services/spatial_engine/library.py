@@ -1,20 +1,22 @@
 """The same canonical, non-proxy mesh inventory used by the editor Library."""
 
+import json
 import struct
 from pathlib import Path
 
-from contracts.schema import FurnitureItem, RoomScene
+from contracts.schema import FurnitureItem
 
-FIXTURE_ROOT = Path(__file__).resolve().parents[2] / "contracts" / "mock_room"
-FLOORS = ("ground", "first", "second")
-BROWSER_ROOT = "/api/reconstruction/mock-room"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+CATALOG_PATH = PROJECT_ROOT / "frontend/src/data/ikeaCatalog.json"
+ASSET_ROOT = PROJECT_ROOT / "frontend/public/catalog/ikea"
+BROWSER_ROOT = "/catalog/ikea"
 
 
 def _has_mesh(root: Path, url: str) -> bool:
-    if not url.startswith("/assets/"):
+    if not url.startswith(BROWSER_ROOT + "/assets/"):
         return False
     directory = (root / "assets").resolve()
-    path = (root / url.lstrip("/")).resolve()
+    path = (root / url.removeprefix(BROWSER_ROOT + "/")).resolve()
     if path.parent != directory or path.suffix != ".glb":
         return False
     try:
@@ -36,18 +38,15 @@ def library_assets() -> dict[str, FurnitureItem]:
     No provider, reconstruction-service import or network access is required.
     """
     assets = {}
-    for floor in FLOORS:
-        scene = RoomScene.model_validate_json(
-            (FIXTURE_ROOT / f"three_floor_{floor}_scene.json").read_text(encoding="utf-8")
+    for entry in json.loads(CATALOG_PATH.read_text(encoding="utf-8")):
+        item = FurnitureItem.model_validate(
+            {**entry["asset"], "pose": {"x": 0, "z": 0, "yaw_deg": 0}}
         )
-        for item in scene.furniture:
-            if item.is_fixed or item.is_proxy or not _has_mesh(FIXTURE_ROOT, item.glb_url):
-                continue
-            if item.id in assets:
-                raise ValueError("Duplicate Library asset ID")
-            assets[item.id] = item.model_copy(
-                deep=True, update={"glb_url": BROWSER_ROOT + item.glb_url}
-            )
+        if item.is_fixed or item.is_proxy or not _has_mesh(ASSET_ROOT, item.glb_url):
+            continue
+        if item.id in assets:
+            raise ValueError("Duplicate Library asset ID")
+        assets[item.id] = item
     return assets
 
 

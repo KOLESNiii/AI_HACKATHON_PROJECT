@@ -1,5 +1,5 @@
 import type { FurnitureItem } from '../lib/contracts'
-import { demoFloors } from './demoHome'
+import ikeaCatalog from './ikeaCatalog.json'
 
 /** Available, backend-served room models. Retain their dimensions and collision evidence. */
 export interface CatalogItem extends Omit<
@@ -7,22 +7,14 @@ export interface CatalogItem extends Omit<
   'id' | 'pose' | 'is_fixed'
 > {
   sku: string
+  image_url?: string
 }
 
-export const catalog: CatalogItem[] = demoFloors.flatMap(({ scene }) =>
-  scene.furniture
-    .filter((item) => !item.is_fixed && !item.is_proxy && Boolean(item.glb_url))
-    .map((item) => {
-      const { id, pose: _pose, is_fixed: _fixed, ...asset } = item
-      return {
-        ...structuredClone(asset),
-        sku: id,
-        glb_url: item.glb_url.startsWith('/assets/')
-          ? `/api/reconstruction/mock-room${item.glb_url}`
-          : item.glb_url,
-      }
-    }),
-)
+/** Offline IKEA snapshot shared with the spatial service. */
+export const catalog: CatalogItem[] = ikeaCatalog.map((entry) => {
+  const { id: _id, is_fixed: _fixed, ...asset } = entry.asset
+  return { ...asset, sku: entry.sku, image_url: entry.image_url } as CatalogItem
+})
 
 /** Agent additions must be exact copies of a real Library asset, except ID and pose. */
 export function isLibraryAsset(item: FurnitureItem): boolean {
@@ -68,4 +60,5 @@ export const catalogCategories = [
   'wardrobe',
   'sofa',
   'storage',
+  'other',
 ] as const

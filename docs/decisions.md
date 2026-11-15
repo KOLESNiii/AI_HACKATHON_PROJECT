@@ -1,5 +1,19 @@
 # Decisions
 
+## Pre-stored IKEA library
+
+- Operator requested replacing every fictional library entry with approximately
+  100 real, pre-stored IKEA products, balanced across categories plus Other.
+- Bundle the selected retailer models and thumbnails with their source evidence
+  for an offline demo. This request supersedes the earlier demo-cache decision to
+  keep retailer models out of the repository for this specific library snapshot.
+- Use existing parsing, normalization and validation, with DracoPy as an import-time
+  decoder for compressed retailer meshes. No runtime dependency, paid generation,
+  proxy fallback or shared contract change. Keep published dimensions
+  only when they agree with the model. Category collision templates remain approximate.
+- Store GBP prices as dated snapshots and link to each source product. Include an
+  ownership notice; third-party assets retain their original ownership.
+
 ## Frontend layout proposals and Stats
 
 - Reuse `/solve`, `/audit` and `/scenes/{scene_id}` without changing backend scoring,
@@ -13,7 +27,7 @@
   display null as zero or infer that an unavailable agent found a good room.
 - Keep requests independent and leave interpretation, locks and tool calls to the
   existing agent. Browser cancellation stops waiting; no automatic paid retries.
-- Library now uses the existing movable demo meshes instead of mock retail
+- The initial mesh Library used the existing movable demo meshes instead of mock retail
   products and a generic proxy URL. Preserve asset dimensions, collision parts and
   uncertainty flags on each copy; do not invent product prices or claim estimated
   dimensions are catalog measurements. Share the editor mesh renderer and use

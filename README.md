@@ -146,12 +146,16 @@ before selecting another version. Clicking a saved version restores its full lay
 and refreshes Stats. Agent acceptance still saves immediately. Versions are kept
 while the room is open; opening another room or reloading starts a new history.
 
-**Library** offers the 31 movable mesh models from the demo home. Select a model's
-name to preview and rotate it, then **Add** to place a copy in the room. Mesh URLs,
-metric bounds and collision parts are preserved, so additions work with chat,
-Stats and version history. These are simplified room models with estimated
-dimensions; Library no longer shows invented retail products or prices. Live
-product search and URL import remain separate integrations.
+**Library** offers real IKEA models. Select a model's name to rotate its 3D preview,
+then Add it to the room. Copies retain their dimensions, provenance and collision
+parts through Stats and version history. Retailer URL imports remain available.
+
+The Library includes 100 bundled IKEA products: 13 each for beds, desks, chairs,
+tables, wardrobes, sofas and storage, plus nine Other items. Their thumbnails,
+published dimensions, GBP price snapshots and normalized 3D models load locally,
+without retailer access or provider keys. Product links open the source IKEA pages.
+See the [library notice](frontend/public/catalog/ikea/NOTICE.md) for provenance and
+the refresh command.
 
 ```bash
 bun run build             # TypeScript check + production frontend bundle

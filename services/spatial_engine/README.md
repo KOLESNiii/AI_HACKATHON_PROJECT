@@ -649,8 +649,9 @@ category, dimensions, collision parts and provenance from that inventory; tool
 arguments cannot replace them. A copy gets a new ID and the proposed pose, then
 passes the existing placement checks.
 
-Only movable, non-proxy entries with a valid GLB under the shared fixture asset
-directory are available. Missing or corrupt meshes are excluded and availability
+Only movable, non-proxy IKEA entries with a valid bundled GLB under
+`frontend/public/catalog/ikea/assets` are available. The inventory comes from
+`frontend/src/data/ikeaCatalog.json`, the same snapshot used by the browser. Missing or corrupt meshes are excluded and availability
 is checked again when the tool runs. Unknown IDs and extra metadata fields are
 rejected; an empty Library removes the addition tool. No generated proxy fallback
 is available to chat. The old proxy route is retained only for existing clients

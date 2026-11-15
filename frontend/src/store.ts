@@ -224,7 +224,7 @@ function restoreVersion(state: State, version: RoomVersion): Partial<State> {
 
 function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
   itemSeq += 1
-  const { sku, ...asset } = c
+  const { sku, image_url: _image, ...asset } = c
   return {
     ...structuredClone(asset),
     id: `lib-${itemSeq}-${sku}`.slice(0, 64),

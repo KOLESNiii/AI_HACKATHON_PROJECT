@@ -11,12 +11,13 @@ from contracts.schema import (
     MIN_HEIGHT_OVERLAP_M,
     MIN_PLAN_OVERLAP_M2,
     AuditReport,
+    FengShuiScore,
     LayoutGoal,
     RoomScene,
 )
 from services.spatial_engine.brightness import calculate_brightness_approximation
 from services.spatial_engine.feng_shui_inputs import FengShuiRequest
-from services.spatial_engine.feng_shui_score import FengShuiScore, score_feng_shui
+from services.spatial_engine.feng_shui_score import score_feng_shui
 from services.spatial_engine.geometry import (
     SceneGeometry,
     SpatialInputError,

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
 import { catalog, catalogCategories } from '../src/data/catalog'
-import { demoFloors } from '../src/data/demoHome'
+import ikeaCatalog from '../src/data/ikeaCatalog.json'
 import { freshMockScene } from '../src/data/mockScene'
 import { initialRoomHistory } from '../src/lib/roomVersions'
 import { useStore } from '../src/store'
@@ -26,20 +26,16 @@ beforeEach(() => {
 afterEach(() => useStore.setState(initial))
 
 test('Library uses existing movable meshes and their actual metadata, rather than invented products', () => {
-  const movable = demoFloors
-    .flatMap((f) => f.scene.furniture)
-    .filter((i) => !i.is_fixed && !i.is_proxy && i.glb_url)
-  expect(catalog).toHaveLength(movable.length)
+  expect(catalog).toHaveLength(100)
   expect(new Set(catalog.map((i) => i.sku)).size).toBe(catalog.length)
   for (const item of catalog) {
-    const source = movable.find((i) => i.id === item.sku)!
-    expect(source).toBeDefined()
-    expect(item.glb_url).toBe(`/api/reconstruction/mock-room${source.glb_url}`)
+    const source = ikeaCatalog.find((i) => i.sku === item.sku)!.asset
+    expect(item.glb_url).toBe(source.glb_url)
     expect(item.bbox_m).toEqual(source.bbox_m)
-    expect(item.dimension_source).toBe(source.dimension_source)
+    expect(item.dimension_source).toBe('catalog')
     expect(item.collision_parts).toEqual(source.collision_parts)
     expect(item.is_proxy).toBe(false)
-    expect(item.price_gbp).toBeNull()
+    expect(item.price_gbp).toBeGreaterThan(0)
     expect(item).not.toHaveProperty('pose')
     expect(item).not.toHaveProperty('is_fixed')
   }
@@ -47,13 +43,10 @@ test('Library uses existing movable meshes and their actual metadata, rather tha
     expect(catalog.some((i) => i.category === category)).toBe(true)
 })
 
-test('every Library URL points at a real canonical GLB file served by reconstruction', () => {
+test('every Library URL points at a real canonical GLB file bundled with the frontend', () => {
   for (const item of catalog) {
-    const relative = item.glb_url.replace('/api/reconstruction/mock-room/', '')
-    const path = new URL(
-      `../../contracts/mock_room/${relative}`,
-      import.meta.url,
-    )
+    const relative = item.glb_url.replace(/^\//, '')
+    const path = new URL(`../public/${relative}`, import.meta.url)
     expect(existsSync(path)).toBe(true)
     expect(readFileSync(path).subarray(0, 4).toString()).toBe('glTF')
   }
@@ -86,6 +79,7 @@ test('adding a mesh preserves provenance, metric bounds, access rules and collis
     has_screen: source.has_screen,
   })
   expect(added).not.toHaveProperty('sku')
+  expect(added).not.toHaveProperty('image_url')
   expect(added.id).not.toBe(source.sku)
   expect(state.versions.at(-1)?.scene.furniture[0].glb_url).toBe(source.glb_url)
   expect(state.toasts.at(-1)?.text).not.toContain('proxy')

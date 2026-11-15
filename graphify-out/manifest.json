@@ -1,14 +1,14 @@
 {
   "contracts/schema.py": {
-    "mtime": 1794728171.6727266,
-    "seen": 1794729940.886878,
-    "ast_hash": "937c8a694e9bf03d733c26eba4f337eb",
+    "mtime": 1794731554.870529,
+    "seen": 1794731748.392526,
+    "ast_hash": "5851625b5b42fbabeee566cc898b7972",
     "semantic_hash": ""
   },
   "contracts/schema.ts": {
-    "mtime": 1794728171.6729045,
-    "seen": 1794729940.8868916,
-    "ast_hash": "2f64f9742c2ee7e61488aa4616c12801",
+    "mtime": 1794731554.8711987,
+    "seen": 1794731748.3925354,
+    "ast_hash": "a94ddcb5c65aab7af097d693a0fae2a0",
     "semantic_hash": ""
   },
   "frontend/.oxlintrc.json": {
@@ -72,21 +72,21 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/EditorScreen.tsx": {
-    "mtime": 1794728171.6738362,
-    "seen": 1794729940.8869195,
-    "ast_hash": "29c9f0efc4bce88ae489c9b214415f38",
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3930376,
+    "ast_hash": "3d4042ab30aeb8169f8d9ba9939fdd70",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Furniture.tsx": {
-    "mtime": 1794728115.5101693,
-    "seen": 1794729940.8869214,
-    "ast_hash": "18d1d4b32f4e46022b475821379aee2f",
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3930428,
+    "ast_hash": "ef5dd285771dafb4dc0d27ac684df5e5",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/KeyboardControls.tsx": {
-    "mtime": 1794694681.8471122,
-    "seen": 1794729940.8869243,
-    "ast_hash": "3de2ed8b3ad8ddb0015e338a9c9262a7",
+    "mtime": 1794731554.8738403,
+    "seen": 1794731748.3930466,
+    "ast_hash": "65a2585fe0bf55d8e6398dd24b14461e",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/RoomView.tsx": {
@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Sidebar.tsx": {
-    "mtime": 1794729931.9239001,
-    "seen": 1794729940.886932,
-    "ast_hash": "b0ff6e8d745ccceedfc30057905eab2f",
+    "mtime": 1794731608.9210658,
+    "seen": 1794731748.3931766,
+    "ast_hash": "877e35b9f578fc879834d5761bb76160",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/ink.ts": {
@@ -120,15 +120,15 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/keyboard.ts": {
-    "mtime": 1794694681.8478153,
-    "seen": 1794729940.8869355,
-    "ast_hash": "d987f75725b91f7d4e359178ca492ed8",
+    "mtime": 1794731554.8744614,
+    "seen": 1794731748.393222,
+    "ast_hash": "1ae7fdcd2f39ff62cce941947521c864",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/useLiveAudit.ts": {
-    "mtime": 1794728171.6740294,
-    "seen": 1794729940.8869376,
-    "ast_hash": "af0f67b184cf9f554aa573529f115d32",
+    "mtime": 1794731554.8748405,
+    "seen": 1794731748.3932242,
+    "ast_hash": "b26ff3df86475fe2cebd15a4b8eb7c74",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/FloorPlanScreen.tsx": {
@@ -216,9 +216,9 @@
     "semantic_hash": ""
   },
   "frontend/src/data/catalog.ts": {
-    "mtime": 1794729931.924153,
-    "seen": 1794729940.8869603,
-    "ast_hash": "e6ae95d5b2a38783b917fefb2fc47bf4",
+    "mtime": 1794731608.9198337,
+    "seen": 1794731748.3937886,
+    "ast_hash": "615d61a43211b4ca263e852397df98ee",
     "semantic_hash": ""
   },
   "frontend/src/data/demoHome.ts": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/agent.ts": {
-    "mtime": 1794728171.6741087,
-    "seen": 1794729940.8869655,
-    "ast_hash": "5b7c194780fd77d4b8fbb09b40f4c669",
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.393864,
+    "ast_hash": "d6ae452ef0636349972b5486015ab079",
     "semantic_hash": ""
   },
   "frontend/src/lib/contracts.ts": {
-    "mtime": 1794728171.674176,
-    "seen": 1794729940.8869703,
-    "ast_hash": "e1bcc48c2c8b8a36ebadc1bfc92bd2f5",
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.39387,
+    "ast_hash": "fd011b36e6f674f93a5e1788a437d858",
     "semantic_hash": ""
   },
   "frontend/src/lib/geometry.ts": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/spatial.ts": {
-    "mtime": 1794728171.6742496,
-    "seen": 1794729940.8869758,
-    "ast_hash": "affc2e7680cee4614d22b91e660a07f0",
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.393956,
+    "ast_hash": "5f9d1da24fd4d2da3809b1caad4c5235",
     "semantic_hash": ""
   },
   "frontend/src/lib/spatialPreview.ts": {
@@ -282,15 +282,15 @@
     "semantic_hash": ""
   },
   "frontend/src/store.ts": {
-    "mtime": 1794729931.924153,
-    "seen": 1794729940.8869824,
-    "ast_hash": "ae2cc589da566c3584b8566b2e3ee1bf",
+    "mtime": 1794731637.2581637,
+    "seen": 1794731748.394061,
+    "ast_hash": "747b43869f3aee8d605a05e1602efb6a",
     "semantic_hash": ""
   },
   "frontend/tests/agentAddItem.test.ts": {
-    "mtime": 1794728171.6744916,
-    "seen": 1794729940.886984,
-    "ast_hash": "4949cb7e00e40564c93f5c8e044eae9d",
+    "mtime": 1794731608.9269094,
+    "seen": 1794731748.3940625,
+    "ast_hash": "052c516c154d625ab854a6b1a0638332",
     "semantic_hash": ""
   },
   "frontend/tests/audio.test.ts": {
@@ -312,9 +312,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/editorControls.test.ts": {
-    "mtime": 1794687116.683567,
-    "seen": 1794729940.8869936,
-    "ast_hash": "f059cacd2125459988a0951917dd9db8",
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.3941967,
+    "ast_hash": "7740a898e3b258fdc63fea4db127fa32",
     "semantic_hash": ""
   },
   "frontend/tests/playLighting.test.ts": {
@@ -558,9 +558,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/config.py": {
-    "mtime": 1794728133.8385334,
-    "seen": 1794729940.8870704,
-    "ast_hash": "6ce4e359da28bee30ab4ce29d080068a",
+    "mtime": 1794731958.9204974,
+    "seen": 1794731993.7461567,
+    "ast_hash": "8164d11eb5a08dbe9a2dac1fedf1086d",
     "semantic_hash": ""
   },
   "services/reconstruction/demo_assets.py": {
@@ -570,9 +570,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/main.py": {
-    "mtime": 1794729931.9411533,
-    "seen": 1794729940.8870747,
-    "ast_hash": "01cd4630d046452a9084ac95bcd6e1a3",
+    "mtime": 1794731958.9204974,
+    "seen": 1794731993.7462058,
+    "ast_hash": "4a14596af33ebb1551bd145cba1ac463",
     "semantic_hash": ""
   },
   "services/reconstruction/room/__init__.py": {
@@ -672,9 +672,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/room/routes.py": {
-    "mtime": 1794728115.5342176,
-    "seen": 1794729940.8871026,
-    "ast_hash": "1e9871e37aef3f59e1699d0c2d2472e2",
+    "mtime": 1794731958.9240444,
+    "seen": 1794731993.747031,
+    "ast_hash": "b4d7ea4e0e6bbdd6d022075897bba0d9",
     "semantic_hash": ""
   },
   "services/reconstruction/room/shell.py": {
@@ -690,9 +690,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/scenes.py": {
-    "mtime": 1794728133.8385334,
-    "seen": 1794729940.8871078,
-    "ast_hash": "8071dbe26ce89047b4e2de2bbfda6751",
+    "mtime": 1794731958.9240444,
+    "seen": 1794731993.7471392,
+    "ast_hash": "fa77b897d72c8b911ae7b812e09513ef",
     "semantic_hash": ""
   },
   "services/spatial_engine/__init__.py": {
@@ -702,9 +702,9 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/agent.py": {
-    "mtime": 1794728171.6910553,
-    "seen": 1794729940.8871112,
-    "ast_hash": "9fb5cfd1f9d6edcd5eac030aeb476245",
+    "mtime": 1794731554.8818405,
+    "seen": 1794731748.3964894,
+    "ast_hash": "df301350950c12f7a7b8f0ad8aaba155",
     "semantic_hash": ""
   },
   "services/spatial_engine/audit.py": {
@@ -720,21 +720,21 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/chat.py": {
-    "mtime": 1794728171.6912415,
-    "seen": 1794729940.887116,
-    "ast_hash": "a805bf5ea4c44caeb0e779798dfc672b",
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.396552,
+    "ast_hash": "fdb3bc425d6e2c77b9e8e30a28c4a480",
     "semantic_hash": ""
   },
   "services/spatial_engine/drafts.py": {
-    "mtime": 1794728115.5360992,
-    "seen": 1794729940.8871179,
-    "ast_hash": "aa25acba8c332800a764e78f9df4e20e",
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.3965538,
+    "ast_hash": "3312b5e09d31e9c1cd5a17a316cae92d",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui.py": {
-    "mtime": 1794728115.536178,
-    "seen": 1794729940.8871193,
-    "ast_hash": "8fb3db7d3a5129257f9a319ad429dce2",
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.3965557,
+    "ast_hash": "fbc2efd150c6996aee519ba74cd70ed2",
     "semantic_hash": ""
   },
   "services/spatial_engine/feng_shui_metric.py": {
@@ -744,27 +744,27 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/geometry.py": {
-    "mtime": 1794728171.691478,
-    "seen": 1794729940.8871229,
-    "ast_hash": "e62f506380033c41cfac7bc3e048d267",
+    "mtime": 1794731554.8838403,
+    "seen": 1794731748.3965955,
+    "ast_hash": "cbf3dc520bf73b00f614f28a8b25e1b7",
     "semantic_hash": ""
   },
   "services/spatial_engine/layout_tools.py": {
-    "mtime": 1794728171.6916258,
-    "seen": 1794729940.8871243,
-    "ast_hash": "a2f7e3b04f62e7c70388fe6917de8a05",
+    "mtime": 1794731554.8848403,
+    "seen": 1794731748.396597,
+    "ast_hash": "5587af3811f05c5ac0e42c52b4dcfc00",
     "semantic_hash": ""
   },
   "services/spatial_engine/main.py": {
-    "mtime": 1794728171.691714,
-    "seen": 1794729940.8871262,
-    "ast_hash": "4001451951dbce5645c45fed99452ee1",
+    "mtime": 1794731554.8848403,
+    "seen": 1794731748.3966007,
+    "ast_hash": "45853a8f0f60907816a4a27f9388e6a8",
     "semantic_hash": ""
   },
   "services/spatial_engine/objective.py": {
-    "mtime": 1794728171.6918647,
-    "seen": 1794729940.8871276,
-    "ast_hash": "bde4dfa3b8afea04b944d8cb16d94281",
+    "mtime": 1794731716.179473,
+    "seen": 1794731748.3966024,
+    "ast_hash": "84f66ef4c557ca1751318b4c25c07a5a",
     "semantic_hash": ""
   },
   "services/spatial_engine/proxy.py": {
@@ -786,9 +786,9 @@
     "semantic_hash": ""
   },
   "tests/conftest.py": {
-    "mtime": 1794728133.8409843,
-    "seen": 1794729940.8871348,
-    "ast_hash": "19ece1302adf7cb0bd2608ae8e7cf25a",
+    "mtime": 1794731958.9264212,
+    "seen": 1794731993.7480464,
+    "ast_hash": "eb0c93761bed087fe91c603591492b78",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_catalog.py": {
@@ -846,9 +846,9 @@
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_api.py": {
-    "mtime": 1794728171.6921124,
-    "seen": 1794729940.8871505,
-    "ast_hash": "d86dc47a487949d07875dee56c19838e",
+    "mtime": 1794731554.8868403,
+    "seen": 1794731748.3971262,
+    "ast_hash": "7ef0f958053a2ef797275ea9e396b7aa",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_brightness.py": {
@@ -858,9 +858,9 @@
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_chat.py": {
-    "mtime": 1794728171.6922412,
-    "seen": 1794729940.8871543,
-    "ast_hash": "532fc7419846656ab4ed0c938be86d41",
+    "mtime": 1794731824.3832667,
+    "seen": 1794731939.442866,
+    "ast_hash": "bb9a7d988445e97765f9bcb315efb651",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_clearance.py": {
@@ -936,9 +936,9 @@
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_objective.py": {
-    "mtime": 1794728171.6924882,
-    "seen": 1794729940.8871741,
-    "ast_hash": "ba149cb3d9cc825053fc4f24d46e8ae5",
+    "mtime": 1794731554.889422,
+    "seen": 1794731748.39754,
+    "ast_hash": "8b436bf751fdcf7badf05dfc8de1052b",
     "semantic_hash": ""
   },
   "tests/spatial_engine/test_reachability.py": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794729931.9231641,
-    "seen": 1794729940.887218,
-    "ast_hash": "7d67ff475b1cb1263fc0dc5ac90f3c74",
+    "mtime": 1794731958.9185221,
+    "seen": 1794731993.7498415,
+    "ast_hash": "04ba32b2a16bb15f478d16220b09f586",
     "semantic_hash": ""
   },
   "contracts/mock_room/README.txt": {
@@ -1092,21 +1092,21 @@
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794729931.9235728,
-    "seen": 1794729940.8872206,
-    "ast_hash": "a1205c202157681bd4b5d155ea7bbac2",
+    "mtime": 1794731958.9195073,
+    "seen": 1794731993.7498808,
+    "ast_hash": "f5cd045156259d0c9dbd5b8e6c2f2161",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794729931.9239001,
-    "seen": 1794729940.8872223,
-    "ast_hash": "a0742eb77929ca23ecad0c8dbcb716b5",
+    "mtime": 1794731958.9204974,
+    "seen": 1794731993.7498832,
+    "ast_hash": "1c5659a0a328e92fa0f92d4751f23de5",
     "semantic_hash": ""
   },
   "docs/dev3-spatial-handoff.md": {
-    "mtime": 1794728171.673746,
-    "seen": 1794729940.8872254,
-    "ast_hash": "e8f99bc4db741973128269cd60eef686",
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3982558,
+    "ast_hash": "9bd236c98b683617bdb67bfa438a4d97",
     "semantic_hash": ""
   },
   "docs/dev4-plan.md": {
@@ -1218,9 +1218,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/README.md": {
-    "mtime": 1794728133.8236024,
-    "seen": 1794729940.8872647,
-    "ast_hash": "ff26ead9d2d2d2758e1c8ba84916e13d",
+    "mtime": 1794731958.9204974,
+    "seen": 1794731993.7506406,
+    "ast_hash": "989f3585b4a66a5fdabddd4066efd3a0",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/README.md": {
@@ -1242,21 +1242,21 @@
     "semantic_hash": ""
   },
   "services/reconstruction/room/README.md": {
-    "mtime": 1794728133.8385334,
-    "seen": 1794729940.8872712,
-    "ast_hash": "534804601345c649ad2a90952937a7e5",
+    "mtime": 1794731958.9210443,
+    "seen": 1794731993.750778,
+    "ast_hash": "72e97ebf4eace776a0feaa3e167cea35",
     "semantic_hash": ""
   },
   "services/spatial_engine/README.md": {
-    "mtime": 1794728171.6907349,
-    "seen": 1794729940.8872726,
-    "ast_hash": "42c86d1c5029d3d682d4cd40b8599ac3",
+    "mtime": 1794731685.1966197,
+    "seen": 1794731748.39916,
+    "ast_hash": "e22d25ce9e63c607152625374d87de10",
     "semantic_hash": ""
   },
   "services/spatial_engine/skills/feng-shui/SKILL.md": {
-    "mtime": 1794728115.5385425,
-    "seen": 1794729940.8872743,
-    "ast_hash": "ecc633da27ba9da7fdc2448d5ee69e27",
+    "mtime": 1794731554.8858404,
+    "seen": 1794731748.3991616,
+    "ast_hash": "67fb20ba590b52e0e1c436217fda9108",
     "semantic_hash": ""
   },
   "examples/one_floor.jpg": {
@@ -1411,104 +1411,104 @@
   },
   ".graphify_ast.json": {
     "mtime": 1794644052.0582492,
-    "seen": 1794728220.8859913,
+    "seen": 1794731446.875703,
     "ast_hash": "",
     "semantic_hash": ""
   },
   ".graphify_cached.json": {
     "mtime": 1794644029.234256,
-    "seen": 1794728220.8860002,
+    "seen": 1794731446.875715,
     "ast_hash": "",
     "semantic_hash": ""
   },
   ".graphify_detect.json": {
     "mtime": 1794644020.845635,
-    "seen": 1794728220.886004,
+    "seen": 1794731446.8757207,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/mock_scene.json": {
     "mtime": 1794674703.9606164,
-    "seen": 1794728220.8860064,
+    "seen": 1794731446.875724,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/one_floor_scene.json": {
     "mtime": 1794687116.680454,
-    "seen": 1794728220.8860085,
+    "seen": 1794731446.8757267,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_first_scene.json": {
     "mtime": 1794687116.6806648,
-    "seen": 1794728220.8860104,
+    "seen": 1794731446.875729,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_ground_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794728220.8860116,
+    "seen": 1794731446.8757317,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_second_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794728220.886013,
+    "seen": 1794731446.875734,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/evidence.json": {
     "mtime": 1794674703.9634907,
-    "seen": 1794728220.8861494,
+    "seen": 1794731446.8789904,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/one_floor.annotations.json": {
     "mtime": 1794682055.4256458,
-    "seen": 1794728220.8861868,
+    "seen": 1794731446.8801064,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/real_rooms.json": {
     "mtime": 1794728115.5340552,
-    "seen": 1794728220.886188,
+    "seen": 1794731446.8801086,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.assets.json": {
     "mtime": 1794700786.8696582,
-    "seen": 1794728220.886189,
+    "seen": 1794731446.8801105,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.hints.json": {
     "mtime": 1794700786.8698816,
-    "seen": 1794728220.8861907,
+    "seen": 1794731446.880113,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/three_floor.annotations.json": {
     "mtime": 1794682055.4259014,
-    "seen": 1794728220.8861918,
+    "seen": 1794731446.8801148,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "services/spatial_engine/fixtures/audit_cases.json": {
     "mtime": 1794682055.4266927,
-    "seen": 1794728220.8862205,
+    "seen": 1794731446.8809364,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
     "mtime": 1794687676.6252723,
-    "seen": 1794728220.8862402,
+    "seen": 1794731446.8812094,
     "ast_hash": "",
     "semantic_hash": ""
   },
   "frontend/src/lib/catalogImport.ts": {
-    "mtime": 1794729931.924153,
-    "seen": 1794729940.8869684,
-    "ast_hash": "e7a889fe2fe668dacf3cfe778a96f247",
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3938682,
+    "ast_hash": "074f3210edf31a63430859cbdf69780b",
     "semantic_hash": ""
   },
   "frontend/tests/catalogImport.test.ts": {
@@ -1527,6 +1527,816 @@
     "mtime": 1794729931.9411533,
     "seen": 1794729940.8871813,
     "ast_hash": "fcd872bd5d2c0e5655c26c2ff5af4eff",
+    "semantic_hash": ""
+  },
+  "frontend/tests/ikeaCatalog.test.ts": {
+    "mtime": 1794731608.927816,
+    "seen": 1794731748.3942041,
+    "ast_hash": "e8ee1a8497f532005d224e3f2fca07a7",
+    "semantic_hash": ""
+  },
+  "scripts/cache_ikea_library.py": {
+    "mtime": 1794730996.1361008,
+    "seen": 1794731129.7266252,
+    "ast_hash": "fdc86a5edd1f9675c951206ceeb6d001",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/test_ikea_library.py": {
+    "mtime": 1794730270.6801922,
+    "seen": 1794731129.729317,
+    "ast_hash": "c3dbc2670205341032fc5071e96e3f5e",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/test_ikea_unpack.py": {
+    "mtime": 1794731052.7467663,
+    "seen": 1794731129.7293189,
+    "ast_hash": "fda2b9e5be1d38918f79930f8659162f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/NOTICE.md": {
+    "mtime": 1794730996.6999264,
+    "seen": 1794731129.7313287,
+    "ast_hash": "fb44446e7c0003c939d76c326cbaf619",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00104291.webp": {
+    "mtime": 1794730414.8272436,
+    "seen": 1794731129.731784,
+    "ast_hash": "74fd899ce9883470d0cde19cf7fdc143",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00217797.webp": {
+    "mtime": 1794730384.9207914,
+    "seen": 1794731129.7317858,
+    "ast_hash": "f4658d868643b863320c1b64d98094ea",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00228705.webp": {
+    "mtime": 1794730290.5357368,
+    "seen": 1794731129.7317867,
+    "ast_hash": "8ad4d09a772ec7a2cf3d7472523fff53",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00263850.webp": {
+    "mtime": 1794730612.9742959,
+    "seen": 1794731129.7317884,
+    "ast_hash": "6d25ab6212dbd8101092c62ea42af88e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00320134.webp": {
+    "mtime": 1794730304.897418,
+    "seen": 1794731129.7317894,
+    "ast_hash": "534fd95dfbf0ddde21eb34ee4a389e52",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00324518.webp": {
+    "mtime": 1794730704.0552638,
+    "seen": 1794731129.7317905,
+    "ast_hash": "1058bc353358cc4e37e491bc40f9f83d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00396242.webp": {
+    "mtime": 1794731019.982956,
+    "seen": 1794731129.7317922,
+    "ast_hash": "bf59bceaca7467a6a5b07cc58a7ba549",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00441758.webp": {
+    "mtime": 1794730431.5399508,
+    "seen": 1794731129.7317934,
+    "ast_hash": "a496a8105d93291c3311fb4f5d445cd9",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00457235.webp": {
+    "mtime": 1794730385.3867826,
+    "seen": 1794731129.7317946,
+    "ast_hash": "c73c80c134d9aec16656aec40abd8b3e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00506231.webp": {
+    "mtime": 1794730594.665525,
+    "seen": 1794731129.7317958,
+    "ast_hash": "46c496421a53e06dd0e2d88b74d29384",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00595086.webp": {
+    "mtime": 1794730361.9392335,
+    "seen": 1794731129.7317967,
+    "ast_hash": "bf095ff61d0e9c13c8161e3bedbc48a3",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00609125.webp": {
+    "mtime": 1794730416.827208,
+    "seen": 1794731129.7317982,
+    "ast_hash": "96b2d1178e718a0a70833e7e52264574",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00635167.webp": {
+    "mtime": 1794730382.6718338,
+    "seen": 1794731129.7317994,
+    "ast_hash": "2d6d1d0e6d04528f21554027e61891c8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10401931.webp": {
+    "mtime": 1794730727.7120228,
+    "seen": 1794731129.7318003,
+    "ast_hash": "16be3c54933611ffe5daf966754cd39d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10473555.webp": {
+    "mtime": 1794730372.0120373,
+    "seen": 1794731129.7318013,
+    "ast_hash": "51ad2a94ecaba3ff1763587081ac7fa0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10576718.webp": {
+    "mtime": 1794730379.916886,
+    "seen": 1794731129.731803,
+    "ast_hash": "cb2a0f3fd7706852f6a52597fbbfe558",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10603547.webp": {
+    "mtime": 1794730277.490034,
+    "seen": 1794731129.731804,
+    "ast_hash": "41d9d28f014bb44761c899ac4d0d3ce5",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10605424.webp": {
+    "mtime": 1794730378.2479177,
+    "seen": 1794731129.731805,
+    "ast_hash": "068d92efad1bb5b95f16f3b2f140aa71",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10608998.webp": {
+    "mtime": 1794730419.2151659,
+    "seen": 1794731129.731806,
+    "ast_hash": "5c40ad36ab1b4662156975de675f75d9",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20436713.webp": {
+    "mtime": 1794730693.8133714,
+    "seen": 1794731129.7318077,
+    "ast_hash": "c3b312aeedf8fbed05ad93a5930427b5",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20487873.webp": {
+    "mtime": 1794730418.5661774,
+    "seen": 1794731129.7318094,
+    "ast_hash": "822878d2baa82d6caa09fb0da1f35c89",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20530065.webp": {
+    "mtime": 1794730421.9761174,
+    "seen": 1794731129.7318106,
+    "ast_hash": "c6f85fabb2f3260ab0e0c234d1c9f627",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20530621.webp": {
+    "mtime": 1794730381.1028636,
+    "seen": 1794731129.731812,
+    "ast_hash": "c0ed71c870db4066c591f35a685eadcc",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20532743.webp": {
+    "mtime": 1794731013.6679938,
+    "seen": 1794731129.7318134,
+    "ast_hash": "01dd3d7886fddac8424c35371f7d33da",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30213076.webp": {
+    "mtime": 1794730367.3521278,
+    "seen": 1794731129.7318149,
+    "ast_hash": "03cf96285576a9d063e55b9c16b7df2f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30263844.webp": {
+    "mtime": 1794730612.9742959,
+    "seen": 1794731129.7318163,
+    "ast_hash": "be9ca93bd6f20c29b1b4815d961da831",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30298396.webp": {
+    "mtime": 1794731021.483947,
+    "seen": 1794731129.7318175,
+    "ast_hash": "d8dadae48c655199fd81559c0b5f40fd",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30582445.webp": {
+    "mtime": 1794730365.9161556,
+    "seen": 1794731129.7318187,
+    "ast_hash": "0f6bad95faae64738b849c018e395015",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30602429.webp": {
+    "mtime": 1794730358.4033034,
+    "seen": 1794731129.73182,
+    "ast_hash": "d893fe41db3cad723e48f0574ed7d30b",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40104294.webp": {
+    "mtime": 1794730415.373234,
+    "seen": 1794731129.731822,
+    "ast_hash": "430792a2e96ef2cdbefe4741dee0e4b1",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40301223.webp": {
+    "mtime": 1794730703.3492713,
+    "seen": 1794731129.7318227,
+    "ast_hash": "8cc5c73b1d1bb93505ce21f107cde653",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40407922.webp": {
+    "mtime": 1794730429.6329837,
+    "seen": 1794731129.7318244,
+    "ast_hash": "f6f1e71d7b09734e7863a8206a4bbbb1",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40415465.webp": {
+    "mtime": 1794730713.6861644,
+    "seen": 1794731129.7318258,
+    "ast_hash": "717a10e5861c5928a264c2dcd9e521d3",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40492675.webp": {
+    "mtime": 1794730989.4291427,
+    "seen": 1794731129.7318275,
+    "ast_hash": "11a6227dafc46a4fb09c904c79f86eb6",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40500005.webp": {
+    "mtime": 1794730423.7710857,
+    "seen": 1794731129.7318285,
+    "ast_hash": "3bea833fc028c3d44433e3a36d445df8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40503546.webp": {
+    "mtime": 1794730714.3701575,
+    "seen": 1794731129.7318296,
+    "ast_hash": "1a64a584ecaf0d6ec89354c1d4fca9d7",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40534152.webp": {
+    "mtime": 1794730419.089168,
+    "seen": 1794731129.7318313,
+    "ast_hash": "4696fedf4dd49aa29a5b7eeebb37b18f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40554381.webp": {
+    "mtime": 1794731028.0459082,
+    "seen": 1794731129.731832,
+    "ast_hash": "5b8ee7189fda3e3e53a51cb9b1d80531",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40566751.webp": {
+    "mtime": 1794730406.7583885,
+    "seen": 1794731129.7318337,
+    "ast_hash": "1558eb8c6b6d04482f0199056be86845",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40598610.webp": {
+    "mtime": 1794730435.898876,
+    "seen": 1794731129.7318347,
+    "ast_hash": "f38befce4ce8503d1a34cfa4aa68ecbc",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40613677.webp": {
+    "mtime": 1794730369.183092,
+    "seen": 1794731129.731836,
+    "ast_hash": "328ec9e8365f7aec39fddde475ebf684",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50161321.webp": {
+    "mtime": 1794730419.9781525,
+    "seen": 1794731129.731837,
+    "ast_hash": "ea035ec4c1d7370c3286e675be876bd6",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50250713.webp": {
+    "mtime": 1794730374.0279984,
+    "seen": 1794731129.7318382,
+    "ast_hash": "3019bb3010ade83a4b790faddac5976b",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50263838.webp": {
+    "mtime": 1794730693.8133714,
+    "seen": 1794731129.7318394,
+    "ast_hash": "ee60043da5903105336bf931ea46ccd8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50403669.webp": {
+    "mtime": 1794730378.6679099,
+    "seen": 1794731129.731841,
+    "ast_hash": "f414176d682f6c6086b30f642f508c2c",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50453758.webp": {
+    "mtime": 1794730437.0978553,
+    "seen": 1794731129.7318425,
+    "ast_hash": "f7c6c50d9d1cd5162fa2611c917f9779",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50530988.webp": {
+    "mtime": 1794731029.3939004,
+    "seen": 1794731129.7318442,
+    "ast_hash": "ac2b0fa7ab49cb54a725332f18ec7789",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50569103.webp": {
+    "mtime": 1794730381.0078652,
+    "seen": 1794731129.7318454,
+    "ast_hash": "759d9be02cc234068c49c629cbec1076",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50586145.webp": {
+    "mtime": 1794731028.8609035,
+    "seen": 1794731129.7318466,
+    "ast_hash": "8bf9169eaf9177808dfc96c8f7bf87fe",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60456916.webp": {
+    "mtime": 1794730438.8948247,
+    "seen": 1794731129.731848,
+    "ast_hash": "eb74ecbf2fd2687e08c753c5c22cc54e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60483255.webp": {
+    "mtime": 1794730439.2028196,
+    "seen": 1794731129.7318492,
+    "ast_hash": "0c12240dfd3499d2a1787144181d2fcf",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60518274.webp": {
+    "mtime": 1794730345.0765705,
+    "seen": 1794731129.7318509,
+    "ast_hash": "86a0bb7518d0cdf509ef164b391312db",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60538205.webp": {
+    "mtime": 1794730372.556027,
+    "seen": 1794731129.7318516,
+    "ast_hash": "df3e6ddc32f3413dbd91617754756c2d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60607171.webp": {
+    "mtime": 1794730987.958152,
+    "seen": 1794731129.731853,
+    "ast_hash": "700c55477e0873a68065e59b72f99d18",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60627980.webp": {
+    "mtime": 1794730421.3801277,
+    "seen": 1794731129.7318547,
+    "ast_hash": "db952d1ddd23f1db158e36366b22a7f0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70239710.webp": {
+    "mtime": 1794730414.694246,
+    "seen": 1794731129.7318559,
+    "ast_hash": "c8b98e7d4505f3eb019e8eeab5a77d20",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70453762.webp": {
+    "mtime": 1794730431.4909515,
+    "seen": 1794731129.7318566,
+    "ast_hash": "eb622cfc72739e5cae93499ef8612b8c",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70458203.webp": {
+    "mtime": 1794730437.4468493,
+    "seen": 1794731129.7318583,
+    "ast_hash": "c43b93fdaa82a36428d73c6080333fcb",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70515915.webp": {
+    "mtime": 1794731016.5989761,
+    "seen": 1794731129.731859,
+    "ast_hash": "953e02a486a081f3a45540ee3f627321",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70530609.webp": {
+    "mtime": 1794730435.9258754,
+    "seen": 1794731129.7318604,
+    "ast_hash": "ef502bfb4d9d94bfc7d0d03aec5db58e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70544866.webp": {
+    "mtime": 1794730382.9308288,
+    "seen": 1794731129.7318618,
+    "ast_hash": "cea4366c4743eb9bd1e3d9cfb720ef1f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80213074.webp": {
+    "mtime": 1794730365.9841545,
+    "seen": 1794731129.7318633,
+    "ast_hash": "297308c712ba52c61ad0b40d83a24392",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80437234.webp": {
+    "mtime": 1794730431.530951,
+    "seen": 1794731129.731865,
+    "ast_hash": "3fb43d17435a1e1cdf353b117607e0d4",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80458231.webp": {
+    "mtime": 1794730441.9177735,
+    "seen": 1794731129.731866,
+    "ast_hash": "6bf98eb669f47988f1d4f303f2982f26",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80506393.webp": {
+    "mtime": 1794730986.4891613,
+    "seen": 1794731129.7318673,
+    "ast_hash": "ba363622a18ff5f861c1a19803551ce0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80507627.webp": {
+    "mtime": 1794730375.8549635,
+    "seen": 1794731129.7318687,
+    "ast_hash": "2e97c3d28907c459a9afdb85710625a5",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80569998.webp": {
+    "mtime": 1794730406.6343906,
+    "seen": 1794731129.7318702,
+    "ast_hash": "8c9662310b11c7dd677fd219d906dd1a",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80608103.webp": {
+    "mtime": 1794730344.6535792,
+    "seen": 1794731129.7318716,
+    "ast_hash": "5c46c3cb33be41ad8a4c9cda6840ec63",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90214308.webp": {
+    "mtime": 1794730370.6020646,
+    "seen": 1794731129.7318728,
+    "ast_hash": "683de31f4d4f56e34d7d0caec6f58f8e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90349326.webp": {
+    "mtime": 1794730265.6033115,
+    "seen": 1794731129.731874,
+    "ast_hash": "a4142e77a5290eafc155224bc17e9ce8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90399316.webp": {
+    "mtime": 1794730594.0245333,
+    "seen": 1794731129.731876,
+    "ast_hash": "851e182e17fac315ab73764b013f0903",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90401932.webp": {
+    "mtime": 1794730715.09215,
+    "seen": 1794731129.731877,
+    "ast_hash": "522b9f610e3d1761174dd5b9bce17d26",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90437238.webp": {
+    "mtime": 1794730432.8499281,
+    "seen": 1794731129.731878,
+    "ast_hash": "90c586847bb274b1173c43ed06254a72",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90493955.webp": {
+    "mtime": 1794730368.518105,
+    "seen": 1794731129.7318795,
+    "ast_hash": "02f47797bafdbe9792de1aa8b90dca46",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90540706.webp": {
+    "mtime": 1794730423.3260937,
+    "seen": 1794731129.7318802,
+    "ast_hash": "15c1484275b82133c4d18c75da50d30a",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90551120.webp": {
+    "mtime": 1794730379.5148935,
+    "seen": 1794731129.731882,
+    "ast_hash": "2eed1a77e78c756a4e479e3d7a89d2d7",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90562246.webp": {
+    "mtime": 1794730423.2790945,
+    "seen": 1794731129.7318828,
+    "ast_hash": "d4f485beaf70bbf5936c776e71f60935",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90606820.webp": {
+    "mtime": 1794730407.4583757,
+    "seen": 1794731129.7318842,
+    "ast_hash": "31c6d92875cb2cffcdc2f0134599db96",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s09489637.webp": {
+    "mtime": 1794730586.3726313,
+    "seen": 1794731129.7318857,
+    "ast_hash": "44c971c898e8e6a0c500ea7a8df934c4",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s09536177.webp": {
+    "mtime": 1794731013.6999936,
+    "seen": 1794731129.7318869,
+    "ast_hash": "957d8293beaea4043859b125f7e7fa3f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s09903014.webp": {
+    "mtime": 1794730367.5871232,
+    "seen": 1794731129.7318945,
+    "ast_hash": "9fb0d76a13a74beea863802e9894540d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19031704.webp": {
+    "mtime": 1794730588.5396035,
+    "seen": 1794731129.7318962,
+    "ast_hash": "ba0d0023faab313d3c24024d2053debb",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19270313.webp": {
+    "mtime": 1794730585.644641,
+    "seen": 1794731129.7318976,
+    "ast_hash": "31cc15b4f819b6dca749ca5dd1c202cc",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19306294.webp": {
+    "mtime": 1794730597.3564909,
+    "seen": 1794731129.7319007,
+    "ast_hash": "51bd16bcdb9ad28f6d36a2157a34fc2f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19508862.webp": {
+    "mtime": 1794730596.8294976,
+    "seen": 1794731129.7319024,
+    "ast_hash": "920240bcbfaccf34da5c11273b964763",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29006940.webp": {
+    "mtime": 1794730270.8031895,
+    "seen": 1794731129.731904,
+    "ast_hash": "ff06e0f9b0782da3ad8d85fdce2fb958",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29006978.webp": {
+    "mtime": 1794730220.9227567,
+    "seen": 1794731129.7319055,
+    "ast_hash": "823f7780a47a9ee331c52e458c587bd1",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29281066.webp": {
+    "mtime": 1794730714.3581576,
+    "seen": 1794731129.7319071,
+    "ast_hash": "0cf483d81731bbcde9aaecf86e77f9e7",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29416758.webp": {
+    "mtime": 1794730371.9000394,
+    "seen": 1794731129.7319088,
+    "ast_hash": "c61cdd3b8f4a08dae883d355fc215cb2",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s39284998.webp": {
+    "mtime": 1794730703.2152727,
+    "seen": 1794731129.7319138,
+    "ast_hash": "a2152a121faeb78b871a51b18414ab9d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s39494760.webp": {
+    "mtime": 1794730444.0447376,
+    "seen": 1794731129.7319157,
+    "ast_hash": "f47e52654f6414e72ffdf19f2d5fa7fd",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s39514683.webp": {
+    "mtime": 1794731012.953998,
+    "seen": 1794731129.731918,
+    "ast_hash": "fef266ce9df3313fea2296a1709f309c",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s49431927.webp": {
+    "mtime": 1794730369.80908,
+    "seen": 1794731129.7319195,
+    "ast_hash": "80934fc6bd28496580b474087855be1a",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s59399031.webp": {
+    "mtime": 1794730587.872612,
+    "seen": 1794731129.7319214,
+    "ast_hash": "da85fef6ab6f02ce2820d3056caf5e5e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s69440596.webp": {
+    "mtime": 1794730584.318658,
+    "seen": 1794731129.7319229,
+    "ast_hash": "8119b68b4b498257563079ee9a1b7991",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s69537409.webp": {
+    "mtime": 1794730593.2075436,
+    "seen": 1794731129.7319243,
+    "ast_hash": "e236098dcdaca606de1df76b8f374dff",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s79017837.webp": {
+    "mtime": 1794730708.477218,
+    "seen": 1794731129.7319255,
+    "ast_hash": "d5c75b5b2432ca8285f81cbfbe964a68",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s79270273.webp": {
+    "mtime": 1794730594.4585276,
+    "seen": 1794731129.7319264,
+    "ast_hash": "93a5a5c1384e37e0234f3697de2d70f0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s89246862.webp": {
+    "mtime": 1794730454.6545606,
+    "seen": 1794731129.731928,
+    "ast_hash": "e66cf3363ea56043007c8665b08e7c8d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s99270291.webp": {
+    "mtime": 1794730594.736524,
+    "seen": 1794731129.7319293,
+    "ast_hash": "323fd65de065cd0e1a3a344ee82b439a",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/CatalogPreview.tsx": {
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3929875,
+    "ast_hash": "91a282496c7503c602066bb2c608d12e",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/FengShuiScoreCard.tsx": {
+    "mtime": 1794731554.8733408,
+    "seen": 1794731748.3930402,
+    "ast_hash": "958b0b88daa35e2a3c9f72114d00f966",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/FurnitureMesh.tsx": {
+    "mtime": 1794731554.8738403,
+    "seen": 1794731748.393044,
+    "ast_hash": "f9ecfbb82f20b510c82a3957cee41102",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/LayoutProposalCard.tsx": {
+    "mtime": 1794731554.8738403,
+    "seen": 1794731748.3930476,
+    "ast_hash": "9c09b615adc5998bdd532698397c27fe",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/VersionTree.tsx": {
+    "mtime": 1794731554.8744614,
+    "seen": 1794731748.3931787,
+    "ast_hash": "2d9f5135282a1453245330e2f64baac9",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/api.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.393865,
+    "ast_hash": "03247aa01aeb33db0dbd20f64e69f125",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/editorServices.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3938713,
+    "ast_hash": "9bf9c3b8c7b7c953db2b266d3af4db49",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/fengShui.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3938732,
+    "ast_hash": "db5363e3f3560e682545ae2fb6dba983",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/layoutDiff.ts": {
+    "mtime": 1794731554.8758404,
+    "seen": 1794731748.3939173,
+    "ast_hash": "b3e2761d40451ca90a4c792203900895",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/roomVersions.ts": {
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.3939538,
+    "ast_hash": "3b1753ec53961a04d099473e170121ac",
+    "semantic_hash": ""
+  },
+  "frontend/tests/catalog.test.ts": {
+    "mtime": 1794731676.3315566,
+    "seen": 1794731748.3941305,
+    "ast_hash": "6e1c43432bc361cb942e4e0d4fc62c1d",
+    "semantic_hash": ""
+  },
+  "frontend/tests/fengShui.test.ts": {
+    "mtime": 1794731554.8768404,
+    "seen": 1794731748.3941982,
+    "ast_hash": "8f0308829bcefb95700d10b552a472e3",
+    "semantic_hash": ""
+  },
+  "frontend/tests/fengShuiFixtures.ts": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3941998,
+    "ast_hash": "f2088be7d1648e8a9e8125731a9a42fd",
+    "semantic_hash": ""
+  },
+  "frontend/tests/fengShuiScore.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3942015,
+    "ast_hash": "04a4ff1fe9c40de7ff62a203c5f15d41",
+    "semantic_hash": ""
+  },
+  "frontend/tests/layoutAgent.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3942053,
+    "ast_hash": "2c59c1a1728cf5d18fc2f944dd640fac",
+    "semantic_hash": ""
+  },
+  "frontend/tests/layoutProgress.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3942068,
+    "ast_hash": "fc965cf002b0d2ad8d5593ee8268461c",
+    "semantic_hash": ""
+  },
+  "frontend/tests/roomVersions.test.tsx": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3943045,
+    "ast_hash": "8c774d971689ed9920ac9f2d03258b74",
+    "semantic_hash": ""
+  },
+  "frontend/tests/solveStream.ts": {
+    "mtime": 1794731554.8778403,
+    "seen": 1794731748.3943067,
+    "ast_hash": "5768f5944deb54b42ba0f30973401ea1",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/feng_shui_inputs.py": {
+    "mtime": 1794731554.8828404,
+    "seen": 1794731748.3965573,
+    "ast_hash": "8b8772b86610bb0e831a8c85014fecec",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/feng_shui_score.py": {
+    "mtime": 1794731554.8838403,
+    "seen": 1794731748.3965921,
+    "ast_hash": "3876c06c5ec58a2381cc6bfb21aa9218",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/feng_shui_skill.py": {
+    "mtime": 1794731554.8838403,
+    "seen": 1794731748.3965936,
+    "ast_hash": "137b80a8d42bfe266c1962eb8d876370",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/library.py": {
+    "mtime": 1794731609.018708,
+    "seen": 1794731748.3965988,
+    "ast_hash": "1c4fdd4bde18a916e6806a20005b73e1",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/streaming.py": {
+    "mtime": 1794731554.8858404,
+    "seen": 1794731748.3966994,
+    "ast_hash": "2105e98d97b45ca7f63b5627f06559df",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_feng_shui_optimisation.py": {
+    "mtime": 1794731554.8878403,
+    "seen": 1794731748.3974094,
+    "ast_hash": "4e3260be38cffa95c4acfdcc407a2435",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_feng_shui_score.py": {
+    "mtime": 1794731554.888403,
+    "seen": 1794731748.3974106,
+    "ast_hash": "5b9c1333a48259acff09136cbe7d0387",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_library.py": {
+    "mtime": 1794731637.2592328,
+    "seen": 1794731748.397539,
+    "ast_hash": "ebcc1a12c58f10412910f62798a95d91",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_streaming.py": {
+    "mtime": 1794731554.8897712,
+    "seen": 1794731748.3976345,
+    "ast_hash": "81d66e74351b07b95b86e6bbfa819c82",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/scene_cache.py": {
+    "mtime": 1794731958.9240444,
+    "seen": 1794731993.7470345,
+    "ast_hash": "5461b6f9459569bb012f892df2bd616e",
+    "semantic_hash": ""
+  },
+  "tests/test_scene_cache.py": {
+    "mtime": 1794731958.9266195,
+    "seen": 1794731993.7496393,
+    "ast_hash": "b90e2caeba874ba5894522f9824a478a",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/scene_cache/README.md": {
+    "mtime": 1794731958.9226375,
+    "seen": 1794731993.7507796,
+    "ast_hash": "871f256c6fac4eb22d4885ef0f135565",
     "semantic_hash": ""
   }
 }
