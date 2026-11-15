@@ -151,6 +151,21 @@ proxy-box/shell-error fallback. These named demo URLs use `Cache-Control: no-cac
 Restart the reconstruction service after changing source fixture geometry to clear
 the in-memory room/shell cache. The frontend's former copy/build script is removed.
 
+## Home screen and intake presentation
+
+The frontend starts at the local `home` screen, branded Refresh, before upload,
+processing, room selection and editing. Framer Motion coordinates screen and
+room-panel transitions using the existing dependency; processing still advances
+on demo timers rather than reconstruction-job progress.
+
+`Landscape` stays mounted for the app session and is shown on home/processing
+screens. It lazy-loads the locally vendored MIT-licensed Shan Shui Inf engine as
+text into an iframe with `sandbox="allow-scripts"`. The adapter hides the original
+controls, fits the viewport and pauses/resumes drift through source-checked
+`postMessage` events. A procedural canvas fallback paints while the engine starts
+or if loading/adaptation fails. No provider requests or extra configuration are
+required. Attribution and the original license live beside the vendored source.
+
 ## Individual furniture meshes and proxies (#16)
 
 `assets/reconstruction.py` consumes the #14 registry and #15 masks, calling an injected

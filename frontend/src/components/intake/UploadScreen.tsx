@@ -81,13 +81,9 @@ export function UploadScreen() {
           />
         </div>
         <div className="flex w-full items-center justify-between gap-4">
-          <button
-            type="button"
-            className="cursor-pointer text-[11px] font-medium text-ink-mist underline-offset-2 hover:underline"
-            onClick={() => setScreen('reading')}
-          >
+          <Button size="lg" onClick={() => setScreen('reading')}>
             Skip with demo home
-          </button>
+          </Button>
           {/* Upload to the reconstruction service is not wired yet; files stay in the browser. */}
           <Button
             variant="primary"
@@ -95,7 +91,7 @@ export function UploadScreen() {
             disabled={!plan || !video}
             onClick={() => setScreen('reading')}
           >
-            Build room
+            Read floor plan
           </Button>
         </div>
       </Panel>

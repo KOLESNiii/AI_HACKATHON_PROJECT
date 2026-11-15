@@ -91,7 +91,7 @@ function ChatTab() {
       <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto">
         {chat.length === 0 && (
           <p className="text-[14px] leading-[23px] text-ink-medium">
-            Ask SpaceShift to redesign this room, e.g.{' '}
+            Ask Refresh to redesign this room, e.g.{' '}
             <em className="font-serif text-[16px]">
               “make it feel more open and get the desk out of the window glare.”
             </em>
@@ -103,7 +103,7 @@ function ChatTab() {
             className={`flex flex-col gap-1.5 ${m.role === 'user' ? 'items-end' : 'items-start'}`}
           >
             <span className="text-[11px] font-medium text-ink-mist">
-              {m.role === 'user' ? 'You' : 'SpaceShift'}
+              {m.role === 'user' ? 'You' : 'Refresh'}
             </span>
             <p
               className={`rounded-[2px] px-3 py-2.5 text-[14px] leading-[23px] ${
@@ -128,7 +128,7 @@ function ChatTab() {
         ))}
         {busy && (
           <span className="text-[11px] font-medium text-ink-mist">
-            SpaceShift is thinking…
+            Refresh is thinking…
           </span>
         )}
         <div ref={end} />
@@ -137,7 +137,7 @@ function ChatTab() {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Ask SpaceShift to redesign the room…"
+          placeholder="Ask Refresh to redesign the room…"
           className="min-w-0 flex-1 rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
         />
         <Button type="submit" variant="primary" size="lg" disabled={busy}>
