@@ -3,6 +3,7 @@ import { catalog, catalogCategories } from '../../data/catalog'
 import { proposalSummary, sendAgentMessage } from '../../lib/agent'
 import type { AuditReport, RoomScene } from '../../lib/contracts'
 import { fitsRoom } from '../../lib/geometry'
+import type { ProductOption } from '../../lib/products'
 import { SpatialError } from '../../lib/spatial'
 import { useStore, type Tab } from '../../store'
 import { Button, Chip, ScoreRing, StatusDot, type Status } from '../ui'
@@ -78,6 +79,7 @@ function ChatTab() {
           additions: reply.additions,
           report: reply.report,
           outlook: reply.outlook,
+          products: reply.products,
           baseRevision,
         })
     } catch (error) {
@@ -102,6 +104,10 @@ function ChatTab() {
             Ask Refresh to redesign this room, e.g.{' '}
             <em className="font-serif text-[16px]">
               “make it feel more open and get the desk out of the window glare.”
+            </em>{' '}
+            or{' '}
+            <em className="font-serif text-[16px]">
+              “find me an oak desk for under £150.”
             </em>
           </p>
         )}
@@ -122,6 +128,13 @@ function ChatTab() {
             >
               {m.text}
             </p>
+            {!!m.products?.length && (
+              <div className="flex w-full flex-col gap-2">
+                {m.products.map((p) => (
+                  <ProductCard key={p.product_url} product={p} />
+                ))}
+              </div>
+            )}
             {(m.poses || !!m.additions?.length) && (
               <div className="flex w-full flex-col gap-2 rounded-[2px] bg-paper-deep py-2 pr-2 pl-3">
                 <div className="flex items-center justify-between gap-2.5">
@@ -175,6 +188,70 @@ function ChatTab() {
         </Button>
       </form>
     </>
+  )
+}
+
+/** One product found online: photo, shop, price and the published size, if read. */
+function ProductCard({ product }: { product: ProductOption }) {
+  const adding = useStore((s) => s.adding.includes(product.product_url))
+  const inLibrary = useStore((s) =>
+    s.library.some((e) => e.product.product_url === product.product_url),
+  )
+  const addProductToScene = useStore((s) => s.addProductToScene)
+  const size = product.bbox_m
+    ? `${product.bbox_m.width.toFixed(2)} × ${product.bbox_m.depth.toFixed(2)} × ${product.bbox_m.height.toFixed(2)} m`
+    : 'Size read on import'
+  return (
+    <div className="flex items-center gap-3 rounded-[2px] border border-hairline-ink bg-paper-card/65 p-2.5">
+      <ProductImage src={product.image_url} alt={product.name} />
+      <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
+        <a
+          href={product.product_url}
+          target="_blank"
+          rel="noreferrer noopener"
+          title={product.name}
+          className="line-clamp-2 text-[13px] leading-[17px] font-medium hover:underline"
+        >
+          {product.name}
+        </a>
+        <span className="truncate text-[11px] text-ink-medium">
+          {product.retailer}
+          {product.price_gbp != null && (
+            <span className="mono text-ink-primary">
+              {' · '}£{product.price_gbp.toFixed(product.price_gbp % 1 ? 2 : 0)}
+            </span>
+          )}
+        </span>
+        <span className="mono truncate text-[11px] text-ink-mist">{size}</span>
+      </div>
+      <Button
+        disabled={adding}
+        onClick={() => void addProductToScene(product)}
+        title={
+          inLibrary
+            ? 'Already in your library: places another one'
+            : 'Import into your library and place it in the room'
+        }
+      >
+        {adding ? 'Adding…' : 'Add to scene'}
+      </Button>
+    </div>
+  )
+}
+
+function ProductImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false)
+  return failed ? (
+    <div className="size-16 shrink-0 rounded-[2px] bg-ink-medium/16" />
+  ) : (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      className="size-16 shrink-0 rounded-[2px] bg-white object-contain"
+    />
   )
 }
 
@@ -384,6 +461,13 @@ function LibraryTab() {
     [category, query],
   )
 
+  const library = useStore((s) => s.library)
+  const imported = library.filter(
+    (e) =>
+      (category === 'all' || e.item.category === category) &&
+      e.product.name.toLowerCase().includes(query.trim().toLowerCase()),
+  )
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <input
@@ -406,9 +490,25 @@ function LibraryTab() {
         ))}
       </div>
       <span className="text-[11px] font-medium text-ink-medium">
-        {results.length} results
+        {results.length + imported.length} results
       </span>
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-2">
+        {imported.length > 0 && (
+          <>
+            <span className="text-[11px] font-medium text-ink-mist">
+              Imported from shops
+            </span>
+            {imported.map((e) => (
+              <ProductCard
+                key={e.product.product_url}
+                product={{ ...e.product, bbox_m: e.item.bbox_m }}
+              />
+            ))}
+            <span className="pt-2 text-[11px] font-medium text-ink-mist">
+              Catalog
+            </span>
+          </>
+        )}
         {results.map((c) => {
           const fits = fitsRoom(floor, c.bbox_m.width, c.bbox_m.depth)
           return (

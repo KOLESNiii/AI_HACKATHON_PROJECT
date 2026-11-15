@@ -19,12 +19,13 @@ from services.spatial_engine.agent import (
     LayoutModel,
     propose_layout,
 )
-from services.spatial_engine.chat import ChatReply, ChatRequest, chat
+from services.spatial_engine.chat import ChatReply, ChatRequest, PlaceRequest, chat, place
 from services.spatial_engine.feng_shui import (
     FengShuiRequest,
     FengShuiResult,
     assess_feng_shui,
 )
+from services.spatial_engine.furniture_search import LinkupPost, linkup_client
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.proxy import proxy_glb
 from services.spatial_engine.report import audit_scene
@@ -162,14 +163,28 @@ def feng_shui(
         return assess_feng_shui(request, model)
 
 
+def get_linkup() -> LinkupPost | None:
+    """Linkup web search, or None when LINKUP_API_KEY is unset (IKEA is still searched)."""
+    api_key = os.environ.get("LINKUP_API_KEY", "").strip()
+    return linkup_client(api_key) if api_key else None
+
+
 @app.post("/chat", response_model=ChatReply)
 def room_chat(
     request: ChatRequest,
     model: LayoutModel | None = Depends(get_layout_model),
+    linkup: LinkupPost | None = Depends(get_linkup),
 ) -> ChatReply:
-    """Return an audited proposal for explicit application by the editor."""
+    """Return an audited proposal, or products found online, for the editor to apply."""
     with _input_errors():
-        return chat(request, model)
+        return chat(request, model, linkup)
+
+
+@app.post("/place", response_model=ChatReply)
+def place_imported(request: PlaceRequest) -> ChatReply:
+    """Choose an audited pose for one imported item; the scene itself is not modified."""
+    with _input_errors():
+        return place(request)
 
 
 @app.get("/proxies/{width}/{height}/{depth}.glb")

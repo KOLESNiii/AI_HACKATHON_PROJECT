@@ -1,4 +1,5 @@
 import type { AuditReport, FurnitureItem, Pose2D, RoomScene } from './contracts'
+import type { ProductOption } from './products'
 import { postSpatial, SpatialError, toServiceScene } from './spatial'
 
 export interface AgentReply {
@@ -8,6 +9,8 @@ export interface AgentReply {
   report?: AuditReport | null
   /** The proposed audit, shown before Apply. */
   outlook?: string
+  /** Real products found online for the user to pick from. */
+  products?: ProductOption[]
 }
 
 /** What Apply would do, e.g. "Proposed layout · 1 new item · 2 moves". */
@@ -66,5 +69,6 @@ export async function sendAgentMessage(
       reply.poses && Object.keys(reply.poses).length ? reply.poses : undefined,
     additions: reply.additions?.length ? reply.additions : undefined,
     outlook: reply.report ? describeOutlook(reply.report) : undefined,
+    products: reply.products?.length ? reply.products : undefined,
   }
 }
