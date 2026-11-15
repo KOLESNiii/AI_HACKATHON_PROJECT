@@ -4,6 +4,7 @@ discovery (`assets/providers.py`) and the extraction job's checks. No test calls
 from __future__ import annotations
 
 import json
+import threading
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -25,10 +26,10 @@ from services.reconstruction.room.plan_view import render_floor  # noqa: E402
 from services.reconstruction.room.room_frames import (  # noqa: E402
     FalRoomClassifier,
     adjacency,
-    assign_items,
     parse_reply,
     plan_rooms,
     smooth,
+    spread,
 )
 from services.reconstruction.room.video_jobs import whole_view  # noqa: E402
 
@@ -127,19 +128,18 @@ def test_unassigned_frames_stay_unassigned_but_keep_continuity() -> None:
     assert smooth([None, None], NEAR) == [None, None]
 
 
-def test_items_go_to_the_room_most_of_their_sightings_show() -> None:
-    f = [_frame(i) for i in range(5)]
-    rooms = {f[0].key: "kitchen", f[1].key: "kitchen", f[2].key: "bed", f[3].key: None}
-    objects = [
-        _object("vid-000001", f[:3]),  # 2 kitchen, 1 bed
-        _object("vid-000002", [f[1], f[2]]),  # tie
-        _object("vid-000003", [f[3], f[4]]),  # no room seen
-    ]
-    assert assign_items(objects, rooms) == {
-        "vid-000001": "kitchen",
-        "vid-000002": None,
-        "vid-000003": None,
-    }
+def test_spread_caps_each_room_evenly_over_every_video() -> None:
+    other = "b" * 64
+    frames = [_frame(i) for i in range(30)] + [_frame(i, other) for i in range(10)]
+    picked = spread(frames, 16)
+    assert len(picked) <= 16
+    first = [f.timestamp_s for f in picked if f.source_id == SOURCE]
+    second = [f.timestamp_s for f in picked if f.source_id == other]
+    assert first[0] == 0 and first[-1] == 29  # covers the first video's whole span
+    assert second and second[0] == 0 and second[-1] == 9
+    assert len(first) > len(second)  # shares follow each video's frames
+    few = frames[:5]
+    assert spread(few, 16) == few
 
 
 # --- the model's answer ---------------------------------------------------------------------
@@ -174,35 +174,30 @@ def _write_frames(data_dir: Path, frames: Sequence[Frame]) -> None:
         cv2.imwrite(str(data_dir / f.image_path), np.full((48, 64, 3), 128, np.uint8))
 
 
-def test_classifier_matches_frames_then_items(tmp_path: Path) -> None:
+def test_classifier_matches_every_chunk_at_once_then_smooths(tmp_path: Path) -> None:
     rooms = plan_rooms(PLAN)
     near = adjacency(rooms)
     a = next(r for r in rooms if near[r.room_id])
     b = next(r for r in rooms if r.room_id in near[a.room_id])
-    frames = [_frame(i) for i in range(10)]
+    other = "b" * 64
+    frames = [_frame(i) for i in range(16)] + [_frame(i, other) for i in range(8)]
     _write_frames(tmp_path, frames)
-    prompts: list[str] = []
+    together = threading.Barrier(3, timeout=5)  # 3 chunks: breaks unless all run at once
 
     def ask(prompt: str, images: Sequence[bytes]) -> str:
-        prompts.append(prompt)
+        together.wait()
         count = len(images) - len(PLAN.floors)
-        start = 0 if len(prompts) == 1 else 8
-        rooms_seen = [a.number if start + i < 6 else b.number for i in range(count)]
-        return json.dumps(
-            {
-                "frames": [
-                    {"frame": f"F{i}", "room": n, "confidence": 0.9}
-                    for i, n in enumerate(rooms_seen)
-                ]
-            }
-        )
+        assert "previous" not in prompt  # chunks run at once: no hint from the one before
+        answers = [{"frame": f"F{i}", "room": a.number, "confidence": 0.9} for i in range(count)]
+        answers[3]["room"] = b.number  # one stray frame, smoothed away
+        return json.dumps({"frames": answers})
 
-    objects = [_object("vid-000001", frames[:3]), _object("vid-000002", frames[7:])]
-    result = FalRoomClassifier(ask=ask).assign(PLAN, frames, objects, tmp_path)
-    assert len(prompts) == 2  # 10 frames, 8 per request
-    assert f"room {b.number}" in prompts[1]  # the previous batch's last room is passed on
-    assert result.item_rooms == {"vid-000001": a.room_id, "vid-000002": b.room_id}
-    assert result.warnings == []
+    frame_rooms, warnings = FalRoomClassifier(ask=ask, parallel=4).assign_frames(
+        PLAN, frames, tmp_path
+    )
+    assert warnings == []
+    assert set(frame_rooms) == {f.key for f in frames}
+    assert set(frame_rooms.values()) == {a.room_id}
 
 
 def test_classifier_failures_leave_frames_unassigned(tmp_path: Path) -> None:
@@ -212,12 +207,13 @@ def test_classifier_failures_leave_frames_unassigned(tmp_path: Path) -> None:
     def broken(prompt: str, images: Sequence[bytes]) -> str:
         raise TimeoutError
 
-    objects = [_object("vid-000001", frames)]
-    result = FalRoomClassifier(ask=broken).assign(PLAN, frames, objects, tmp_path)
-    assert result.item_rooms == {"vid-000001": None}
-    assert result.warnings == ["1 frame batch(es) could not be matched to rooms"]
-    unreadable = FalRoomClassifier(ask=lambda p, i: "sorry").assign(PLAN, frames, objects, tmp_path)
-    assert unreadable.item_rooms == {"vid-000001": None}
+    frame_rooms, warnings = FalRoomClassifier(ask=broken).assign_frames(PLAN, frames, tmp_path)
+    assert set(frame_rooms.values()) == {None}
+    assert warnings == ["1 of 1 frame batches could not be matched to rooms"]
+    unreadable, _ = FalRoomClassifier(ask=lambda p, i: "sorry").assign_frames(
+        PLAN, frames, tmp_path
+    )
+    assert set(unreadable.values()) == {None}
 
 
 # --- lenient discovery and the job's checks -------------------------------------------------

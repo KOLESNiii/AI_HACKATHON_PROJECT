@@ -7,8 +7,9 @@ consecutive frames of one video, and says which numbered room each frame was fil
 
 The answers are then smoothed with what a walkthrough implies (`smooth`): the camera stays in
 a room for a while and leaves it through a door, so a lone frame in another room is taken as
-a mistake, and so is a jump between rooms that share no door. Each item then belongs to the
-room most of its sightings were filmed in (`assign_items`).
+a mistake, and so is a jump between rooms that share no door. The extraction job
+(`video_jobs.py`) then searches each room's frames for furniture on their own, all rooms at
+once: the videos are cut up by room.
 
 Like the placement observer this never raises: no key, a failed call or an unreadable answer
 leave those frames unassigned, with a warning.
@@ -23,8 +24,8 @@ import json
 import logging
 import math
 import os
-from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,7 +33,7 @@ import cv2
 from pydantic import BaseModel, Field, ValidationError
 
 from contracts.schema import ParsedFloorPlan, RoomScene
-from services.reconstruction.assets.selection_models import Frame, SelectedObject
+from services.reconstruction.assets.selection_models import Frame
 
 from .annotate import DEFAULT_FAL_ENDPOINT, DEFAULT_FAL_MODEL, _extract_json
 from .plan_view import render_floor
@@ -120,22 +121,24 @@ def smooth(labels: Sequence[str | None], adjacent: Mapping[str, set[str]]) -> li
     return out
 
 
-def assign_items(
-    objects: Sequence[SelectedObject], frame_rooms: Mapping[str, str | None]
-) -> dict[str, str | None]:
-    """Each item's room: the room most of its sightings were filmed in. None when no sighting
-    has a room, or when two rooms tie."""
-    rooms: dict[str, str | None] = {}
-    for obj in objects:
-        votes = Counter(
-            room for s in obj.sightings if (room := frame_rooms.get(s.frame_key)) is not None
-        )
-        ranked = votes.most_common(2)
-        if not ranked or (len(ranked) == 2 and ranked[0][1] == ranked[1][1]):
-            rooms[obj.id] = None
-        else:
-            rooms[obj.id] = ranked[0][0]
-    return rooms
+def spread(frames: Sequence[Frame], n: int) -> list[Frame]:
+    """At most `n` of `frames`, evenly spread over each video's span (videos get shares in
+    proportion to their frames), in (source, time) order."""
+    ordered = sorted(frames, key=lambda f: (f.source_id, f.timestamp_s, f.frame_index))
+    if len(ordered) <= n:
+        return ordered
+    by_source: dict[str, list[Frame]] = {}
+    for frame in ordered:
+        by_source.setdefault(frame.source_id, []).append(frame)
+    picked: list[Frame] = []
+    for group in by_source.values():
+        share = max(1, round(n * len(group) / len(ordered)))
+        if share >= len(group):
+            picked.extend(group)
+            continue
+        step = (len(group) - 1) / max(1, share - 1)
+        picked.extend(group[round(i * step)] for i in range(share))
+    return sorted(picked, key=lambda f: (f.source_id, f.timestamp_s, f.frame_index))[:n]
 
 
 PROMPT = """You are matching frames of a walkthrough video of a home to the rooms of its floor plan.
@@ -144,7 +147,7 @@ numbered. Then come video frames {first}..{last}, in filming order, a few second
 
 Rooms:
 {rooms}
-{previous}
+
 For each frame, say which numbered room the camera is standing in. Use what is visible (beds:
 bedroom; oven, sink, worktops: kitchen; toilet, shower, bath: bathroom; stairs: hall or landing),
 the printed room names, sizes, doors and windows, and continuity: the camera walks from room to
@@ -163,7 +166,7 @@ class _Reply(BaseModel):
     frames: list[_Seen]
 
 
-def build_prompt(rooms: Sequence[PlanRoom], count: int, previous: PlanRoom | None) -> str:
+def build_prompt(rooms: Sequence[PlanRoom], count: int) -> str:
     lines = []
     for r in rooms:
         xs = [p.x for p in r.scene.floor_polygon]
@@ -180,11 +183,6 @@ def build_prompt(rooms: Sequence[PlanRoom], count: int, previous: PlanRoom | Non
         first="F0",
         last=f"F{count - 1}",
         rooms="\n".join(lines),
-        previous=(
-            f"The frame just before F0 was in room {previous.number} ({previous.name}).\n"
-            if previous
-            else ""
-        ),
     )
 
 
@@ -226,78 +224,78 @@ def _frame_jpeg(data_dir: Path, frame: Frame) -> bytes | None:
     return _encode(cv2.resize(image, (int(width * scale), int(height * scale))), ".jpg")
 
 
-@dataclass
-class RoomAssignment:
-    frame_rooms: dict[str, str | None]
-    """Frame key -> room ID (None: unassigned)."""
-    item_rooms: dict[str, str | None]
-    """Object ID -> room ID (None: unassigned)."""
-    warnings: list[str]
-
-
 class FalRoomClassifier:
-    """Asks a vision LLM on fal.ai which plan room each frame shows. Never raises."""
+    """Asks a vision LLM on fal.ai which plan room each frame shows. Never raises.
+
+    Every video is cut into chunks of FRAMES_PER_REQUEST consecutive frames and all chunks
+    are classified at once (`parallel` requests in flight); continuity is restored per video
+    afterwards (`smooth`)."""
 
     def __init__(
-        self, endpoint: str | None = None, model: str | None = None, ask: Ask | None = None
+        self,
+        endpoint: str | None = None,
+        model: str | None = None,
+        ask: Ask | None = None,
+        parallel: int = 8,
     ) -> None:
         self.endpoint = endpoint or os.environ.get("FAL_VISION_ENDPOINT", DEFAULT_FAL_ENDPOINT)
         self.model = model or os.environ.get("FAL_VISION_MODEL", DEFAULT_FAL_MODEL)
         self.ask = ask or self._ask
+        self.parallel = max(1, parallel)
 
-    def assign(
-        self,
-        plan: ParsedFloorPlan,
-        frames: Sequence[Frame],
-        objects: Sequence[SelectedObject],
-        data_dir: Path,
-    ) -> RoomAssignment:
+    def assign_frames(
+        self, plan: ParsedFloorPlan, frames: Sequence[Frame], data_dir: Path
+    ) -> tuple[dict[str, str | None], list[str]]:
+        """Frame key -> room ID (None: unassigned), and warnings."""
         rooms = plan_rooms(plan)
-        warnings: list[str] = []
         if not rooms:
-            return RoomAssignment({}, {o.id: None for o in objects}, ["the plan has no rooms"])
+            return {f.key: None for f in frames}, ["the plan has no rooms"]
         floors = []
         for floor in plan.floors:
             numbered = [(r.number, r.scene) for r in rooms if r.floor_id == floor.floor_id]
             if numbered:
                 floors.append(_encode(render_floor(numbered), ".png"))
-        adjacent = adjacency(rooms)
-        frame_rooms: dict[str, str | None] = {}
         by_source: dict[str, list[Frame]] = {}
         for frame in frames:
             by_source.setdefault(frame.source_id, []).append(frame)
-        failed = 0
+        chunks = []
         for source in by_source.values():
-            source.sort(key=lambda f: f.timestamp_s)
-            labels: list[str | None] = []
-            previous: PlanRoom | None = None
-            for start in range(0, len(source), FRAMES_PER_REQUEST):
-                batch = source[start : start + FRAMES_PER_REQUEST]
-                answer = self._classify(rooms, floors, batch, previous, data_dir)
-                if answer is None:
-                    failed += 1
-                    answer = [None] * len(batch)
-                labels.extend(r.room_id if r else None for r in answer)
-                previous = next((r for r in reversed(answer) if r is not None), previous)
-            for frame, label in zip(source, smooth(labels, adjacent), strict=True):
-                frame_rooms[frame.key] = label
-        if failed:
-            warnings.append(f"{failed} frame batch(es) could not be matched to rooms")
-        item_rooms = assign_items(objects, frame_rooms)
-        return RoomAssignment(frame_rooms, item_rooms, warnings)
+            source.sort(key=lambda f: (f.timestamp_s, f.frame_index))
+            chunks += [
+                source[i : i + FRAMES_PER_REQUEST]
+                for i in range(0, len(source), FRAMES_PER_REQUEST)
+            ]
+        with ThreadPoolExecutor(self.parallel, thread_name_prefix="rooms") as pool:
+            answers = list(
+                pool.map(lambda chunk: self._classify(rooms, floors, chunk, data_dir), chunks)
+            )
+        label: dict[str, str | None] = {}
+        for chunk, answer in zip(chunks, answers, strict=True):
+            for frame, room in zip(chunk, answer or [None] * len(chunk), strict=True):
+                label[frame.key] = room.room_id if room else None
+        adjacent = adjacency(rooms)
+        frame_rooms: dict[str, str | None] = {}
+        for source in by_source.values():
+            smoothed = smooth([label[f.key] for f in source], adjacent)
+            frame_rooms.update({f.key: room for f, room in zip(source, smoothed, strict=True)})
+        warnings = []
+        if failed := sum(answer is None for answer in answers):
+            warnings.append(
+                f"{failed} of {len(chunks)} frame batches could not be matched to rooms"
+            )
+        return frame_rooms, warnings
 
     def _classify(
         self,
         rooms: Sequence[PlanRoom],
         floors: Sequence[bytes],
         batch: Sequence[Frame],
-        previous: PlanRoom | None,
         data_dir: Path,
     ) -> list[PlanRoom | None] | None:
         images = [img for f in batch if (img := _frame_jpeg(data_dir, f)) is not None]
         if len(images) != len(batch):
             return None
-        prompt = build_prompt(rooms, len(batch), previous)
+        prompt = build_prompt(rooms, len(batch))
         for _ in range(2):  # one retry for an unreadable answer
             try:
                 text = self.ask(prompt, [*floors, *images])
