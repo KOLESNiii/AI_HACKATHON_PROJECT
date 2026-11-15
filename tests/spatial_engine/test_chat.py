@@ -11,7 +11,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from contracts.schema import BBoxM, DoorOpening, FurnitureItem, Pose2D, RoomScene, Vec2, WallSegment
+from contracts.schema import (
+    BBoxM,
+    DoorOpening,
+    FurnitureItem,
+    LayoutProposal,
+    Pose2D,
+    RoomScene,
+    Vec2,
+    WallSegment,
+)
 from services.spatial_engine.agent import ModelReply, ProviderError, ToolCall
 from services.spatial_engine.chat import ChatRequest, add_item, chat, remove_items
 from services.spatial_engine.furniture_search import ProductOption
@@ -77,15 +86,17 @@ def move(**changes: Any) -> dict[str, Any]:
 
 
 class Scripted:
-    """Each step is add_item arguments, the model's closing words, a whole turn or a failure."""
+    """Each step is add_item arguments, the model's closing words, a whole turn or a failure.
+    Once the script runs out the model ends its turn without words."""
 
     def __init__(self, *steps: dict[str, Any] | str | ModelReply | Exception):
         self.steps = list(steps)
         self.requests: list[dict[str, Any]] = []
 
     def complete(self, **request: Any) -> ModelReply:
-        self.requests.append(request)
-        step = self.steps.pop(0)
+        # The agent extends one message list across turns: keep what this turn was sent.
+        self.requests.append({**request, "messages": list(request["messages"])})
+        step = self.steps.pop(0) if self.steps else ""
         if isinstance(step, Exception):
             raise step
         if isinstance(step, ModelReply):
@@ -226,7 +237,7 @@ def test_an_addition_may_not_seal_the_room(room: RoomScene) -> None:
 def test_agent_corrects_a_collision(room: RoomScene) -> None:
     model = Scripted(arguments(x=7.0, z=7.0), arguments())
     reply = chat(ChatRequest(scene=room, instruction="Add a table"), model)
-    assert len(reply.additions) == 1 and len(model.requests) == 2
+    assert len(reply.additions) == 1 and len(model.requests) == 3
     assert tool_error(model) == "Placement rejected: the new item overlaps fixed by 0.11 m2"
     assert {tool["name"] for tool in model.requests[0]["tools"]} == {
         "add_item",
@@ -433,3 +444,81 @@ def test_remove_tool_is_not_offered_when_only_fixed_items_exist(room: RoomScene)
     model = Scripted("Nothing can be removed.")
     chat(ChatRequest(scene=room, instruction="Remove the radiator"), model)
     assert all(t["name"] != "remove_items" for t in model.requests[0]["tools"])
+
+
+def test_several_steps_become_one_proposal(room: RoomScene) -> None:
+    """The reported failure: 'remove all, then add a bed and a wardrobe' stopped after the
+    removal. Each step now builds on the last and the user reviews one combined proposal."""
+    room.furniture.append(blocker(is_fixed=False))
+    original = room.model_dump()
+    model = Scripted(
+        remove_turn({"item_ids": ["blocker"]}),
+        arguments(x=7.0, z=7.0),  # collides with the radiator: corrected below
+        arguments(),
+        arguments(asset_id="ikea-80437234", x=5.5, z=2.0),
+        "Everything is proposed.",
+    )
+    reply = chat(ChatRequest(scene=room, instruction="Remove all, add a table and a chest"), model)
+    assert room.model_dump() == original
+    assert len(model.requests) == 5
+    assert reply.removals == ["blocker"] and not reply.poses
+    assert len(reply.additions) == 2 and reply.proposal is None
+    assert reply.text.startswith("Proposed 3 steps as one change: 1. Remove Shoe cabinet.")
+    assert reply.text.endswith("Everything is proposed.")
+    final = room.model_copy(deep=True)
+    final.furniture = [i for i in final.furniture if i.id != "blocker"] + reply.additions
+    assert audit_scene(final) == reply.report
+    # Each later step saw the room as the earlier steps left it.
+    kept = model.requests[1]["messages"][-1]["content"][0]
+    assert not kept.get("is_error") and "Step 1 verified and kept" in kept["content"]
+    assert '"blocker"' not in kept["content"].split("Room now:")[1]
+
+
+def test_rearrange_runs_on_the_room_with_its_additions(
+    room: RoomScene, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: dict[str, Any] = {}
+
+    def propose(request: Any, model: Any, **_: Any) -> Any:
+        seen["ids"] = [item.id for item in request.scene.furniture]
+        seen["instruction"] = request.instruction
+        added = request.scene.furniture[-1]
+        moved = Pose2D(x=3.0, z=3.0, yaw_deg=90)
+        candidate = request.scene.model_copy(deep=True)
+        candidate.furniture[-1].pose = moved
+        return LayoutProposal(
+            proposal_id="p",
+            poses={added.id: moved},
+            report=audit_scene(candidate),
+            improved=True,
+            goal="feng_shui",
+            explanation="Moved the table for Feng Shui.",
+        )
+
+    monkeypatch.setattr("services.spatial_engine.chat.propose_layout", propose)
+    rearrange = {"instruction": "optimise feng shui"}
+    block = {"type": "tool_use", "id": "tool-f", "name": "rearrange_room", "input": rearrange}
+    turn = ModelReply("tool_use", [block], (ToolCall("tool-f", "rearrange_room", rearrange),), 50)
+    model = Scripted(arguments(), turn)
+    reply = chat(ChatRequest(scene=room, instruction="Add a table then feng shui"), model)
+    assert seen["instruction"] == "optimise feng shui" and len(seen["ids"]) == 2
+    assert len(reply.additions) == 1 and not reply.poses
+    assert reply.additions[0].pose == Pose2D(x=3.0, z=3.0, yaw_deg=90)
+    assert "2. Moved the table for Feng Shui." in reply.text
+
+
+def test_search_cannot_join_a_combined_proposal(
+    room: RoomScene, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("services.spatial_engine.chat.search_products", lambda *a, **k: [])
+    model = Scripted(arguments(), search_turn({"query": "oak desk", "category": "desk"}))
+    reply = chat(ChatRequest(scene=room, instruction="Add a table and find a desk"), model)
+    assert "cannot be combined" in tool_error(model, 2)
+    assert len(reply.additions) == 1 and not reply.products
+
+
+def test_a_provider_failure_keeps_the_steps_already_verified(room: RoomScene) -> None:
+    model = Scripted(arguments(), ProviderError("timeout", retryable=True))
+    reply = chat(ChatRequest(scene=room, instruction="Add a table and a chair"), model)
+    assert len(reply.additions) == 1
+    assert "stopped before finishing every step" in reply.text

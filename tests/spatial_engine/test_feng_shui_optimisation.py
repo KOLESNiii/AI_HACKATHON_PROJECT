@@ -89,8 +89,10 @@ def test_exact_chat_request_routes_through_the_skill_and_preserves_the_users_wor
     assert result.proposal.goal == "feng_shui"
     assert not result.additions
     assert "Feng Shui request call rearrange_room" in model.systems[0]
-    assert "Mode: layout_optimisation" in model.systems[-1]
-    payload = json.loads(model.requests[-1]["messages"][0]["content"])
+    # The chat agent gets the last turn, after the delegated harness has finished.
+    harness = [i for i, system in enumerate(model.systems) if "Mode: layout_optimisation" in system]
+    assert harness and harness[-1] == len(model.systems) - 2
+    payload = json.loads(model.requests[harness[-1]]["messages"][0]["content"])
     assert payload["person_request"] == instruction
 
 

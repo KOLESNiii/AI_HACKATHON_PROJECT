@@ -186,6 +186,7 @@ def test_chat_stream_emits_progress_and_audited_additions_without_mutating_the_r
         "exploring",
         "evaluating",
         "verifying",
+        "exploring",  # the agent is asked whether any step remains
     ]
     assert frames[-1][0] == "reply"
     result = frames[-1][1]

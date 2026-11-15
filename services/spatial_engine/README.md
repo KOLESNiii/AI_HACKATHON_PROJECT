@@ -541,10 +541,24 @@ swing (`g-kitchen` in the demo home) and unreliable wherever a movable one does
 (`g-master`, the default room). The model is sent those existing findings with the
 scene, and a rejection names each offending item, the new one as "the new item".
 
+A request may have several steps ("remove everything, add a bed, a wardrobe, a desk
+and a chair, then optimise the feng shui"). Each verified `add_item`, `remove_items`
+or `rearrange_room` call is applied to a working copy of the room and reported back to
+the model with the room as it now stands, so the next step builds on it; `rearrange_room`
+(at most once, with an optional `instruction` naming only the arranging part) arranges
+the items added earlier. When the model ends its turn, every step is returned as one
+`ChatReply`: `removals`, `additions` at their final poses, `poses` for moved existing
+items and the audit of the final room, so the user approves once. A single step keeps
+its own reply (a lone rearrangement still carries `proposal`). If the provider fails or
+the allowance runs out midway, the steps already verified are returned with a note.
+`search_products` needs the user to pick a product, so it ends the request and is
+refused once other steps have been proposed; Library models are IKEA products and are
+added with `add_item` instead.
+
 When the model ends without a proposal, its own words are returned (at most 900
 characters, no changes attached): an answer to a question, or why nothing fits. The
 reply also names items moved to make room, any change in reachable floor, and parts of
-the request the model reported as not handled, such as a second item.
+the request the model reported as not handled.
 
 Before the Library-only restriction, proxy additions were checked live on
 2026-11-15 with the default model: one addition requested in each of
@@ -552,7 +566,7 @@ the 18 selectable demo rooms gave 17 verified proposals and one refusal with a r
 (an armchair in the 1.4 m by 1.3 m bathroom), each in 4 to 8 seconds. Results vary
 between runs; this historical run does not validate the current mesh-only inventory.
 
-Uses the existing Anthropic configuration. Maximum six model calls, 90 seconds,
+Uses the existing Anthropic configuration. Maximum 14 model calls, 180 seconds,
 200k tokens, 60 scene items and 500 instruction characters; delegated solves use
 what remains of that allowance. No live calls are made by tests. New items are
 copies of existing Library meshes; their source dimensions and uncertainty flags are preserved.
