@@ -1,6 +1,7 @@
 """Masked views -> one stored raw mesh per item, or an explicit failure, and always a proxy (#16).
 
-Raw meshes are in the provider's frame and scale: normalising and serving them is #17.
+Raw meshes are in the provider's frame and scale and are never served. Each current one is
+normalised to the furniture profile (#17) into the item's servable `asset`.
 """
 
 from __future__ import annotations
@@ -13,6 +14,8 @@ from pathlib import Path
 
 from .asset_store import ASSET_URL_BASE, write_atomic
 from .mesh_providers import MeshError, MeshProvider, RawMesh, inspect_mesh
+from .models import FurnitureAsset
+from .normalisation import PROVIDER_FRONT, NormalisationError, normalise_mesh
 from .providers import RequestBudget
 from .proxies import KnownDimensions, proxy_asset
 from .registry import Registry
@@ -89,7 +92,9 @@ def reconstruct_furniture(
     replaced or its file is gone. A provider failure, a timeout or an unusable mesh is reported
     on the item as a `failure`; it never raises, never removes an item and never discards a
     stored mesh. Every item carries a labelled proxy sized from `dimensions[id]` when given,
-    otherwise from a category default marked as an estimate needing correction.
+    otherwise from a category default marked as an estimate needing correction. Every current
+    mesh is also normalised into `asset` (fitted to `dimensions[id]`, else an estimated size);
+    one that cannot be is reported in `warnings` and keeps only its proxy.
     `replace` rebuilds from the current mask but reuses the paid provider result unless
     the provider is configured with a fresh `refresh` namespace.
     Unknown scenes/items raise ValueError.
@@ -236,20 +241,41 @@ def reconstruct_furniture(
         # The fixed evidence shape holds one source: the mesh's, else the item's best view's.
         best = mesh.frame_key if mesh else (obj.selected_views or [obj.sightings[0].frame_key])[0]
         evidence = evidence_for(obj, state.frames, source_id=state.frames[best].source_id)
+        size = known.get(object_id)
+        proxy = proxy_asset(
+            obj.id,
+            obj.name,
+            obj.category,
+            evidence,
+            data_dir=data_dir,
+            known=size,
+            url_base=url_base,
+        )
+        asset = None
+        if mesh is not None:
+            try:
+                fitted = normalise_mesh(
+                    data_dir / mesh.mesh_path,
+                    category=obj.category,
+                    target_bbox=None if size is None else size.bbox_m,
+                    data_dir=data_dir,
+                    front=PROVIDER_FRONT[mesh.provider],
+                    url_base=url_base,
+                )
+                # Only stated dimensions are trusted: a size read off the mesh is an estimate.
+                asset = FurnitureAsset.model_validate(
+                    {
+                        **proxy.model_dump(),
+                        **fitted.model_dump(),
+                        "is_proxy": False,
+                        "dimension_source": "estimated" if size is None else size.source,
+                    }
+                )
+            except NormalisationError as exc:
+                warnings.append(f"{object_id}: mesh not normalised ({exc}); the proxy is served")
         items.append(
             ItemReconstruction(
-                object_id=object_id,
-                mesh=mesh,
-                failure=failure,
-                proxy=proxy_asset(
-                    obj.id,
-                    obj.name,
-                    obj.category,
-                    evidence,
-                    data_dir=data_dir,
-                    known=known.get(object_id),
-                    url_base=url_base,
-                ),
+                object_id=object_id, mesh=mesh, failure=failure, proxy=proxy, asset=asset
             )
         )
     return ReconstructionResult(
@@ -257,5 +283,5 @@ def reconstruct_furniture(
         registry_revision=state.revision,
         items=items,
         warnings=warnings,
-        complete=all(item.failure is None for item in items),
+        complete=all(item.failure is None and item.asset is not None for item in items),
     )

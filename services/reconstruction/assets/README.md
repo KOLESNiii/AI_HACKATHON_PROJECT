@@ -90,7 +90,9 @@ Dev 1 applies `pose` on top without rescaling.
   can nest: a chair under a desk, a table over a radiator. An empty list means one solid box.
   The collision rule is in the `contracts/schema.py` module docstring.
 - Dev 2 fills the parts in: first from a category template fitted to `bbox_m` (which also
-  works for proxies), later refined from the mesh. `collision_source` records which.
+  works for proxies), later refined from the mesh. `collision_source` records which. The templates are
+  `collision_templates.template_parts(category, bbox_m)`; proxies and normalised meshes both
+  use them (#17).
 - Template parts are guesses. A nested fit that relies on them is an estimate.
 - `is_fixed: true` marks an item that is part of the room, such as a radiator. It is checked
   like any other item but is never moved.
@@ -112,13 +114,15 @@ as a silent default.
 
 ## 8. Functions and failure contract
 
-Agreed signatures. None is implemented yet; the issue that implements each is noted. Dev 1
-wires them into the reconstruction routes (#9). The types they use are in `models.py`.
+Agreed signatures; the issue that implements each is noted. Dev 1 wires them into the
+reconstruction routes (#9). The types they use are in `models.py`.
 
 ```python
 async def extract_furniture(video_path: Path, scene_id: str) -> list[FurnitureAsset]   # #14–#16
 async def import_catalog_asset(product_url: str, scene_id: str) -> FurnitureAsset      # #19
-def normalise_mesh(raw_glb: Path, *, category: str, target_bbox: BBoxM | None) -> NormalisedMesh  # #17
+def normalise_mesh(raw_glb: Path, *, category: str, target_bbox: BBoxM | None,
+                   data_dir: Path, front: Front | None = None,
+                   url_base: str = ASSET_URL_BASE) -> NormalisedMesh                    # #17, implemented
 ```
 
 `FurnitureAsset` is the pose-less asset from section 2; Dev 1 places one with
@@ -401,4 +405,61 @@ Geometry projections were compared with source crops: table/sofas are recognisab
 item labelled office chair reconstructs as an upholstered armchair. Frame 105 clips the
 right sofa and chair, both warned. Hidden geometry is inferred; passing structural checks
 is not a visual-accuracy claim. Textures, metric scaling and canonical orientation were not
-visually verified. #17 must normalise meshes before they become servable furniture assets.
+visually verified. Raw meshes become servable only through #17's normalisation (below).
+
+## Implemented: mesh normalisation (#17)
+
+`normalisation.normalise_mesh(raw_glb, *, category, target_bbox, data_dir, front=None,
+url_base=...)` is the one path from any raw glTF 2.0 binary to the section 5 profile. It
+returns a `NormalisedMesh` whose `glb_url` is stored in the content-addressed asset store.
+`data_dir` (where to store) and `front` are additions to the signature agreed in section 8.
+
+| Step | Behaviour |
+|---|---|
+| Load | Node transforms are baked into the vertices; the output has identity nodes, no skins, animations, cameras or lights. The raw file is taken to be +Y up, as glTF requires. |
+| Front | `front` (`"+z"`, `"+x"`, `"-z"`, `"-x"`) names the raw mesh's front, which is turned to +Z. `None` keeps the mesh as given and adds `"orientation"` to `correction_needed`. |
+| Size, known | With a `target_bbox` each axis is scaled to match it exactly. If that stretches one axis over 15 % more than another (`MAX_DISTORTION`), `"dimensions"` is requested: the shape disagrees with the stated size. |
+| Size, unknown | Without one the mesh is scaled uniformly so its height is the category's typical height (`CATEGORY_SIZE_M`), `bbox_m` is read off the result (rounded to 1 mm) and `"dimensions"` is always requested. |
+| Origin | The bounding-box bottom-centre is moved to the origin. |
+| Profile | Textures above 1024 px are downscaled. The written file is re-read: its bounds must equal `bbox_m` within `GLB_BBOX_TOLERANCE_M`. |
+| Parts | `collision_parts` come from the category template fitted to `bbox_m`; `collision_source` is `"template"`. |
+
+**Measured against estimated.** `normalise_mesh` never calls a size it derived a measurement.
+`reconstruct_furniture` sets `dimension_source` from the caller's `dimensions[id].source`
+(`measured`, `catalog`, `user_corrected`) only when dimensions were given; otherwise the asset
+is `estimated` with `"dimensions"` in `correction_needed`. The provider's own `scale` metadata
+is not used: on the four live meshes it gave a 0.86 m two-seat sofa and a 0.55 m armchair.
+
+**Refusals.** `NormalisationError` (a `ValueError`) when the file cannot be read, has no
+triangles or no extent, a side would be under 1 cm, or it exceeds 30,000 triangles, 4
+primitives or 3 MB. There is no decimator among the dependencies, so an over-budget mesh is
+refused, not reduced: providers are asked for a budget instead. Nothing is stored on refusal.
+
+**In the pipeline.** `ItemReconstruction.asset` is the item's normalised `FurnitureAsset`
+(`is_proxy: false`, same ID and evidence as the proxy) when its current raw mesh normalises,
+else `None` with a warning; `proxy` is always present. `complete` now also requires every
+item to have an `asset`. The CLI's `assets.json` holds each item's `asset`, or its `proxy`
+when there is none, and `report.md` lists the normalised size and outstanding corrections.
+SAM 3D meshes are passed `front="+z"` (`PROVIDER_FRONT`). Proxies now carry the same category
+template parts, so a desk or table proxy can nest a chair.
+
+**Dependency.** Pillow joins the `reconstruction` extra: without it `trimesh` silently drops
+textures on load.
+
+**Verification (2026-11-15).** The four stored raw SAM 3D meshes of the reviewed opening room
+were normalised offline (no provider request). Orthographic projections of the raw meshes
+showed all four +Y up and axis-aligned, with both sofas and the armchair facing +Z; the table
+is symmetric. Re-reading each stored output:
+
+| Item | `bbox_m` W × H × D (m) | Source | Bounds error | Triangles | Bytes |
+|---|---|---|---:|---:|---:|
+| Coffee table | 1.1 × 0.45 × 0.65 | `user_corrected` (test value) | < 0.001 mm | 10,806 | 1,257,480 |
+| Rear sofa | 1.82 × 0.85 × 0.818 | `estimated` | < 0.001 mm | 9,804 | 1,095,976 |
+| Right sofa | 1.9 × 0.85 × 0.859 | `estimated` | < 0.001 mm | 10,098 | 1,157,840 |
+| Office chair | 1.015 × 0.95 × 0.741 | `estimated` | < 0.001 mm | 17,978 | 1,410,088 |
+
+All four kept their 1024 px base-colour texture and have their bottom-centre at the origin.
+The table's supplied size was an invented test value that stretches the mesh 17 %, so it
+correctly asked for `"dimensions"`. Not verified: how the textured results look in the
+editor, the front direction of other SAM 3D outputs, and `trellis-2` output. Estimated sizes
+are category guesses: the "office chair" mesh is an armchair and comes out 1.0 m wide.

@@ -7,7 +7,7 @@ dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1", "pydantic>=2.
 
 [project.optional-dependencies]
 spatial = ["shapely>=2,<3", "numpy>=2,<3", "scipy>=1.15,<2"]
-reconstruction = ["opencv-python-headless>=4.10,<5", "trimesh>=4,<5", "fal-client>=0.5,<1"]
+reconstruction = ["opencv-python-headless>=4.10,<5", "trimesh>=4,<5", "fal-client>=0.5,<1", "pillow>=10,<13"]
 media = ["fal-client>=0.5,<1"]
 
 [dependency-groups]

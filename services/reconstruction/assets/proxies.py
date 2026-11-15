@@ -12,6 +12,7 @@ from pydantic import model_validator
 from contracts.schema import MIN_PART_DIMENSION_M, BBoxM
 
 from .asset_store import ASSET_URL_BASE, store_asset
+from .collision_templates import template_parts
 from .models import AssetEvidence, FurnitureAsset
 from .selection_models import Category, Record
 
@@ -97,6 +98,7 @@ def proxy_asset(
         is_proxy=True,
         dimension_source="estimated" if known is None else known.source,
         correction_needed=["dimensions"] if known is None else [],
+        collision_parts=template_parts(category, bbox),
         is_fixed=category == "fixture",
         evidence=evidence,
     )
