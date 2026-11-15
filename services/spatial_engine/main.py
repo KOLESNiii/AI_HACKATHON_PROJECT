@@ -13,6 +13,7 @@ from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
 from contracts.schema import (
     AuditReport,
+    ChatReply,
     ChatRequest,
     FengShuiRequest,
     FengShuiScore,
@@ -28,7 +29,7 @@ from services.spatial_engine.agent import (
     prepare_layout,
     propose_layout,
 )
-from services.spatial_engine.chat import ChatReply, PlaceRequest, chat, place
+from services.spatial_engine.chat import PlaceRequest, chat, place
 from services.spatial_engine.feng_shui import (
     FengShuiResult,
     assess_feng_shui,
