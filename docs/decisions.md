@@ -352,6 +352,17 @@
 - An instruction that could not be read is dropped with a note and the result is reported as
   `stopped_early`, so it is never presented as honouring what the user wrote.
 
+## Feng Shui placement metric
+
+- `AuditReport.feng_shui` is filled by a small deterministic rule set (desk or bed in
+  command position, back to the door, bed foot at the door) instead of staying null, so the
+  editor can show and the layout goals can rank it. It judges beds and desks only and is null
+  when nothing can be judged. It is labelled a traditional rule of thumb, never a prediction.
+- This differs from the qualitative AI assessment on the `feat/feng-shui-evaluation-agent`
+  branch, which deliberately has no score; the two are complementary and share no code.
+- A `feng_shui` goal was added to `LayoutGoal`: score first, then access, walking space and
+  movement. Fit, door and lock rules still come before it.
+
 ## Retailer import review (#60)
 
 - Classify the product's head phrase before `with`, `and` or a comma, using the last

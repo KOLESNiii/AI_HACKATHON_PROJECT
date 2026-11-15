@@ -7,12 +7,15 @@ from services.spatial_engine.audit import (
     detect_front_clearance,
     detect_out_of_bounds,
 )
+from services.spatial_engine.feng_shui_metric import calculate_feng_shui
 from services.spatial_engine.geometry import SceneGeometry, scene_geometry
 from services.spatial_engine.reachability import calculate_reachable_floor_ratio
 
 
 def audit_scene(scene: RoomScene, *, _prepared: SceneGeometry | None = None) -> AuditReport:
     """Audit without network access or mutation; unavailable assessments stay null.
+
+    `feng_shui` is null when the room has no doors or no bed or desk to judge.
 
     Domain-invalid geometry raises SpatialInputError for the HTTP adapter to map to 422.
     No known doors leaves reachability null while preserving other findings.
@@ -30,5 +33,5 @@ def audit_scene(scene: RoomScene, *, _prepared: SceneGeometry | None = None) -> 
         glare_orientation_grounded=None,
         overall_score=None,
         glare_alerts=None,
-        feng_shui=None,
+        feng_shui=calculate_feng_shui(scene, _prepared=prepared),
     )

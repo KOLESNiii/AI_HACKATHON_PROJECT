@@ -110,8 +110,8 @@ floor ratio using a 50 cm person and entry through any physically passable door.
 Door swing obstruction is reported separately: clipping the swing arc does not
 exclude an entry unless obstacles actually prevent passage through the doorway.
 
-Scoring, glare and Feng Shui remain unimplemented. `overall_score`, `glare_alerts`
-and `feng_shui` are nullable in both shared schemas. Consumers must display null
+Scoring and glare remain unimplemented; Feng Shui is a small rule-based placement metric.
+`overall_score`, `glare_alerts` and `feng_shui` are nullable in both shared schemas. Consumers must display null
 as unassessed, not zero/no issues. `glare_orientation_grounded` is also nullable:
 null means glare was not assessed, true means assessed with grounded orientation,
 and false means an assessment used the plan-normal/-Z fallback.
