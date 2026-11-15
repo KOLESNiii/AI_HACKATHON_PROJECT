@@ -147,6 +147,8 @@ class Extractions:
         self._data_dir = data_dir
         self._run = run
         self._jobs: dict[str, ExtractionJob] = {}
+        self._generations: dict[str, int] = {}
+        """Per plan, bumped whenever a job starts: the plan's furniture source changed."""
         self._lock = threading.Lock()
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="extract")
 
@@ -160,6 +162,7 @@ class Extractions:
                 return False
             job = ExtractionJob(plan_id, namespace, list(videos))
             self._jobs[plan_id] = job
+            self._generations[plan_id] = self._generations.get(plan_id, 0) + 1
         self._executor.submit(self._work, job)
         return True
 
@@ -180,6 +183,16 @@ class Extractions:
         """The job of the plan this room belongs to (`<plan_id>-<room_id>`), if any."""
         with self._lock:
             return next((j for p, j in self._jobs.items() if scene_id.startswith(f"{p}-")), None)
+
+    def generation(self, scene_id: str) -> int:
+        """How often the furniture source of this room's plan has changed (0 = never).
+
+        Read before assembling a room and again before keeping it: if it moved, the room was
+        assembled from a source that no longer applies and must not be kept."""
+        with self._lock:
+            return next(
+                (g for p, g in self._generations.items() if scene_id.startswith(f"{p}-")), 0
+            )
 
     def pending(self, scene_id: str) -> bool:
         job = self.for_scene(scene_id)
@@ -227,7 +240,9 @@ class VideoFurniture:
         if job is None:
             return self.fallback.furniture_for(room)
         if job.state == "running":
-            return SceneFurniture(assets=[], warnings=[extracting(job.stage)], complete=False)
+            return SceneFurniture(
+                assets=[], warnings=[extracting(job.stage)], complete=False, pending=True
+            )
         if job.state == "failed":
             furniture = self.fallback.furniture_for(room)
             furniture.warnings.insert(0, extraction_failed(job.error or "unknown reason"))

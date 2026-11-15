@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -187,3 +187,107 @@ def test_rooms_without_videos_are_never_pending(client: TestClient) -> None:
     res = client.get(f"/scenes/{scene_id}")
     assert res.status_code == 200 and PENDING_HEADER not in res.headers
     assert NoFurniture  # the default source for unbound rooms
+
+
+# --- races between extraction jobs and scene assembly (PR #70 review) ----------------------------
+
+
+class _ScriptedSource:
+    """Answers `furniture_for` from a script, one entry per call (the last one repeats)."""
+
+    def __init__(self, *answers: Callable[[], SceneFurniture]) -> None:
+        self.answers = list(answers)
+        self.calls = 0
+
+    def furniture_for(self, room: RoomScene) -> SceneFurniture:
+        answer = self.answers[min(self.calls, len(self.answers) - 1)]
+        self.calls += 1
+        return answer()
+
+
+@pytest.fixture()
+def plan_room(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[TestClient, str]]:
+    """A parsed room and a client; extraction jobs run a no-op, never fal."""
+    monkeypatch.setattr(
+        video_jobs, "EXTRACTIONS", Extractions(lambda: tmp_path, run=lambda job, d: None)
+    )
+    ann = PlanAnnotations(rooms=[_label("Studio", 400, 350, 4.0, 3.0)])
+    app.dependency_overrides[get_annotator] = lambda: FixedAnnotator(ann)
+    clear_cache()
+    with TestClient(app) as c:
+        files = [("files", ("plan.png", _png(single_room()), "image/png"))]
+        plan = c.post("/floor-plans", files=files).json()
+        yield c, plan["floors"][0]["rooms"][0]["scene"]["scene_id"]
+    app.dependency_overrides.clear()
+    clear_cache()
+
+
+def _use(source: _ScriptedSource) -> None:
+    from services.reconstruction.scenes import get_furniture_source
+
+    app.dependency_overrides[get_furniture_source] = lambda: source
+
+
+def test_extraction_finishing_mid_assembly_is_assembled_again(
+    plan_room: tuple[TestClient, str],
+) -> None:
+    """The job finished after `furniture_for` answered "still extracting" (no job is running
+    any more): the empty room must not be the final answer."""
+    client, scene_id = plan_room
+    source = _ScriptedSource(
+        lambda: SceneFurniture(assets=[], warnings=["extracting"], complete=False, pending=True),
+        lambda: SceneFurniture(assets=[], warnings=["extracted"]),
+    )
+    _use(source)
+    res = client.get(f"/scenes/{scene_id}")
+    assert res.status_code == 200
+    assert source.calls == 2
+    assert json.loads(res.headers["X-Reconstruction-Warnings"])[-1] == "extracted"
+    assert PENDING_HEADER not in res.headers
+    assert client.get(f"/scenes/{scene_id}").status_code == 200
+    assert source.calls == 2  # the finished room is kept
+
+
+def test_a_pending_room_always_tells_the_client_to_ask_again(
+    plan_room: tuple[TestClient, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Even when the job's progress is gone by the time the response is written."""
+    client, scene_id = plan_room
+    jobs = video_jobs.extractions()
+    monkeypatch.setattr(jobs, "pending", lambda scene_id: True)
+    monkeypatch.setattr(jobs, "progress", lambda scene_id: None)
+    _use(
+        _ScriptedSource(
+            lambda: SceneFurniture(assets=[], warnings=[], complete=False, pending=True)
+        )
+    )
+    res = client.get(f"/scenes/{scene_id}")
+    assert res.status_code == 200
+    assert res.headers.get(PENDING_HEADER) == "true"
+    assert PROGRESS_HEADER not in res.headers
+
+
+def test_a_room_assembled_from_a_replaced_source_is_not_kept(
+    plan_room: tuple[TestClient, str], tmp_path: Path
+) -> None:
+    """New videos start a job while a request is assembling from the old furniture source:
+    that assembly must not be kept after `forget_plan` cleared the cache."""
+    client, scene_id = plan_room
+    plan_id = scene_id.rsplit("-floor-", 1)[0]
+
+    def old_source_then_videos_arrive() -> SceneFurniture:
+        assert video_jobs.extractions().start(plan_id, [tmp_path / "new.mp4"])
+        return SceneFurniture(assets=[], warnings=["old source"])
+
+    source = _ScriptedSource(
+        old_source_then_videos_arrive,
+        lambda: SceneFurniture(assets=[], warnings=["new source"]),
+    )
+    _use(source)
+    res = client.get(f"/scenes/{scene_id}")
+    assert res.status_code == 200
+    assert source.calls == 2
+    assert json.loads(res.headers["X-Reconstruction-Warnings"])[-1] == "new source"
+    from services.reconstruction import scenes
+
+    assert scenes._scenes[scene_id].warnings[-1] == "new source"

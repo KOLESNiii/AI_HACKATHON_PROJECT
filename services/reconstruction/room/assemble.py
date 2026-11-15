@@ -42,6 +42,9 @@ class SceneFurniture:
     complete: bool = True
     """False when the source has less than it will have later (its furniture is not extracted
     yet): the room is shown, but the assembly is not kept, so the next request asks again."""
+    pending: bool = False
+    """The furniture is still being extracted (`video_jobs.py`): the client should ask again
+    later. Implies `complete = False`."""
 
 
 class FurnitureSource(Protocol):
@@ -65,6 +68,9 @@ class Assembly:
     """False when the furniture source failed or was not ready, or the placement observer
     failed: the room came back with less than it should have, and a retry may give more, so
     callers should not keep it."""
+    pending: bool = False
+    """Assembled while the furniture was still being extracted: decided here, from the
+    source's answer, never from the job's later state."""
 
 
 def assemble_scene(room: RoomScene, source: FurnitureSource) -> Assembly:
@@ -93,6 +99,7 @@ def assemble_scene(room: RoomScene, source: FurnitureSource) -> Assembly:
         records=result.records,
         warnings=warnings,
         complete=furniture.complete and not (source_failed or result.observer_failed),
+        pending=furniture.pending and not source_failed,
     )
 
 
