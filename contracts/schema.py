@@ -91,7 +91,7 @@ LayoutGoal = Literal["balanced", "brighter", "roomier", "minimal_changes", "feng
 """What a layout suggestion should favour once it fits and doors are clear. `balanced`: access
 in front of furniture, then walking space. `brighter`: unobstructed windows first. `roomier`:
 walking space first. `minimal_changes`: move furniture only to fix a fit or access problem.
-`feng_shui`: raise the Feng Shui placement score (`AuditReport.feng_shui`).
+`feng_shui`: raise the full-rule score from `/feng-shui/score`, using the Feng Shui skill.
 `custom`: the request is something else (e.g. "a cosy reading corner"); the assistant
 follows the user's wording and only fit, doors and access are checked, so the user judges
 the rest in the preview."""
@@ -487,6 +487,41 @@ class LayoutProposal(ContractModel):
     explanation: str = ""
     """Plain text for the preview, built by the server from measured results. It also lists
     parts of the instruction that could not be handled."""
+
+
+LayoutProgressStage = Literal[
+    "validating", "interpreting", "exploring", "evaluating", "retrying", "verifying"
+]
+
+
+class LayoutProgress(ContractModel):
+    """A factual harness update, never a proposed edit or model reasoning."""
+
+    stage: LayoutProgressStage
+    message: str = Field(min_length=1, max_length=300)
+
+
+class LayoutStreamError(ContractModel):
+    message: str = Field(min_length=1, max_length=300)
+
+
+class LayoutProgressEvent(ContractModel):
+    event: Literal["progress"] = "progress"
+    data: LayoutProgress
+
+
+class LayoutResultEvent(ContractModel):
+    event: Literal["result"] = "result"
+    data: LayoutProposal
+
+
+class LayoutErrorEvent(ContractModel):
+    event: Literal["error"] = "error"
+    data: LayoutStreamError
+
+
+LayoutStreamEvent = LayoutProgressEvent | LayoutResultEvent | LayoutErrorEvent
+"""POST /solve/stream SSE: event is the SSE name; data is its JSON payload."""
 
 
 class RenderCamera(ContractModel):

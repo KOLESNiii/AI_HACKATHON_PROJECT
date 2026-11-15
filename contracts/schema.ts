@@ -301,7 +301,7 @@ export const MAX_LAYOUT_INSTRUCTION_CHARS = 500;
  * What a layout suggestion should favour once it fits and doors are clear. `balanced`: access in
  * front of furniture, then walking space. `brighter`: unobstructed windows first. `roomier`:
  * walking space first. `minimal_changes`: move furniture only to fix a fit or access problem.
- * `feng_shui`: raise the Feng Shui placement score (`AuditReport.feng_shui`).
+ * `feng_shui`: raise the full-rule score from `/feng-shui/score`, using the Feng Shui skill.
  * `custom`: the request is something else (e.g. "a cosy reading corner"); the assistant follows
  * the user's wording and only fit, doors and access are checked, so the user judges the rest in
  * the preview.
@@ -351,6 +351,25 @@ export interface LayoutProposal {
   /** Plain text for the preview, built by the server from measured results. */
   explanation: string;
 }
+
+/** Factual execution updates; no edits can be applied from these events. */
+export type LayoutProgressStage =
+  | "validating" | "interpreting" | "exploring" | "evaluating" | "retrying" | "verifying";
+
+export interface LayoutProgress {
+  stage: LayoutProgressStage;
+  message: string;
+}
+
+export interface LayoutStreamError {
+  message: string;
+}
+
+/** POST /solve/stream SSE: event names and their JSON data payloads. */
+export type LayoutStreamEvent =
+  | { event: "progress"; data: LayoutProgress }
+  | { event: "result"; data: LayoutProposal }
+  | { event: "error"; data: LayoutStreamError };
 
 export interface RenderCamera {
   position: Vec3;

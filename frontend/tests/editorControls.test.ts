@@ -3,10 +3,12 @@ import { Vector3 } from 'three'
 import {
   editorKey,
   handleItemKey,
+  handleSaveKey,
   panCamera,
 } from '../src/components/editor/keyboard'
 import { footprint } from '../src/lib/geometry'
 import { useStore } from '../src/store'
+import { initialRoomHistory } from '../src/lib/roomVersions'
 
 const initial = useStore.getState()
 
@@ -37,7 +39,13 @@ beforeEach(() => {
       pose: { x: 5, z: 5, yaw_deg: 0 },
     },
   ]
-  useStore.setState({ ...initial, scene, selectedId: 'item' })
+  useStore.setState({
+    ...initial,
+    scene,
+    ...initialRoomHistory(scene),
+    screen: 'editor',
+    selectedId: 'item',
+  })
 })
 afterEach(() => useStore.setState(initial))
 
@@ -170,5 +178,65 @@ describe('camera panning', () => {
     const before = position.clone()
     panCamera(position, target, 0, 0, 2)
     expect(position.toArray()).toEqual(before.toArray())
+  })
+})
+
+describe('explicit layout save shortcut', () => {
+  test('Ctrl+S saves a manual draft once and suppresses the browser save dialog', () => {
+    useStore.getState().rotateItem('item', 90)
+    expect(useStore.getState().versions).toHaveLength(1)
+    const save = keyEvent('s', { ctrlKey: true })
+    expect(handleSaveKey(save.event)).toBe(true)
+    expect(save.prevented()).toBe(true)
+    expect(useStore.getState().versions).toHaveLength(2)
+    expect(useStore.getState().hasUnsavedChanges).toBe(false)
+    handleSaveKey(keyEvent('s', { ctrlKey: true, repeat: true }).event)
+    handleSaveKey(keyEvent('s', { ctrlKey: true }).event)
+    expect(useStore.getState().versions).toHaveLength(2)
+  })
+
+  test('Cmd+S saves with no furniture selected and while the chat input has focus', () => {
+    useStore.getState().rotateItem('item', 90)
+    useStore.getState().select(null)
+    const event = keyEvent('S', {
+      metaKey: true,
+      target: {
+        closest: () => ({ tagName: 'INPUT' }),
+      } as unknown as HTMLElement,
+    })
+    expect(handleSaveKey(event.event)).toBe(true)
+    expect(event.prevented()).toBe(true)
+    expect(useStore.getState().versions).toHaveLength(2)
+  })
+
+  test('active gestures and room loading cannot save a partial layout', () => {
+    useStore.getState().rotateItem('item', 90)
+    for (const state of [{ interacting: true }, { roomLoading: true }]) {
+      useStore.setState({ interacting: false, roomLoading: false, ...state })
+      const event = keyEvent('s', { ctrlKey: true })
+      expect(handleSaveKey(event.event)).toBe(true)
+      expect(event.prevented()).toBe(true)
+      expect(useStore.getState().versions).toHaveLength(1)
+    }
+  })
+
+  test('other shortcuts, composition, Play and other screens are left alone', () => {
+    useStore.getState().rotateItem('item', 90)
+    for (const modifiers of [
+      {},
+      { ctrlKey: true, shiftKey: true },
+      { ctrlKey: true, altKey: true },
+      { ctrlKey: true, isComposing: true },
+      { ctrlKey: true, defaultPrevented: true },
+    ]) {
+      const event = keyEvent('s', modifiers)
+      expect(handleSaveKey(event.event)).toBe(false)
+      expect(event.prevented()).toBe(false)
+    }
+    useStore.setState({ mode: 'play' })
+    expect(handleSaveKey(keyEvent('s', { ctrlKey: true }).event)).toBe(false)
+    useStore.setState({ mode: 'edit', screen: 'floorplan' })
+    expect(handleSaveKey(keyEvent('s', { ctrlKey: true }).event)).toBe(false)
+    expect(useStore.getState().versions).toHaveLength(1)
   })
 })

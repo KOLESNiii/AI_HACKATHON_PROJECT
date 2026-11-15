@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { catalog, catalogCategories } from '../../data/catalog'
-import { proposalSummary, sendAgentMessage } from '../../lib/agent'
-import type { AuditReport, RoomScene } from '../../lib/contracts'
+import type {
+  AuditReport,
+  LayoutProgress,
+  RoomScene,
+} from '../../lib/contracts'
+import { MAX_LAYOUT_INSTRUCTION_CHARS } from '../../lib/contracts'
+import { matchingAudit } from '../../lib/layoutDiff'
 import { fitsRoom } from '../../lib/geometry'
-import { SpatialError } from '../../lib/spatial'
 import { useStore, type Tab } from '../../store'
 import { Button, Chip, ScoreRing, StatusDot, type Status } from '../ui'
+import { LayoutProposalCard } from './LayoutProposalCard'
+import { CatalogPreview } from './CatalogPreview'
+import { FengShuiScoreCard } from './FengShuiScoreCard'
+import { matchingFengShuiScore, type FengShuiScore } from '../../lib/fengShui'
 
 const tabs: [Tab, string][] = [
   ['chat', 'Chat'],
@@ -37,7 +45,7 @@ export function Sidebar() {
           </button>
         ))}
       </nav>
-      <div className="flex min-h-0 flex-1 flex-col px-6 pt-[76px] pb-5">
+      <div className="flex min-h-0 flex-1 flex-col px-6 pt-6 pb-5">
         {tab === 'chat' && <ChatTab />}
         {tab === 'stats' && <StatsTab />}
         {tab === 'library' && <LibraryTab />}
@@ -46,10 +54,61 @@ export function Sidebar() {
   )
 }
 
+export function HarnessProgress({ updates }: { updates: LayoutProgress[] }) {
+  if (!updates.length) return null
+  return (
+    <details className="w-full text-[11px] leading-5 text-ink-medium">
+      <summary className="cursor-pointer">
+        Activity · {updates.length}{' '}
+        {updates.length === 1 ? 'update' : 'updates'}
+      </summary>
+      <ol className="mt-1 list-decimal space-y-1 pl-5">
+        {updates.map((update, i) => (
+          <li key={i}>{update.message}</li>
+        ))}
+      </ol>
+    </details>
+  )
+}
+
+export function HarnessStatus({
+  updates,
+  onCancel,
+}: {
+  updates: LayoutProgress[]
+  onCancel: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div
+        role="status"
+        className="flex items-center justify-between gap-2 text-[11px] font-medium text-ink-mist"
+      >
+        <span>
+          {updates.at(-1)?.message ?? 'Connecting to the layout assistant…'}
+        </span>
+        <Button onClick={onCancel}>Cancel</Button>
+      </div>
+      <HarnessProgress updates={updates} />
+    </div>
+  )
+}
+
 function ChatTab() {
   const chat = useStore((s) => s.chat)
   const busy = useStore((s) => s.agentBusy)
-  const { pushChat, setAgentBusy, applyPoses, dismissProposal } =
+  const progress = useStore((s) => s.agentProgress)
+  const scene = useStore((s) => s.scene)
+  const roomSession = useStore((s) => s.roomSession)
+  const currentVersionId = useStore((s) => s.currentVersionId)
+  const hasUnsavedChanges = useStore((s) => s.hasUnsavedChanges)
+  const versionLabel = useStore(
+    (s) => s.versions.find((v) => v.id === s.currentVersionId)?.label,
+  )
+  const blocked = useStore(
+    (s) => s.interacting || s.roomLoading || s.mode !== 'edit',
+  )
+  const { sendChat, cancelAgent, applyPoses, rejectProposal } =
     useStore.getState()
   const [text, setText] = useState('')
   const end = useRef<HTMLDivElement>(null)
@@ -57,51 +116,26 @@ function ChatTab() {
     end.current?.scrollIntoView({ behavior: 'smooth' })
   }, [chat.length])
 
-  const submit = async (e: FormEvent) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault()
     const msg = text.trim()
-    if (!msg || busy || useStore.getState().interacting) return
+    if (!msg || busy || blocked) return
     setText('')
-    const { scene, roomSession } = useStore.getState()
-    const baseRevision = scene.revision
-    const controller = new AbortController()
-    pushChat({ role: 'user', text: msg })
-    setAgentBusy(true, controller)
-    const current = () => useStore.getState().roomSession === roomSession
-    try {
-      const reply = await sendAgentMessage(scene, msg, controller.signal)
-      if (current())
-        pushChat({
-          role: 'assistant',
-          text: reply.text,
-          poses: reply.poses,
-          additions: reply.additions,
-          report: reply.report,
-          outlook: reply.outlook,
-          baseRevision,
-        })
-    } catch (error) {
-      if (current() && !controller.signal.aborted)
-        pushChat({
-          role: 'assistant',
-          text:
-            error instanceof SpatialError
-              ? error.message
-              : 'The agent could not be reached. Try again.',
-        })
-    } finally {
-      if (current()) setAgentBusy(false)
-    }
+    void sendChat(msg)
   }
 
   return (
     <>
+      <p className="mb-3 text-[11px] font-medium text-ink-mist">
+        Working from {versionLabel ?? 'this layout'}
+        {hasUnsavedChanges ? ' · Unsaved changes' : ''}
+      </p>
       <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto">
         {chat.length === 0 && (
           <p className="text-[14px] leading-[23px] text-ink-medium">
             Ask Refresh to redesign this room, e.g.{' '}
             <em className="font-serif text-[16px]">
-              “make it feel more open and get the desk out of the window glare.”
+              “make it feel more open, but keep the bed where it is.”
             </em>
           </p>
         )}
@@ -122,55 +156,40 @@ function ChatTab() {
             >
               {m.text}
             </p>
-            {(m.poses || !!m.additions?.length) && (
-              <div className="flex w-full flex-col gap-2 rounded-[2px] bg-paper-deep py-2 pr-2 pl-3">
-                <div className="flex items-center justify-between gap-2.5">
-                  <span className="text-[11px] font-medium text-ink-medium">
-                    {proposalSummary(m)}
-                  </span>
-                  <span className="flex gap-1.5">
-                    {!m.applied && !m.dismissed && (
-                      <Button onClick={() => dismissProposal(i)}>
-                        Dismiss
-                      </Button>
-                    )}
-                    <Button
-                      disabled={m.applied || m.dismissed}
-                      onClick={() => applyPoses(i)}
-                    >
-                      {m.applied
-                        ? 'Applied'
-                        : m.dismissed
-                          ? 'Dismissed'
-                          : 'Apply'}
-                    </Button>
-                  </span>
-                </div>
-                {m.outlook && (
-                  <span className="text-[11px] text-ink-medium">
-                    Once applied: {m.outlook}
-                  </span>
-                )}
-              </div>
+            <HarnessProgress updates={m.progress ?? []} />
+            {m.proposal && (
+              <LayoutProposalCard
+                message={m}
+                stale={
+                  m.roomSession !== roomSession ||
+                  m.baseScene !== scene ||
+                  m.baseVersionId !== currentVersionId
+                }
+                blocked={blocked}
+                onAccept={() => applyPoses(i)}
+                onReject={() => rejectProposal(i)}
+              />
             )}
           </div>
         ))}
-        {busy && (
-          <span className="text-[11px] font-medium text-ink-mist">
-            Refresh is thinking…
-          </span>
-        )}
+        {busy && <HarnessStatus updates={progress} onCancel={cancelAgent} />}
         <div ref={end} />
       </div>
       <form onSubmit={submit} className="flex items-center gap-2 pt-4">
         <input
+          aria-label="Room redesign request"
+          maxLength={MAX_LAYOUT_INSTRUCTION_CHARS}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          maxLength={500}
           placeholder="Ask Refresh to redesign the room…"
           className="min-w-0 flex-1 rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
         />
-        <Button type="submit" variant="primary" size="lg" disabled={busy}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          disabled={busy || blocked || !text.trim()}
+        >
           Send
         </Button>
       </form>
@@ -198,50 +217,167 @@ function Row({
   )
 }
 
-/** Renders the spatial engine's AuditReport, refreshed by `useLiveAudit` after each edit. */
+/** Only current-scene results belong in Stats, never a candidate's report. */
 function StatsTab() {
   const scene = useStore((s) => s.scene)
   const raw = useStore((s) => s.audit)
+  const interacting = useStore((s) => s.interacting)
+  const roomLoading = useStore((s) => s.roomLoading)
+  const loading = useStore((s) => s.auditStatus === 'loading') || roomLoading
   const error = useStore((s) => s.auditError)
-  // Never show a report for another room or an older revision.
-  const audit =
-    raw &&
-    raw.scene_id === scene.scene_id &&
-    raw.scene_revision === scene.revision
+  const refresh = useStore((s) => s.refreshAudit)
+  const rawScore = useStore((s) => s.fengShuiScore)
+  const scoreStatus = useStore((s) => s.fengShuiScoreStatus)
+  const scoreError = useStore((s) => s.fengShuiScoreError)
+  const refreshScore = useStore((s) => s.refreshFengShuiScore)
+  const score =
+    !interacting && matchingFengShuiScore(rawScore, scene) ? rawScore : null
+  const audit = !interacting && matchingAudit(raw, scene) ? raw : null
+  const findings =
+    interacting || loading ? (
+      <p role="status" className="text-[14px] text-ink-medium">
+        {interacting
+          ? 'Finish placing furniture to update Stats.'
+          : 'Checking the room…'}
+      </p>
+    ) : error ? (
+      <div className="flex flex-col gap-3">
+        <p role="alert" className="text-[14px] text-ink-medium">
+          {error}
+        </p>
+        <Button onClick={() => void refresh()}>Retry audit</Button>
+      </div>
+    ) : (
+      <AuditStats audit={audit} scene={scene} fengShuiScore={score} />
+    )
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+      {findings}
+      <hr className="ink-divider" />
+      <FengShuiScoreCard
+        scene={scene}
+        score={score}
+        status={scoreStatus}
+        error={scoreError}
+        blocked={interacting || roomLoading}
+        onRetry={() => void refreshScore()}
+      />
+      <hr className="ink-divider" />
+      <FengShuiSection />
+    </div>
+  )
+}
+
+/** Advisory `/feng-shui` result: model reasoning, not a measured score. */
+function FengShuiSection() {
+  const scene = useStore((s) => s.scene)
+  const raw = useStore((s) => s.fengShui)
+  const status = useStore((s) => s.fengShuiStatus)
+  const error = useStore((s) => s.fengShuiError)
+  const blocked = useStore((s) => s.interacting || s.roomLoading)
+  const assess = useStore((s) => s.assessFengShui)
+  const result =
+    raw?.scene_id === scene.scene_id && raw.revision === scene.revision
       ? raw
       : null
-  return <AuditStats audit={audit} scene={scene} error={error} />
+  const name = (id: string) =>
+    scene.furniture.find((i) => i.id === id)?.name ?? id
+  return (
+    <section aria-label="Feng shui assessment" className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-serif text-[20px] leading-[23px] font-semibold">
+          Feng shui advice
+        </h3>
+        <Button
+          disabled={blocked || status === 'loading'}
+          onClick={() => void assess()}
+        >
+          {result ? 'Assess again' : 'Assess'}
+        </Button>
+      </div>
+      {status === 'loading' && (
+        <p role="status" className="text-[13px] text-ink-medium">
+          Reviewing this layout…
+        </p>
+      )}
+      {status === 'error' && error && (
+        <p role="alert" className="text-[13px] text-ink-medium">
+          {error}
+        </p>
+      )}
+      {result?.outcome === 'assistant_unavailable' && (
+        <p role="status" className="text-[13px] text-ink-medium">
+          The feng shui assistant is unavailable right now. This is a service
+          problem, not a verdict on your room.
+        </p>
+      )}
+      {result?.assessment && (
+        <>
+          <p className="text-[13px] leading-[21px]">
+            {result.assessment.summary}
+          </p>
+          <ul className="flex flex-col gap-2.5 text-[12px]">
+            {result.assessment.findings.map((f, i) => (
+              <li key={i} className="border-b border-hairline-ink pb-2">
+                <span className="font-medium">
+                  {f.object_ids.map(name).join(', ')} · {f.principle}
+                </span>
+                <p className="text-ink-medium">{f.recommendation}</p>
+                <details className="mt-0.5 text-[11px] text-ink-mist">
+                  <summary className="cursor-pointer">
+                    Evidence · {f.confidence} confidence
+                  </summary>
+                  <p>{f.evidence}</p>
+                </details>
+              </li>
+            ))}
+          </ul>
+          {result.assessment.missing_information.length > 0 && (
+            <p className="text-[11px] text-ink-medium">
+              Not known: {result.assessment.missing_information.join('; ')}
+            </p>
+          )}
+          <p className="text-[11px] text-ink-mist">
+            Traditional advice from the assistant, not a measured check.
+          </p>
+        </>
+      )}
+    </section>
+  )
 }
 
 export function AuditStats({
   audit,
   scene,
-  error = null,
+  fengShuiScore,
 }: {
   audit: AuditReport | null
   scene: RoomScene
-  error?: string | null
+  fengShuiScore?: FengShuiScore | null
 }) {
   const name = (id: string) =>
     scene.furniture.find((i) => i.id === id)?.name ?? id
+  const score = matchingFengShuiScore(fengShuiScore, scene)
+    ? fengShuiScore
+    : null
 
   if (!audit) {
     return (
       <div className="flex flex-col gap-3">
         <h3 className="font-serif text-[20px] leading-[23px] font-semibold">
-          {error ? 'Audit unavailable' : 'Checking the room…'}
+          No audit yet
         </h3>
         <p className="text-[14px] leading-[23px] text-ink-medium">
-          {error ??
-            'Spatial engine findings appear here: collisions, blocked doors, clearance and feng shui.'}
+          Spatial engine findings appear here: collisions, blocked doors,
+          clearance, glare and feng shui.
         </p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
-      <div className="flex items-center gap-6">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <ScoreRing score={audit.overall_score} size={52} />
         <Metric
           label="Walkable floor"
@@ -254,9 +390,13 @@ export function AuditStats({
         <Metric
           label="Feng shui"
           value={
-            audit.feng_shui == null
-              ? 'Not checked'
-              : String(audit.feng_shui.score)
+            score
+              ? score.score === null
+                ? 'Not assessable'
+                : `${score.score} / 100`
+              : fengShuiScore !== undefined || audit.feng_shui == null
+                ? 'Not checked'
+                : String(audit.feng_shui.score)
           }
         />
       </div>
@@ -321,7 +461,7 @@ export function AuditStats({
         {audit.glare_alerts == null && (
           <Row status="pending" label="Glare" value="Not checked" />
         )}
-        {audit.feng_shui == null && (
+        {fengShuiScore === undefined && audit.feng_shui == null && (
           <Row status="pending" label="Feng shui" value="Not checked" />
         )}
         {audit.glare_alerts
@@ -334,25 +474,15 @@ export function AuditStats({
               value={g.severity}
             />
           ))}
-        {audit.feng_shui?.sightlines.map((s, i) => (
-          <div key={`fs-${i}`} className="border-b border-hairline-ink py-2">
-            <span className="flex items-center gap-2 text-[13px] font-medium">
-              <StatusDot
-                status={s.status === 'command_position' ? 'valid' : 'warning'}
-              />
-              {`${name(s.from_item_id)} · ${s.status.replaceAll('_', ' ')}`}
-            </span>
-            <p className="mt-1 pl-4 text-[11px] leading-[17px] text-ink-medium">
-              {s.reason}
-            </p>
-          </div>
-        ))}
-        {audit.feng_shui != null && (
-          <p className="pt-2 text-[11px] leading-[17px] text-ink-mist">
-            Feng shui here is a traditional placement guide for beds and desks
-            (see the door, never sit with your back to it), not a prediction.
-          </p>
-        )}
+        {fengShuiScore === undefined &&
+          audit.feng_shui?.sightlines.map((s, i) => (
+            <Row
+              key={`fs-${i}`}
+              status={s.status === 'command_position' ? 'valid' : 'danger'}
+              label={`${name(s.from_item_id)} · ${s.status.replaceAll('_', ' ')}`}
+              value={s.to_door_id}
+            />
+          ))}
       </div>
     </div>
   )
@@ -367,12 +497,14 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Furniture library: mock catalog until Dev 2's catalog search / URL import lands. */
+/** Add the same dimensioned mesh assets that the room renderer already supports. */
 function LibraryTab() {
+  const roomLoading = useStore((s) => s.roomLoading)
   const floor = useStore((s) => s.scene.floor_polygon)
   const addFromCatalog = useStore((s) => s.addFromCatalog)
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string>('all')
+  const [previewSku, setPreviewSku] = useState<string | null>(null)
 
   const results = useMemo(
     () =>
@@ -383,21 +515,18 @@ function LibraryTab() {
       ),
     [category, query],
   )
+  const preview = results.find((item) => item.sku === previewSku) ?? results[0]
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <input
+        aria-label="Search available furniture"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search furniture or paste a product link"
+        placeholder="Search available furniture…"
         className="rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
       />
-      {/^https?:\/\//.test(query.trim()) && (
-        <p className="text-[11px] font-medium text-accent-ochre">
-          Link import arrives with the URL importer. Showing catalog matches
-          meanwhile.
-        </p>
-      )}
+      {preview && <CatalogPreview item={preview} />}
       <div className="flex flex-wrap gap-1.5">
         {['all', ...catalogCategories].map((c) => (
           <Chip key={c} on={category === c} onClick={() => setCategory(c)}>
@@ -406,7 +535,7 @@ function LibraryTab() {
         ))}
       </div>
       <span className="text-[11px] font-medium text-ink-medium">
-        {results.length} results
+        {results.length} room models · Estimated dimensions
       </span>
       <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pb-2">
         {results.map((c) => {
@@ -414,33 +543,49 @@ function LibraryTab() {
           return (
             <div
               key={c.sku}
-              className="flex items-center gap-3 rounded-[2px] border border-hairline-ink bg-paper-card/65 p-2.5"
+              className={`flex items-center gap-3 rounded-[2px] border bg-paper-card/65 p-2.5 ${preview?.sku === c.sku ? 'border-seal-vermilion/60' : 'border-hairline-ink'}`}
             >
-              <div className="size-14 shrink-0 rounded-[2px] bg-ink-medium/16" />
               <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                <span className="truncate text-[13px] font-medium">
+                <button
+                  type="button"
+                  aria-label={`Preview ${c.name}, ${c.bbox_m.width.toFixed(2)} by ${c.bbox_m.depth.toFixed(2)} metres`}
+                  aria-pressed={preview?.sku === c.sku}
+                  onClick={() => setPreviewSku(c.sku)}
+                  className="cursor-pointer truncate text-left text-[13px] font-medium hover:text-seal-vermilion"
+                >
                   {c.name}
-                </span>
+                </button>
                 <span className="mono text-[11px] text-ink-medium">
                   {c.bbox_m.width.toFixed(2)}m × {c.bbox_m.depth.toFixed(2)}m ×{' '}
                   {c.bbox_m.height.toFixed(2)}m
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="mono text-[12px]">£{c.price_gbp}</span>
+                  {c.price_gbp != null && (
+                    <span className="mono text-[12px]">£{c.price_gbp}</span>
+                  )}
                   <StatusDot status={fits ? 'valid' : 'danger'} />
                   <span
                     className={`text-[11px] font-medium ${fits ? 'text-accent-celadon' : 'text-seal-vermilion'}`}
                   >
-                    {fits ? 'Fits' : "Doesn't fit"}
+                    {fits ? 'Size fits' : 'Too large'}
                   </span>
                 </span>
               </div>
-              <Button disabled={!fits} onClick={() => addFromCatalog(c)}>
+              <Button
+                aria-label={`Add ${c.name}`}
+                disabled={!fits || roomLoading}
+                onClick={() => addFromCatalog(c)}
+              >
                 Add
               </Button>
             </div>
           )
         })}
+        {results.length === 0 && (
+          <p className="text-[13px] text-ink-medium">
+            No models match. Try another name or category.
+          </p>
+        )}
       </div>
     </div>
   )

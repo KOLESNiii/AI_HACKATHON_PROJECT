@@ -98,13 +98,57 @@ load from a committed demo cache with no provider request; reading the plan's la
 `PUT /scenes/<scene_id>` keeps the user's furniture poses and `POST /scenes/<scene_id>/scale`
 corrects a floor's scale from one wall's real length (see [architecture](docs/architecture.md#corrections-11)).
 
-The frontend displays live service connection status. The spatial service also
-implements `POST /audit`: send a `RoomScene` to receive collision, boundary, door,
-front-clearance and 50 cm walking-reachability results. Scores, glare and Feng Shui
-are not assessed and return `null`. No provider credentials are needed for auditing
-or health checks. Reconstruction, search, generated media and editor integration
-remain planned work. See the [spatial service guide](services/spatial_engine/README.md)
-and [frontend handoff](docs/dev3-spatial-handoff.md).
+The editor loads assembled rooms from reconstruction, then updates **Stats** from
+`POST /audit` after each committed furniture edit. It shows collisions, boundaries,
+blocked doors, front clearance and 50 cm walking reachability. Feng Shui scores
+refresh separately after committed edits, with rule coverage, breakdowns, assumptions
+and any cap caused by fit or door findings. The score is a traditional placement
+guide; a room that cannot be scored shows **Not assessable**. Proposal previews
+compare the original and proposed scores and coverage before acceptance. Overall
+score and glare remain **Not checked**. Audits and Feng Shui scoring need no
+provider credentials.
+If reconstruction is unavailable, the editor keeps its local demo room with a
+warning; some local rooms cannot pass the backend's stricter door validation.
+
+In **Chat**, ask for a rearrangement, e.g. “Unblock the door, but keep the bed where
+it is.” Set `ANTHROPIC_API_KEY` in root `.env` and run the spatial service for live
+layout suggestions. The existing tool-calling agent returns a **Room diff**:
+dashed/current and green/proposed footprints, item moves and turns, and measured
+findings. **Accept layout** moves the furniture together and refreshes Stats;
+**Reject** leaves the room untouched. Editing the room makes older proposals
+outdated. Requests can take up to 90 seconds; Cancel stops waiting without changing
+the room (it does not guarantee an in-progress provider call stops). Each request
+uses the current room and your new instruction; include any locks in that request.
+While Refresh works, Chat streams its current execution stage and an expandable
+activity log. The log remains with the final or cancelled reply; the layout preview
+appears only after validation. Cancel stops later harness work, although an active
+provider call may finish within its timeout. Streaming requires no new configuration.
+
+Ask **“optimise the feng shui”** to propose a layout using the Feng Shui skill
+and the same full-rule score shown in Stats. The agent uses the weighted rule
+breakdown and coverage to choose moves; review the preview before accepting.
+Unknown mirrors and assumed occupant positions remain visible limitations.
+
+Scoring and goal ranking remain backend-owned. See the
+[spatial service guide](services/spatial_engine/README.md) and
+[frontend handoff](docs/dev3-spatial-handoff.md).
+
+**Room versions** on the left keeps the starting layout, accepted agent layouts
+and explicitly saved manual layouts. Manual moves, rotations, additions and deletions
+remain a working draft until **Ctrl+S** (**Cmd+S** on Mac) or **Save version** saves
+them together as one version. Repeated saves without changes create nothing.
+Successive saves form a linear chain; go back, edit and save an older version to
+create a branch while preserving its existing successors. Save or **Discard changes**
+before selecting another version. Clicking a saved version restores its full layout
+and refreshes Stats. Agent acceptance still saves immediately. Versions are kept
+while the room is open; opening another room or reloading starts a new history.
+
+**Library** offers the 31 movable mesh models from the demo home. Select a model's
+name to preview and rotate it, then **Add** to place a copy in the room. Mesh URLs,
+metric bounds and collision parts are preserved, so additions work with chat,
+Stats and version history. These are simplified room models with estimated
+dimensions; Library no longer shows invented retail products or prices. Live
+product search and URL import remain separate integrations.
 
 ```bash
 bun run build             # TypeScript check + production frontend bundle
@@ -167,11 +211,13 @@ now reconstructs individual raw meshes with explicit proxy fallback. Mesh normal
 and final room placement remain later stages.
 
 In the editor's **Chat** tab, ask to add one item (for example, “Add a small
-0.5 m wide side table”) or rearrange existing furniture. Start the spatial service
+desk from Library”) or rearrange existing furniture. Start the spatial service
 and configure `ANTHROPIC_API_KEY` in the root `.env` for agent requests. Review the
-proposal, then click **Apply**. New furniture uses a labelled proxy with estimated
-dimensions that need checking; collision, floor-boundary and door checks run on it,
+proposal, then choose **Accept layout**. The bot can only select real mesh models from Library, retaining their
+dimensions and collision metadata; collision, floor-boundary and door checks run on it,
 and on anything moved to make room, before it is proposed. Problems the room already
-had are reported rather than blocking the addition. Stats shows the accepted audit, including any front-clearance
-warnings. Editing the room invalidates older proposals. Retailer search and live
-furniture-mesh generation are separate from this flow.
+had are reported rather than blocking the addition. The preview includes streamed
+execution updates; acceptance saves a room version and refreshes Stats, including
+any front-clearance warnings. Editing the room invalidates older proposals. Retailer search and live
+furniture-mesh generation are separate from this flow. If no suitable Library model
+is available or fits, the bot offers other choices instead of creating a proxy.

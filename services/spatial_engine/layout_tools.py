@@ -232,6 +232,7 @@ class LayoutToolbox:
             locked_item_ids,
             near_window_item_ids=self.preferences.near_window_item_ids,
             measure_brightness=(self.preferences.goal == "brighter"),
+            measure_feng_shui=(self.preferences.goal == "feng_shui"),
             max_evaluations=max_evaluations,
             session_token=session_token,
         )
@@ -349,6 +350,11 @@ class LayoutToolbox:
             "can_be_recommended": self._acceptable(draft),
             "findings": _findings(draft.evaluation),
             "metrics": _metrics(draft.evaluation),
+            **(
+                {"feng_shui": draft.evaluation.feng_shui.model_dump(mode="json")}
+                if draft.evaluation.feng_shui is not None
+                else {}
+            ),
         }
 
     def _inspect_layout(self, arguments: _InspectArguments) -> dict[str, Any]:

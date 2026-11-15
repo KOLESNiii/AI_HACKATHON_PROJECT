@@ -4,13 +4,15 @@ export type {
   BlockedDoorIssue,
   BBoxM,
   DoorOpening,
-  FengShuiReport,
   FurnitureItem,
   LayoutGoal,
   LayoutProposal,
+  LayoutProgress,
+  LayoutStreamEvent,
   OptimiseRequest,
   Pose2D,
   RoomScene,
   Vec2,
   WallSegment,
 } from '../../../contracts/schema'
+export { MAX_LAYOUT_INSTRUCTION_CHARS } from '../../../contracts/schema'
