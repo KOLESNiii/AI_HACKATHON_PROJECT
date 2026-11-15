@@ -2,7 +2,11 @@ import { afterEach, expect, test } from 'bun:test'
 import { catalog } from '../src/data/catalog'
 import { proposalSummary, sendAgentMessage } from '../src/lib/agent'
 import type { AuditReport } from '../src/lib/contracts'
-import { useStore, type ChatMessage } from '../src/store'
+import { useStore } from '../src/store'
+
+import { solveEvent } from './solveStream'
+import { readProposal } from '../src/lib/agent'
+import { layoutChanges } from '../src/lib/layoutDiff'
 
 const initial = useStore.getState()
 const originalFetch = globalThis.fetch
@@ -13,12 +17,12 @@ afterEach(() => {
 })
 
 function proposal() {
-  const existing = initial.scene.furniture[0]
+  const { sku: _sku, ...existing } = catalog[0]
   return {
     ...existing,
     id: 'new-item',
     is_fixed: false,
-    is_proxy: true,
+    is_proxy: false,
     pose: { x: 2, z: 2, yaw_deg: 0 },
   }
 }
@@ -40,19 +44,36 @@ test('chat sends scene and instruction, preserving cancellation and additions', 
       additions: [proposal()],
     })
   }) as typeof fetch
-  const reply = await sendAgentMessage(
-    initial.scene,
-    'Add a chair',
-    controller.signal,
-  )
-  expect(reply.additions?.[0].id).toBe('new-item')
-  expect(reply.poses).toBeUndefined()
+  await expect(
+    sendAgentMessage(initial.scene, 'Add a chair', controller.signal),
+  ).rejects.toThrow()
 })
 
 test('agent errors do not become successful proposals', async () => {
   globalThis.fetch = (async () =>
     new Response('', { status: 503 })) as typeof fetch
   await expect(sendAgentMessage(initial.scene, 'Add a chair')).rejects.toThrow()
+})
+
+test('the JSON chat client also rejects proxy or altered Library assets', async () => {
+  for (const change of [
+    { is_proxy: true },
+    { glb_url: '/api/spatial_engine/proxies/1/1/1.glb' },
+    { name: 'Invented desk' },
+  ]) {
+    let calls = 0
+    globalThis.fetch = (async () => {
+      calls++
+      return Response.json({
+        text: 'Proposed',
+        additions: [{ ...proposal(), ...change }],
+      })
+    }) as typeof fetch
+    await expect(sendAgentMessage(initial.scene, 'Add a desk')).rejects.toThrow(
+      'Library',
+    )
+    expect(calls).toBe(1)
+  }
 })
 
 test('chat preserves readable validation errors from the spatial transport', async () => {
@@ -92,174 +113,183 @@ test('chat previews the proposed audit and rejects a report for another revision
   )
 })
 
-test('Dismiss prevents both addition-only and pose-only proposals from applying', () => {
-  for (const change of [
-    { additions: [proposal()] },
-    { poses: { [initial.scene.furniture[0].id]: { x: 3, z: 3, yaw_deg: 0 } } },
-  ]) {
-    useStore.setState({
-      ...initial,
-      chat: [
-        {
-          role: 'assistant',
-          text: 'Proposed',
-          baseRevision: initial.scene.revision,
-          ...change,
-        },
-      ],
-    })
-    useStore.getState().dismissProposal(0)
-    expect(useStore.getState().chat[0].dismissed).toBe(true)
-    useStore.getState().applyPoses(0)
-    expect(useStore.getState().scene).toBe(initial.scene)
-  }
-})
-
-test('Apply adds the proxy and moves existing furniture once, in one revision', () => {
-  const scene = structuredClone(initial.scene)
-  const movable = scene.furniture.find((item) => !item.is_fixed)!
-  const fixed = scene.furniture.find((item) => item.is_fixed)!
-  const fixedPose = { ...fixed.pose }
-  useStore.setState({
-    ...initial,
-    scene,
-    chat: [
-      {
-        role: 'assistant',
-        text: 'Proposed',
-        baseRevision: scene.revision,
-        additions: [proposal()],
-        poses: {
-          [movable.id]: { x: 3, z: 3, yaw_deg: 90 },
-          [fixed.id]: { x: 8, z: 8, yaw_deg: 90 },
-        },
-      },
-    ],
-  })
-  useStore.getState().applyPoses(0)
-  const applied = useStore.getState()
-  expect(applied.scene.furniture.length).toBe(scene.furniture.length + 1)
-  expect(
-    applied.scene.furniture.find((item) => item.id === movable.id)?.pose.x,
-  ).toBe(3)
-  expect(
-    applied.scene.furniture.find((item) => item.id === fixed.id)?.pose,
-  ).toEqual(fixedPose)
-  expect(applied.scene.revision).toBe(scene.revision + 1)
-  useStore.getState().applyPoses(0)
-  expect(useStore.getState().scene).toBe(applied.scene)
-})
-
-test('stale proposals and active gestures cannot add furniture', () => {
-  for (const interacting of [true, false]) {
-    useStore.setState({
-      ...initial,
-      interacting,
-      chat: [
-        {
-          role: 'assistant',
-          text: 'Proposed',
-          baseRevision: initial.scene.revision - (interacting ? 0 : 1),
-          additions: [proposal()],
-        },
-      ],
-    })
-    useStore.getState().applyPoses(0)
-    expect(useStore.getState().scene).toBe(initial.scene)
-  }
-})
-
-test('duplicate addition IDs are rejected atomically', () => {
-  useStore.setState({
-    ...initial,
-    chat: [
-      {
-        role: 'assistant',
-        text: 'Proposed',
-        baseRevision: initial.scene.revision,
-        additions: [proposal(), proposal()],
-      },
-    ],
-  })
-  useStore.getState().applyPoses(0)
-  expect(useStore.getState().scene).toBe(initial.scene)
-})
-
-test('a Library item keeps the scene acceptable to the spatial service', () => {
-  // The services validate RoomScene: an empty glb_url made every chat request fail (422).
-  useStore.getState().addFromCatalog(catalog[0])
-  const added = useStore.getState().scene.furniture.at(-1)!
-  const { width, height, depth } = catalog[0].bbox_m
-  expect(added.is_proxy).toBe(true)
-  expect(added.glb_url).toBe(
-    `/api/spatial_engine/proxies/${width}/${height}/${depth}.glb`,
-  )
-  for (const item of useStore.getState().scene.furniture) {
-    expect(item.glb_url).toMatch(/^(https?:\/\/|\/[^/])/) // GLB_URL_PATTERN
-    expect(item.id).toMatch(/^[a-z0-9][a-z0-9_-]{0,63}$/) // ITEM_ID_PATTERN
-  }
-})
-
-test('every Library proxy is within the size the proxy route serves', () => {
-  for (const { bbox_m } of catalog) {
-    for (const [size, limit] of [
-      [bbox_m.width, 20],
-      [bbox_m.height, 10],
-      [bbox_m.depth, 20],
-    ]) {
-      expect(size).toBeGreaterThan(0.01)
-      expect(size).toBeLessThanOrEqual(limit)
-    }
-  }
-})
-
-test('Apply carries the audited report into Stats at the new revision', () => {
-  const { scene } = initial
-  const report = {
-    scene_id: scene.scene_id,
-    scene_revision: scene.revision,
+function report(): AuditReport {
+  return {
+    scene_id: initial.scene.scene_id,
+    scene_revision: initial.scene.revision,
     collisions: [],
     blocked_doors: [],
     out_of_bounds_item_ids: [],
     clearance_issues: [],
-  } as unknown as AuditReport
-  for (const [sent, expected] of [
-    [report, scene.revision + 1],
-    [{ ...report, scene_id: 'another-room' }, null],
-    [{ ...report, scene_revision: scene.revision + 5 }, null],
-  ] as const) {
-    useStore.setState({
-      ...initial,
-      chat: [
-        {
-          role: 'assistant',
-          text: 'Proposed',
-          baseRevision: scene.revision,
-          additions: [proposal()],
-          report: sent,
-        },
-      ],
-    })
-    useStore.getState().applyPoses(0)
-    expect(useStore.getState().scene.revision).toBe(scene.revision + 1)
-    expect(useStore.getState().audit?.scene_revision ?? null).toBe(expected)
+    walkable_floor_ratio: 0.75,
+    overall_score: null,
+    feng_shui: null,
+    glare_alerts: null,
+    glare_orientation_grounded: null,
+  }
+}
+async function propose(poses = {}) {
+  useStore.setState({
+    ...initial,
+    screen: 'editor',
+    scene: structuredClone(initial.scene),
+  })
+  const base = useStore.getState().scene
+  globalThis.fetch = (async () =>
+    new Response(
+      solveEvent('reply', {
+        text: 'Proposed one item',
+        poses,
+        additions: [proposal()],
+        report: report(),
+      }),
+      { headers: { 'Content-Type': 'text/event-stream' } },
+    )) as typeof fetch
+  await useStore.getState().sendChat('Add a chair')
+  return base
+}
+
+test('Reject prevents additions from applying through the reviewed proposal', async () => {
+  const base = await propose()
+  useStore.getState().rejectProposal(1)
+  useStore.getState().applyPoses(1)
+  expect(useStore.getState().chat[1].rejected).toBe(true)
+  expect(useStore.getState().scene).toBe(base)
+})
+
+test('Accept adds the Library mesh and moves furniture once in one saved version, preserving fixed items', async () => {
+  const movable = initial.scene.furniture.find((i) => !i.is_fixed)!
+  const base = await propose({ [movable.id]: { x: 3, z: 3, yaw_deg: 90 } })
+  const preview = useStore.getState().chat[1].proposal!
+  expect(layoutChanges(base, preview).some((c) => c.added)).toBe(true)
+  useStore.getState().applyPoses(1)
+  const applied = useStore.getState()
+  expect(applied.scene.furniture.length).toBe(base.furniture.length + 1)
+  expect(applied.scene.furniture.find((i) => i.id === movable.id)?.pose.x).toBe(
+    3,
+  )
+  for (const item of base.furniture.filter((i) => i.is_fixed))
+    expect(applied.scene.furniture.find((i) => i.id === item.id)).toEqual(item)
+  expect(applied.scene.revision).toBe(base.revision + 1)
+  expect(applied.versions.at(-1)?.source).toBe('agent')
+  expect(applied.audit).toBeNull() // The normal lifecycle re-audits this exact new revision.
+  applied.applyPoses(1)
+  expect(useStore.getState().scene).toBe(applied.scene)
+})
+
+test('stale proposals and active gestures cannot add furniture', async () => {
+  for (const interacting of [true, false]) {
+    const base = await propose()
+    if (interacting) useStore.setState({ interacting: true })
+    else useStore.getState().commitEdit(null)
+    const before = useStore.getState().scene
+    useStore.getState().applyPoses(1)
+    expect(useStore.getState().scene).toBe(before)
+    expect(useStore.getState().scene.furniture).toEqual(base.furniture)
   }
 })
 
-test('the proposal row says what Apply will do', () => {
+test('duplicate additions, unknown moves, fixed moves and invalid metadata are rejected atomically', () => {
+  const room = initial.scene
+  const added = proposal()
+  const fixed = room.furniture.find((i) => i.is_fixed)!
+  const good = {
+    proposal_id: 'addition',
+    poses: {},
+    additions: [added],
+    report: report(),
+    improved: true,
+    outcome: 'completed',
+    goal: null,
+    explanation: 'Add one item',
+  }
+  for (const bad of [
+    { ...good, additions: [added, added] },
+    { ...good, additions: [{ ...added, id: room.furniture[0].id }] },
+    { ...good, additions: [{ ...added, is_fixed: true }] },
+    { ...good, additions: [{ ...added, glb_url: '' }] },
+    { ...good, additions: [{ ...added, is_proxy: true }] },
+    {
+      ...good,
+      additions: [
+        { ...added, glb_url: '/api/spatial_engine/proxies/1/1/1.glb' },
+      ],
+    },
+    { ...good, additions: [{ ...added, name: 'Invented asset' }] },
+    {
+      ...good,
+      additions: [
+        {
+          ...added,
+          bbox_m: { ...added.bbox_m, width: added.bbox_m.width / 2 },
+        },
+      ],
+    },
+    {
+      ...good,
+      additions: [
+        {
+          ...added,
+          collision_parts: [
+            { x: 0, z: 0, width: 0.1, depth: 0.1, y_min: 0, y_max: 0.1 },
+          ],
+        },
+      ],
+    },
+    {
+      ...good,
+      additions: [{ ...added, bbox_m: { ...added.bbox_m, width: NaN } }],
+    },
+    { ...good, poses: { unknown: { x: 0, z: 0, yaw_deg: 0 } } },
+    { ...good, poses: { [fixed.id]: { x: 0, z: 0, yaw_deg: 0 } } },
+  ])
+    expect(() => readProposal(bad, room)).toThrow()
+})
+
+test('unchanged existing findings do not reject an addition, but findings involving it do', () => {
+  const added = proposal()
+  const existing = initial.scene.furniture[0].id
+  const good = {
+    proposal_id: 'addition',
+    poses: {},
+    additions: [added],
+    report: { ...report(), out_of_bounds_item_ids: [existing] },
+    improved: true,
+    outcome: 'completed',
+    goal: null,
+    explanation: 'Add one item',
+  }
+  expect(readProposal(good, initial.scene).additions).toHaveLength(1)
+  expect(() =>
+    readProposal(
+      {
+        ...good,
+        report: { ...good.report, out_of_bounds_item_ids: [added.id] },
+      },
+      initial.scene,
+    ),
+  ).toThrow()
+})
+
+test('Library additions retain the existing mesh, dimensions and valid service URLs', () => {
+  useStore.setState({ ...initial, screen: 'editor' })
+  useStore.getState().addFromCatalog(catalog[0])
+  const added = useStore.getState().scene.furniture.at(-1)!
+  expect(added.is_proxy).toBe(catalog[0].is_proxy)
+  expect(added.glb_url).toBe(catalog[0].glb_url)
+  expect(added.bbox_m).toEqual(catalog[0].bbox_m)
+  for (const item of useStore.getState().scene.furniture) {
+    expect(item.glb_url).toMatch(/^(https?:\/\/|\/[^/])/)
+    expect(item.id).toMatch(/^[a-z0-9][a-z0-9_-]{0,63}$/)
+  }
+})
+
+test('the proposal summary names additions and moves', () => {
   const pose = { x: 1, z: 1, yaw_deg: 0 }
-  const message = (m: Partial<ChatMessage>): ChatMessage => ({
-    role: 'assistant',
-    text: '',
-    ...m,
-  })
-  expect(proposalSummary(message({ additions: [proposal()] }))).toBe(
+  expect(proposalSummary({ additions: [proposal()] })).toBe(
     'Proposed layout · 1 new item',
   )
-  expect(
-    proposalSummary(message({ additions: [proposal()], poses: { a: pose } })),
-  ).toBe('Proposed layout · 1 new item · 1 move')
-  expect(proposalSummary(message({ poses: { a: pose, b: pose } }))).toBe(
-    'Proposed layout · 2 moves',
+  expect(proposalSummary({ additions: [proposal()], poses: { a: pose } })).toBe(
+    'Proposed layout · 1 new item · 1 move',
   )
 })

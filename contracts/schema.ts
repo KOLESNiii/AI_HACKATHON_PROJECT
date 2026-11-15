@@ -301,7 +301,7 @@ export const MAX_LAYOUT_INSTRUCTION_CHARS = 500;
  * What a layout suggestion should favour once it fits and doors are clear. `balanced`: access in
  * front of furniture, then walking space. `brighter`: unobstructed windows first. `roomier`:
  * walking space first. `minimal_changes`: move furniture only to fix a fit or access problem.
- * `feng_shui`: raise the Feng Shui placement score (`AuditReport.feng_shui`).
+ * `feng_shui`: raise the full-rule score from `/feng-shui/score`, using the Feng Shui skill.
  * `custom`: the request is something else (e.g. "a cosy reading corner"); the assistant follows
  * the user's wording and only fit, doors and access are checked, so the user judges the rest in
  * the preview.
@@ -350,6 +350,101 @@ export interface LayoutProposal {
   goal: LayoutGoal | null;
   /** Plain text for the preview, built by the server from measured results. */
   explanation: string;
+}
+
+/** Factual execution updates; no edits can be applied from these events. */
+export type LayoutProgressStage =
+  | "validating" | "interpreting" | "exploring" | "evaluating" | "retrying" | "verifying";
+
+export interface LayoutProgress {
+  stage: LayoutProgressStage;
+  message: string;
+}
+
+export interface LayoutStreamError {
+  message: string;
+}
+
+/** POST /solve/stream SSE: event names and their JSON data payloads. */
+export type LayoutStreamEvent =
+  | { event: "progress"; data: LayoutProgress }
+  | { event: "result"; data: LayoutProposal }
+  | { event: "error"; data: LayoutStreamError };
+
+/** POST /chat and /chat/stream. */
+export interface ChatRequest {
+  scene: RoomScene;
+  instruction: string;
+}
+
+/** POST /chat response, and the data of /chat/stream's terminal `reply` event. */
+export interface ChatReply {
+  text: string;
+  poses: Record<string, Pose2D>;
+  additions: FurnitureItem[];
+  report: AuditReport | null;
+  /** Preserves goal/outcome metadata when chat delegates to the rearrangement harness. */
+  proposal: LayoutProposal | null;
+}
+
+/** POST /chat/stream SSE. The terminal event is `reply`, never a LayoutStreamEvent `result`. */
+export type ChatStreamEvent =
+  | { event: "progress"; data: LayoutProgress }
+  | { event: "reply"; data: ChatReply }
+  | { event: "error"; data: LayoutStreamError };
+
+export interface FengShuiMirror {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  width_m: number;
+  height_m: number;
+  normal_yaw_deg: number;
+  is_fixed: boolean;
+}
+
+export interface FengShuiActivityAnchor {
+  item_id: string;
+  kind: "seated" | "headboard";
+  x: number;
+  z: number;
+  facing_yaw_deg: number;
+}
+
+/** POST /feng-shui and /feng-shui/score. */
+export interface FengShuiRequest {
+  scene: RoomScene;
+  room_use?: string;
+  main_entry_door_id?: string | null;
+  mirrors?: FengShuiMirror[] | null;
+  activities?: FengShuiActivityAnchor[];
+  /** Optional observed beams, clutter, materials, lighting and other non-geometric context. */
+  observations?: string;
+}
+
+export interface FengShuiRuleScore {
+  rule: string;
+  object_ids: string[];
+  /** 0-1. */
+  score: number;
+  weight: number;
+  detail: string;
+}
+
+/** POST /feng-shui/score: deterministic Form School score, no model call. */
+export interface FengShuiScore {
+  scene_id: string;
+  revision: number;
+  /** 0-100. null when the room has no door or no bed, desk or sofa: never read as zero. */
+  score: number | null;
+  /** Assessed weight / weight applicable to this room (0-1). */
+  coverage: number;
+  /** The audit found collisions, blocked doors or out-of-bounds items, which cap the score. */
+  capped_by_audit: boolean;
+  sightlines: FengShuiSightline[];
+  rules: FengShuiRuleScore[];
+  unassessed: string[];
 }
 
 export interface RenderCamera {

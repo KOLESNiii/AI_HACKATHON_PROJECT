@@ -111,8 +111,9 @@ Door swing obstruction is reported separately: clipping the swing arc does not
 exclude an entry unless obstacles actually prevent passage through the doorway.
 
 Scoring and glare remain unimplemented; Feng Shui is a small rule-based placement metric.
-`overall_score`, `glare_alerts` and `feng_shui` are nullable in both shared schemas. Consumers must display null
-as unassessed, not zero/no issues. `glare_orientation_grounded` is also nullable:
+`overall_score`, `glare_alerts` and `feng_shui` are nullable in both shared schemas.
+Consumers must display null as unassessed, not zero/no issues. The richer rule-based
+Feng Shui score is separately available at `/feng-shui/score`. `glare_orientation_grounded` is also nullable:
 null means glare was not assessed, true means assessed with grounded orientation,
 and false means an assessment used the plan-normal/-Z fallback.
 Scene input and geometry failures return HTTP 422 with a `detail` list containing
@@ -125,8 +126,8 @@ Audit requests build a request-local geometry context once, reusing item volumes
 walking projections, broad-phase bounds and free-floor geometry across checks.
 It is rebuilt after each request and is never retained across scene revisions.
 
-Persistence and live editor wiring are separate work. See the spatial README and
-Dev 3 handoff for examples.
+The editor calls this route on room load and after committed edits. Persistence
+remains separate work. See the spatial README and Dev 3 handoff for examples.
 
 ## Layout suggestion API
 
@@ -140,6 +141,76 @@ if it is valid and better. Assistant failures and limits are reported in the
 response's `outcome` with HTTP 200, never as a clean or successful proposal;
 invalid input is HTTP 422. Nothing is persisted and the editor's scene is not
 changed. Details and limits are in the spatial README.
+
+## Editor layout review and live Stats
+
+`frontend/src/lib/agent.ts` sends the current `RoomScene` and the latest instruction
+to the existing `/solve` route; tool execution and objective ranking stay on the
+backend. The client bounds waiting to 120 seconds and never retries a solve
+automatically. There is no conversation-history API, new dependency or shared
+schema change. The server-side `ANTHROPIC_API_KEY` remains outside browser code.
+
+The store retains a full proposal, its immutable base-scene snapshot and an optional
+matching baseline audit. Chat renders a floor-plan diff and per-item translation,
+rotation and measured before/after findings. Proposed scenes never replace the
+current scene or Stats while awaiting a decision. Acceptance validates the complete
+proposal again, requires the original room session and scene snapshot with no
+active gesture, applies only known movable item poses, and increments the revision
+once. Mesh URLs, sizes, IDs, fixed items and room geometry are preserved. Rejecting
+only changes the proposal's review state. Editing invalidates earlier proposals.
+
+`frontend/src/lib/editorServices.ts` owns one editor lifetime, across tabs and Play.
+It fetches the canonical assembled room first (15-second timeout), preserving
+warnings and falling back visibly to the local fixture on failure. Editing is
+blocked while this initial load is pending. Live audit requests wait 250 ms after
+committed edits, skip active gestures, and time out after 10 seconds. Room session,
+scene identity and revision checks reject late results, including live drag poses
+that have not yet changed the revision. Superseded requests and editor cleanup
+abort browser fetches; abort does not guarantee server/provider cancellation.
+Stats exposes loading/error/retry states and retains null as unassessed. Returned
+Feng Shui assessments display directly when backend work populates them.
+
+The left-hand version tree stores complete layout snapshots in local Zustand
+state. The canonical room is the root. Manual commits update the working scene,
+its audit revision and an unsaved-changes flag, without creating history nodes.
+Ctrl+S/Cmd+S or Save version checkpoints all manual changes together; an accepted
+agent proposal still saves immediately, including the reviewed working draft.
+Each save appends to `currentVersionId` and selects its new child, so successive
+saves are a linear chain. A fork appears only after selecting an ancestor with an
+existing successor and saving a changed layout. Unchanged saves create no nodes.
+The tree keeps single-successor paths aligned and indents only at forks.
+
+Unsaved manual changes block version navigation until Save or Discard. Discard
+restores the selected snapshot without creating a node. Selection restores furniture (including additions/deletions),
+poses and metadata from the snapshot using a fresh monotonically increasing audit
+revision. It creates no node, cancels pending agent/audit fetches, invalidates older
+proposals and triggers a new audit. Every agent request captures the selected
+version and current scene; acceptance checks both before creating its child.
+Saving manual changes preserves scene identity/revision and the current audit,
+but advances the selected version, cancelling an in-flight suggestion and making
+older proposals stale. The shortcut also works while the chat input is focused;
+active gestures and room loading cannot save a partial layout.
+Version navigation is blocked during gestures, room loading and Play. History is
+local to the open room and resets on a new room or page reload; there is no server
+persistence or shared contract change.
+
+## Library mesh collection
+
+The frontend catalog derives its entries from the demo floor fixtures, excluding
+fixed fixtures and proxies. Each entry retains the source model's dimensions,
+collision parts, access rules and uncertainty metadata, and uses the existing
+`/api/reconstruction/mock-room/assets/` route. No model files are copied and no new
+backend route, provider call or dependency is needed. Unsupported mock retail
+names/prices are replaced by the available room models, labelled estimated.
+
+Adding an entry clones its asset metadata onto a fresh item ID and the chosen
+room pose, marks the working layout unsaved and refreshes the audit. Ctrl+S saves
+it with any other manual changes as a single version.
+`FurnitureMesh` is shared by placed items and the Library's selected-model preview:
+it fits GLBs to `bbox_m`, clones appearance materials and leaves loader-cached
+geometry/textures intact. Library uses one on-demand preview canvas, with orbit
+controls, loading and failure states, instead of one WebGL context per card.
+Failed mesh loads retain the editor's labelled proxy fallback.
 
 ## Editor play mode
 
@@ -304,20 +375,8 @@ contract `RoomScene`, ready for the editor and `POST /audit`:
   once and kept in memory with their plan (`Cache-Control: no-cache`, because furniture
   changes as meshes arrive). No keys needed.
 
-**Handoff to Dev 3.** The editor can load rooms from the backend instead of assembling them in
-`frontend/src/data/demoHome.ts`. A sketch of the swap, keeping the local fixture as a fallback:
-
-```ts
-export async function fetchRoomScene(roomId: string): Promise<RoomScene> {
-  try {
-    const res = await fetch(`/api/reconstruction/scenes/${encodeURIComponent(roomId)}`)
-    if (res.ok) return (await res.json()) as RoomScene
-  } catch {
-    /* backend down: fall through */
-  }
-  return roomScene(roomId)
-}
-```
+The editor now loads these scenes through `frontend/src/lib/spatial.ts`, keeping
+the local fixture from `frontend/src/data/demoHome.ts` as a visibly warned fallback.
 
 The response matches `roomScene(roomId)` (same IDs, shell and model URLs, fixture poses) except
 that doors sit exactly on their walls. The editor still owns `revision` after load.
@@ -453,18 +512,18 @@ Chat offers `add_item` and `rearrange_room`; the latter delegates to the existin
 solver, including its custom goals. Both use the configured layout model. Chat and
 any delegated solve share a 90-second, six-call, 200k-token allowance.
 
-`add_item` proposes exactly one dimensioned proxy plus up to 32 moves of existing
-movable furniture. All new dimensions are explicitly estimated and need correction;
-this is not retailer search. The new item and every moved item must pass collision,
+`add_item` selects exactly one real Library mesh by asset ID, plus up to 32 moves of existing
+movable furniture. Mesh dimensions, collision parts, provenance and uncertainty flags
+are copied from that Library entry; the model cannot change them. The new item and every moved item must pass collision,
 floor containment and door-swing checks, and a room that could be entered must stay
 enterable. Findings among untouched items do not reject the addition; they remain in
 the report and are counted in the reply. Rejections name the offending items to the
 model for a bounded retry. Existing fixed items cannot move. Front-clearance warnings
 are returned for review. A turn that ends without a proposal returns the model's own
 words with no changes attached. The server never changes the submitted scene or persists a draft.
-Proxy GLBs are generated without dependencies at `/proxies/{width}/{height}/{depth}.glb`;
-they use metric bottom-centred coordinates and dimension-specific immutable URLs.
-The editor displays them through its existing labelled proxy renderer.
+The legacy `/proxies/{width}/{height}/{depth}.glb` route remains available for older
+scene references; it is not offered to the bot. New bot additions retain the Library
+mesh URL and render through the existing mesh renderer.
 
 The Chat tab calls `/api/spatial_engine/chat`. Apply appends additions and applies
 poses atomically with one revision bump; stale replies, duplicate IDs, repeated
@@ -473,10 +532,116 @@ cancellation still discards responses from rooms that have been closed. The audi
 report provides a preview before Apply and follows the accepted revision into Stats;
 the live audit then checks the new revision. Chat reuses the spatial client's timeout,
 cancellation and readable error handling. Provider failure or no key returns
-an explanation with no changes. Library items carry the same proxy URL form as agent
-additions, because the services reject a scene whose item has an empty `glb_url`.
+an explanation with no changes. Both manual and bot Library additions preserve their
+real model URLs and original geometry metadata.
 No new configuration or dependencies are introduced;
 `ANTHROPIC_API_KEY` and `SPACESHIFT_LAYOUT_MODEL` are reused. Tests use scripted models.
+
+## Streaming layout progress
+
+`POST /solve/stream` accepts the existing `OptimiseRequest` and runs the same harness
+as `/solve`, which remains available as JSON. Shared contracts define SSE payloads:
+`progress` carries a stage and factual message, `result` carries a `LayoutProposal`,
+and `error` carries an actionable message. Input/geometry validation happens before
+stream headers, preserving HTTP 422. Provider unavailability and search limits keep
+the existing proposal outcomes; unexpected execution failures produce an error event.
+
+The synchronous harness runs in a request-local worker, forwarding interpretation,
+model exploration, tool checks, retries and final validation through a queue. Ten-second
+SSE comment heartbeats keep idle connections active. The endpoint disables caching and
+proxy buffering; deployment proxies must pass streaming responses without buffering.
+No provider token streaming, new dependency or ranking-policy change is involved.
+Disconnect signals cooperative cancellation: no later model calls or tool executions
+are scheduled, although an active provider call can finish within its existing timeout.
+
+The editor reads the POST response incrementally with fetch, retaining its 120-second
+total timeout and stale-request guards. Current status appears beside Cancel, with a
+bounded expandable activity log retained on the final, failed or cancelled reply.
+Only a complete validated result creates a proposal card. An interrupted stream is
+an error and is never retried automatically; progress events never mutate the room.
+
+
+## Editor Feng Shui score integration
+
+The editor calls `POST /feng-shui/score` with `{scene}` independently of `/audit`
+and the opt-in AI advice at `/feng-shui`. A shared 250 ms debounce refreshes audit
+and score after canonical room load and committed edits; active gestures suppress
+requests. Independent loading/error/retry state prevents a scoring failure from
+hiding a valid audit. Room-session, scene-snapshot and revision validation rejects
+late results from an older committed revision or that land mid-drag; uncommitted
+drag frames keep the last committed revision's results on screen. Room/version changes and
+editor cleanup abort outstanding scoring requests.
+
+Stats shows the server's score, weighted-rule coverage, audit cap, rule breakdown,
+sightlines and unassessed assumptions. Null means not assessable, and zero remains
+a scored result. Mirror inventories and occupant anchors are not supplied by this
+UI; the backend's corresponding assumptions remain visible. The audit's nullable
+`feng_shui` field is not rewritten to conceal these separate response shapes.
+
+Each actionable proposal scores its immutable before and pose-applied snapshots
+without changing the live scene. The comparison shows score and coverage, with
+its own retry on failure. Component cleanup cancels these requests and snapshot
+identity guards reject late responses. Scoring never changes proposal ranking,
+acceptance, history or live Stats; acceptance triggers the normal live refresh.
+
+## Main integration: chat additions and streaming
+
+The active editor chat uses `POST /chat/stream`. It runs main's `/chat` additions
+and rearrangement flow with the same factual progress transport as `/solve/stream`.
+The existing JSON `/chat` and `/solve` routes and direct `/solve/stream` remain
+available. Chat preserves the nested layout goal/outcome when it delegates to solve.
+Its terminal SSE event is `reply` (a `ChatReply`, `ChatStreamEvent` in contracts), so
+it is never confused with `LayoutStreamEvent`'s `result`.
+
+The editor validates additions and existing-item moves atomically, previews new
+footprints, and saves accepted additions as part of the same room-history version.
+Existing untouched findings do not veto an addition; the new and moved items must
+pass main's placement rules. Library additions retain their actual model URLs.
+The single `useLiveAudit` lifetime delegates to the canonical-room/audit/score
+coordinator, avoiding duplicate audit effects.
+
+The `feng_shui` solver goal now ranks the full `/feng-shui/score` result shown in
+Stats. Its runtime skill and rule feedback guide exploration; the audit's smaller
+door-placement metric remains a separate diagnostic and is not used for this goal.
+
+
+## Skill-guided Feng Shui optimisation
+
+Chat routes an “optimise the feng shui” instruction to layout exploration, retaining
+the instruction and interpreted locks. For the `feng_shui` goal only, the harness
+loads the repository-owned skill in `layout_optimisation` mode. Inspection and
+candidate-evaluation tool results include the exact full score, weighted rules,
+coverage, cap and unassessed notes from the Stats scorer. The same full score ranks
+candidates and is recomputed during the independent final check. Other goals do
+not incur full scoring or skill-loading work.
+
+`feng_shui_inputs.py` holds shared request models and validation, keeping the pure
+scorer independent of model orchestration. Existing imports from `feng_shui.py`
+remain compatible. The advisory endpoint uses the same skill in read-only
+`assessment` mode with its original structured-response tool. Missing or malformed
+skill content is a server configuration error (HTTP 503, or a stream `error` event),
+never `assistant_unavailable`, and exploration never runs without the guidance.
+During optimisation the scorer reuses each candidate's audit and geometry, so it adds
+no repeated audits and accepts every scene `/audit` accepts. No additional provider call or new dependency is
+introduced. Score weights, inventory and fixed/locked-item constraints are unchanged.
+
+
+## Library-only chat additions
+
+`services/spatial_engine/library.py` reads the same shared three-floor fixture
+manifest as the frontend Library. It excludes fixed/proxy entries and missing or
+invalid GLB files, confines files to the canonical assets directory, and keeps
+reconstruction browser URLs. No new service call, provider or configuration is needed.
+
+Chat supplies this inventory to the model and enumerates its IDs in the addition
+tool schema. `add_item` accepts only `asset_id`, pose, optional existing-item moves
+and unhandled notes. It rechecks availability and clones the server-owned asset
+with a fresh ID and pose, preserving dimensions, collision parts and provenance.
+Unknown IDs and invented metadata are rejected; an empty inventory removes the
+addition tool. There is no proxy fallback. The editor independently checks each
+addition against its own Library before preview/application, including JSON-client
+responses. Existing room items and saved versions are not rewritten.
+
 
 ## Library URL imports
 

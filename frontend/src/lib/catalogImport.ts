@@ -26,16 +26,9 @@ export async function importCatalogUrl(
   }
   // Evidence belongs to reconstruction, not the shared RoomScene contract.
   const { evidence: _evidence, ...asset } = result.asset
+  const { id, is_fixed: _fixed, ...item } = asset
   return {
-    item: {
-      sku: asset.id,
-      name: asset.name,
-      category: asset.category,
-      bbox_m: asset.bbox_m,
-      price_gbp: asset.price_gbp ?? null,
-      product_url: asset.product_url ?? undefined,
-      asset,
-    },
+    item: { ...item, sku: id },
     warnings: [
       ...result.warnings,
       ...(asset.is_proxy

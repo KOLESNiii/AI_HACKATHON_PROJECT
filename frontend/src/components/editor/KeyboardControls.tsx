@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import type { Vector3 } from 'three'
 import { useStore } from '../../store'
-import { editorKey, handleItemKey, panCamera } from './keyboard'
+import { editorKey, handleItemKey, handleSaveKey, panCamera } from './keyboard'
 
 const panKeys = new Set(['w', 'a', 's', 'd'])
 
@@ -19,6 +19,7 @@ export function KeyboardControls({ speed }: { speed: number }) {
     const held = keys.current
     const clear = () => held.clear()
     const onDown = (event: KeyboardEvent) => {
+      if (handleSaveKey(event)) return clear()
       const key = editorKey(event)
       if (useStore.getState().mode !== 'edit') return clear()
       if (!key) return clear()

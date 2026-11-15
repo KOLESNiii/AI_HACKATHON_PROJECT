@@ -15,6 +15,8 @@ from contracts.schema import (
     RoomScene,
 )
 from services.spatial_engine.brightness import calculate_brightness_approximation
+from services.spatial_engine.feng_shui_inputs import FengShuiRequest
+from services.spatial_engine.feng_shui_score import FengShuiScore, score_feng_shui
 from services.spatial_engine.geometry import (
     SceneGeometry,
     SpatialInputError,
@@ -68,7 +70,7 @@ class LayoutMetrics:
     near a window. None when no item was requested or the room has no windows."""
 
     feng_shui_score: int | None = None
-    """AuditReport.feng_shui.score; None when the room has no bed or desk and door to judge."""
+    """Full Stats score, measured on request; None when unassessed or not assessable."""
 
     @property
     def critical_issue_count(self) -> int:
@@ -91,6 +93,8 @@ class LayoutEvaluation:
     brightness_measured: bool
     near_window_item_ids: tuple[str, ...] = ()
     """Items the user asked to place near a window, sorted; empty when none was requested."""
+    feng_shui: FengShuiScore | None = None
+    """Exact Stats score, rule breakdown, coverage and assumptions."""
 
 
 @dataclass(frozen=True)
@@ -169,6 +173,7 @@ def evaluate_layout(
     candidate: RoomScene,
     *,
     measure_brightness: bool = False,
+    measure_feng_shui: bool = False,
     near_window_item_ids: Sequence[str] = (),
 ) -> LayoutEvaluation:
     """Measure a candidate against the immutable original, without modifying either.
@@ -226,6 +231,11 @@ def evaluate_layout(
         if measure_brightness
         else None
     )
+    feng_shui = (
+        score_feng_shui(FengShuiRequest(scene=candidate), _audit=report, _prepared=prepared)
+        if measure_feng_shui
+        else None
+    )
     near_window = _near_window_shortfall(candidate, prepared, near_ids)
     if near_window is not None and not isfinite(near_window):
         raise SpatialInputError("Layout metrics must be finite")
@@ -243,10 +253,11 @@ def evaluate_layout(
             moved_item_count=moved,
             brightness_openness=brightness,
             near_window_shortfall_m=near_window,
-            feng_shui_score=None if report.feng_shui is None else report.feng_shui.score,
+            feng_shui_score=None if feng_shui is None else feng_shui.score,
         ),
         brightness_measured=measure_brightness,
         near_window_item_ids=near_ids,
+        feng_shui=feng_shui,
     )
 
 
@@ -275,6 +286,8 @@ def compare_evaluations(
         raise SpatialInputError("Compared layouts must measure the same near-window items")
     if goal == "brighter" and not (baseline.brightness_measured and candidate.brightness_measured):
         raise SpatialInputError("The brighter goal requires measured window openness")
+    if goal == "feng_shui" and (baseline.feng_shui is None or candidate.feng_shui is None):
+        raise SpatialInputError("Feng Shui comparison requires measured full-rule scores")
     names = [*_HARD_PRIORITIES]
     if candidate.near_window_item_ids:
         names.append("near_window_shortfall_m")
@@ -318,10 +331,15 @@ def compare_layouts(
         original,
         original if baseline is None else baseline,
         measure_brightness=measure,
+        measure_feng_shui=(goal == "feng_shui"),
         near_window_item_ids=near_window_item_ids,
     )
     proposed = evaluate_layout(
-        original, candidate, measure_brightness=measure, near_window_item_ids=near_window_item_ids
+        original,
+        candidate,
+        measure_brightness=measure,
+        measure_feng_shui=(goal == "feng_shui"),
+        near_window_item_ids=near_window_item_ids,
     )
     return compare_evaluations(baseline_evaluation, proposed, goal)
 

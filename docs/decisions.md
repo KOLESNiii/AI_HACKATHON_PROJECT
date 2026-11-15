@@ -1,5 +1,34 @@
 # Decisions
 
+## Frontend layout proposals and Stats
+
+- Reuse `/solve`, `/audit` and `/scenes/{scene_id}` without changing backend scoring,
+  shared contracts or dependencies. Load canonical assembled scenes so fixture
+  door-rounding errors do not prevent audits or layout suggestions.
+- Review the full room diff before acceptance: current/proposed footprints, named
+  moves and rotations, and server-measured findings. Accept applies all moves once;
+  Reject preserves the scene. A later edit invalidates previous proposals.
+- Keep candidate reports separate from live Stats. Re-audit after acceptance and
+  committed edits, with a 250 ms debounce and room/session/snapshot guards. Never
+  display null as zero or infer that an unavailable agent found a good room.
+- Keep requests independent and leave interpretation, locks and tool calls to the
+  existing agent. Browser cancellation stops waiting; no automatic paid retries.
+- Library now uses the existing movable demo meshes instead of mock retail
+  products and a generic proxy URL. Preserve asset dimensions, collision parts and
+  uncertainty flags on each copy; do not invent product prices or claim estimated
+  dimensions are catalog measurements. Share the editor mesh renderer and use
+  one selected-model preview canvas. Live retailer search remains separate work.
+- Operator revision: manual edits remain unsaved until Ctrl+S/Cmd+S or the explicit
+  Save version action; group all edits since the selected snapshot into one node.
+  Accepted agent layouts still save immediately. Continue linearly from the newest
+  save, forking only when editing and saving an ancestor that already has a child.
+  Do not create nodes for unchanged saves or merely viewing history.
+- Operator choice: require Save or Discard before switching versions with unsaved
+  changes. Discard restores the selected snapshot. Keep API revisions increasing
+  across restores; saving unchanged geometry preserves its audit and cancels any
+  pending suggestion tied to the previous version. Store snapshots for the open
+  room only; persistence is outside this integration.
+
 ## Calm editor audio
 
 - Enable music and effects by default, as chosen by the operator, with immediate
@@ -425,6 +454,62 @@
 - Merge #35's live audit and proposal controls with #65's `/chat` route: keep audit
   previews and Dismiss for both additions and rearrangements, and reuse the same spatial
   transport for cancellation, timeouts and service errors.
+
+## Harness execution progress
+
+- Add `/solve/stream` without replacing `/solve` or changing layout acceptance criteria.
+  Reuse one harness with optional progress and cooperative-cancellation hooks.
+- Stream factual stage and tool-check updates, not model reasoning or fabricated progress
+  percentages. Keep provider calls buffered; progress does not require token streaming.
+- Use POST fetch with SSE framing, shared typed payloads and a terminal validated proposal.
+  Keep the current status compact, with an expandable activity history. Never apply edits
+  from progress events or automatically retry a disconnected request.
+- Preserve input errors as HTTP errors before headers. Disconnect stops subsequent work;
+  an active synchronous provider call remains bounded by its original timeout.
+
+## Editor deterministic Feng Shui scores
+
+- Consume the existing `/feng-shui/score` response without changing its rules or
+  merging it into the narrower `AuditReport.feng_shui` model. Keep AI advice optional.
+- Refresh score and audit independently after committed edits. Show coverage,
+  breakdown, audit caps and unassessed assumptions; preserve null versus zero.
+- Compare scores for exact original/proposed snapshots without applying them or
+  changing the solver's ranking. Score failures do not prevent reviewing a layout.
+- Keep mirror inventory and activity anchors unspecified until the editor can
+  collect them; display the backend's default-position and unknown-inventory notes.
+
+## Merge of main chat and Feng Shui integration
+
+- Keep main's additions and Feng Shui goal while preserving streaming, full proposal
+  review, real Library meshes and version history. The editor consumes `/chat/stream`;
+  existing JSON clients remain compatible.
+- Preserve main's addition-specific validation: unrelated existing problems remain
+  visible without rejecting a clean new item. Reject malformed additions atomically.
+- Show the solver's door-placement score separately from the full-rule score endpoint
+  with coverage. Neither metric is silently substituted for the other.
+
+## Skill-guided full-score Feng Shui goal
+
+- Operator choice (2026-11-15): “optimise the feng shui” uses the full Stats score
+  plus the Feng Shui skill, replacing the door-placement-only ranking for that goal.
+- Use one mode-aware skill for read-only assessments and pose exploration. The model
+  chooses moves; the existing deterministic scorer owns weights and numerical scores.
+- Return full rule feedback, coverage and assumptions on every evaluated draft.
+  Compute this only for the Feng Shui goal, then re-score the final candidate.
+- Separate shared inputs/validation from provider orchestration to avoid a circular
+  dependency when the objective reuses the full scorer. Preserve existing imports.
+- Skill-loading failure prevents unguided optimisation. Missing mirrors or confirmed
+  occupant anchors remain unknown/assumed, and fit, doors and locks remain hard rules.
+
+## Mesh Library additions only
+
+- Operator requirement (2026-11-15): the bot may add only actual mesh models from
+  the editor Library. Replace free-form proxy authoring with canonical asset IDs.
+- Use the shared fixture manifest as the server-owned inventory; check mesh files
+  and retain dimensions, collision evidence and uncertainty metadata on every copy.
+- Reject invented fields/IDs and remove the addition tool when no assets are available.
+  The client independently rejects additions outside its Library. No proxy fallback
+  or new provider integration is introduced, and existing room/history data is kept.
 
 ## Library URL importer connection
 
