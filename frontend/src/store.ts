@@ -70,6 +70,17 @@ export interface ChatMessage {
   /** Real products found online, each offered with an Add to scene button. */
   products?: ProductOption[]
 }
+/** A room's working state, kept for the session so reopening it resumes where you left off. */
+export interface SavedRoom {
+  scene: RoomScene
+  versions: RoomVersion[]
+  currentVersionId: string
+  hasUnsavedChanges: boolean
+  chat: ChatMessage[]
+  human: Pose2D | null
+  playLighting: PlayLightingSettings
+  roomWarnings: string[]
+}
 export interface Toast {
   id: number
   text: string
@@ -96,6 +107,10 @@ interface State {
   placingHuman: boolean
   humanPreview: Pose2D | null
   roomLoading: boolean
+  /** True once this room's canonical scene was loaded (or the local fallback kept). */
+  roomReady: boolean
+  /** Rooms opened this session, keyed by scene_id; restored instead of reloaded. */
+  rooms: Record<string, SavedRoom>
   roomWarnings: string[]
   roomAbort: AbortController | null
   /** Audit of the current committed scene only; candidate reports stay in chat. */
@@ -222,6 +237,28 @@ function restoreVersion(state: State, version: RoomVersion): Partial<State> {
   }
 }
 
+function savedRoom(s: State): SavedRoom {
+  return {
+    scene: s.scene,
+    versions: s.versions,
+    currentVersionId: s.currentVersionId,
+    hasUnsavedChanges: s.hasUnsavedChanges,
+    chat: s.agentBusy
+      ? [
+          ...s.chat,
+          {
+            role: 'assistant',
+            text: 'Layout request cancelled when you left the room. Ask again to continue.',
+            progress: s.agentProgress,
+          },
+        ]
+      : s.chat,
+    human: s.human,
+    playLighting: { ...s.playLighting },
+    roomWarnings: s.roomWarnings,
+  }
+}
+
 function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
   itemSeq += 1
   const { sku, image_url: _image, ...asset } = c
@@ -269,6 +306,8 @@ export const useStore = create<State>((set, get) => ({
   placingHuman: false,
   humanPreview: null,
   roomLoading: false,
+  roomReady: false,
+  rooms: {},
   roomWarnings: [],
   roomAbort: null,
   audit: null,
@@ -308,18 +347,42 @@ export const useStore = create<State>((set, get) => ({
     get().fengShuiAbort?.abort()
     get().fengShuiScoreAbort?.abort()
     set((s) => {
-      const scene = roomScene(s.segmentId)
+      // Keep the room being left (only once it finished loading), then resume
+      // the requested room from this session if it was opened before.
+      const rooms = s.roomReady
+        ? { ...s.rooms, [s.scene.scene_id]: savedRoom(s) }
+        : s.rooms
+      const fresh = roomScene(s.segmentId)
+      const saved = rooms[fresh.scene_id]
+      const roomSession = s.roomSession + 1
+      const room = saved
+        ? {
+            ...saved,
+            // Proposals stay usable: their base scene and version are unchanged.
+            chat: saved.chat.map((m) =>
+              m.roomSession == null ? m : { ...m, roomSession },
+            ),
+            playLighting: { ...saved.playLighting },
+            roomReady: true,
+          }
+        : {
+            scene: fresh,
+            ...initialRoomHistory(fresh),
+            chat: [],
+            human: null,
+            playLighting: { ...DEFAULT_PLAY_LIGHTING },
+            roomWarnings: [],
+            roomReady: false,
+          }
       return {
         screen: 'building',
-        scene,
-        ...initialRoomHistory(scene),
-        roomSession: s.roomSession + 1,
+        rooms,
+        ...room,
+        roomSession,
         selectedId: null,
         tab: 'chat',
         mode: 'edit',
         playPhase: 'walking',
-        playLighting: { ...DEFAULT_PLAY_LIGHTING },
-        human: null,
         placingHuman: false,
         humanPreview: null,
         audit: null,
@@ -335,10 +398,8 @@ export const useStore = create<State>((set, get) => ({
         fengShuiScoreError: null,
         fengShuiScoreAbort: null,
         roomLoading: false,
-        roomWarnings: [],
         roomAbort: null,
         interacting: false,
-        chat: [],
         agentBusy: false,
         agentProgress: [],
         agentAbort: null,
@@ -831,7 +892,8 @@ export const useStore = create<State>((set, get) => ({
           roomWarnings: [`Using the local demo room. ${errorMessage(error)}`],
         })
     } finally {
-      if (current()) set({ roomLoading: false, roomAbort: null })
+      if (current())
+        set({ roomLoading: false, roomAbort: null, roomReady: true })
     }
   },
   refreshAudit: async () => {

@@ -8,6 +8,7 @@ import type {
   LayoutProposal,
   RoomScene,
 } from '../src/lib/contracts'
+import { DEFAULT_ROOM_ID, demoRooms } from '../src/data/demoHome'
 import { initialRoomHistory } from '../src/lib/roomVersions'
 import { useStore } from '../src/store'
 
@@ -420,4 +421,64 @@ test('accepted agent proposals still create one immediate version from the revie
   expect(after.hasUnsavedChanges).toBe(false)
   s.saveVersion()
   expect(useStore.getState().versions).toHaveLength(2)
+})
+
+test('leaving a room and reopening it later in the session keeps its edits, versions and chat', () => {
+  const other = demoRooms.find(
+    (r) => r.selectable && r.room_id !== DEFAULT_ROOM_ID,
+  )!
+  const open = (segmentId: string) => {
+    useStore.setState({ segmentId })
+    useStore.getState().openRoom()
+    useStore.setState({ roomReady: true, screen: 'editor' })
+  }
+  open(DEFAULT_ROOM_ID)
+  const s = useStore.getState()
+  const id = s.scene.furniture.find((i) => !i.is_fixed)!.id
+  s.rotateItem(id, 90)
+  s.saveVersion()
+  s.rotateItem(id, 90)
+  useStore.setState({ chat: [{ role: 'user', text: 'Make it cosy' }] })
+  const edited = useStore.getState()
+
+  open(other.room_id)
+  expect(useStore.getState().scene.scene_id).toBe(other.room_id)
+  expect(useStore.getState().versions).toHaveLength(1)
+  expect(useStore.getState().chat).toEqual([])
+
+  open(DEFAULT_ROOM_ID)
+  const back = useStore.getState()
+  expect(back.scene).toBe(edited.scene)
+  expect(back.versions).toBe(edited.versions)
+  expect(back.currentVersionId).toBe('version-2')
+  expect(back.hasUnsavedChanges).toBe(true)
+  expect(back.chat).toEqual(edited.chat)
+  expect(back.rooms[other.room_id]).toBeDefined()
+})
+
+test('a room still loading when left is not cached and loads again on reopen', () => {
+  useStore.setState({ segmentId: null })
+  useStore.getState().openRoom()
+  const s = useStore.getState()
+  s.rotateItem(s.scene.furniture.find((i) => !i.is_fixed)!.id, 90)
+  useStore.getState().openRoom()
+  expect(useStore.getState().roomReady).toBe(false)
+  expect(useStore.getState().hasUnsavedChanges).toBe(false)
+})
+
+test('the editor audits a resumed room instead of reloading it from the server', async () => {
+  const paths: string[] = []
+  globalThis.fetch = (async (url: string | URL | Request) => {
+    paths.push(String(url))
+    return new Response('{}', { status: 500 })
+  }) as typeof fetch
+  useStore.setState({ roomReady: true })
+  const { connectEditorServices } = await import('../src/lib/editorServices')
+  const before = useStore.getState().scene
+  const stop = connectEditorServices(0)
+  await new Promise((r) => setTimeout(r, 10))
+  stop()
+  expect(paths.some((p) => p.includes('/scenes/'))).toBe(false)
+  expect(paths.length).toBeGreaterThan(0)
+  expect(useStore.getState().scene).toBe(before)
 })
