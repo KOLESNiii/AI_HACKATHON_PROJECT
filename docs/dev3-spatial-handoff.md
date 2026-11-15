@@ -30,7 +30,8 @@ none must be converted into a clean report. Internal error details stay server-s
 
 The audit response uses the shared models with these nullable fields:
 `overall_score: number | null`, `glare_alerts: GlareAlert[] | null`, and
-`feng_shui: FengShuiReport | null`. All three currently return null: display
+`feng_shui: FengShuiReport | null`. `overall_score` and `glare_alerts` currently return
+null; `feng_shui` is null only without a door or a bed/desk. Display null as
 "not checked", never zero/perfect scores or "no glare". Python and TypeScript
 schemas changed together; use this revision when wiring the frontend. A future
 assessed empty glare list means no alerts, whereas null means not checked.
@@ -130,7 +131,7 @@ uv run --extra spatial pytest tests/spatial_engine/test_handoff_cases.py
 
 Implemented. Send `OptimiseRequest`: the scene, `locked_item_ids`, and optionally
 the user's typed `instruction` (max 500 characters) and a `goal` chip
-(`balanced`, `brighter`, `roomier`, `minimal_changes`, `custom`; the chip overrides what
+(`balanced`, `brighter`, `roomier`, `minimal_changes`, `feng_shui`, `custom`; the chip overrides what
 the assistant reads from the text). Expect several seconds up to 90 seconds, so
 show progress and allow the user to keep editing.
 
