@@ -31,6 +31,7 @@ from services.spatial_engine.agent import (
 )
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.main import app, get_interpreter_model, get_layout_model
+from services.spatial_engine.objective import evaluate_layout
 from services.spatial_engine.report import audit_scene
 
 Step = ModelReply | Exception | Callable[[list[dict[str, Any]]], ModelReply]
@@ -558,3 +559,35 @@ def test_a_custom_request_still_refuses_invalid_layouts_and_worse_access() -> No
 def test_the_same_move_is_not_suggested_for_a_measurable_goal() -> None:
     request = OptimiseRequest(scene=valid_scene(), goal="balanced")
     assert not propose_layout(request, Scripted(move("box", 6, 6), END)).improved
+
+
+def test_custom_solve_rejects_a_circulation_regression(divided_access_room: RoomScene) -> None:
+    proposal = propose_layout(
+        OptimiseRequest(scene=divided_access_room, goal="custom"),
+        Scripted(move("box", 4, 7.5), END),
+    )
+    assert not proposal.improved and proposal.poses == {}
+    assert proposal.report == audit_scene(divided_access_room)
+
+
+def test_custom_final_reaudit_rejects_a_circulation_regression(
+    divided_access_room: RoomScene,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    blocked = divided_access_room.model_copy(deep=True)
+    blocked.furniture[1].pose = Pose2D(x=4, z=7.5)
+    reaudit = evaluate_layout(divided_access_room, blocked)
+    checked = []
+
+    def final_check(*args: Any, **kwargs: Any):
+        checked.append(True)
+        return reaudit
+
+    monkeypatch.setattr("services.spatial_engine.agent.evaluate_layout", final_check)
+    proposal = propose_layout(
+        OptimiseRequest(scene=divided_access_room, goal="custom"),
+        Scripted(move("box", 2, 5.7)),
+    )
+    assert checked == [True]
+    assert not proposal.improved and proposal.poses == {}
+    assert proposal.report == audit_scene(divided_access_room)

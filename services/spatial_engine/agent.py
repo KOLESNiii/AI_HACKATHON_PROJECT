@@ -505,7 +505,7 @@ def propose_layout(
             measure_brightness=(goal == "brighter"),
             near_window_item_ids=near_window,
         )
-        if is_acceptable_proposal(before, checked) and beats_original(before, checked, goal):
+        if is_acceptable_proposal(before, checked, goal) and beats_original(before, checked, goal):
             after = checked
             start = {item.id: item.pose for item in base.furniture}
             poses = {

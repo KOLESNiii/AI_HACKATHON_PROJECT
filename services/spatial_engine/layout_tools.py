@@ -339,7 +339,7 @@ class LayoutToolbox:
 
     def _acceptable(self, draft: LayoutDraft) -> bool:
         original = self.session.draft(self.session.original_draft_id)
-        return is_acceptable_proposal(original.evaluation, draft.evaluation)
+        return is_acceptable_proposal(original.evaluation, draft.evaluation, self.preferences.goal)
 
     def _describe_draft(self, draft: LayoutDraft) -> dict[str, Any]:
         return {
