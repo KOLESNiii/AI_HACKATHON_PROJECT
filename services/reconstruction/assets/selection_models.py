@@ -246,7 +246,8 @@ class MeshFailure(Record):
 
 
 class ItemReconstruction(Record):
-    """One furniture item after #16: its raw mesh or the reason there is none, and its proxy."""
+    """One furniture item after #16/#17: its raw mesh or the reason there is none, its proxy,
+    and the normalised mesh asset when there is one."""
 
     object_id: str = Field(pattern=ITEM_ID_PATTERN)
     mesh: MeshRecord | None
@@ -255,7 +256,10 @@ class ItemReconstruction(Record):
     """Why this run produced no mesh. Set together with `mesh` when a replacement failed and
     the stored mesh was kept."""
     proxy: FurnitureAsset
-    """A labelled box (`is_proxy`). The only servable asset until #17 normalises the raw mesh."""
+    """A labelled box (`is_proxy`): what to serve while `asset` is None."""
+    asset: FurnitureAsset | None = None
+    """The raw mesh normalised to the furniture profile (#17), with the same ID. None when
+    there is no mesh or it could not be normalised; the result's warnings say which."""
 
     @model_validator(mode="after")
     def _outcome(self) -> ItemReconstruction:
@@ -270,8 +274,8 @@ class ReconstructionResult(Record):
     items: list[ItemReconstruction]
     warnings: list[str]
     complete: bool
-    """Every requested item has a current raw mesh and nothing failed in this run; not a
-    quality claim."""
+    """Every requested item has a current raw mesh that normalised, and nothing failed in this
+    run; not a quality claim."""
 
 
 class SelectionOptions(Record):

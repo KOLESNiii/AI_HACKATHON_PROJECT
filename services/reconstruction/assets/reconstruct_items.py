@@ -18,15 +18,19 @@ def write_report(result: ReconstructionResult, output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
     (output / "reconstruction.json").write_text(result.model_dump_json(indent=2) + "\n")
     (output / "assets.json").write_text(
-        json.dumps([item.proxy.model_dump(mode="json") for item in result.items], indent=2) + "\n"
+        json.dumps(
+            [(item.asset or item.proxy).model_dump(mode="json") for item in result.items], indent=2
+        )
+        + "\n"
     )
     lines = [
         f"# Furniture reconstruction: {result.scene_id}",
         "",
         f"Complete: {result.complete}. Registry revision {result.registry_revision}.",
         "",
-        "Raw meshes retain provider units and orientation; normalisation is #17. "
-        "assets.json contains servable proxies. Estimated dimensions need correction.",
+        "Raw meshes retain provider units and orientation and are not served. assets.json holds "
+        "each item's normalised mesh, or its proxy when there is none. Estimated dimensions "
+        "need correction.",
         "",
     ]
     for item in result.items:
@@ -45,6 +49,16 @@ def write_report(result: ReconstructionResult, output: Path) -> None:
                 [
                     f"Raw mesh: `{item.mesh.mesh_path}`; {item.mesh.triangles} triangles; "
                     f"{item.mesh.size_bytes} bytes. Frame `{item.mesh.frame_key}`.",
+                    "",
+                ]
+            )
+        if item.asset:
+            size, needs = item.asset.bbox_m, ", ".join(item.asset.correction_needed) or "nothing"
+            lines.extend(
+                [
+                    f"Normalised mesh: {size.width:g} × {size.height:g} × {size.depth:g} m "
+                    f"(W × H × D); {item.asset.dimension_source}; needs correction: {needs}. "
+                    f"`{item.asset.glb_url}`.",
                     "",
                 ]
             )

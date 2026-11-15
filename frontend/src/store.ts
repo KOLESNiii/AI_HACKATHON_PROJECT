@@ -11,7 +11,8 @@ import { bounds, clampToFloor, fitYaw, snapToNearestWall } from './lib/geometry'
 import type { Pt } from './lib/geometry'
 import { canStand, humanPoseAt } from './lib/walk'
 
-export type Screen = 'upload' | 'reading' | 'floorplan' | 'building' | 'editor'
+export type Screen =
+  'home' | 'upload' | 'reading' | 'floorplan' | 'building' | 'editor'
 export type Tab = 'chat' | 'stats' | 'library'
 export type EditorMode = 'edit' | 'play'
 
@@ -121,7 +122,7 @@ function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
 }
 
 export const useStore = create<State>((set, get) => ({
-  screen: 'upload',
+  screen: 'home',
   segmentId: null,
   scene: roomScene(null),
   roomSession: 0,

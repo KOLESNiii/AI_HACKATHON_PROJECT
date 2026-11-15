@@ -151,6 +151,26 @@ proxy-box/shell-error fallback. These named demo URLs use `Cache-Control: no-cac
 Restart the reconstruction service after changing source fixture geometry to clear
 the in-memory room/shell cache. The frontend's former copy/build script is removed.
 
+## Home screen and intake presentation
+
+The frontend starts at the local `home` screen, branded Refresh, before upload,
+processing, room selection and editing. Framer Motion coordinates screen and
+room-panel transitions using the existing dependency; processing still advances
+on demo timers rather than reconstruction-job progress.
+
+`Landscape` stays mounted for the app session and scrolls four pre-rendered WebP
+panoramas on home/processing screens. Each panorama has two adjacent copies for a
+seamless CSS transform loop; hidden panoramas pause, and reduced-motion preferences
+pause the landscape animation. Home and floor-plan processing have distinct images;
+room builds alternate between the other two. No landscape engine runs in the browser.
+
+`frontend/scripts/generate-landscapes.ts` optionally regenerates the checked-in
+images from the locally vendored MIT-licensed Shan Shui Inf engine, using fixed
+seeds and headless Chromium. Set `CHROME_BIN` if Chromium is not in Playwright's
+local cache. Image regeneration needs no provider keys and is not part of normal
+setup or builds. Attribution/licenses accompany the vendored source and the public
+landscapes; the vendored HTML is retained only for regeneration, not bundled at runtime.
+
 ## Individual furniture meshes and proxies (#16)
 
 `assets/reconstruction.py` consumes the #14 registry and #15 masks, calling an injected
@@ -171,6 +191,22 @@ correction. `assets/asset_store.py` stores their GLBs by SHA-256 and supplies `a
 for Dev 1 to mount at `/assets`; browser URLs include `/api/reconstruction`. This PR does
 not mount the route or change shared schemas/manifests. `reconstruct_items` provides local
 JSON/Markdown reports; see the asset README for configuration and retry commands.
+
+## Furniture normalisation (#17, PR #54 review)
+
+`assets/normalisation.py` fits raw meshes to metric bounds before serving them. Known
+dimensions are matched exactly; unknown dimensions use the category height and require
+correction. If any estimated side exceeds 3 times its category size, normalisation refuses
+the mesh and reconstruction retains its proxy with a warning. Supplying dimensions allows
+the stored raw mesh to be retried offline. Unused vertices are removed before fitting;
+providers without a known front convention request an orientation correction.
+
+**Handoff to Dev 4:** desk, table and chair proxies now use the same category-template
+collision parts as normalised assets, rather than a solid bounding box. The audit should
+consume these parts to preserve nesting and walking space. Other categories retain the
+solid-box fallback. Shared collision contracts are unchanged. Pillow in the reconstruction
+extra preserves textures; it was approved in the #17 design and changes the root manifest
+and lockfile in PR #54. This review follow-up adds no dependencies.
 
 ## Scene assembly route (#9)
 

@@ -42,6 +42,7 @@ export function RoomView({
   const select = useStore((s) => s.select)
   const toast = useStore((s) => s.toast)
   const play = useStore((s) => s.mode === 'play')
+  const [ready, setReady] = useState(false)
 
   const { centre, span } = useMemo(() => {
     const b = bounds(floor)
@@ -71,6 +72,9 @@ export function RoomView({
 
   return (
     <Canvas
+      // Fade in once the GL context exists so the editor doesn't flash an empty canvas.
+      style={{ opacity: ready ? 1 : 0, transition: 'opacity 300ms ease-out' }}
+      onCreated={() => setReady(true)}
       gl={{ alpha: true, antialias: true }}
       camera={cameraOptions}
       onPointerMissed={() => {

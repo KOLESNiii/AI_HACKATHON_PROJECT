@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import {
   demoFloors,
@@ -22,10 +23,12 @@ function PlanRoom({
   seg,
   selected,
   onSelect,
+  onOpen,
 }: {
   seg: RoomSegment
   selected: boolean
   onSelect: () => void
+  onOpen: () => void
 }) {
   const cx = seg.centre.x * M,
     cy = seg.centre.z * M
@@ -39,9 +42,13 @@ function PlanRoom({
       aria-pressed={seg.selectable ? selected : undefined}
       tabIndex={seg.selectable ? 0 : -1}
       onClick={seg.selectable ? onSelect : undefined}
-      onKeyDown={(e) =>
-        seg.selectable && (e.key === 'Enter' || e.key === ' ') && onSelect()
-      }
+      onDoubleClick={seg.selectable ? onOpen : undefined}
+      onKeyDown={(e) => {
+        if (!seg.selectable) return
+        // Enter on the already-selected room opens it; otherwise Enter/Space select.
+        if (e.key === 'Enter' && selected) onOpen()
+        else if (e.key === 'Enter' || e.key === ' ') onSelect()
+      }}
       className={
         seg.selectable
           ? 'cursor-pointer outline-none [&:focus-visible>polygon]:fill-paper-deep [&:hover>polygon]:fill-paper-deep'
@@ -57,8 +64,10 @@ function PlanRoom({
               ? 'fill-paper-card'
               : 'fill-paper-base'
         }
-        stroke={selected ? 'var(--color-seal-vermilion)' : 'none'}
+        stroke="var(--color-seal-vermilion)"
+        strokeOpacity={selected ? 1 : 0}
         strokeWidth={3}
+        style={{ transition: 'fill 160ms ease, stroke-opacity 200ms ease' }}
       />
       {seg.clear >= 0.2 && (
         <text
@@ -170,7 +179,7 @@ function Openings({ floor }: { floor: DemoFloor }) {
 }
 
 export function FloorPlanScreen() {
-  const { segmentId, selectSegment, openRoom } = useStore()
+  const { segmentId, selectSegment, openRoom, setScreen } = useStore()
   const selected = findRoom(segmentId)
   const [floorId, setFloorId] = useState(selected?.floor_id ?? demoFloors[0].id)
   const floor = demoFloors.find((f) => f.id === floorId) ?? demoFloors[0]
@@ -190,107 +199,169 @@ export function FloorPlanScreen() {
   return (
     <div className="relative flex h-full">
       <div className="relative flex-1">
-        <Panel className="absolute top-6 left-6 z-10 flex flex-col gap-3 px-5 py-4">
-          <div className="flex flex-col gap-1">
-            <h1 className="font-serif text-[20px] leading-[23px] font-semibold">
-              Your home
-            </h1>
-            <p className="text-[11px] font-medium text-ink-medium">
-              {demoFloors.length} floors segmented into {count} rooms · pick one
-              to build
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {demoFloors.map((f) => (
-              <Chip
-                key={f.id}
-                on={f.id === floor.id}
-                onClick={() => {
-                  setFloorId(f.id)
-                  if (selected && selected.floor_id !== f.id)
-                    selectSegment(null)
-                }}
-              >
-                {f.label}
-              </Chip>
-            ))}
-          </div>
-        </Panel>
-        <div className="grid h-full place-items-center">
-          <svg
-            viewBox={`${b.minX * M - PAD} ${b.minZ * M - PAD} ${(b.maxX - b.minX) * M + PAD * 2} ${(b.maxZ - b.minZ) * M + PAD * 2}`}
-            className="max-h-[84vh] w-auto max-w-[90%]"
-          >
-            <polygon
-              points={points(floor.scene.floor_polygon)}
-              className="fill-ink-primary"
-              stroke="var(--color-ink-primary)"
-              strokeWidth={5}
-              strokeLinejoin="miter"
-            />
-            {ordered.map((seg) => (
-              <PlanRoom
-                key={seg.room_id}
-                seg={seg}
-                selected={seg.room_id === segmentId}
-                onSelect={() => selectSegment(seg.room_id)}
-              />
-            ))}
-            <Openings floor={floor} />
-            <g transform={`translate(${b.minX * M}, ${b.maxZ * M + PAD - 22})`}>
-              <rect width={M} height={3} className="fill-ink-primary" />
-              <text y={18} className="mono fill-ink-medium text-[11px]">
-                1 m
-              </text>
-            </g>
-          </svg>
-        </div>
-        {!selected && (
-          <Panel className="absolute bottom-6 left-1/2 -translate-x-1/2 px-5 py-2.5 text-[13px] font-medium">
-            Select a room to build
-          </Panel>
-        )}
-      </div>
-      {selected && room && (
-        <aside className="flex w-[380px] shrink-0 flex-col gap-4 border-l border-hairline-ink bg-scroll-panel p-6">
-          <div className="flex flex-col gap-1">
-            <h2 className="font-serif text-[20px] leading-[23px] font-semibold">
-              {selected.label}
-            </h2>
-            <span className="mono text-[12px] text-ink-medium">
-              {selected.width.toFixed(2)}m × {selected.depth.toFixed(2)}m ·{' '}
-              {selected.area.toFixed(1)} m²
-            </span>
-          </div>
-          <div className="flex flex-col gap-2 text-[11px] font-medium text-ink-medium">
-            <span className="flex items-center gap-2">
-              <StatusDot status={grounded ? 'valid' : 'warning'} />
-              {grounded
-                ? 'North grounded from floor plan'
-                : 'No compass on the plan: calibrate north in the editor'}
-            </span>
-            <span className="flex items-center gap-2">
-              <StatusDot status="valid" />
-              {plural(room.doors.length, 'door')} and{' '}
-              {plural(room.windows.length, 'window')} detected
-            </span>
-          </div>
-          <p className="text-[14px] leading-[23px] text-ink-medium">
-            Next, SpaceShift extracts this room&apos;s furniture from your
-            walkthrough video and assembles it in 3D. Other rooms stay untouched
-            until you pick them.
-          </p>
-          <div className="flex-1" />
+        <div className="absolute top-6 left-6 z-10 flex flex-col items-start gap-3">
+          {/* Back to the upload step ("reading" is transient, so it is skipped). */}
           <Button
-            variant="primary"
-            size="lg"
-            onClick={openRoom}
-            className="w-full"
+            onClick={() => {
+              selectSegment(null)
+              setScreen('upload')
+            }}
           >
-            Build this room
+            ← Upload
           </Button>
-        </aside>
-      )}
+          <Panel className="flex flex-col gap-3 px-5 py-4">
+            <div className="flex flex-col gap-1">
+              <h1 className="font-serif text-[20px] leading-[23px] font-semibold">
+                Your home
+              </h1>
+              <p className="text-[11px] font-medium text-ink-medium">
+                {demoFloors.length} floors segmented into {count} rooms · pick
+                one to build
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {demoFloors.map((f) => (
+                <Chip
+                  key={f.id}
+                  on={f.id === floor.id}
+                  onClick={() => {
+                    setFloorId(f.id)
+                    if (selected && selected.floor_id !== f.id)
+                      selectSegment(null)
+                  }}
+                >
+                  {f.label}
+                </Chip>
+              ))}
+            </div>
+          </Panel>
+        </div>
+
+        <div className="grid h-full place-items-center pr-[380px] pl-[340px]">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.svg
+              key={floor.id}
+              initial={{ opacity: 0, scale: 0.985 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.985 }}
+              transition={{ duration: 0.18, ease: 'easeOut' }}
+              viewBox={`${b.minX * M - PAD} ${b.minZ * M - PAD} ${(b.maxX - b.minX) * M + PAD * 2} ${(b.maxZ - b.minZ) * M + PAD * 2}`}
+              className="max-h-[84vh] w-auto max-w-[90%] select-none"
+            >
+              {/* Wall mass: the floor's outer boundary in ink, with the rooms laid over it. */}
+              <polygon
+                points={points(floor.scene.floor_polygon)}
+                className="fill-ink-primary"
+                stroke="var(--color-ink-primary)"
+                strokeWidth={5}
+                strokeLinejoin="miter"
+              />
+              {ordered.map((seg) => (
+                <PlanRoom
+                  key={seg.room_id}
+                  seg={seg}
+                  selected={seg.room_id === segmentId}
+                  onSelect={() => selectSegment(seg.room_id)}
+                  onOpen={() => {
+                    // Zustand's set is synchronous, so openRoom sees this segment.
+                    selectSegment(seg.room_id)
+                    openRoom()
+                  }}
+                />
+              ))}
+              <Openings floor={floor} />
+              <g
+                transform={`translate(${b.minX * M}, ${b.maxZ * M + PAD - 22})`}
+              >
+                <rect width={M} height={3} className="fill-ink-primary" />
+                <text y={18} className="mono fill-ink-medium text-[11px]">
+                  1 m
+                </text>
+              </g>
+            </motion.svg>
+          </AnimatePresence>
+        </div>
+
+        <AnimatePresence>
+          {!selected && (
+            <motion.div
+              className="absolute bottom-6 left-[calc(50%-20px)] -translate-x-1/2"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Panel className="px-5 py-2.5 text-[13px] font-medium whitespace-nowrap">
+                Click a room to inspect · double-click to open
+              </Panel>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {selected && room && (
+          <motion.aside
+            key="room-panel"
+            initial={{ x: 380, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 380, opacity: 0 }}
+            transition={{ duration: 0.26, ease: 'easeOut' }}
+            className="absolute inset-y-0 right-0 z-10 w-[380px] overflow-hidden border-l border-hairline-ink bg-scroll-panel"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={selected.room_id}
+                initial={{ opacity: 0, x: 12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.16, ease: 'easeOut' }}
+                className="flex h-full w-[380px] flex-col gap-4 p-6"
+              >
+                <div className="flex flex-col gap-1">
+                  <h2 className="font-serif text-[20px] leading-[23px] font-semibold">
+                    {selected.label}
+                  </h2>
+                  <span className="mono text-[12px] text-ink-medium">
+                    {selected.width.toFixed(2)}m × {selected.depth.toFixed(2)}m
+                    · {selected.area.toFixed(1)} m²
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 text-[11px] font-medium text-ink-medium">
+                  <span className="flex items-center gap-2">
+                    <StatusDot status={grounded ? 'valid' : 'warning'} />
+                    {grounded
+                      ? 'North grounded from floor plan'
+                      : 'No compass on the plan: calibrate north in the editor'}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <StatusDot status="valid" />
+                    {plural(room.doors.length, 'door')} and{' '}
+                    {plural(room.windows.length, 'window')} detected
+                  </span>
+                </div>
+                <p className="text-[14px] leading-[23px] text-ink-medium">
+                  Next, Refresh extracts this room&apos;s furniture from your
+                  walkthrough video and assembles it in 3D. Other rooms stay
+                  untouched until you pick them.
+                </p>
+                <div className="flex-1" />
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={openRoom}
+                  className="w-full"
+                >
+                  Build this room
+                </Button>
+                <span className="-mt-2 text-center text-[11px] font-medium text-ink-mist">
+                  or double-click the room on the plan
+                </span>
+              </motion.div>
+            </AnimatePresence>
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
