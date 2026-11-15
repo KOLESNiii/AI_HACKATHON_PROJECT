@@ -119,10 +119,16 @@ MeshRunner = Callable[[ExtractionJob, str, list[str], Path], None]
 """(job, room ID, object IDs, data dir): build those items' meshes."""
 
 
+PIPELINE_VERSION = 2
+"""Part of the registry namespace: items registered by an older pipeline (which kept lights
+and railings, with no room matching) are never mixed into a newer one's results."""
+
+
 def namespace_for(plan_id: str, videos: Sequence[Path]) -> str:
-    """Same plan and same videos (content-addressed names) -> same registry namespace."""
+    """Same plan, same videos (content-addressed names) and same pipeline -> same registry
+    namespace, so re-uploading reuses every cached result."""
     digest = hashlib.sha256("\n".join(sorted(v.name for v in videos)).encode()).hexdigest()
-    return f"upload-{plan_id}-{digest[:12]}"
+    return f"upload-v{PIPELINE_VERSION}-{plan_id}-{digest[:12]}"
 
 
 def batch_failures(selection: SelectionResult) -> tuple[int, int]:
