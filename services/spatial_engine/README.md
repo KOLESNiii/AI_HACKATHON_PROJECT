@@ -38,6 +38,16 @@ for can outrank priorities 1-2, fixed items or locked items.
 | `brighter` | window openness, front clearance, walking area, least movement |
 | `roomier` | walking area, front clearance, least movement |
 | `minimal_changes` | front clearance, least movement, walking area |
+| `custom` | front clearance, walking area; movement is not penalised |
+
+`custom` is for a request none of the others express ("a cosy reading corner"). The
+user's wording goes to Sonnet, which follows it as closely as the rules allow. Only fit,
+doors and access are measured, so a layout is suggested if it is valid, does not make
+access worse and moves something. The explanation says the wish itself was not
+verified. A new measurable goal such as Feng Shui needs a metric, one table entry in
+`objective.py` and a value in `contracts.schema.LayoutGoal`. If the typed request cannot
+be read at all, exploration still runs with the default goal, the explanation says the
+request was not applied, and `outcome` is `stopped_early`.
 
 The team chose that a requested goal may cost some front access: under `brighter`
 or `roomier` a layout can rank better while a wardrobe's access gets worse. The

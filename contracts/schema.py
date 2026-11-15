@@ -87,10 +87,13 @@ WALK_HEADROOM_M = 2.0
 
 MAX_LAYOUT_INSTRUCTION_CHARS = 500
 
-LayoutGoal = Literal["balanced", "brighter", "roomier", "minimal_changes"]
+LayoutGoal = Literal["balanced", "brighter", "roomier", "minimal_changes", "custom"]
 """What a layout suggestion should favour once it fits and doors are clear. `balanced`: access
 in front of furniture, then walking space. `brighter`: unobstructed windows first. `roomier`:
-walking space first. `minimal_changes`: move furniture only to fix a fit or access problem."""
+walking space first. `minimal_changes`: move furniture only to fix a fit or access problem.
+`custom`: the request is something else (e.g. "a cosy reading corner"); the assistant
+follows the user's wording and only fit, doors and access are checked, so the user judges
+the rest in the preview."""
 
 MAX_FLOOR_PLAN_IMAGES = 5
 MAX_ROOM_VIDEOS = 5

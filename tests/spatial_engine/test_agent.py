@@ -515,3 +515,46 @@ def test_blocking_a_clear_door_or_overlapping_furniture_is_never_accepted() -> N
     for bad in (move("box", 5.5, 0.5), move("box", 7.5, 4.5)):  # into the swing; onto the radiator
         proposal = propose_layout(OptimiseRequest(scene=room), Scripted(bad, END))
         assert not proposal.improved and proposal.poses == {}
+
+
+def test_an_unreadable_instruction_is_dropped_with_a_note_and_never_reported_as_honoured() -> None:
+    reader = Scripted(ProviderError("request_rejected", retryable=False))
+    explorer = Scripted(GOOD)
+    request = OptimiseRequest(scene=scene(), instruction="keep the box")
+    proposal = propose_layout(request, explorer, interpreter=reader)
+    assert proposal.improved and proposal.outcome == "stopped_early"
+    assert "could not be read, so it was not applied" in proposal.explanation
+
+
+def valid_scene() -> RoomScene:
+    room = scene()
+    room.furniture[1].pose = Pose2D(x=5, z=5.5)  # access already fine: nothing measurable to gain
+    return room
+
+
+def test_a_custom_request_hands_the_wording_to_the_model_and_accepts_a_valid_move() -> None:
+    reader = Scripted(interpret("custom", [], [], []))
+    explorer = Scripted(move("box", 6, 6), END)
+    request = OptimiseRequest(scene=valid_scene(), instruction="a cosy corner for the box")
+    proposal = propose_layout(request, explorer, interpreter=reader)
+
+    first = json.loads(explorer.requests[0]["messages"][0]["content"])
+    assert first["person_request"] == "a cosy corner for the box"
+    assert proposal.improved and proposal.goal == "custom"
+    assert proposal.poses == {"box": Pose2D(x=6, z=6)}
+    assert "judge it in the preview" in proposal.explanation
+
+
+def test_a_custom_request_still_refuses_invalid_layouts_and_worse_access() -> None:
+    request = OptimiseRequest(scene=valid_scene(), instruction="make it cosy")
+    for bad in (
+        move("box", 7.5, 4.5),
+        move("box", 2, 5.5),
+    ):  # onto the radiator; in front of wardrobe
+        reader = Scripted(interpret("custom", [], [], []))
+        assert not propose_layout(request, Scripted(bad, END), interpreter=reader).improved
+
+
+def test_the_same_move_is_not_suggested_for_a_measurable_goal() -> None:
+    request = OptimiseRequest(scene=valid_scene(), goal="balanced")
+    assert not propose_layout(request, Scripted(move("box", 6, 6), END)).improved

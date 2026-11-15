@@ -41,7 +41,12 @@ _SOFT_PRIORITIES: dict[LayoutGoal, tuple[str, ...]] = {
     ),
     "roomier": ("reachable_floor_ratio", "clearance_deficit", "movement_m"),
     "minimal_changes": ("clearance_deficit", "movement_m", "reachable_floor_ratio"),
+    # The user wants something we cannot measure, so movement is not penalised: only access
+    # may not get worse. See `beats_original`.
+    "custom": ("clearance_deficit", "reachable_floor_ratio"),
 }
+# A new measurable goal (e.g. Feng Shui) needs three things: a metric on LayoutMetrics, an
+# entry in this table, and a value in contracts.schema.LayoutGoal. Nothing else ranks layouts.
 _MAXIMISED = frozenset({"reachable_floor_ratio", "brightness_openness"})
 
 
@@ -253,6 +258,7 @@ def compare_evaluations(
     - brighter: window openness, front clearance, walking area, least movement.
     - roomier: walking area, front clearance, least movement.
     - minimal_changes: front clearance, least movement, walking area.
+    - custom: front clearance, walking area; movement is not penalised.
 
     Any unavailable metric is skipped, never replaced by zero or infinity.
     All priorities use 1e-9 absolute/relative float tolerance. Counts are exact.
@@ -330,3 +336,18 @@ def is_acceptable_proposal(original: LayoutEvaluation, candidate: LayoutEvaluati
         and metrics.out_of_bounds_count == 0
         and blocked_after <= blocked_before
     )
+
+
+def beats_original(
+    baseline: LayoutEvaluation, candidate: LayoutEvaluation, goal: LayoutGoal
+) -> bool:
+    """Whether a candidate is a worthwhile suggestion compared with the original.
+
+    A measurable goal needs a strictly better ranking. A `custom` request cannot be measured,
+    so moving something is the point: the candidate must not rank worse (access may not get
+    worse) and must actually move at least one item.
+    """
+    outcome = compare_evaluations(baseline, candidate, goal).outcome
+    if goal == "custom":
+        return outcome != "worse" and candidate.metrics.moved_item_count > 0
+    return outcome == "better"

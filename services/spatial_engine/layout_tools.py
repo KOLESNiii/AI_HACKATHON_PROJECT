@@ -24,6 +24,7 @@ from services.spatial_engine.objective import (
     NEAR_WINDOW_M,
     LayoutComparison,
     LayoutEvaluation,
+    beats_original,
     compare_evaluations,
     is_acceptable_proposal,
 )
@@ -382,8 +383,13 @@ class LayoutToolbox:
         original = self.session.draft(self.session.original_draft_id)
         versus_original = compare_evaluations(original.evaluation, draft.evaluation, goal)
         versus_best = compare_evaluations(self.best_draft.evaluation, draft.evaluation, goal)
-        if self._acceptable(draft) and versus_best.outcome == "better":
-            self.best_draft_id = draft.draft_id
+        if self._acceptable(draft):
+            if self.best_draft_id == self.session.original_draft_id:
+                take = beats_original(original.evaluation, draft.evaluation, goal)
+            else:
+                take = versus_best.outcome == "better"
+            if take:
+                self.best_draft_id = draft.draft_id
         return {
             **self._describe_draft(draft),
             "already_evaluated": already_evaluated,

@@ -299,3 +299,14 @@
   it may not block a door that was clear. This replaced the all-or-nothing rule,
   under which a room with a fixed item in a door swing could never get a suggestion.
 - Operator decision (2026-11-14): no cached demo answers. Requests are always live.
+
+## Custom requests
+
+- A request that none of the four measurable goals fits becomes the `custom` goal: Sonnet
+  receives the user's words and the server enforces the hard rules and that access does not
+  get worse. The wish itself is unverified and the explanation says so; the user judges it in
+  the preview. Hard rules (no overlap, nothing outside the room, no newly blocked door, locks)
+  are never relaxed. Further measurable goals (Feng Shui) are added as a metric plus one entry
+  in the priority table.
+- An instruction that could not be read is dropped with a note and the result is reported as
+  `stopped_early`, so it is never presented as honouring what the user wrote.

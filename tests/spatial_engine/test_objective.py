@@ -437,3 +437,18 @@ def test_inputs_and_nullable_scores_unchanged() -> None:
         result.baseline.report.overall_score is None
         and result.candidate.report.overall_score is None
     )
+
+
+def test_custom_goal_ignores_movement_but_never_accepts_worse_access() -> None:
+    from services.spatial_engine.objective import beats_original
+
+    original = room([item("target", 2, 2, clearance=1), item("a", 6, 6)])
+    moved = original.model_copy(deep=True)
+    moved.furniture[1].pose = Pose2D(x=7, z=7)
+    old, new = evaluate_layout(original, original), evaluate_layout(original, moved)
+    assert compare_evaluations(old, new, "custom").outcome == "equal"
+    assert beats_original(old, new, "custom") and not beats_original(old, new, "balanced")
+    assert not beats_original(old, old, "custom")  # nothing moved
+    blocked = original.model_copy(deep=True)
+    blocked.furniture[1].pose = Pose2D(x=2, z=3.5)
+    assert not beats_original(old, evaluate_layout(original, blocked), "custom")
