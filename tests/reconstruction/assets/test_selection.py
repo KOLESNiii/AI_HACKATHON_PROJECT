@@ -24,8 +24,10 @@ from services.reconstruction.assets.providers import (
 from services.reconstruction.assets.registry import Registry
 from services.reconstruction.assets.select_frames import main, write_report
 from services.reconstruction.assets.selection import (
+    discover_frames,
     object_evidence,
     reconcile,
+    sample_sources,
     select_furniture_frames,
 )
 from services.reconstruction.assets.selection_models import (
@@ -821,3 +823,44 @@ def test_live_cli_missing_fal_client_exits_cleanly(
     monkeypatch.setattr(builtins, "__import__", missing_sdk)
     assert main(["not-read.mp4", "--scene-id", "demo", "--live", "--out", str(tmp_path)]) == 1
     assert "install the reconstruction Python extra" in capsys.readouterr().out
+
+
+def test_sampling_once_then_discovering_matches_one_call(video: Path, tmp_path: Path) -> None:
+    """`select_furniture_frames` is `sample_sources` then `discover_frames`; the halves let a
+    caller sample once and discover in subsets of the frames (one namespace per room)."""
+    options = SelectionOptions(sample_interval_s=0.25, batch_size=1)
+    probe = select_furniture_frames([video], "probe", data_dir=tmp_path / "probe", options=options)
+    discovery = Discovery(objects=[track(probe.frames, 0.05), track(probe.frames, 0.65)])
+    whole = select_furniture_frames(
+        [video],
+        "demo",
+        data_dir=tmp_path / "one",
+        options=options,
+        provider=RecordedProvider(discovery),
+    )
+    sources, frames, notes = sample_sources([video], tmp_path / "two", options)
+    split = discover_frames(
+        "demo",
+        sources,
+        frames,
+        data_dir=tmp_path / "two",
+        provider=RecordedProvider(discovery),
+        options=options,
+        warnings=notes,
+    )
+    assert split.complete == whole.complete
+    assert [f.key for f in split.frames] == [f.key for f in whole.frames]
+    assert [(o.id, o.name, len(o.sightings)) for o in split.objects] == [
+        (o.id, o.name, len(o.sightings)) for o in whole.objects
+    ]
+    subset = frames[:2]
+    part = discover_frames(
+        "part",
+        sources,
+        subset,
+        data_dir=tmp_path / "two",
+        provider=RecordedProvider(Discovery(objects=[track(subset, 0.05)])),
+        options=options,
+    )
+    assert {f.key for f in part.frames} == {f.key for f in subset}
+    assert len(part.objects) == 1 and len(part.objects[0].sightings) == len(subset)
