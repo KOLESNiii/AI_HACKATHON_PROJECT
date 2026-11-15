@@ -268,831 +268,821 @@ function withEditCue(cue: SoundCue, change: () => void) {
 
 const initialScene = roomScene(null)
 
-export const useStore = create<State>((set, get) => {
-  /**
-   * Re-fetches `loaded` until its furniture arrives, without blocking the editor. The room
-   * is replaced only if the user hasn't changed it since; otherwise they're told to reopen it.
-   */
-  const pollRoom = (session: number, loaded: RoomScene, attempt = 1) => {
-    clearTimeout(roomPoll)
-    if (attempt > ROOM_POLL_ATTEMPTS) return
-    roomPoll = setTimeout(async () => {
-      const live = () =>
-        get().roomSession === session && get().screen === 'editor'
-      if (!live()) return
-      let result: Awaited<ReturnType<typeof fetchRoom>>
-      try {
-        result = await fetchRoom(loaded.scene_id)
-      } catch {
-        if (live()) pollRoom(session, loaded, attempt + 1)
-        return
-      }
-      if (!live()) return
-      if (result.pending) {
-        set({
-          furnitureProgress: result.progress,
-          ...(get().scene === loaded ? { roomWarnings: result.warnings } : {}),
-        })
-        pollRoom(session, loaded, attempt + 1)
-      } else if (get().scene === loaded) {
-        set({
-          scene: result.scene,
-          ...initialRoomHistory(result.scene),
-          roomWarnings: result.warnings,
-          furnitureProgress: null,
-        })
-        get().toast(
+/**
+ * Re-fetches `loaded` until its furniture arrives, without blocking the editor. The room
+ * is replaced only if the user hasn't changed it since; otherwise they're told to reopen it.
+ */
+function pollRoom(session: number, loaded: RoomScene, attempt = 1) {
+  clearTimeout(roomPoll)
+  if (attempt > ROOM_POLL_ATTEMPTS) return
+  roomPoll = setTimeout(async () => {
+    const live = () =>
+      useStore.getState().roomSession === session &&
+      useStore.getState().screen === 'editor'
+    if (!live()) return
+    let result: Awaited<ReturnType<typeof fetchRoom>>
+    try {
+      result = await fetchRoom(loaded.scene_id)
+    } catch {
+      if (live()) pollRoom(session, loaded, attempt + 1)
+      return
+    }
+    if (!live()) return
+    if (result.pending) {
+      useStore.setState({
+        furnitureProgress: result.progress,
+        ...(useStore.getState().scene === loaded
+          ? { roomWarnings: result.warnings }
+          : {}),
+      })
+      pollRoom(session, loaded, attempt + 1)
+    } else if (useStore.getState().scene === loaded) {
+      useStore.setState({
+        scene: result.scene,
+        ...initialRoomHistory(result.scene),
+        roomWarnings: result.warnings,
+        furnitureProgress: null,
+      })
+      useStore
+        .getState()
+        .toast(
           `Furniture from your videos is in: ${result.scene.furniture.length} items.`,
         )
-      } else {
-        set({
-          furnitureProgress: null,
-          roomWarnings: [
-            'Furniture from your videos is ready: open this room again to load it (your edits here are not carried over).',
-          ],
-        })
-      }
-    }, ROOM_POLL_MS)
-  }
+    } else {
+      useStore.setState({
+        furnitureProgress: null,
+        roomWarnings: [
+          'Furniture from your videos is ready: open this room again to load it (your edits here are not carried over).',
+        ],
+      })
+    }
+  }, ROOM_POLL_MS)
+}
 
-  return {
-    screen: 'home',
-    home: demoPlan,
-    uploadPlans: [],
-    uploadVideos: [],
-    planStatus: 'idle',
-    planError: null,
-    planAbort: null,
-    segmentId: null,
-    scene: initialScene,
-    ...initialRoomHistory(initialScene),
-    roomSession: 0,
-    selectedId: null,
-    interacting: false,
-    tab: 'chat',
-    mode: 'edit',
-    playPhase: 'walking',
-    playLighting: { ...DEFAULT_PLAY_LIGHTING },
-    human: null,
-    placingHuman: false,
-    humanPreview: null,
-    roomLoading: false,
-    roomWarnings: [],
-    furnitureProgress: null,
-    roomAbort: null,
-    audit: null,
-    auditStatus: 'idle',
-    auditError: null,
-    auditAbort: null,
-    fengShui: null,
-    fengShuiStatus: 'idle',
-    fengShuiError: null,
-    fengShuiAbort: null,
-    fengShuiScore: null,
-    fengShuiScoreStatus: 'idle',
-    fengShuiScoreError: null,
-    fengShuiScoreAbort: null,
-    chat: [],
-    agentBusy: false,
-    agentProgress: [],
-    agentAbort: null,
-    toasts: [],
+export const useStore = create<State>((set, get) => ({
+  screen: 'home',
+  home: demoPlan,
+  uploadPlans: [],
+  uploadVideos: [],
+  planStatus: 'idle',
+  planError: null,
+  planAbort: null,
+  segmentId: null,
+  scene: initialScene,
+  ...initialRoomHistory(initialScene),
+  roomSession: 0,
+  selectedId: null,
+  interacting: false,
+  tab: 'chat',
+  mode: 'edit',
+  playPhase: 'walking',
+  playLighting: { ...DEFAULT_PLAY_LIGHTING },
+  human: null,
+  placingHuman: false,
+  humanPreview: null,
+  roomLoading: false,
+  roomWarnings: [],
+  furnitureProgress: null,
+  roomAbort: null,
+  audit: null,
+  auditStatus: 'idle',
+  auditError: null,
+  auditAbort: null,
+  fengShui: null,
+  fengShuiStatus: 'idle',
+  fengShuiError: null,
+  fengShuiAbort: null,
+  fengShuiScore: null,
+  fengShuiScoreStatus: 'idle',
+  fengShuiScoreError: null,
+  fengShuiScoreAbort: null,
+  chat: [],
+  agentBusy: false,
+  agentProgress: [],
+  agentAbort: null,
+  toasts: [],
 
-    setScreen: (screen) =>
+  setScreen: (screen) =>
+    set({
+      screen,
+      mode: 'edit',
+      playPhase: 'walking',
+      placingHuman: false,
+      humanPreview: null,
+      interacting: false,
+    }),
+  setUploadFiles: (kind, files) =>
+    set(kind === 'plans' ? { uploadPlans: files } : { uploadVideos: files }),
+  submitUpload: async () => {
+    get().planAbort?.abort()
+    const { uploadPlans, uploadVideos } = get()
+    if (!uploadPlans.length) return
+    const controller = new AbortController()
+    set({
+      screen: 'reading',
+      segmentId: null,
+      planStatus: 'loading',
+      planError: null,
+      planAbort: controller,
+    })
+    try {
+      const parsed = await uploadFloorPlan(
+        uploadPlans,
+        uploadVideos,
+        controller.signal,
+      )
+      if (get().planAbort !== controller) return
+      const home = planFromParsed(parsed)
+      if (!home.floors.some((f) => f.rooms.length))
+        throw new Error(
+          'No rooms were found on this floor plan. Try a clearer image.',
+        )
+      set({ home, planStatus: 'ready', planAbort: null })
+    } catch (error) {
+      // Superseded by another upload, the demo home or a cancel. A timeout is still ours.
+      if (get().planAbort !== controller) return
       set({
-        screen,
+        planStatus: 'error',
+        planError: errorMessage(error),
+        planAbort: null,
+      })
+    }
+  },
+  cancelUpload: () => {
+    get().planAbort?.abort()
+    set({
+      planStatus: 'idle',
+      planError: null,
+      planAbort: null,
+      screen: 'upload',
+    })
+  },
+  chooseDemoHome: () => {
+    get().planAbort?.abort()
+    set({
+      home: demoPlan,
+      segmentId: null,
+      planStatus: 'idle',
+      planError: null,
+      planAbort: null,
+      screen: 'reading',
+    })
+  },
+  selectSegment: (segmentId) => set({ segmentId }),
+  openRoom: () => {
+    get().agentAbort?.abort()
+    get().roomAbort?.abort()
+    get().auditAbort?.abort()
+    get().fengShuiAbort?.abort()
+    get().fengShuiScoreAbort?.abort()
+    set((s) => {
+      const room =
+        findPlanRoom(s.home, s.segmentId) ??
+        s.home.floors.flatMap((f) => f.rooms).find((r) => r.selectable)
+      const scene = room ? room.scene() : roomScene(null)
+      return {
+        screen: 'building',
+        scene,
+        ...initialRoomHistory(scene),
+        roomSession: s.roomSession + 1,
+        selectedId: null,
+        tab: 'chat',
         mode: 'edit',
         playPhase: 'walking',
+        playLighting: { ...DEFAULT_PLAY_LIGHTING },
+        human: null,
         placingHuman: false,
         humanPreview: null,
+        audit: null,
+        auditStatus: 'idle',
+        auditError: null,
+        auditAbort: null,
+        fengShui: null,
+        fengShuiStatus: 'idle',
+        fengShuiError: null,
+        fengShuiAbort: null,
+        fengShuiScore: null,
+        fengShuiScoreStatus: 'idle',
+        fengShuiScoreError: null,
+        fengShuiScoreAbort: null,
+        roomLoading: false,
+        roomWarnings: [],
+        furnitureProgress: null,
+        roomAbort: null,
         interacting: false,
-      }),
-    setUploadFiles: (kind, files) =>
-      set(kind === 'plans' ? { uploadPlans: files } : { uploadVideos: files }),
-    submitUpload: async () => {
-      get().planAbort?.abort()
-      const { uploadPlans, uploadVideos } = get()
-      if (!uploadPlans.length) return
-      const controller = new AbortController()
-      set({
-        screen: 'reading',
-        segmentId: null,
-        planStatus: 'loading',
-        planError: null,
-        planAbort: controller,
-      })
-      try {
-        const parsed = await uploadFloorPlan(
-          uploadPlans,
-          uploadVideos,
-          controller.signal,
-        )
-        if (get().planAbort !== controller) return
-        const home = planFromParsed(parsed)
-        if (!home.floors.some((f) => f.rooms.length))
-          throw new Error(
-            'No rooms were found on this floor plan. Try a clearer image.',
-          )
-        set({ home, planStatus: 'ready', planAbort: null })
-      } catch (error) {
-        // Superseded by another upload, the demo home or a cancel. A timeout is still ours.
-        if (get().planAbort !== controller) return
-        set({
-          planStatus: 'error',
-          planError: errorMessage(error),
-          planAbort: null,
-        })
-      }
-    },
-    cancelUpload: () => {
-      get().planAbort?.abort()
-      set({
-        planStatus: 'idle',
-        planError: null,
-        planAbort: null,
-        screen: 'upload',
-      })
-    },
-    chooseDemoHome: () => {
-      get().planAbort?.abort()
-      set({
-        home: demoPlan,
-        segmentId: null,
-        planStatus: 'idle',
-        planError: null,
-        planAbort: null,
-        screen: 'reading',
-      })
-    },
-    selectSegment: (segmentId) => set({ segmentId }),
-    openRoom: () => {
-      get().agentAbort?.abort()
-      get().roomAbort?.abort()
-      get().auditAbort?.abort()
-      get().fengShuiAbort?.abort()
-      get().fengShuiScoreAbort?.abort()
-      set((s) => {
-        const room =
-          findPlanRoom(s.home, s.segmentId) ??
-          s.home.floors.flatMap((f) => f.rooms).find((r) => r.selectable)
-        const scene = room ? room.scene() : roomScene(null)
-        return {
-          screen: 'building',
-          scene,
-          ...initialRoomHistory(scene),
-          roomSession: s.roomSession + 1,
-          selectedId: null,
-          tab: 'chat',
-          mode: 'edit',
-          playPhase: 'walking',
-          playLighting: { ...DEFAULT_PLAY_LIGHTING },
-          human: null,
-          placingHuman: false,
-          humanPreview: null,
-          audit: null,
-          auditStatus: 'idle',
-          auditError: null,
-          auditAbort: null,
-          fengShui: null,
-          fengShuiStatus: 'idle',
-          fengShuiError: null,
-          fengShuiAbort: null,
-          fengShuiScore: null,
-          fengShuiScoreStatus: 'idle',
-          fengShuiScoreError: null,
-          fengShuiScoreAbort: null,
-          roomLoading: false,
-          roomWarnings: [],
-          furnitureProgress: null,
-          roomAbort: null,
-          interacting: false,
-          chat: [],
-          agentBusy: false,
-          agentProgress: [],
-          agentAbort: null,
-        }
-      })
-    },
-    selectVersion: (id) => {
-      const s = get()
-      if (
-        s.currentVersionId === id ||
-        s.roomLoading ||
-        s.interacting ||
-        s.mode !== 'edit'
-      )
-        return
-      const version = s.versions.find((v) => v.id === id)
-      if (!version || version.scene.scene_id !== s.scene.scene_id) return
-      if (s.hasUnsavedChanges)
-        return get().toast(
-          'Save with Ctrl+S or discard your changes before switching versions.',
-        )
-      set(restoreVersion(s, version))
-      playCue('select')
-    },
-    saveVersion: () => {
-      const s = get()
-      if (
-        s.screen !== 'editor' ||
-        s.mode !== 'edit' ||
-        s.roomLoading ||
-        s.interacting ||
-        !s.hasUnsavedChanges
-      )
-        return
-      const saved = recordRoomVersion(
-        s,
-        s.scene,
-        'Saved manual changes',
-        'manual',
-      )
-      if (saved.currentVersionId === s.currentVersionId) {
-        set(saved)
-        return
-      }
-      s.agentAbort?.abort()
-      set({
-        ...saved,
+        chat: [],
         agentBusy: false,
         agentProgress: [],
         agentAbort: null,
-        chat: s.agentBusy
-          ? [
-              ...s.chat,
-              {
-                role: 'assistant',
-                text: 'Layout request cancelled because a new version was saved. Ask again from this version.',
-                progress: s.agentProgress,
-              },
-            ]
-          : s.chat,
-      })
-      playCue('ready')
-    },
-    discardChanges: () => {
-      const s = get()
-      if (
-        s.screen !== 'editor' ||
-        s.mode !== 'edit' ||
-        s.roomLoading ||
-        s.interacting ||
-        !s.hasUnsavedChanges
+      }
+    })
+  },
+  selectVersion: (id) => {
+    const s = get()
+    if (
+      s.currentVersionId === id ||
+      s.roomLoading ||
+      s.interacting ||
+      s.mode !== 'edit'
+    )
+      return
+    const version = s.versions.find((v) => v.id === id)
+    if (!version || version.scene.scene_id !== s.scene.scene_id) return
+    if (s.hasUnsavedChanges)
+      return get().toast(
+        'Save with Ctrl+S or discard your changes before switching versions.',
       )
-        return
-      const version = s.versions.find((v) => v.id === s.currentVersionId)
-      if (version) set(restoreVersion(s, version))
-    },
-    select: (selectedId) => {
-      const s = get()
-      if (s.selectedId === selectedId) return
-      set({ selectedId })
-      if (
-        selectedId &&
-        s.scene.furniture.some((i) => i.id === selectedId && !i.is_fixed)
-      )
-        playCue('select')
-    },
-    setInteracting: (interacting) => set({ interacting }),
-    setPose: (id, pose) =>
-      set((s) =>
-        s.roomLoading
-          ? {}
-          : {
-              scene: {
-                ...s.scene,
-                furniture: mapItem(s.scene, id, (i) => ({
-                  ...i,
-                  pose: { ...i.pose, ...pose },
-                })),
-              },
+    set(restoreVersion(s, version))
+    playCue('select')
+  },
+  saveVersion: () => {
+    const s = get()
+    if (
+      s.screen !== 'editor' ||
+      s.mode !== 'edit' ||
+      s.roomLoading ||
+      s.interacting ||
+      !s.hasUnsavedChanges
+    )
+      return
+    const saved = recordRoomVersion(
+      s,
+      s.scene,
+      'Saved manual changes',
+      'manual',
+    )
+    if (saved.currentVersionId === s.currentVersionId) {
+      set(saved)
+      return
+    }
+    s.agentAbort?.abort()
+    set({
+      ...saved,
+      agentBusy: false,
+      agentProgress: [],
+      agentAbort: null,
+      chat: s.agentBusy
+        ? [
+            ...s.chat,
+            {
+              role: 'assistant',
+              text: 'Layout request cancelled because a new version was saved. Ask again from this version.',
+              progress: s.agentProgress,
             },
-      ),
-    commitEdit: (cue = 'place') => {
-      if (get().roomLoading) return
-      set((s) => editRoomLayout(s, bump(s.scene)))
-      if (cue) playCue(cue)
-    },
-    snapItem: (id) =>
-      withEditCue('snap', () =>
-        set((s) => {
-          const item = s.scene.furniture.find((i) => i.id === id)
-          if (!item || item.is_fixed || s.roomLoading) return {}
-          return editRoomLayout(
-            s,
-            bump(
-              s.scene,
-              mapItem(s.scene, id, (i) => ({
+          ]
+        : s.chat,
+    })
+    playCue('ready')
+  },
+  discardChanges: () => {
+    const s = get()
+    if (
+      s.screen !== 'editor' ||
+      s.mode !== 'edit' ||
+      s.roomLoading ||
+      s.interacting ||
+      !s.hasUnsavedChanges
+    )
+      return
+    const version = s.versions.find((v) => v.id === s.currentVersionId)
+    if (version) set(restoreVersion(s, version))
+  },
+  select: (selectedId) => {
+    const s = get()
+    if (s.selectedId === selectedId) return
+    set({ selectedId })
+    if (
+      selectedId &&
+      s.scene.furniture.some((i) => i.id === selectedId && !i.is_fixed)
+    )
+      playCue('select')
+  },
+  setInteracting: (interacting) => set({ interacting }),
+  setPose: (id, pose) =>
+    set((s) =>
+      s.roomLoading
+        ? {}
+        : {
+            scene: {
+              ...s.scene,
+              furniture: mapItem(s.scene, id, (i) => ({
                 ...i,
-                pose: snapToNearestWall(
-                  s.scene.walls,
-                  s.scene.floor_polygon,
-                  i,
-                ),
+                pose: { ...i.pose, ...pose },
               })),
-            ),
-          )
-        }),
-      ),
-    rotateItem: (id, degrees) =>
-      withEditCue('rotate', () =>
-        set((s) => {
-          const item = s.scene.furniture.find((i) => i.id === id)
-          if (
-            !item ||
-            item.is_fixed ||
-            s.roomLoading ||
-            s.interacting ||
-            !Number.isFinite(degrees)
-          )
-            return {}
-          const yaw = (((item.pose.yaw_deg + degrees) % 360) + 360) % 360
-          if (yaw === item.pose.yaw_deg) return {}
-          const rotated = { ...item, pose: { ...item.pose, yaw_deg: yaw } }
-          const p = clampToFloor(
-            s.scene.floor_polygon,
-            rotated,
-            item.pose.x,
-            item.pose.z,
-          )
-          return editRoomLayout(
-            s,
-            bump(
-              s.scene,
-              mapItem(s.scene, id, (i) => ({
-                ...i,
-                pose: { x: p.x, z: p.z, yaw_deg: yaw },
-              })),
-            ),
-          )
-        }),
-      ),
-    resetRotation: (id) =>
-      withEditCue('rotate', () =>
-        set((s) => {
-          const item = s.scene.furniture.find((i) => i.id === id)
-          if (
-            !item ||
-            item.is_fixed ||
-            s.roomLoading ||
-            item.pose.yaw_deg === 0
-          )
-            return {}
-          const upright = { ...item, pose: { ...item.pose, yaw_deg: 0 } }
-          const c = clampToFloor(
-            s.scene.floor_polygon,
-            upright,
-            item.pose.x,
-            item.pose.z,
-          )
-          return editRoomLayout(
-            s,
-            bump(
-              s.scene,
-              mapItem(s.scene, id, (i) => ({
-                ...i,
-                pose: { x: c.x, z: c.z, yaw_deg: 0 },
-              })),
-            ),
-          )
-        }),
-      ),
-    deleteItem: (id) =>
-      withEditCue('delete', () =>
-        set((s) => {
-          const item = s.scene.furniture.find((i) => i.id === id)
-          if (!item || item.is_fixed || s.roomLoading) return {}
-          return {
-            ...editRoomLayout(
-              s,
-              bump(
-                s.scene,
-                s.scene.furniture.filter((i) => i.id !== id),
-              ),
-            ),
-            selectedId: s.selectedId === id ? null : s.selectedId,
-          }
-        }),
-      ),
-    addFromCatalog: (c) => {
-      if (get().roomLoading) return
-      const { scene } = get()
-      const yaw = fitYaw(scene.floor_polygon, c.bbox_m.width, c.bbox_m.depth)
-      if (yaw == null) {
-        playCue('reject')
-        return get().toast(`${c.name} doesn't fit this room.`)
-      }
-      const b = bounds(scene.floor_polygon)
-      const draft = itemFromCatalog(c, { x: 0, z: 0, yaw_deg: yaw })
-      const p = clampToFloor(
-        scene.floor_polygon,
-        draft,
-        (b.minX + b.maxX) / 2,
-        (b.minZ + b.maxZ) / 2,
-      )
-      const item = { ...draft, pose: { x: p.x, z: p.z, yaw_deg: yaw } }
-      set({
-        ...editRoomLayout(get(), bump(scene, [...scene.furniture, item])),
-        selectedId: item.id,
-      })
-      get().toast(
-        `Added ${c.name}${item.is_proxy ? ' as a proxy box' : ''}. Drag it into place.`,
-      )
-      playCue('add')
-    },
-    applyPoses: (index) => {
-      const {
-        chat,
-        scene,
-        roomSession,
-        currentVersionId,
-        interacting,
-        mode,
-        roomLoading,
-      } = get()
-      const msg = chat[index]
-      if (
-        !msg?.proposal ||
-        !msg.baseScene ||
-        msg.applied ||
-        msg.rejected ||
-        interacting ||
-        mode !== 'edit' ||
-        roomLoading
-      )
-        return
-      if (
-        msg.roomSession !== roomSession ||
-        scene !== msg.baseScene ||
-        msg.baseVersionId !== currentVersionId
-      ) {
-        playCue('reject')
-        return get().toast(
-          'The room changed since this suggestion. Ask the agent again.',
-        )
-      }
-      let proposal: EditorProposal
-      try {
-        proposal = readProposal(msg.proposal, scene, msg.baselineAudit)
-        if (!proposal.improved || layoutChanges(scene, proposal).length === 0)
-          return
-      } catch (error) {
-        return get().toast(errorMessage(error))
-      }
-      const poses = proposal.poses
-      const furniture = scene.furniture.map((i) =>
-        Object.hasOwn(poses, i.id) ? { ...i, pose: { ...poses[i.id] } } : i,
-      )
-      withEditCue('apply', () =>
-        set({
-          ...recordRoomVersion(
-            get(),
-            bump(scene, [
-              ...furniture,
-              ...structuredClone(proposal.additions ?? []),
-            ]),
-            `Agent: ${proposal.explanation}`,
-            'agent',
-          ),
-          audit: null,
-          auditStatus: 'idle',
-          chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
-        }),
-      )
-    },
-    rejectProposal: (index) =>
-      set((s) => ({
-        chat: s.chat.map((m, i) =>
-          i === index && m.proposal && !m.applied
-            ? { ...m, rejected: true }
-            : m,
-        ),
-      })),
-    sendChat: async (text) => {
-      const instruction = text.trim()
-      const {
-        scene,
-        roomSession,
-        currentVersionId,
-        audit,
-        agentBusy,
-        interacting,
-        mode,
-        roomLoading,
-      } = get()
-      if (
-        agentBusy ||
-        interacting ||
-        mode !== 'edit' ||
-        roomLoading ||
-        !instruction
-      )
-        return
-      if ([...instruction].length > MAX_LAYOUT_INSTRUCTION_CHARS) {
-        get().toast(
-          `Keep your request within ${MAX_LAYOUT_INSTRUCTION_CHARS} characters.`,
-        )
-        return
-      }
-      const controller = new AbortController()
-      const current = () =>
-        get().roomSession === roomSession && get().agentAbort === controller
-      set((s) => ({
-        agentBusy: true,
-        agentProgress: [],
-        agentAbort: controller,
-        chat: [...s.chat, { role: 'user', text: instruction }],
-      }))
-      try {
-        const reply = await streamAgentMessage(
-          scene,
-          instruction,
-          controller.signal,
-          (update) => {
-            if (current())
-              set((s) => ({
-                agentProgress: [...s.agentProgress, update].slice(-200),
-              }))
+            },
           },
-          matchingAudit(audit, scene) ? audit : undefined,
+    ),
+  commitEdit: (cue = 'place') => {
+    if (get().roomLoading) return
+    set((s) => editRoomLayout(s, bump(s.scene)))
+    if (cue) playCue(cue)
+  },
+  snapItem: (id) =>
+    withEditCue('snap', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (!item || item.is_fixed || s.roomLoading) return {}
+        return editRoomLayout(
+          s,
+          bump(
+            s.scene,
+            mapItem(s.scene, id, (i) => ({
+              ...i,
+              pose: snapToNearestWall(s.scene.walls, s.scene.floor_polygon, i),
+            })),
+          ),
         )
-        if (!current()) return
+      }),
+    ),
+  rotateItem: (id, degrees) =>
+    withEditCue('rotate', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (
+          !item ||
+          item.is_fixed ||
+          s.roomLoading ||
+          s.interacting ||
+          !Number.isFinite(degrees)
+        )
+          return {}
+        const yaw = (((item.pose.yaw_deg + degrees) % 360) + 360) % 360
+        if (yaw === item.pose.yaw_deg) return {}
+        const rotated = { ...item, pose: { ...item.pose, yaw_deg: yaw } }
+        const p = clampToFloor(
+          s.scene.floor_polygon,
+          rotated,
+          item.pose.x,
+          item.pose.z,
+        )
+        return editRoomLayout(
+          s,
+          bump(
+            s.scene,
+            mapItem(s.scene, id, (i) => ({
+              ...i,
+              pose: { x: p.x, z: p.z, yaw_deg: yaw },
+            })),
+          ),
+        )
+      }),
+    ),
+  resetRotation: (id) =>
+    withEditCue('rotate', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (!item || item.is_fixed || s.roomLoading || item.pose.yaw_deg === 0)
+          return {}
+        const upright = { ...item, pose: { ...item.pose, yaw_deg: 0 } }
+        const c = clampToFloor(
+          s.scene.floor_polygon,
+          upright,
+          item.pose.x,
+          item.pose.z,
+        )
+        return editRoomLayout(
+          s,
+          bump(
+            s.scene,
+            mapItem(s.scene, id, (i) => ({
+              ...i,
+              pose: { x: c.x, z: c.z, yaw_deg: 0 },
+            })),
+          ),
+        )
+      }),
+    ),
+  deleteItem: (id) =>
+    withEditCue('delete', () =>
+      set((s) => {
+        const item = s.scene.furniture.find((i) => i.id === id)
+        if (!item || item.is_fixed || s.roomLoading) return {}
+        return {
+          ...editRoomLayout(
+            s,
+            bump(
+              s.scene,
+              s.scene.furniture.filter((i) => i.id !== id),
+            ),
+          ),
+          selectedId: s.selectedId === id ? null : s.selectedId,
+        }
+      }),
+    ),
+  addFromCatalog: (c) => {
+    if (get().roomLoading) return
+    const { scene } = get()
+    const yaw = fitYaw(scene.floor_polygon, c.bbox_m.width, c.bbox_m.depth)
+    if (yaw == null) {
+      playCue('reject')
+      return get().toast(`${c.name} doesn't fit this room.`)
+    }
+    const b = bounds(scene.floor_polygon)
+    const draft = itemFromCatalog(c, { x: 0, z: 0, yaw_deg: yaw })
+    const p = clampToFloor(
+      scene.floor_polygon,
+      draft,
+      (b.minX + b.maxX) / 2,
+      (b.minZ + b.maxZ) / 2,
+    )
+    const item = { ...draft, pose: { x: p.x, z: p.z, yaw_deg: yaw } }
+    set({
+      ...editRoomLayout(get(), bump(scene, [...scene.furniture, item])),
+      selectedId: item.id,
+    })
+    get().toast(
+      `Added ${c.name}${item.is_proxy ? ' as a proxy box' : ''}. Drag it into place.`,
+    )
+    playCue('add')
+  },
+  applyPoses: (index) => {
+    const {
+      chat,
+      scene,
+      roomSession,
+      currentVersionId,
+      interacting,
+      mode,
+      roomLoading,
+    } = get()
+    const msg = chat[index]
+    if (
+      !msg?.proposal ||
+      !msg.baseScene ||
+      msg.applied ||
+      msg.rejected ||
+      interacting ||
+      mode !== 'edit' ||
+      roomLoading
+    )
+      return
+    if (
+      msg.roomSession !== roomSession ||
+      scene !== msg.baseScene ||
+      msg.baseVersionId !== currentVersionId
+    ) {
+      playCue('reject')
+      return get().toast(
+        'The room changed since this suggestion. Ask the agent again.',
+      )
+    }
+    let proposal: EditorProposal
+    try {
+      proposal = readProposal(msg.proposal, scene, msg.baselineAudit)
+      if (!proposal.improved || layoutChanges(scene, proposal).length === 0)
+        return
+    } catch (error) {
+      return get().toast(errorMessage(error))
+    }
+    const poses = proposal.poses
+    const furniture = scene.furniture.map((i) =>
+      Object.hasOwn(poses, i.id) ? { ...i, pose: { ...poses[i.id] } } : i,
+    )
+    withEditCue('apply', () =>
+      set({
+        ...recordRoomVersion(
+          get(),
+          bump(scene, [
+            ...furniture,
+            ...structuredClone(proposal.additions ?? []),
+          ]),
+          `Agent: ${proposal.explanation}`,
+          'agent',
+        ),
+        audit: null,
+        auditStatus: 'idle',
+        chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
+      }),
+    )
+  },
+  rejectProposal: (index) =>
+    set((s) => ({
+      chat: s.chat.map((m, i) =>
+        i === index && m.proposal && !m.applied ? { ...m, rejected: true } : m,
+      ),
+    })),
+  sendChat: async (text) => {
+    const instruction = text.trim()
+    const {
+      scene,
+      roomSession,
+      currentVersionId,
+      audit,
+      agentBusy,
+      interacting,
+      mode,
+      roomLoading,
+    } = get()
+    if (
+      agentBusy ||
+      interacting ||
+      mode !== 'edit' ||
+      roomLoading ||
+      !instruction
+    )
+      return
+    if ([...instruction].length > MAX_LAYOUT_INSTRUCTION_CHARS) {
+      get().toast(
+        `Keep your request within ${MAX_LAYOUT_INSTRUCTION_CHARS} characters.`,
+      )
+      return
+    }
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession && get().agentAbort === controller
+    set((s) => ({
+      agentBusy: true,
+      agentProgress: [],
+      agentAbort: controller,
+      chat: [...s.chat, { role: 'user', text: instruction }],
+    }))
+    try {
+      const reply = await streamAgentMessage(
+        scene,
+        instruction,
+        controller.signal,
+        (update) => {
+          if (current())
+            set((s) => ({
+              agentProgress: [...s.agentProgress, update].slice(-200),
+            }))
+        },
+        matchingAudit(audit, scene) ? audit : undefined,
+      )
+      if (!current()) return
+      set((s) => ({
+        chat: [
+          ...s.chat,
+          {
+            role: 'assistant',
+            text: reply.text,
+            proposal: reply.proposal,
+            progress: s.agentProgress,
+            baseScene: scene,
+            roomSession,
+            baseVersionId: currentVersionId,
+            baseVersionLabel: get().versions.find(
+              (v) => v.id === currentVersionId,
+            )?.label,
+            baselineAudit: matchingAudit(audit, scene) ? audit : undefined,
+          },
+        ],
+      }))
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
         set((s) => ({
           chat: [
             ...s.chat,
             {
               role: 'assistant',
-              text: reply.text,
-              proposal: reply.proposal,
+              text: errorMessage(error),
               progress: s.agentProgress,
-              baseScene: scene,
-              roomSession,
-              baseVersionId: currentVersionId,
-              baseVersionLabel: get().versions.find(
-                (v) => v.id === currentVersionId,
-              )?.label,
-              baselineAudit: matchingAudit(audit, scene) ? audit : undefined,
             },
           ],
         }))
-      } catch (error) {
-        if (current() && !controller.signal.aborted)
-          set((s) => ({
-            chat: [
-              ...s.chat,
-              {
-                role: 'assistant',
-                text: errorMessage(error),
-                progress: s.agentProgress,
-              },
-            ],
-          }))
-      } finally {
-        if (current())
-          set({ agentBusy: false, agentAbort: null, agentProgress: [] })
+    } finally {
+      if (current())
+        set({ agentBusy: false, agentAbort: null, agentProgress: [] })
+    }
+  },
+  cancelAgent: () => {
+    if (!get().agentBusy) return
+    get().agentAbort?.abort()
+    set((s) => ({
+      agentBusy: false,
+      agentProgress: [],
+      agentAbort: null,
+      chat: [
+        ...s.chat,
+        {
+          role: 'assistant',
+          text: 'Request cancelled. Your room has not changed.',
+          progress: s.agentProgress,
+        },
+      ],
+    }))
+  },
+  loadRoom: async () => {
+    get().roomAbort?.abort()
+    clearTimeout(roomPoll)
+    const { scene, roomSession } = get()
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession && get().roomAbort === controller
+    set({
+      roomLoading: true,
+      roomAbort: controller,
+      roomWarnings: [],
+      furnitureProgress: null,
+      audit: null,
+    })
+    try {
+      const result = await fetchRoom(scene.scene_id, controller.signal)
+      if (current() && get().scene === scene) {
+        set({
+          scene: result.scene,
+          ...initialRoomHistory(result.scene),
+          roomWarnings: result.warnings,
+          furnitureProgress: result.progress,
+        })
+        if (result.pending) pollRoom(roomSession, result.scene)
       }
-    },
-    cancelAgent: () => {
-      if (!get().agentBusy) return
-      get().agentAbort?.abort()
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({
+          roomWarnings: [
+            get().home.planId
+              ? `Showing the room as parsed, without furniture. ${errorMessage(error)}`
+              : `Using the local demo room. ${errorMessage(error)}`,
+          ],
+        })
+    } finally {
+      if (current()) set({ roomLoading: false, roomAbort: null })
+    }
+  },
+  refreshAudit: async () => {
+    const { scene, roomSession, interacting, roomLoading } = get()
+    if (interacting || roomLoading) return
+    get().auditAbort?.abort()
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession &&
+      sameRevision(get().scene, scene) &&
+      !get().interacting &&
+      get().auditAbort === controller
+    set({
+      audit: null,
+      auditStatus: 'loading',
+      auditError: null,
+      auditAbort: controller,
+    })
+    try {
+      const audit = await fetchAudit(scene, controller.signal)
+      if (current()) set({ audit, auditStatus: 'ready' })
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({ auditStatus: 'error', auditError: errorMessage(error) })
+    } finally {
+      if (get().auditAbort === controller) set({ auditAbort: null })
+    }
+  },
+  refreshFengShuiScore: async () => {
+    const { scene, roomSession, interacting, roomLoading } = get()
+    if (interacting || roomLoading) return
+    get().fengShuiScoreAbort?.abort()
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession &&
+      sameRevision(get().scene, scene) &&
+      !get().interacting &&
+      get().fengShuiScoreAbort === controller
+    set({
+      fengShuiScore: null,
+      fengShuiScoreStatus: 'loading',
+      fengShuiScoreError: null,
+      fengShuiScoreAbort: controller,
+    })
+    try {
+      const score = await fetchFengShuiScore(scene, controller.signal)
+      if (current()) set({ fengShuiScore: score, fengShuiScoreStatus: 'ready' })
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({
+          fengShuiScoreStatus: 'error',
+          fengShuiScoreError: errorMessage(error),
+        })
+    } finally {
+      if (get().fengShuiScoreAbort === controller)
+        set({ fengShuiScoreAbort: null })
+    }
+  },
+  assessFengShui: async () => {
+    const { scene, roomSession, interacting, roomLoading } = get()
+    if (interacting || roomLoading || get().fengShuiStatus === 'loading') return
+    const controller = new AbortController()
+    const current = () =>
+      get().roomSession === roomSession &&
+      sameRevision(get().scene, scene) &&
+      get().fengShuiAbort === controller
+    set({
+      fengShui: null,
+      fengShuiStatus: 'loading',
+      fengShuiError: null,
+      fengShuiAbort: controller,
+    })
+    try {
+      const fengShui = await fetchFengShui(scene, controller.signal)
+      if (current()) set({ fengShui, fengShuiStatus: 'ready' })
+    } catch (error) {
+      if (current() && !controller.signal.aborted)
+        set({ fengShuiStatus: 'error', fengShuiError: errorMessage(error) })
+    } finally {
+      if (get().fengShuiAbort === controller) set({ fengShuiAbort: null })
+    }
+  },
+  setTab: (tab) => {
+    if (get().tab === tab) return
+    set({ tab })
+    playCue('select')
+  },
+  beginHumanPlacement: () => {
+    const s = get()
+    if (s.mode !== 'edit' || s.interacting || s.roomLoading) return false
+    set({
+      placingHuman: true,
+      humanPreview: null,
+      interacting: true,
+      selectedId: null,
+    })
+    return true
+  },
+  previewHuman: (p) => {
+    const s = get()
+    if (s.placingHuman)
+      set({ humanPreview: p ? humanPoseAt(p, s.scene, s.human) : null })
+  },
+  finishHumanPlacement: (p) => {
+    const s = get()
+    if (!s.placingHuman) return false
+    const valid = p != null && canStand(p, s.scene)
+    set({
+      human: valid ? humanPoseAt(p, s.scene, s.human) : s.human,
+      placingHuman: false,
+      humanPreview: null,
+      interacting: false,
+    })
+    if (!valid) playCue('reject')
+    else if (!s.human || p!.x !== s.human.x || p!.z !== s.human.z)
+      playCue('place')
+    return valid
+  },
+  cancelHumanPlacement: () => {
+    if (get().placingHuman)
+      set({ placingHuman: false, humanPreview: null, interacting: false })
+  },
+  removeHuman: () => {
+    if (get().mode === 'edit' && !get().interacting) set({ human: null })
+  },
+  startPlay: () => {
+    const s = get()
+    if (
+      s.screen !== 'editor' ||
+      s.mode !== 'edit' ||
+      s.interacting ||
+      !s.human ||
+      !canStand(s.human, s.scene)
+    )
+      return false
+    set({ mode: 'play', playPhase: 'walking', selectedId: null })
+    return true
+  },
+  finishPlay: (pose) => {
+    const s = get()
+    if (s.mode !== 'play') return
+    const valid =
+      pose &&
+      Number.isFinite(pose.x) &&
+      Number.isFinite(pose.z) &&
+      Number.isFinite(pose.yaw_deg)
+    set({
+      mode: 'edit',
+      playPhase: 'walking',
+      human: valid && s.human ? { ...pose } : s.human,
+    })
+  },
+  openLightingPanel: () => {
+    if (get().mode !== 'play') return false
+    set({ playPhase: 'lighting' })
+    return true
+  },
+  resumeWalking: () => {
+    if (get().mode !== 'play' || get().playPhase !== 'lighting') return false
+    set({ playPhase: 'walking' })
+    return true
+  },
+  setArtificialLight: (percent) => {
+    if (Number.isFinite(percent))
       set((s) => ({
-        agentBusy: false,
-        agentProgress: [],
-        agentAbort: null,
-        chat: [
-          ...s.chat,
-          {
-            role: 'assistant',
-            text: 'Request cancelled. Your room has not changed.',
-            progress: s.agentProgress,
-          },
-        ],
+        playLighting: {
+          ...s.playLighting,
+          artificialPercent: Math.max(0, Math.min(100, percent)),
+        },
       }))
-    },
-    loadRoom: async () => {
-      get().roomAbort?.abort()
-      clearTimeout(roomPoll)
-      const { scene, roomSession } = get()
-      const controller = new AbortController()
-      const current = () =>
-        get().roomSession === roomSession && get().roomAbort === controller
-      set({
-        roomLoading: true,
-        roomAbort: controller,
-        roomWarnings: [],
-        furnitureProgress: null,
-        audit: null,
-      })
-      try {
-        const result = await fetchRoom(scene.scene_id, controller.signal)
-        if (current() && get().scene === scene) {
-          set({
-            scene: result.scene,
-            ...initialRoomHistory(result.scene),
-            roomWarnings: result.warnings,
-            furnitureProgress: result.progress,
-          })
-          if (result.pending) pollRoom(roomSession, result.scene)
-        }
-      } catch (error) {
-        if (current() && !controller.signal.aborted)
-          set({
-            roomWarnings: [
-              get().home.planId
-                ? `Showing the room as parsed, without furniture. ${errorMessage(error)}`
-                : `Using the local demo room. ${errorMessage(error)}`,
-            ],
-          })
-      } finally {
-        if (current()) set({ roomLoading: false, roomAbort: null })
-      }
-    },
-    refreshAudit: async () => {
-      const { scene, roomSession, interacting, roomLoading } = get()
-      if (interacting || roomLoading) return
-      get().auditAbort?.abort()
-      const controller = new AbortController()
-      const current = () =>
-        get().roomSession === roomSession &&
-        sameRevision(get().scene, scene) &&
-        !get().interacting &&
-        get().auditAbort === controller
-      set({
-        audit: null,
-        auditStatus: 'loading',
-        auditError: null,
-        auditAbort: controller,
-      })
-      try {
-        const audit = await fetchAudit(scene, controller.signal)
-        if (current()) set({ audit, auditStatus: 'ready' })
-      } catch (error) {
-        if (current() && !controller.signal.aborted)
-          set({ auditStatus: 'error', auditError: errorMessage(error) })
-      } finally {
-        if (get().auditAbort === controller) set({ auditAbort: null })
-      }
-    },
-    refreshFengShuiScore: async () => {
-      const { scene, roomSession, interacting, roomLoading } = get()
-      if (interacting || roomLoading) return
-      get().fengShuiScoreAbort?.abort()
-      const controller = new AbortController()
-      const current = () =>
-        get().roomSession === roomSession &&
-        sameRevision(get().scene, scene) &&
-        !get().interacting &&
-        get().fengShuiScoreAbort === controller
-      set({
-        fengShuiScore: null,
-        fengShuiScoreStatus: 'loading',
-        fengShuiScoreError: null,
-        fengShuiScoreAbort: controller,
-      })
-      try {
-        const score = await fetchFengShuiScore(scene, controller.signal)
-        if (current())
-          set({ fengShuiScore: score, fengShuiScoreStatus: 'ready' })
-      } catch (error) {
-        if (current() && !controller.signal.aborted)
-          set({
-            fengShuiScoreStatus: 'error',
-            fengShuiScoreError: errorMessage(error),
-          })
-      } finally {
-        if (get().fengShuiScoreAbort === controller)
-          set({ fengShuiScoreAbort: null })
-      }
-    },
-    assessFengShui: async () => {
-      const { scene, roomSession, interacting, roomLoading } = get()
-      if (interacting || roomLoading || get().fengShuiStatus === 'loading')
-        return
-      const controller = new AbortController()
-      const current = () =>
-        get().roomSession === roomSession &&
-        sameRevision(get().scene, scene) &&
-        get().fengShuiAbort === controller
-      set({
-        fengShui: null,
-        fengShuiStatus: 'loading',
-        fengShuiError: null,
-        fengShuiAbort: controller,
-      })
-      try {
-        const fengShui = await fetchFengShui(scene, controller.signal)
-        if (current()) set({ fengShui, fengShuiStatus: 'ready' })
-      } catch (error) {
-        if (current() && !controller.signal.aborted)
-          set({ fengShuiStatus: 'error', fengShuiError: errorMessage(error) })
-      } finally {
-        if (get().fengShuiAbort === controller) set({ fengShuiAbort: null })
-      }
-    },
-    setTab: (tab) => {
-      if (get().tab === tab) return
-      set({ tab })
-      playCue('select')
-    },
-    beginHumanPlacement: () => {
-      const s = get()
-      if (s.mode !== 'edit' || s.interacting || s.roomLoading) return false
-      set({
-        placingHuman: true,
-        humanPreview: null,
-        interacting: true,
-        selectedId: null,
-      })
-      return true
-    },
-    previewHuman: (p) => {
-      const s = get()
-      if (s.placingHuman)
-        set({ humanPreview: p ? humanPoseAt(p, s.scene, s.human) : null })
-    },
-    finishHumanPlacement: (p) => {
-      const s = get()
-      if (!s.placingHuman) return false
-      const valid = p != null && canStand(p, s.scene)
-      set({
-        human: valid ? humanPoseAt(p, s.scene, s.human) : s.human,
-        placingHuman: false,
-        humanPreview: null,
-        interacting: false,
-      })
-      if (!valid) playCue('reject')
-      else if (!s.human || p!.x !== s.human.x || p!.z !== s.human.z)
-        playCue('place')
-      return valid
-    },
-    cancelHumanPlacement: () => {
-      if (get().placingHuman)
-        set({ placingHuman: false, humanPreview: null, interacting: false })
-    },
-    removeHuman: () => {
-      if (get().mode === 'edit' && !get().interacting) set({ human: null })
-    },
-    startPlay: () => {
-      const s = get()
-      if (
-        s.screen !== 'editor' ||
-        s.mode !== 'edit' ||
-        s.interacting ||
-        !s.human ||
-        !canStand(s.human, s.scene)
-      )
-        return false
-      set({ mode: 'play', playPhase: 'walking', selectedId: null })
-      return true
-    },
-    finishPlay: (pose) => {
-      const s = get()
-      if (s.mode !== 'play') return
-      const valid =
-        pose &&
-        Number.isFinite(pose.x) &&
-        Number.isFinite(pose.z) &&
-        Number.isFinite(pose.yaw_deg)
-      set({
-        mode: 'edit',
-        playPhase: 'walking',
-        human: valid && s.human ? { ...pose } : s.human,
-      })
-    },
-    openLightingPanel: () => {
-      if (get().mode !== 'play') return false
-      set({ playPhase: 'lighting' })
-      return true
-    },
-    resumeWalking: () => {
-      if (get().mode !== 'play' || get().playPhase !== 'lighting') return false
-      set({ playPhase: 'walking' })
-      return true
-    },
-    setArtificialLight: (percent) => {
-      if (Number.isFinite(percent))
-        set((s) => ({
-          playLighting: {
-            ...s.playLighting,
-            artificialPercent: Math.max(0, Math.min(100, percent)),
-          },
-        }))
-    },
-    setTimeOfDay: (hour) => {
-      if (Number.isFinite(hour))
-        set((s) => ({
-          playLighting: {
-            ...s.playLighting,
-            timeOfDay: Math.round(Math.max(0, Math.min(24, hour)) * 4) / 4,
-          },
-        }))
-    },
-    toast: (text) => {
-      const id = ++toastSeq
-      set((s) => ({ toasts: [...s.toasts, { id, text }] }))
-      setTimeout(() => get().dismissToast(id), 4500)
-    },
-    dismissToast: (id) =>
-      set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
-  }
-})
+  },
+  setTimeOfDay: (hour) => {
+    if (Number.isFinite(hour))
+      set((s) => ({
+        playLighting: {
+          ...s.playLighting,
+          timeOfDay: Math.round(Math.max(0, Math.min(24, hour)) * 4) / 4,
+        },
+      }))
+  },
+  toast: (text) => {
+    const id = ++toastSeq
+    set((s) => ({ toasts: [...s.toasts, { id, text }] }))
+    setTimeout(() => get().dismissToast(id), 4500)
+  },
+  dismissToast: (id) =>
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+}))
