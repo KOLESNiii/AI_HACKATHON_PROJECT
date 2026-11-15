@@ -45,6 +45,12 @@ from services.reconstruction.room.routes import (
     publish,
 )
 from services.reconstruction.room.video_furniture import RealRoomFurniture, default_bindings
+from services.reconstruction.room.video_jobs import (
+    PENDING_HEADER,
+    PROGRESS_HEADER,
+    VideoFurniture,
+    extractions,
+)
 
 WARNINGS_HEADER = "X-Reconstruction-Warnings"
 SCENE_HEADERS = {"Cache-Control": "no-cache"}
@@ -72,16 +78,25 @@ class DemoFurniture:
 
 
 def get_furniture_source() -> FurnitureSource:
-    """Furniture for uploaded rooms: the video furniture of rooms bound to a video
+    """Furniture for uploaded rooms: what was extracted from the videos uploaded with the plan
+    (`room/video_jobs.py`); else the video furniture of rooms bound to a video
     (`room/fixtures/real_rooms.json`), read from the furniture data directory, else from the
     published demo cache (#20); the room alone otherwise. Overridden in tests
     (`app.dependency_overrides`)."""
-    return RealRoomFurniture(default_bindings(), furniture_data_dir(), demo_cache_dir())
+    bound = RealRoomFurniture(default_bindings(), furniture_data_dir(), demo_cache_dir())
+    return VideoFurniture(extractions(), furniture_data_dir(), bound)
 
 
 def clear_cache() -> None:
     """Forget assembled scenes (tests, or after the furniture source changes)."""
     _scenes.clear()
+
+
+def forget_plan(plan_id: str) -> None:
+    """Forget the kept scenes of one uploaded plan: its furniture source changed."""
+    with STATE_LOCK:
+        for scene_id in [s for s in _scenes if s.startswith(f"{plan_id}-")]:
+            del _scenes[scene_id]
 
 
 @router.get("/{scene_id}", response_model=RoomScene)
@@ -134,6 +149,11 @@ OVERTAKEN = (
 def _respond(response: Response, assembly: Assembly) -> RoomScene:
     response.headers.update(SCENE_HEADERS)
     response.headers[WARNINGS_HEADER] = json.dumps(assembly.warnings)
+    progress = None if assembly.complete else extractions().progress(assembly.scene.scene_id)
+    if progress is not None:
+        # Furniture is still being extracted from the plan's videos: ask again later.
+        response.headers[PENDING_HEADER] = "true"
+        response.headers[PROGRESS_HEADER] = json.dumps(progress)
     return assembly.scene
 
 

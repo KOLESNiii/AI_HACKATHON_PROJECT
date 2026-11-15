@@ -48,3 +48,16 @@ def scene_cache_dir() -> Path:
     if configured:
         return Path(configured).resolve()
     return REPO_ROOT / "services" / "reconstruction" / "room" / "fixtures" / "scene_cache"
+
+
+UPLOAD_DIR_ENV = "RECONSTRUCTION_UPLOAD_DIR"
+
+
+def upload_dir() -> Path:
+    """Where walkthrough videos uploaded with a floor plan are kept (`room/videos.py`).
+
+    `$RECONSTRUCTION_UPLOAD_DIR`, else `artifacts/uploads` in the repository (ignored by Git).
+    The directory need not exist yet.
+    """
+    configured = os.environ.get(UPLOAD_DIR_ENV)
+    return Path(configured).resolve() if configured else REPO_ROOT / "artifacts" / "uploads"

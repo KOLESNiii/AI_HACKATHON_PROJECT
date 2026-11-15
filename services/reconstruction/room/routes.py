@@ -12,18 +12,35 @@ from __future__ import annotations
 import math
 import threading
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
-from contracts.schema import MAX_FLOOR_PLAN_IMAGES, ParsedFloor, ParsedFloorPlan, RoomScene
+from contracts.schema import (
+    MAX_FLOOR_PLAN_IMAGES,
+    MAX_ROOM_VIDEOS,
+    ParsedFloor,
+    ParsedFloorPlan,
+    RoomScene,
+)
+from services.reconstruction.config import upload_dir
 
 from . import correct
 from .annotate import FalVisionAnnotator, PlanAnnotator
 from .parse import parse_floor_plan, plan_id_for
 from .raster import UnreadableImage
 from .shell import shell_glb
+from .video_jobs import Extractions, extractions
+from .videos import (
+    VideoRejected,
+    discard_staging,
+    keep_videos,
+    new_staging,
+    stage_video,
+    videos_note,
+)
 
 router = APIRouter(prefix="/floor-plans", tags=["floor plans"])
 
@@ -43,20 +60,72 @@ def get_annotator() -> PlanAnnotator:
     return FalVisionAnnotator()
 
 
+def get_upload_dir() -> Path:
+    """Where uploaded videos are kept (`videos.py`). Overridden in tests."""
+    return upload_dir()
+
+
+def get_extractions() -> Extractions:
+    """Background furniture extraction from uploaded videos. Overridden in tests."""
+    return extractions()
+
+
 @router.post("", response_model=ParsedFloorPlan)
 async def parse_plan(
     files: Annotated[list[UploadFile], File(description="Floor-plan images (PNG/JPEG)")],
     annotator: Annotated[PlanAnnotator, Depends(get_annotator)],
+    uploads: Annotated[Path, Depends(get_upload_dir)],
+    jobs: Annotated[Extractions, Depends(get_extractions)],
+    videos: Annotated[
+        list[UploadFile] | None,
+        File(description="Optional walkthrough videos; their furniture is extracted with fal"),
+    ] = None,
 ) -> ParsedFloorPlan:
-    """Parse every floor and room on 1..MAX_FLOOR_PLAN_IMAGES floor-plan images."""
+    """Parse every floor and room on 1..MAX_FLOOR_PLAN_IMAGES floor-plan images.
+
+    Up to MAX_ROOM_VIDEOS walkthrough videos may come with them. They are saved under the plan
+    (`videos.py`) and their furniture is extracted in the background (`video_jobs.py`); the
+    response's warnings say so. That note is not stored with the plan."""
+    videos = videos or []
     if not 1 <= len(files) <= MAX_FLOOR_PLAN_IMAGES:
         raise HTTPException(422, f"upload 1 to {MAX_FLOOR_PLAN_IMAGES} floor-plan images")
+    if len(videos) > MAX_ROOM_VIDEOS:
+        raise HTTPException(422, f"upload at most {MAX_ROOM_VIDEOS} walkthrough videos")
     images: list[tuple[bytes, str]] = []
     for f in files:
         data = await f.read()
         if len(data) > MAX_IMAGE_BYTES:
             raise HTTPException(413, f"{f.filename} is larger than {MAX_IMAGE_BYTES} bytes")
         images.append((data, f.content_type or "image/png"))
+    if not videos:
+        return await _parse_or_cached(images, annotator)
+    staging = new_staging(uploads)
+    try:
+        staged = []
+        for v in videos:
+            try:
+                staged.append(
+                    await run_in_threadpool(
+                        stage_video, v.file, v.filename, v.content_type, staging
+                    )
+                )
+            except VideoRejected as exc:
+                raise HTTPException(exc.status_code, str(exc)) from exc
+        plan = await _parse_or_cached(images, annotator)
+        kept = await run_in_threadpool(keep_videos, staged, plan.plan_id, uploads)
+    finally:
+        discard_staging(staging)
+    if jobs.start(plan.plan_id, sorted(set(kept))):
+        # Rooms kept before these videos arrived would never show their furniture.
+        from services.reconstruction.scenes import forget_plan
+
+        forget_plan(plan.plan_id)
+    return plan.model_copy(update={"warnings": [*plan.warnings, videos_note(len(set(kept)))]})
+
+
+async def _parse_or_cached(
+    images: list[tuple[bytes, str]], annotator: PlanAnnotator
+) -> ParsedFloorPlan:
     plan_id = plan_id_for([d for d, _ in images])
     if plan_id in _plans:
         return _plans[plan_id]
