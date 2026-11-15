@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import math
+from pathlib import Path
 
 import pytest
 
@@ -11,6 +12,7 @@ from contracts.schema import FurnitureItem, ParsedFloor, ParsedRoom, Pose2D, Roo
 from services.reconstruction.room import footprint as fp
 from services.reconstruction.room.correct import (
     InvalidEdit,
+    InvalidScale,
     StaleEdit,
     apply_pose_edit,
     carry_furniture,
@@ -82,15 +84,17 @@ def inside(scene: RoomScene, it: FurnitureItem) -> bool:
 def test_rescaling_scales_plan_lengths_and_keeps_heights() -> None:
     before = room()
     after = rescale_room(before, 1.1)
-    for wall in before.walls:
-        assert length(after, wall.id) == pytest.approx(length(before, wall.id) * 1.1, abs=1e-3)
-    assert [w.height_m for w in after.walls] == [w.height_m for w in before.walls]
-    assert [w.thickness_m for w in after.walls] == [0.22] * 4  # traced at image scale
+    for wall, scaled in zip(before.walls, after.walls):  # exact products, never rounded
+        assert (scaled.start.x, scaled.start.z) == (wall.start.x * 1.1, wall.start.z * 1.1)
+        assert (scaled.end.x, scaled.end.z) == (wall.end.x * 1.1, wall.end.z * 1.1)
+        assert scaled.thickness_m == wall.thickness_m * 1.1  # traced at image scale
+        assert scaled.height_m == wall.height_m
     (win,) = after.windows
-    assert (win.offset_along_wall_m, win.width_m) == (1.1, 1.32)
+    assert (win.offset_along_wall_m, win.width_m) == (1.0 * 1.1, 1.2 * 1.1)
     assert (win.sill_height_m, win.plan_normal_deg) == (0.9, 0.0)
     (door,) = after.doors
-    assert (door.hinge_pos.x, door.hinge_pos.z, door.width_m) == (5.5, 4.4, 0.935)
+    assert (door.hinge_pos.x, door.hinge_pos.z) == pytest.approx((5.5, 4.4), abs=1e-12)
+    assert door.width_m == before.doors[0].width_m * 1.1
     assert door.head_height_m == before.doors[0].head_height_m
     assert conform_openings(after) == (after, [])  # every door exactly on its wall
     assert after.shell_glb_url.startswith(URL.removesuffix(".glb") + ".")  # a new file
@@ -221,3 +225,87 @@ def test_a_pose_edit_keeps_poses_only() -> None:
     with pytest.raises(InvalidEdit, match="is_proxy"):
         proxy = turned.model_copy(update={"is_proxy": True})
         apply_pose_edit(kept, edit.model_copy(update={"furniture": [proxy]}))
+
+
+FIXTURES = Path(__file__).resolve().parents[1] / "services/reconstruction/room/fixtures"
+EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
+FACTORS = (0.25, 0.33, 0.5, 0.9, 1.1, 2.0, 4.0)
+
+
+@pytest.mark.parametrize(
+    ("image", "annotations"),
+    [
+        ("three_floor.png", "three_floor.annotations.json"),
+        ("one_floor.jpg", "one_floor.annotations.json"),
+    ],
+)
+def test_every_example_room_is_rescaled_validly_or_refused(image: str, annotations: str) -> None:
+    """PR #59 review: rounding made a door wider than its rescaled wall (the audit refused the
+    room), and a small factor broke the contract (HTTP 500). Every room of both example plans,
+    at factors across the allowed range: either `InvalidScale`, or a room the audit accepts."""
+    pytest.importorskip("cv2")
+    pytest.importorskip("shapely")
+    from fastapi.testclient import TestClient
+
+    from services.reconstruction.room.annotate import FixedAnnotator, PlanAnnotations
+    from services.reconstruction.room.parse import parse_floor_plan
+    from services.spatial_engine.main import app
+
+    if not (EXAMPLES / image).exists():
+        pytest.skip("example plan missing")
+    labels = PlanAnnotations.model_validate_json((FIXTURES / annotations).read_text())
+    plan = parse_floor_plan(
+        [((EXAMPLES / image).read_bytes(), "image/png")], FixedAnnotator(labels)
+    )
+    audit = TestClient(app)
+    refused = []
+    for factor in FACTORS:
+        for floor in plan.floors:
+            try:
+                corrected = rescale_floor(floor, factor)
+            except InvalidScale as exc:
+                refused.append((factor, str(exc)))
+                continue
+            for parsed in corrected.rooms:
+                scene = parsed.scene
+                assert conform_openings(scene)[1] == [], (factor, parsed.room_id)
+                res = audit.post("/audit", json=scene.model_dump(mode="json"))
+                assert res.status_code == 200, (factor, parsed.room_id, res.text)
+    assert all(factor < 0.5 for factor, _ in refused), refused  # only narrow features, small
+
+
+def test_a_door_that_fills_a_diagonal_wall_still_fits_it() -> None:
+    """The reviewer's case in miniature: a 45-degree wall whose door is exactly as wide."""
+    pts = [(0.0, 0.0), (3.0, 0.0), (3.0, 2.0), (2.567, 2.433), (0.0, 2.433)]
+    walls = [
+        {
+            "id": f"w{i}",
+            "start": {"x": pts[i][0], "z": pts[i][1]},
+            "end": {"x": pts[(i + 1) % 5][0], "z": pts[(i + 1) % 5][1]},
+        }
+        for i in range(5)
+    ]
+    diagonal = math.dist(pts[2], pts[3])
+    base = RoomScene.model_validate(
+        {
+            "scene_id": "diag",
+            "shell_glb_url": "/api/reconstruction/shells/diag.glb",
+            "floor_polygon": [{"x": x, "z": z} for x, z in pts],
+            "walls": walls,
+            "windows": [],
+            "doors": [
+                {
+                    "id": "door0",
+                    "wall_id": "w2",
+                    "hinge_pos": {"x": 3.0, "z": 2.0},
+                    "width_m": round(diagonal, 3),
+                }
+            ],
+            "furniture": [],
+        }
+    )
+    base, _ = conform_openings(base)
+    for factor in FACTORS:
+        scaled = rescale_room(base, factor)
+        (door,) = scaled.doors
+        assert door.width_m <= length(scaled, "w2") + 1e-12, factor

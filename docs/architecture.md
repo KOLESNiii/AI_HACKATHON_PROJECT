@@ -358,9 +358,10 @@ Scale correction:
 - One drawing has one scale and one frame, so every room on the floor is rescaled about the
   floor's origin, from the original parse: the factor is `length_m` over the wall's parsed
   length, so corrections never compound and correcting back restores the parse.
-- Plan lengths scale: polygon, walls (and their traced thickness), window offsets and widths,
-  door hinges and widths. Heights, bearings and IDs do not; doors are conformed to their walls
-  again. The rooms become `dimension_source: "user_corrected"` without `"dimensions"`, and the
+- Plan lengths scale exactly (no rounding, so the room is similar to the parse and every
+  opening that fitted its wall still does): polygon, walls (and their traced thickness), window
+  offsets and widths, door hinges and widths, then clamped to their walls against float error.
+  Heights, bearings and IDs do not; doors are conformed to their walls again. The rooms become `dimension_source: "user_corrected"` without `"dimensions"`, and the
   plan carries one note per corrected floor.
 - The shell is immutable per URL, so a corrected room gets `shells/<scene_id>.<digest>.glb`;
   the superseded URL is 404.
@@ -370,14 +371,18 @@ Scale correction:
   rescale pushes out of a smaller room moves to the nearest spot where it fits with the same
   yaw (`align.nearest_fit`), flagged `placement` if that is more than 0.3 m away; one that fits
   nowhere stays where it was carried, flagged.
-- **422** for a demo room (fixture geometry), an unknown wall, or a factor outside 0.25-4;
-  **409** when the scene is not kept, or `revision` is not the kept one (save edits first).
+- **422** for a demo room (fixture geometry), an unknown wall, a factor outside 0.25-4, or a
+  factor at which some room of the floor would not be a valid room (narrow features shrink
+  below the contract's checks); nothing changes. **409** when the scene is not kept, or
+  `revision` is not the kept one (save edits first). The corrected floor and every carried
+  scene are computed before anything is published.
 
 Concurrency: sync routes run in a thread pool, so every check-then-write of the plan store and
 the kept scenes holds one lock (`routes.STATE_LOCK`): a PUT's revision check and write, a whole
 scale correction, and a GET's cache write. Assembly itself runs outside it. A GET never
 replaces a kept scene (a slow assembly that finishes after a save returns the saved scene), and
-an assembly overtaken by a scale correction is returned but not kept.
+an assembly overtaken by a scale correction is done again from the corrected room (409 after
+3 attempts), so a scene's shell URL is always served.
 
 **Handoff to Dev 3 (#25, #26).** PUT the scene when a drag or rotation ends (the revision the
 editor already bumps). To correct scale, PUT first, then POST with the current revision and

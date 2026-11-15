@@ -19,6 +19,8 @@ import hashlib
 import json
 import math
 
+from pydantic import ValidationError
+
 from contracts.schema import (
     DoorOpening,
     FurnitureItem,
@@ -62,12 +64,10 @@ class InvalidEdit(Exception):
 # --- scale ------------------------------------------------------------------------------------
 
 
-def _mm(v: float) -> float:
-    return round(v, 3)
-
-
 def _point(p: Vec2, factor: float) -> Vec2:
-    return Vec2(x=_mm(p.x * factor), z=_mm(p.z * factor))
+    # Full precision: rounding endpoints and widths separately can make a door wider than its
+    # wall (the audit's tolerance is 1e-8 m). Unrounded, the room is exactly similar.
+    return Vec2(x=p.x * factor, z=p.z * factor)
 
 
 def geometry_digest(scene: RoomScene) -> str:
@@ -84,9 +84,12 @@ def corrected_shell_url(original_url: str, digest: str) -> str:
 def rescale_room(original: RoomScene, factor: float) -> RoomScene:
     """The parsed room (no furniture) at `factor` times its size, about the floor's origin.
 
-    Plan lengths scale (polygon, walls and their traced thickness, opening positions and
-    widths); heights, bearings and IDs do not. Doors are conformed to their walls again after
-    millimetre rounding. A room whose geometry changes gets a new shell URL.
+    Plan lengths scale exactly (polygon, walls and their traced thickness, opening positions
+    and widths), so the room is similar to the parse and every opening that fitted its wall
+    still does; heights, bearings and IDs do not change. Openings are then clamped to their
+    walls against float error, and doors conformed. A room whose geometry changes gets a new
+    shell URL. Raises pydantic's `ValidationError` when the scaled room breaks the contract
+    (a feature narrower than its checks at a small factor).
     """
     walls = [
         WallSegment(
@@ -94,26 +97,33 @@ def rescale_room(original: RoomScene, factor: float) -> RoomScene:
             start=_point(w.start, factor),
             end=_point(w.end, factor),
             height_m=w.height_m,
-            thickness_m=_mm(min(MAX_THICKNESS_M, max(MIN_THICKNESS_M, w.thickness_m * factor))),
+            thickness_m=min(MAX_THICKNESS_M, max(MIN_THICKNESS_M, w.thickness_m * factor)),
         )
         for w in original.walls
     ]
-    windows = [
-        WindowOpening.model_validate(
-            w.model_dump()
-            | {
-                "offset_along_wall_m": _mm(w.offset_along_wall_m * factor),
-                "width_m": _mm(w.width_m * factor),
-            }
+    lengths = {w.id: math.dist((w.start.x, w.start.z), (w.end.x, w.end.z)) for w in walls}
+
+    def within(wall_id: str, offset: float, width: float) -> tuple[float, float]:
+        length = lengths.get(wall_id)
+        if length is None:
+            return offset, width
+        width = min(width, length)
+        return min(max(offset, 0.0), length - width), width
+
+    windows = []
+    for w in original.windows:
+        offset, width = within(w.wall_id, w.offset_along_wall_m * factor, w.width_m * factor)
+        windows.append(
+            WindowOpening.model_validate(
+                w.model_dump() | {"offset_along_wall_m": offset, "width_m": width}
+            )
         )
-        for w in original.windows
-    ]
     doors = [
         DoorOpening.model_validate(
             d.model_dump()
             | {
                 "hinge_pos": _point(d.hinge_pos, factor).model_dump(),
-                "width_m": _mm(d.width_m * factor),
+                "width_m": min(d.width_m * factor, lengths.get(d.wall_id, math.inf)),
             }
         )
         for d in original.doors
@@ -135,20 +145,35 @@ def rescale_room(original: RoomScene, factor: float) -> RoomScene:
     return room
 
 
+class InvalidScale(ValueError):
+    """A room of the floor cannot exist at that scale (it would break the contract)."""
+
+
 def rescale_floor(original: ParsedFloor, factor: float) -> ParsedFloor:
-    """Every room of the floor rescaled; the dimensions now come from the user."""
-    rooms = [
-        ParsedRoom.model_validate(
-            room.model_dump()
-            | {
-                "area_m2": round(room.area_m2 * factor * factor, 2),
-                "dimension_source": "user_corrected",
-                "correction_needed": [c for c in room.correction_needed if c != "dimensions"],
-                "scene": rescale_room(room.scene, factor).model_dump(),
-            }
-        )
-        for room in original.rooms
-    ]
+    """Every room of the floor rescaled; the dimensions now come from the user. Raises
+    `InvalidScale` naming the first room that would not be valid: the floor shares one scale,
+    so it is corrected whole or not at all."""
+    rooms = []
+    for room in original.rooms:
+        try:
+            scene = rescale_room(room.scene, factor)
+            rooms.append(
+                ParsedRoom.model_validate(
+                    room.model_dump()
+                    | {
+                        "area_m2": round(room.area_m2 * factor * factor, 2),
+                        "dimension_source": "user_corrected",
+                        "correction_needed": [
+                            c for c in room.correction_needed if c != "dimensions"
+                        ],
+                        "scene": scene.model_dump(),
+                    }
+                )
+            )
+        except ValidationError as exc:
+            raise InvalidScale(f"{room.name}: {exc.errors()[0]['msg']}") from exc
+        except ValueError as exc:
+            raise InvalidScale(f"{room.name}: {exc}") from exc
     return original.model_copy(update={"rooms": rooms})
 
 

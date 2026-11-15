@@ -1,9 +1,9 @@
 """Floor-plan routes. Parsed plans are cached in memory by `plan_id` (derived from the image
 bytes), so re-uploading the same plan is free and rooms can be fetched one at a time.
 
-A floor whose scale the user corrected (#11, `correct_floor_scale`) is served corrected: by
-these routes, by re-upload and to `/scenes`. The original parse is kept beside it, so every
-correction is made from the parse and correcting back restores it exactly.
+A floor whose scale the user corrected (#11: `prepare_floor_scale`, then `publish`) is served
+corrected: by these routes, by re-upload and to `/scenes`. The original parse is kept beside
+it, so every correction is made from the parse and correcting back restores it exactly.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
-from contracts.schema import MAX_FLOOR_PLAN_IMAGES, ParsedFloorPlan, RoomScene
+from contracts.schema import MAX_FLOOR_PLAN_IMAGES, ParsedFloor, ParsedFloorPlan, RoomScene
 
 from . import correct
 from .annotate import FalVisionAnnotator, PlanAnnotator
@@ -116,23 +116,39 @@ class ScaleCorrectionError(ValueError):
 
 @dataclass(frozen=True)
 class ScaleCorrection:
+    """A floor rescaled but not yet published (`prepare_floor_scale`, then `publish`)."""
+
+    plan_id: str
+    floor_index: int
+    floor: ParsedFloor
+    """The corrected floor, every room rescaled."""
     factor: float
     """Corrected size over parsed size, for the whole floor."""
-    scene_ids: list[str]
-    """Every room of the floor, all rescaled."""
+    note: str
+    """The plan warning that says so."""
+
+    @property
+    def scene_ids(self) -> list[str]:
+        return [room.scene.scene_id for room in self.floor.rooms]
+
+    def room(self, scene_id: str) -> RoomScene | None:
+        return next((r.scene for r in self.floor.rooms if r.scene.scene_id == scene_id), None)
 
 
 CORRECTION_NOTE = "scale corrected by the user"
+UNIT_FACTOR_TOLERANCE = 1e-9
+"""A factor this close to 1 is the parsed length given back: the parse, exactly."""
 
 
-def correct_floor_scale(scene_id: str, wall_id: str, length_m: float) -> ScaleCorrection | None:
-    """Rescale the floor of `scene_id` so that its wall `wall_id` is `length_m` long.
+def prepare_floor_scale(scene_id: str, wall_id: str, length_m: float) -> ScaleCorrection | None:
+    """The floor of `scene_id` rescaled so that its wall `wall_id` is `length_m` long; nothing
+    is published until `publish`.
 
     The factor is taken against the original parse, so corrections never compound. Every room
-    on the floor is rescaled (one drawing, one scale, one frame), and the plan's warnings say
-    so, replacing an earlier correction note for that floor. None for an unknown scene; raises
-    `ScaleCorrectionError` for an unknown wall or a factor outside
-    [`correct.MIN_FACTOR`, `correct.MAX_FACTOR`]. Callers hold `STATE_LOCK`.
+    on the floor is rescaled (one drawing, one scale, one frame). None for an unknown scene;
+    raises `ScaleCorrectionError` for an unknown wall, a factor outside
+    [`correct.MIN_FACTOR`, `correct.MAX_FACTOR`], or a factor at which some room of the floor
+    would not be a valid room. Callers hold `STATE_LOCK`.
     """
     for plan_id, original in _originals.items():
         for f, floor in enumerate(original.floors):
@@ -144,20 +160,37 @@ def correct_floor_scale(scene_id: str, wall_id: str, length_m: float) -> ScaleCo
                 raise ScaleCorrectionError(f"{room.name} has no wall {wall_id!r}")
             parsed_m = math.dist((wall.start.x, wall.start.z), (wall.end.x, wall.end.z))
             factor = length_m / parsed_m
+            if abs(factor - 1) <= UNIT_FACTOR_TOLERANCE:
+                factor = 1.0
             if not correct.MIN_FACTOR <= factor <= correct.MAX_FACTOR:
                 raise ScaleCorrectionError(
                     f"{wall_id} was parsed as {parsed_m:.2f} m; {length_m} m would scale the "
                     f"floor by {factor:.2f}, which is not a scale error (check the wall)"
                 )
-            served = _plans[plan_id]
-            floors = list(served.floors)
-            floors[f] = correct.rescale_floor(floor, factor)
-            prefix = f"{floor.name}: {CORRECTION_NOTE}"
-            warnings = [w for w in served.warnings if not w.startswith(prefix)]
-            warnings.append(f"{prefix} ({room.name} {wall_id} = {length_m:.2f} m, x{factor:.3f})")
-            _plans[plan_id] = served.model_copy(update={"floors": floors, "warnings": warnings})
-            return ScaleCorrection(factor, [r.scene.scene_id for r in floor.rooms])
+            try:
+                corrected = correct.rescale_floor(floor, factor)
+            except correct.InvalidScale as exc:
+                raise ScaleCorrectionError(
+                    f"at x{factor:.2f} a room of this floor would not be a valid room ({exc}); "
+                    "check the wall and its length"
+                ) from exc
+            note = (
+                f"{floor.name}: {CORRECTION_NOTE} "
+                f"({room.name} {wall_id} = {length_m:.2f} m, x{factor:.3f})"
+            )
+            return ScaleCorrection(plan_id, f, corrected, factor, note)
     return None
+
+
+def publish(correction: ScaleCorrection) -> None:
+    """Serve the corrected floor, replacing any earlier correction note for it. Callers hold
+    `STATE_LOCK`."""
+    served = _plans[correction.plan_id]
+    floors = list(served.floors)
+    floors[correction.floor_index] = correction.floor
+    prefix = f"{correction.floor.name}: {CORRECTION_NOTE}"
+    warnings = [w for w in served.warnings if not w.startswith(prefix)] + [correction.note]
+    _plans[correction.plan_id] = served.model_copy(update={"floors": floors, "warnings": warnings})
 
 
 def clear_corrections() -> None:

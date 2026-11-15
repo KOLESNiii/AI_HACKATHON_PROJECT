@@ -258,3 +258,10 @@
   way (`align.nearest_fit`), and no orientation flag is added.
 - PR #59 review: non-finite poses are refused (422); `Pose2D` itself accepts them, and they
   would come back as `null`, an invalid scene.
+- Second PR #59 review: rescaled lengths are no longer rounded to the millimetre; rounding
+  endpoints and widths separately made a door wider than its diagonal wall, which the audit
+  (tolerance 1e-8 m) refused. Openings are also clamped to their walls.
+- Second PR #59 review: a factor at which a room of the floor breaks the contract is a 422 that
+  changes nothing (the floor is corrected whole or not at all), never a 500.
+- Second PR #59 review: a GET overtaken by a scale correction assembles the corrected room
+  again rather than returning a retired shell URL; 409 after 3 attempts.

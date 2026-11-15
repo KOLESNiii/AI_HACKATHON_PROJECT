@@ -660,10 +660,16 @@ class _HeldSource:
         return self.inner.furniture_for(room)
 
 
-def _get_in_thread(scene_id: str, source: _HeldSource, out: list[RoomScene]) -> threading.Thread:
-    thread = threading.Thread(
-        target=lambda: out.append(scenes.get_scene(scene_id, FastAPIResponse(), source))
-    )
+def _get_in_thread(
+    scene_id: str, source: _HeldSource, out: list[RoomScene | HTTPException]
+) -> threading.Thread:
+    def get() -> None:
+        try:
+            out.append(scenes.get_scene(scene_id, FastAPIResponse(), source))
+        except HTTPException as exc:
+            out.append(exc)
+
+    thread = threading.Thread(target=get)
     thread.start()
     assert source.started.wait(5)
     return thread
@@ -671,7 +677,8 @@ def _get_in_thread(scene_id: str, source: _HeldSource, out: list[RoomScene]) -> 
 
 def test_a_slow_assembly_never_replaces_a_saved_edit(client: TestClient, data_dir: Path) -> None:
     register_reviewed_items(data_dir)
-    held, out = _HeldSource(), []
+    held = _HeldSource()
+    out: list[RoomScene | HTTPException] = []
     slow = _get_in_thread(BINDING.scene_id, held, out)
     scene, _ = _scene(client)  # a faster request assembles and keeps the scene
     saved = _put(client, _moved(scene, CHAIR, 4.0, 8.6))
@@ -682,24 +689,92 @@ def test_a_slow_assembly_never_replaces_a_saved_edit(client: TestClient, data_di
     assert out == [saved]  # the slow request is answered with the kept scene too
 
 
-def test_an_assembly_overtaken_by_a_scale_correction_is_not_kept(
+def test_an_assembly_overtaken_by_a_scale_correction_is_done_again(
     client: TestClient, data_dir: Path
 ) -> None:
+    """PR #59 review: an overtaken GET returned a scene whose shell URL was retired (404)."""
     register_reviewed_items(data_dir)
     scene, _ = _scene(client)
     neighbour_id = f"{PLAN_ID}-floor-0-room-0"
-    held, out = _HeldSource(), []
+    held = _HeldSource()
+    out: list[RoomScene | HTTPException] = []
     slow = _get_in_thread(neighbour_id, held, out)
     assert _rescale(client, "w16", 4.8, scene.revision).status_code == 200
     held.release.set()
     slow.join(5)
-    (stale,) = out
-    assert neighbour_id not in scenes._scenes  # assembled from the room before the correction
-    fresh = RoomScene.model_validate(client.get(f"/scenes/{neighbour_id}").json())
-    assert fresh.shell_glb_url != stale.shell_glb_url
+    (answer,) = out
+    assert isinstance(answer, RoomScene)
+    assert client.get(answer.shell_glb_url.removeprefix(PROXY_PREFIX)).status_code == 200
+    assert scenes._scenes[neighbour_id].scene == answer  # the corrected room, kept
+    parsed = next(
+        r.scene
+        for f in routes._originals[PLAN_ID].floors
+        for r in f.rooms
+        if r.scene.scene_id == neighbour_id
+    )
     factor = 4.8 / BINDING.walls_m["w16"]
-    for wall_id, length in _walls(stale).items():
-        assert _walls(fresh)[wall_id] == pytest.approx(length * factor, abs=0.002)
+    for wall_id, length in _walls(parsed).items():
+        assert _walls(answer)[wall_id] == pytest.approx(length * factor, abs=1e-6)
+
+
+def test_an_assembly_overtaken_every_time_is_a_conflict(
+    client: TestClient, data_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    register_reviewed_items(data_dir)
+    scene, _ = _scene(client)
+    monkeypatch.setattr(scenes, "ASSEMBLY_ATTEMPTS", 1)
+    neighbour_id = f"{PLAN_ID}-floor-0-room-0"
+    held = _HeldSource()
+    out: list[RoomScene | HTTPException] = []
+    slow = _get_in_thread(neighbour_id, held, out)
+    assert _rescale(client, "w16", 4.8, scene.revision).status_code == 200
+    held.release.set()
+    slow.join(5)
+    (answer,) = out
+    assert isinstance(answer, HTTPException) and answer.status_code == 409
+    assert neighbour_id not in scenes._scenes
+
+
+def _scale_room(client: TestClient, room_id: str, factor: float) -> Response:
+    scene_id = f"{PLAN_ID}-{room_id}"
+    res = client.get(f"/scenes/{scene_id}")
+    assert res.status_code == 200, res.text
+    scene = RoomScene.model_validate(res.json())
+    wall = scene.walls[0]
+    params = {"wall_id": wall.id, "length_m": _length(wall) * factor, "revision": scene.revision}
+    return client.post(f"/scenes/{scene_id}/scale", params=params)
+
+
+def test_a_rescaled_diagonal_door_is_accepted_by_the_audit(
+    client: TestClient, auditor: TestClient
+) -> None:
+    """PR #59 review: x1.1 made floor-1-room-5's door1 wider than its diagonal wall w6."""
+    res = _scale_room(client, "floor-1-room-5", 1.1)
+    assert res.status_code == 200, res.text
+    corrected = RoomScene.model_validate(res.json())
+    for door in corrected.doors:
+        wall = next(w for w in corrected.walls if w.id == door.wall_id)
+        assert door.width_m <= _length(wall) + 1e-9
+    _audit(auditor, corrected)
+
+
+def test_a_scale_that_breaks_a_room_is_refused_and_changes_nothing(
+    client: TestClient, auditor: TestClient
+) -> None:
+    """PR #59 review: x0.25 made floor-1-room-0 invalid and the route answered 500."""
+    before_plan = client.get(f"/floor-plans/{PLAN_ID}").json()
+    scene_id = f"{PLAN_ID}-floor-1-room-0"
+    res = _scale_room(client, "floor-1-room-0", 0.25)
+    assert res.status_code == 422, res.text
+    assert "would not be a valid room" in res.text
+    assert client.get(f"/floor-plans/{PLAN_ID}").json() == before_plan  # nothing published
+    kept = RoomScene.model_validate(client.get(f"/scenes/{scene_id}").json())
+    assert kept.revision == 0 and kept == scenes._scenes[scene_id].scene
+
+    # The same factor is fine where every room stays valid.
+    res = _scale_room(client, "floor-2-room-0", 0.25)
+    assert res.status_code == 200, res.text
+    _audit(auditor, RoomScene.model_validate(res.json()))
 
 
 def test_corrections_need_a_settled_scene(client: TestClient, data_dir: Path) -> None:

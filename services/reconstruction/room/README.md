@@ -112,9 +112,11 @@ flags and the audit reports until the chair is moved.
   flags the user cleared); moving clears `placement`, turning clears `orientation`.
   `StaleEdit` (409) for an old revision or other geometry, `InvalidEdit` (422) otherwise.
 - `rescale_floor` / `rescale_room`: a floor at `factor` times its parsed size about its
-  origin. Plan lengths scale, heights do not; doors are conformed again; a changed room gets
-  a new shell URL (`<scene_id>.<digest>.glb`). `routes.correct_floor_scale` takes the factor
-  against the original parse (`routes._originals`), so corrections never compound.
+  origin, at full precision. Plan lengths scale, heights do not; openings are clamped to their
+  walls and doors conformed again; a changed room gets a new shell URL
+  (`<scene_id>.<digest>.glb`). A room that would break the contract raises `InvalidScale`.
+  `routes.prepare_floor_scale` takes the factor against the original parse
+  (`routes._originals`), so corrections never compound; `routes.publish` serves the result.
 - `carry_furniture(old, room)`: furniture keeps its fraction along its wall, its distance
   from it and its yaw. An item pushed out of a smaller room moves to the nearest spot where it
   fits with the same yaw (`align.nearest_fit`).

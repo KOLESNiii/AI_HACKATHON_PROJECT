@@ -40,8 +40,9 @@ from services.reconstruction.room.observe import FixedObserver
 from services.reconstruction.room.routes import (
     STATE_LOCK,
     ScaleCorrectionError,
-    correct_floor_scale,
     find_parsed_scene,
+    prepare_floor_scale,
+    publish,
 )
 from services.reconstruction.room.video_furniture import RealRoomFurniture, default_bindings
 
@@ -93,9 +94,13 @@ def get_scene(
     Assembled on first request and kept in memory. Uploaded rooms are kept only while their
     plan is (upload it again after a restart). An assembly that a furniture-source or observer
     failure degraded is returned (room plus warning) but not kept, so the next request retries.
+    An assembly that a scale correction overtook is done again from the corrected room, so a
+    response's shell is always served; 409 if that keeps happening.
     """
-    assembly = _scenes.get(scene_id)
-    if assembly is None:
+    for _ in range(ASSEMBLY_ATTEMPTS):
+        kept = _scenes.get(scene_id)
+        if kept is not None:
+            return _respond(response, kept)
         parsed = find_parsed_scene(scene_id)
         if parsed is not None:
             assembly = assemble_scene(parsed, source)
@@ -105,24 +110,23 @@ def get_scene(
             assembly = assemble_scene(room, DemoFurniture(furnished))
         else:
             raise HTTPException(404, "unknown scene_id (upload the floor plan first)")
-        if assembly.complete:
-            assembly = _keep(scene_id, assembly)
-    return _respond(response, assembly)
+        with STATE_LOCK:
+            kept = _scenes.get(scene_id)
+            if kept is not None:  # another request kept it meanwhile, perhaps then edited
+                return _respond(response, kept)
+            current = find_parsed_scene(scene_id)
+            if current is None or current.shell_glb_url == assembly.scene.shell_glb_url:
+                if assembly.complete:
+                    _scenes[scene_id] = assembly
+                return _respond(response, assembly)
+        # The room was rescaled while it was assembled: its shell URL is retired. Again.
+    raise HTTPException(409, OVERTAKEN)
 
 
-def _keep(scene_id: str, assembly: Assembly) -> Assembly:
-    """Keep a fresh assembly unless the slot was filled meanwhile (another GET, then perhaps a
-    user's edit, which must win) or the room was rescaled while it was assembled (it is then
-    returned but not kept, so the next request assembles the corrected room). Returns what to
-    serve."""
-    with STATE_LOCK:
-        kept = _scenes.get(scene_id)
-        if kept is not None:
-            return kept
-        current = find_parsed_scene(scene_id)
-        if current is None or current.shell_glb_url == assembly.scene.shell_glb_url:
-            _scenes[scene_id] = assembly
-        return assembly
+ASSEMBLY_ATTEMPTS = 3
+OVERTAKEN = (
+    "the room's scale was corrected while it was being assembled, more than once; load it again"
+)
 
 
 def _respond(response: Response, assembly: Assembly) -> RoomScene:
@@ -200,23 +204,32 @@ def correct_scale(
                 "reload the scene first",
             )
         try:
-            correction = correct_floor_scale(scene_id, wall_id, length_m)
+            correction = prepare_floor_scale(scene_id, wall_id, length_m)
         except ScaleCorrectionError as exc:
             raise HTTPException(422, str(exc)) from exc
-        if correction is None:  # the plan went between the lookups
+        if correction is None:  # not an uploaded room (demo rooms are refused above)
             raise HTTPException(404, "unknown scene_id (upload the floor plan first)")
+        # Carry every kept scene first; nothing is published unless all of it succeeds.
+        carried: dict[str, Assembly] = {}
         for sid in correction.scene_ids:
             old = _scenes.get(sid)
-            room = find_parsed_scene(sid)
+            room = correction.room(sid)
             if old is None or room is None:
                 continue  # assembled from the corrected room when first requested
             room = room.model_copy(update={"sun_hour": old.scene.sun_hour})
-            result = carry_furniture(old.scene, room)
-            scene = RoomScene.model_validate(
-                result.place_in(room).model_dump() | {"revision": old.scene.revision + 1}
-            )
-            _scenes[sid] = replace(
+            try:
+                result = carry_furniture(old.scene, room)
+                scene = RoomScene.model_validate(
+                    result.place_in(room).model_dump() | {"revision": old.scene.revision + 1}
+                )
+            except ValueError as exc:  # pydantic's ValidationError included
+                raise HTTPException(
+                    422, f"cannot carry the furniture of {sid} to that scale ({exc})"
+                ) from exc
+            carried[sid] = replace(
                 old, scene=scene, records=result.records, warnings=old.warnings + result.warnings
             )
+        publish(correction)
+        _scenes.update(carried)
         assembly = _scenes[scene_id]
     return _respond(response, assembly)
