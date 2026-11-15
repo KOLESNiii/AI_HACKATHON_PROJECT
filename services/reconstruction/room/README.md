@@ -37,7 +37,8 @@ uv run python -m services.reconstruction.room examples/three_floor.png --out /tm
 `--shells` also writes each room's `.glb` and a per-floor section of the shells cut at 1 m
 (walls as outlines, openings as gaps).
 
-Plans are cached in memory by `plan_id`, which is a hash of the image bytes.
+Plans are cached in memory by `plan_id`, which is a hash of the image bytes. Plans published
+in the scene cache (#12, below) are in that cache from startup.
 
 Configuration: `FAL_KEY` (required for labels). Optional: `FAL_VISION_ENDPOINT` (default
 `fal-ai/any-llm/vision`) and `FAL_VISION_MODEL` (default `google/gemini-2.5-flash`). Without
@@ -85,7 +86,8 @@ uv run --extra reconstruction python -m services.reconstruction.assets.segment_i
 uv run --extra reconstruction uvicorn services.reconstruction.main:app --port 8001
 uv run --extra spatial uvicorn services.spatial_engine.main:app --port 8002
 
-# 3. Upload the plan, load the room, audit it; edit a pose and audit again
+# 3. Load the room, audit it; edit a pose and audit again. The upload is optional for this
+#    plan: the scene cache (#12) already holds it, and answers the upload without a provider.
 curl -F files=@examples/three_floor.png localhost:8001/floor-plans > /dev/null
 curl -D headers.txt -o scene.json localhost:8001/scenes/plan-83a12322e933-floor-0-room-3
 curl -H 'Content-Type: application/json' -d @scene.json localhost:8002/audit
@@ -99,12 +101,80 @@ curl -X POST 'localhost:8001/scenes/plan-83a12322e933-floor-0-room-3/scale?wall_
 Tests parse the plan with the recorded labels (`fixtures/three_floor.annotations.json`). Live
 labels (`FAL_KEY`) are expected to give the same room. Without labels the image parses into a
 different room under the same scene ID: the binding's wall lengths (`walls_m`) catch that, and
-the room comes back without furniture and a warning saying its geometry does not match. A
+the room comes back without furniture and a warning saying its geometry does not match. The
+service itself no longer parses this plan: its scene cache (#12, below) holds the labelled
+parse, so the paragraph applies when that cache is disabled or to another plan. A
 partial inventory (selection still running) is shown but not kept. The wall check is on
 shape, so the room keeps its furniture after a scale correction. The hints are the #8 reviewed `g-reception` hints moved onto
 this room's walls (north-west corners aligned); `tests/test_real_room.py` fails if the parser's
 wall IDs drift from them. The chair's hint lands in the entrance door's swing, which alignment
 flags and the audit reports until the chair is moved.
+
+## Demo scene cache (#12)
+
+`scene_cache.py`. The real-input room loads on a fresh checkout with no upload, no `FAL_KEY`
+and no network. `fixtures/scene_cache/plan-83a12322e933.json` holds the plan as parsed with its
+recorded labels, and the room as assembled. When the service starts it restores every published
+plan into the plan store (`routes.restore_plan`), as if the plan had been uploaded. From there
+the room is an ordinary uploaded room:
+
+- `GET /scenes/plan-83a12322e933-floor-0-room-3` assembles it through the usual path: pipeline
+  furniture if `$FURNITURE_DATA_DIR` has any, else Dev 2's committed furniture cache (#20).
+- The shell, `PUT /scenes/...` and `POST /scenes/.../scale` work as for any uploaded plan. The
+  scale correction has the whole floor's original parse, because the whole plan is restored.
+- Uploading `examples/three_floor.png` returns the restored plan without calling the label
+  provider (a plan ID is the hash of the image bytes). The plan's `warnings` end with "from the
+  published scene cache: recorded room labels, no provider used".
+- A plan the service already has is never replaced by the cache.
+
+The stored assembled scene is the published result; the service does not serve it directly.
+`verify` and `tests/test_scene_cache.py` assemble the room again and compare (1 mm, 0.001°), so
+a checkout that verifies serves exactly that scene.
+
+```bash
+# Fresh checkout, no keys: start both services, then
+ID=plan-83a12322e933-floor-0-room-3
+curl -D headers.txt -o scene.json localhost:8001/scenes/$ID        # 4 meshes, 18 walls
+curl -o shell.glb localhost:8001/shells/$ID.glb
+curl -H 'Content-Type: application/json' -d @scene.json localhost:8002/audit
+# edit a pose in scene.json, set "revision": 1, then keep it and audit again
+curl -X PUT -H 'Content-Type: application/json' -d @edited.json localhost:8001/scenes/$ID
+curl -X POST "localhost:8001/scenes/$ID/scale?wall_id=w16&length_m=4.81&revision=1"
+
+# Is the committed cache what this checkout reproduces? Offline, about 10 s.
+uv run --extra reconstruction python -m services.reconstruction.room.scene_cache verify \
+  --plan-id plan-83a12322e933 --images examples/three_floor.png \
+  --annotations services/reconstruction/room/fixtures/three_floor.annotations.json
+```
+
+Checks. `publish` refuses, and `verify` reports, when:
+
+| Check | Meaning |
+|---|---|
+| The cached scene is a room of the cached plan | Same scene ID; every field but `furniture` equals the plan room with its doors conformed; revision 0 |
+| The assembly is complete | The furniture source and observer did not fail, and every hinted item is placed |
+| Every item fits | No `AlignmentRecord` has `fits == False` |
+| Delivered assets are unchanged | `delivery.check_placed`: ID, mesh URL, bounds and flags as Dev 2 published them |
+| The shell builds | `shell.shell_glb` accepts the room |
+| Reproduced (`verify` only) | The assembly, and with `--images` the parse, equal the published ones |
+
+First audit of the published scene (estimates, flagged for correction): `door0` is blocked by
+`vid-000003` and `vid-000004`; the table is 0.12 m in front of the rear sofa and the right sofa
+0.37 m from it; no collisions, nothing out of bounds. Moving the chair to (3.9, 8.6) leaves
+`door0` blocked by the right sofa only.
+
+Limits:
+
+- A cache file that is unreadable, misnamed or inconsistent is skipped with a logged reason
+  (`scene cache skipped: ...`); its rooms are then unknown until the plan is uploaded. A repaired
+  file takes effect at the next start.
+- Corrections are not persisted. Kept poses and scale corrections live in memory, so a restart
+  returns to the published scene.
+- For this plan the label provider is never asked, even with `FAL_KEY` set. To parse it live,
+  point `SCENE_DEMO_CACHE_DIR` at an empty directory, or use the debug CLI above, which never
+  reads the cache.
+- `SCENE_DEMO_CACHE_DIR` replaces the default directory (`fixtures/scene_cache`).
+  `tests/conftest.py` points it at an empty one, so other tests parse for themselves.
 
 ## Corrections (#11)
 
@@ -199,4 +269,5 @@ about 95 s with `gemini-2.5-pro`):
 - The reviewed hints follow the video and disagree with the demo poses for both sofas.
 - `EvidenceFrame` has a mask reference but no image reference, so frame pixels come through a
   `FrameSource`.
-- Not wired into a route (#9) and not persisted (#12).
+- The vision observer is not wired into a route (#9), and its answers are not persisted: the
+  scene cache (#12) holds the room placed from the reviewed hints.
