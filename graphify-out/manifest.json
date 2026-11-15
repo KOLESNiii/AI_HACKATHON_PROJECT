@@ -282,9 +282,9 @@
     "semantic_hash": ""
   },
   "frontend/src/store.ts": {
-    "mtime": 1794737764.4357672,
-    "seen": 1794737809.7063265,
-    "ast_hash": "e7694d1ab21ba9e1b0bf3127792dafa2",
+    "mtime": 1794738324.5849125,
+    "seen": 1794738488.895251,
+    "ast_hash": "aad9705b96b6811165ce351ece4835b7",
     "semantic_hash": ""
   },
   "frontend/tests/agentAddItem.test.ts": {
@@ -2196,9 +2196,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/editorServices.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.3938713,
-    "ast_hash": "9bf9c3b8c7b7c953db2b266d3af4db49",
+    "mtime": 1794738324.5851843,
+    "seen": 1794738488.8952296,
+    "ast_hash": "f479699991ed6275b2090cc078554872",
     "semantic_hash": ""
   },
   "frontend/src/lib/fengShui.ts": {
@@ -2256,9 +2256,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/roomVersions.test.tsx": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3943045,
-    "ast_hash": "8c774d971689ed9920ac9f2d03258b74",
+    "mtime": 1794738357.3579955,
+    "seen": 1794738488.8952844,
+    "ast_hash": "492056cc16ea1cadf98a3fb047c0bfb8",
     "semantic_hash": ""
   },
   "frontend/tests/solveStream.ts": {
