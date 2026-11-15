@@ -582,9 +582,9 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/main.py": {
-    "mtime": 1794704060.6611416,
-    "seen": 1794705751.7986503,
-    "ast_hash": "ce757854c10e02e83e771c46826c8f76",
+    "mtime": 1794706759.3821738,
+    "seen": 1794706823.1902745,
+    "ast_hash": "e63992a7e0ef78ec222f8f39250c8d44",
     "semantic_hash": ""
   },
   "services/spatial_engine/objective.py": {
@@ -840,15 +840,15 @@
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794705582.7329078,
-    "seen": 1794705751.7986891,
-    "ast_hash": "1f8d4e22a530a944eaa3bbbd12e5fa0a",
+    "mtime": 1794706814.565362,
+    "seen": 1794706823.19163,
+    "ast_hash": "56cafb87b949882de887c6dcc7174591",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794705582.7329078,
-    "seen": 1794705751.79869,
-    "ast_hash": "b2114a8f8b4b54fcb88e6d79b007abe9",
+    "mtime": 1794706814.568362,
+    "seen": 1794706823.1916318,
+    "ast_hash": "2415c4a8623fe06cb3ded7f7543dbe0b",
     "semantic_hash": ""
   },
   "docs/dev3-spatial-handoff.md": {
@@ -966,9 +966,9 @@
     "semantic_hash": ""
   },
   "services/spatial_engine/README.md": {
-    "mtime": 1794704095.5632858,
-    "seen": 1794705751.798708,
-    "ast_hash": "237499734b152348ab07e355a3aa62ea",
+    "mtime": 1794706814.5623622,
+    "seen": 1794706823.1923282,
+    "ast_hash": "237d56fd47fca0c6ad13f3c602711e9e",
     "semantic_hash": ""
   },
   "examples/one_floor.jpg": {
@@ -1029,6 +1029,24 @@
     "mtime": 1794703366.980112,
     "seen": 1794705751.7987194,
     "ast_hash": "f85edfafaf2e4f9c6cced624641c3ad4",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/feng_shui.py": {
+    "mtime": 1794706777.4508467,
+    "seen": 1794706823.190206,
+    "ast_hash": "b36ace88a90c6966394dfe20abbee041",
+    "semantic_hash": ""
+  },
+  "tests/spatial_engine/test_feng_shui.py": {
+    "mtime": 1794706777.4508467,
+    "seen": 1794706823.1908336,
+    "ast_hash": "bf51cec769e27ebb09c0aa4620a88d64",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/skills/feng-shui/SKILL.md": {
+    "mtime": 1794706759.3681343,
+    "seen": 1794706823.1923294,
+    "ast_hash": "ecc633da27ba9da7fdc2448d5ee69e27",
     "semantic_hash": ""
   }
 }

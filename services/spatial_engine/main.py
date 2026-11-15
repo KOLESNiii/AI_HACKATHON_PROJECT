@@ -18,6 +18,11 @@ from services.spatial_engine.agent import (
     LayoutModel,
     propose_layout,
 )
+from services.spatial_engine.feng_shui import (
+    FengShuiRequest,
+    FengShuiResult,
+    assess_feng_shui,
+)
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.report import audit_scene
 
@@ -142,3 +147,13 @@ async def unexpected_failure(_request: Request, _exc: Exception) -> JSONResponse
             ]
         },
     )
+
+
+@app.post("/feng-shui", response_model=FengShuiResult)
+def feng_shui(
+    request: FengShuiRequest,
+    model: LayoutModel | None = Depends(get_layout_model),
+) -> FengShuiResult:
+    """Assess traditional layout preferences without changing the scene or audit score."""
+    with _input_errors():
+        return assess_feng_shui(request, model)
