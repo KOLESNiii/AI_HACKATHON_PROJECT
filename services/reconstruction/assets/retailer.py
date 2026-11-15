@@ -153,8 +153,9 @@ _AXES = {"width": "width", "w": "width", "height": "height", "h": "height",
          "depth": "depth", "d": "depth"}  # fmt: skip
 _LABELLED = re.compile(
     # The label must open its line or clause: "Armrest width" and "Seat height" are not the
-    # item's size. IKEA writes a sofa's overall height as "Height including back cushions".
-    rf"(?:^|[.;,|(])[ \t]*(?:overall |total |max\.? )?(width|height|depth)\b"
+    # item's size. IKEA writes a sofa's overall height as "Height including back cushions", and
+    # gives a bed's only overall height as "Headboard height" (the headboard is its top).
+    rf"(?:^|[.;,|(])[ \t]*(?:overall |total |max\.? |headboard )?(width|height|depth)\b"
     rf"(?: including back cushions)?\s*(?:\([^)]{{0,20}}\))?\s*[:=]?\s*"
     rf"({_NUMBER})\s*({_UNIT})(?![a-z])",
     re.IGNORECASE | re.MULTILINE,
@@ -411,6 +412,19 @@ def _price_gbp(product: dict[str, Any], meta: dict[str, str], warnings: list[str
     return price
 
 
+_PACKAGE_HEADING = re.compile(r"^(?:package|packaging|parcel)s?\b", re.IGNORECASE)
+
+
+def _item_text(text: list[str]) -> list[str]:
+    """The page's text up to its package section: the flat-pack boxes' sizes are listed with
+    the same labels as the item's (IKEA: "Package details ... Width: 37 cm, Height: 11 cm" read
+    as an 11 cm tall bed)."""
+    for index, line in enumerate(text):
+        if _PACKAGE_HEADING.match(line):
+            return text[:index]
+    return text
+
+
 def parse_product_page(
     html: str, product_url: str, *, page_url: str | None = None, category: Category | None = None
 ) -> RetailerProduct:
@@ -457,7 +471,7 @@ def parse_product_page(
     if len(sides) < 3:
         # Structured data first; the page's own labelled text only fills what it leaves out.
         described = product.get("description")
-        text = "\n".join([described if isinstance(described, str) else "", *page.text])
+        text = "\n".join([described if isinstance(described, str) else "", *_item_text(page.text)])
         written = {axis: side for axis, side in sides_from_text(text).items() if axis not in sides}
         if written:
             sides, found_in = {**sides, **written}, "page_text"

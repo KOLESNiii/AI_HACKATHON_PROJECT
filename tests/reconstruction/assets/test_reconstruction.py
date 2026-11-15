@@ -544,3 +544,53 @@ def test_cli_accepts_known_dimensions(tmp_path):
     )
     asset = FurnitureAsset.model_validate(json.loads((out / "assets.json").read_text())[0])
     assert asset.dimension_source == "measured" and asset.bbox_m.width == 1.2
+
+
+def test_trellis_uploads_only_the_item_on_white_and_reads_its_mesh(tmp_path, monkeypatch):
+    from services.reconstruction.assets.mesh_providers import (
+        TRELLIS2_ARGUMENTS,
+        FalTrellis2Provider,
+    )
+
+    _, client, fetch, args = sam_setup(tmp_path, monkeypatch, result={
+        "model_glb": {"url": "https://v3.fal.media/trellis.glb"},
+    })  # fmt: skip
+    client.upload.side_effect = ["https://upload/item"]
+    provider = FalTrellis2Provider(key="fake", fetch=fetch)
+    raw = provider.reconstruct(*args, budget=RequestBudget(1))
+    assert inspect_mesh(raw.glb)[0] > 0 and raw.pose is None
+    assert client.upload.call_count == 1
+    assert client.submit.call_args.args[0] == "fal-ai/trellis-2"
+    assert client.submit.call_args.kwargs["arguments"] == {
+        "image_url": "https://upload/item",
+        **TRELLIS2_ARGUMENTS,
+    }
+    # A replace re-reads the paid result.
+    assert provider.reconstruct(*args, budget=RequestBudget(0)) == raw
+    assert client.submit.call_count == 1
+
+
+def test_trellis_refuses_untrusted_artifacts(tmp_path, monkeypatch):
+    from services.reconstruction.assets.mesh_providers import FalTrellis2Provider
+
+    _, client, fetch, args = sam_setup(tmp_path, monkeypatch, result={
+        "model_glb": {"url": "https://attacker.example/x.glb"},
+    })  # fmt: skip
+    client.upload.side_effect = ["https://upload/item"]
+    with pytest.raises(MeshError, match="location not allowed"):
+        FalTrellis2Provider(key="fake", fetch=fetch).reconstruct(*args)
+    fetch.assert_not_called()
+
+
+def test_item_on_white_keeps_only_the_masked_item_centred_in_a_square():
+    from services.reconstruction.assets.mesh_providers import item_on_white
+
+    image = np.random.default_rng(1).integers(0, 200, (120, 200, 3), dtype=np.uint8)
+    mask = np.zeros((120, 200), bool)
+    mask[30:90, 40:80] = True
+    out = item_on_white(image, mask)
+    assert out.shape[0] == out.shape[1] > 60
+    # The border is white and the item's middle is the photo's.
+    assert (out[0] == 255).all() and (out[:, 0] == 255).all()
+    centre = out.shape[0] // 2
+    assert (out[centre, centre] == image[60, 60]).all()

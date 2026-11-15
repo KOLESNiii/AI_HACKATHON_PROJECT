@@ -105,21 +105,23 @@ def inspect_mesh(glb: bytes) -> tuple[int, tuple[float, float, float]]:
     return triangles, (extents[0], extents[1], extents[2])
 
 
-class FalSam3dProvider:
-    """fal SAM 3D Objects: one frame and one item mask per request (verified live 2026-11-14).
+class _FalMeshProvider:
+    """One paid fal request per item and view, submitted at most once.
 
-    Uploads the frame and the mask. `model_glb` is a textured glTF 2.0 binary centred on the
-    origin with its longest side about 1 unit; `metadata[0]` holds the provider's own scale,
-    rotation (quaternion) and translation for the object. One object took 170 s.
+    The request is reserved in the registry before it is submitted, so a retry, a concurrent
+    import or a `replace` reads the paid result back instead of paying again. Subclasses name
+    the endpoint, what is uploaded, and how the result is read.
     """
 
-    name = "sam3d"
+    name: str
+    arguments: dict[str, Any]
+    """Fixed inference arguments, part of the cache key."""
 
     def __init__(
         self,
         *,
         key: str,
-        endpoint: str = "fal-ai/sam-3/3d-objects",
+        endpoint: str,
         timeout_s: float = 420,
         refresh: str = "",
         fetch: Callable[[str], bytes] | None = None,
@@ -134,6 +136,20 @@ class FalSam3dProvider:
         self.endpoint, self.timeout_s, self.refresh = endpoint, timeout_s, refresh
         self.fetch = fetch or _fetch
 
+    def _inputs(
+        self, image: NDArray[np.uint8], mask: Mask
+    ) -> tuple[dict[str, bytes], Callable[[dict[str, str]], dict[str, Any]]]:
+        """PNG uploads by name, and the request arguments made from their uploaded URLs."""
+        raise NotImplementedError
+
+    def _cache_fields(self, uploads: dict[str, bytes]) -> dict[str, str]:
+        """What identifies the request besides frame, endpoint and arguments."""
+        return {name: hashlib.sha256(data).hexdigest() for name, data in uploads.items()}
+
+    def _parse(self, result: Any) -> tuple[str, dict[str, Any] | None]:
+        """(fal media URL of the glTF binary, pose evidence) from a completed result."""
+        raise NotImplementedError
+
     def reconstruct(
         self,
         frame: Frame,
@@ -145,17 +161,14 @@ class FalSam3dProvider:
     ) -> RawMesh:
         if mask.shape != image.shape[:2] or not mask.any():
             raise MeshError("mask does not match its source frame", kind="no_view")
-        image_ok, image_png = cv2.imencode(".png", image)
-        mask_ok, mask_png = cv2.imencode(".png", mask.astype(np.uint8) * 255)
-        if not image_ok or not mask_ok:
-            raise MeshError("could not encode the source frame or its mask")
+        uploads, request_arguments = self._inputs(image, mask)
         cache_key = hashlib.sha256(
             json.dumps(
                 {
                     "frame": frame.key,
-                    "mask": hashlib.sha256(mask_png.tobytes()).hexdigest(),
+                    **self._cache_fields(uploads),
                     "endpoint": self.endpoint,
-                    "arguments": SAM3D_ARGUMENTS,
+                    "arguments": self.arguments,
                     "refresh": self.refresh,
                 },
                 sort_keys=True,
@@ -175,15 +188,13 @@ class FalSam3dProvider:
             if winner:
                 if budget is not None:
                     budget.check()
-                image_url = self.client.upload(image_png.tobytes(), "image/png")
-                mask_url = self.client.upload(mask_png.tobytes(), "image/png")
+                urls = {
+                    name: self.client.upload(data, "image/png") for name, data in uploads.items()
+                }
                 if budget is not None:
                     budget.claim()
                 submit_started = True
-                handle = self.client.submit(
-                    self.endpoint,
-                    arguments={"image_url": image_url, "mask_urls": [mask_url], **SAM3D_ARGUMENTS},
-                )
+                handle = self.client.submit(self.endpoint, arguments=request_arguments(urls))
                 registry.save_request(
                     cache_key, {"status": "submitted", "request_id": handle.request_id}
                 )
@@ -243,6 +254,45 @@ class FalSam3dProvider:
             if winner and not submit_started:
                 registry.release_reservation(cache_key)
 
+
+def _encode_png(pixels: NDArray[np.uint8]) -> bytes:
+    ok, data = cv2.imencode(".png", pixels)
+    if not ok:
+        raise MeshError("could not encode the source frame or its mask")
+    return data.tobytes()
+
+
+class FalSam3dProvider(_FalMeshProvider):
+    """fal SAM 3D Objects: one frame and one item mask per request (verified live 2026-11-14).
+
+    Uploads the frame and the mask. `model_glb` is a textured glTF 2.0 binary centred on the
+    origin with its longest side about 1 unit; `metadata[0]` holds the provider's own scale,
+    rotation (quaternion) and translation for the object. One object took 170 s.
+
+    Made for objects inside a scene. On a retailer's cut-out product shot it can return a flat,
+    upright card; catalog imports try `FalTrellis2Provider` first.
+    """
+
+    name = "sam3d"
+    arguments = SAM3D_ARGUMENTS
+
+    def __init__(self, *, key: str, endpoint: str = "fal-ai/sam-3/3d-objects", **options: Any):
+        super().__init__(key=key, endpoint=endpoint, **options)
+
+    def _inputs(
+        self, image: NDArray[np.uint8], mask: Mask
+    ) -> tuple[dict[str, bytes], Callable[[dict[str, str]], dict[str, Any]]]:
+        uploads = {"image": _encode_png(image), "mask": _encode_png(mask.astype(np.uint8) * 255)}
+        return uploads, lambda urls: {
+            "image_url": urls["image"],
+            "mask_urls": [urls["mask"]],
+            **SAM3D_ARGUMENTS,
+        }
+
+    def _cache_fields(self, uploads: dict[str, bytes]) -> dict[str, str]:
+        # The frame key already names the image; unchanged, so earlier paid results are reused.
+        return {"mask": hashlib.sha256(uploads["mask"]).hexdigest()}
+
     def _parse(self, result: Any) -> tuple[str, dict[str, Any] | None]:
         url = result["model_glb"]["url"]
         if not isinstance(url, str):
@@ -260,3 +310,77 @@ class FalSam3dProvider:
             return url, None
         pose = json.loads(text) if len(text) <= MAX_POSE_CHARS else None
         return url, pose or None
+
+
+TRELLIS2_ARGUMENTS = {
+    "resolution": 1024,
+    "texture_size": 1024,
+    "decimation_target": 12_000,
+    "seed": 0,
+}
+"""A 1024 px texture is all the normaliser keeps. The vertex budget yields about 24k triangles,
+inside the furniture profile's 30k, so a generated mesh is never refused for its size. A fixed
+seed keeps a paid refresh comparable."""
+TRELLIS2_MARGIN = 0.08
+"""White border around the item, as a share of the crop's side."""
+TRELLIS2_MASK_GROW = 0.015
+"""The mask is grown by this share of the item's longer side before the surroundings are
+whitened, so a slightly tight mask does not shave off legs or handles."""
+
+
+def item_on_white(image: NDArray[np.uint8], mask: Mask) -> NDArray[np.uint8]:
+    """The masked item alone, centred on a white square: what an image-to-3D model expects.
+
+    Outside the (slightly grown) mask everything becomes white, so neither room surroundings
+    in a lifestyle shot nor other products in the picture are reconstructed with it.
+    """
+    ys, xs = np.nonzero(mask)
+    x0, x1, y0, y1 = int(xs.min()), int(xs.max()) + 1, int(ys.min()), int(ys.max()) + 1
+    grow = max(1, round(TRELLIS2_MASK_GROW * max(x1 - x0, y1 - y0)))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * grow + 1, 2 * grow + 1))
+    kept = cv2.dilate(mask.astype(np.uint8), kernel) > 0
+    item = np.where(kept[:, :, None], image, np.uint8(255))[y0:y1, x0:x1]
+    side = round(max(x1 - x0, y1 - y0) / (1 - 2 * TRELLIS2_MARGIN))
+    canvas = np.full((side, side, 3), 255, np.uint8)
+    top, left = (side - (y1 - y0)) // 2, (side - (x1 - x0)) // 2
+    canvas[top : top + y1 - y0, left : left + x1 - x0] = item
+    return canvas
+
+
+class FalTrellis2Provider(_FalMeshProvider):
+    """fal TRELLIS.2 image-to-3D: the whole object from one picture of it.
+
+    Unlike SAM 3D, which reconstructs an object inside a scene, it is made for an isolated
+    object, which is what a retailer's product shot is: it returns a closed, textured shape
+    with depth and back instead of a cut-out card. Only the item is uploaded, on white
+    (`item_on_white`). `model_glb` is a glTF 2.0 binary, +Y up, about unit size; the metric
+    size always comes from the published dimensions or the category (`normalise_mesh`).
+    """
+
+    name = "trellis2"
+    arguments = TRELLIS2_ARGUMENTS
+
+    def __init__(self, *, key: str, endpoint: str = "fal-ai/trellis-2", **options: Any):
+        super().__init__(key=key, endpoint=endpoint, **options)
+
+    def _inputs(
+        self, image: NDArray[np.uint8], mask: Mask
+    ) -> tuple[dict[str, bytes], Callable[[dict[str, str]], dict[str, Any]]]:
+        uploads = {"image": _encode_png(item_on_white(image, mask))}
+        return uploads, lambda urls: {"image_url": urls["image"], **TRELLIS2_ARGUMENTS}
+
+    def _parse(self, result: Any) -> tuple[str, dict[str, Any] | None]:
+        url = result["model_glb"]["url"]
+        if not isinstance(url, str):
+            raise TypeError("model_glb")
+        if not fal_media_url(url):
+            raise MeshError("mesh artifact location not allowed")
+        return url, None
+
+
+def catalog_mesh_providers(key: str, *, timeout_s: float = 150) -> list[MeshProvider]:
+    """The live generators for a product image, best first: TRELLIS.2, then SAM 3D."""
+    return [
+        FalTrellis2Provider(key=key, timeout_s=timeout_s),
+        FalSam3dProvider(key=key, timeout_s=timeout_s),
+    ]
