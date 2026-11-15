@@ -99,7 +99,7 @@ function PlanDiff({
       <svg
         viewBox={`${Math.min(...xs) - pad} ${Math.min(...zs) - pad} ${Math.max(...xs) - Math.min(...xs) + pad * 2} ${Math.max(...zs) - Math.min(...zs) + pad * 2}`}
         role="img"
-        aria-label="Room diff floor plan. Dashed outlines show current positions; green outlines show proposed positions."
+        aria-label="Room diff floor plan. Dashed outlines show current positions; green outlines show proposed positions; red crosses mark removed items."
         className="h-44 w-full rounded-[2px] bg-paper-base"
       >
         <polygon
@@ -122,7 +122,7 @@ function PlanDiff({
                   change ? `${size * 0.025} ${size * 0.015}` : undefined
                 }
               />
-              {change && (
+              {change && !change.removed && (
                 <polygon
                   points={points(footprint({ ...item, pose: change.after }))}
                   fill="var(--color-accent-celadon)"
@@ -153,6 +153,25 @@ function PlanDiff({
           ))}
         {changes.map((c, i) => (
           <g key={c.id}>
+            {c.removed && (
+              <g
+                stroke="var(--color-seal-vermilion)"
+                strokeWidth={size * 0.006}
+              >
+                <line
+                  x1={c.before.x - size * 0.04}
+                  y1={c.before.z - size * 0.04}
+                  x2={c.before.x + size * 0.04}
+                  y2={c.before.z + size * 0.04}
+                />
+                <line
+                  x1={c.before.x - size * 0.04}
+                  y1={c.before.z + size * 0.04}
+                  x2={c.before.x + size * 0.04}
+                  y2={c.before.z - size * 0.04}
+                />
+              </g>
+            )}
             <line
               x1={c.before.x}
               y1={c.before.z}
@@ -349,9 +368,11 @@ export function LayoutProposalCard({
                 <p className="text-ink-medium">
                   {c.added
                     ? 'Add new item'
-                    : c.distance > 1e-9
-                      ? `Move ${c.distance.toFixed(2)} m`
-                      : 'Keep position'}
+                    : c.removed
+                      ? 'Remove item'
+                      : c.distance > 1e-9
+                        ? `Move ${c.distance.toFixed(2)} m`
+                        : 'Keep position'}
                   {Math.abs(c.turn) > 1e-9
                     ? ` · turn ${Math.abs(c.turn).toFixed(0)}° ${c.turn > 0 ? 'counterclockwise' : 'clockwise'}`
                     : ''}
@@ -361,7 +382,7 @@ export function LayoutProposalCard({
                     Position and rotation
                   </summary>
                   {!c.added && <p>Before: {poseText(c.before)}</p>}
-                  <p>Proposed: {poseText(c.after)}</p>
+                  {!c.removed && <p>Proposed: {poseText(c.after)}</p>}
                 </details>
               </li>
             ))}

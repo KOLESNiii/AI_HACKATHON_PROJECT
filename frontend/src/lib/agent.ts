@@ -25,6 +25,8 @@ const LAYOUT_GOALS: readonly LayoutGoal[] = [
 /** Reject an entire proposal rather than applying a subset of unverified changes. */
 export interface EditorProposal extends LayoutProposal {
   additions?: FurnitureItem[]
+  /** IDs of existing non-fixed items deleted when the proposal is applied. */
+  removals?: string[]
 }
 export interface EditorReply {
   text: string
@@ -76,6 +78,21 @@ export function readProposal(
       )
     ids.add(item.id)
   }
+  const removals = value.removals ?? []
+  if (
+    !Array.isArray(removals) ||
+    new Set(removals).size !== removals.length ||
+    removals.some(
+      (id) =>
+        typeof id !== 'string' ||
+        !items.has(id) ||
+        items.get(id)!.is_fixed ||
+        Object.hasOwn(value.poses as object, id),
+    )
+  )
+    throw new Error(
+      'The layout agent returned an invalid removal. Nothing was applied.',
+    )
   for (const [id, pose] of Object.entries(value.poses)) {
     const item = items.get(id)
     if (
@@ -90,7 +107,8 @@ export function readProposal(
         'The layout agent returned an invalid furniture move. Nothing was applied.',
       )
   }
-  const count = Object.keys(value.poses).length + additions.length
+  const count =
+    Object.keys(value.poses).length + additions.length + removals.length
   const changed = new Set([
     ...Object.keys(value.poses),
     ...additions.map((i) => i.id),
@@ -102,7 +120,7 @@ export function readProposal(
     (d) => changed.has(d.blocked_by_item_id) && !blockedBefore.has(d.door_id),
   )
   const invalidFindings =
-    additions.length > 0
+    additions.length > 0 || removals.length > 0
       ? report.collisions.some(
           (c) => changed.has(c.item_a) || changed.has(c.item_b),
         ) ||
@@ -125,6 +143,7 @@ export function readProposal(
     ...value,
     report,
     ...(additions.length ? { additions } : {}),
+    ...(removals.length ? { removals } : {}),
   } as unknown as EditorProposal
 }
 
@@ -203,9 +222,10 @@ function readStreamReply(
   }
   const poses = value.poses ?? {}
   const additions = value.additions ?? []
-  if (!isRecord(poses) || !Array.isArray(additions))
+  const removals = value.removals ?? []
+  if (!isRecord(poses) || !Array.isArray(additions) || !Array.isArray(removals))
     throw new Error('The chat proposal is invalid.')
-  if (!Object.keys(poses).length && !additions.length) {
+  if (!Object.keys(poses).length && !additions.length && !removals.length) {
     const products = readProducts(value.products)
     return products.length
       ? { text: value.text, products }
@@ -216,6 +236,7 @@ function readStreamReply(
       proposal_id: crypto.randomUUID(),
       poses,
       additions,
+      removals,
       report: value.report,
       improved: true,
       outcome: 'completed',

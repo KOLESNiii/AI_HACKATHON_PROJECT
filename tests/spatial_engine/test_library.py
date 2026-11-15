@@ -130,5 +130,6 @@ def test_empty_library_does_not_offer_an_addition_tool(isolated_library):
     assert not result.additions
     assert {tool["name"] for tool in model.requests[0]["tools"]} == {
         "rearrange_room",
+        "remove_items",
         "search_products",
     }

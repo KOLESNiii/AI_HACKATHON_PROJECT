@@ -7,6 +7,7 @@ export interface FurnitureChange {
   bbox: FurnitureItem['bbox_m']
   before: Pose2D
   added?: boolean
+  removed?: boolean
   after: Pose2D
   distance: number
   turn: number
@@ -52,6 +53,18 @@ export function layoutChanges(
       turn: 0,
       added: true,
     })),
+    ...scene.furniture
+      .filter((item) => proposal.removals?.includes(item.id))
+      .map((item) => ({
+        id: item.id,
+        name: item.name,
+        bbox: { ...item.bbox_m },
+        before: { ...item.pose },
+        after: { ...item.pose },
+        distance: 0,
+        turn: 0,
+        removed: true,
+      })),
   ]
 }
 

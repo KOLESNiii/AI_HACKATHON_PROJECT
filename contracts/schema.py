@@ -556,6 +556,8 @@ class ChatReply(ContractModel):
     """Preserve goal/outcome metadata when chat delegates to the rearrangement harness."""
     products: Optional[List[ProductOption]] = None
     """Products found online by `search_products`; nothing is added until the user picks one."""
+    removals: List[str] = Field(default_factory=list)
+    """IDs of existing non-fixed items `remove_items` proposes to delete when applied."""
 
 
 class ChatProgressEvent(ContractModel):

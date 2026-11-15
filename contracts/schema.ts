@@ -400,6 +400,8 @@ export interface ChatReply {
   proposal: LayoutProposal | null;
   /** Products found online by `search_products`; nothing is added until the user picks one. */
   products?: ProductOption[] | null;
+  /** IDs of existing non-fixed items `remove_items` proposes to delete when applied. */
+  removals?: string[];
 }
 
 /** POST /chat/stream SSE. The terminal event is `reply`, never a LayoutStreamEvent `result`. */

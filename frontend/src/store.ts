@@ -673,9 +673,12 @@ export const useStore = create<State>((set, get) => ({
       return get().toast(errorMessage(error))
     }
     const poses = proposal.poses
-    const furniture = scene.furniture.map((i) =>
-      Object.hasOwn(poses, i.id) ? { ...i, pose: { ...poses[i.id] } } : i,
-    )
+    const removed = new Set(proposal.removals ?? [])
+    const furniture = scene.furniture
+      .filter((i) => !removed.has(i.id))
+      .map((i) =>
+        Object.hasOwn(poses, i.id) ? { ...i, pose: { ...poses[i.id] } } : i,
+      )
     withEditCue('apply', () =>
       set({
         ...recordRoomVersion(
@@ -689,6 +692,7 @@ export const useStore = create<State>((set, get) => ({
         ),
         audit: null,
         auditStatus: 'idle',
+        ...(removed.has(get().selectedId ?? '') ? { selectedId: null } : {}),
         chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
       }),
     )

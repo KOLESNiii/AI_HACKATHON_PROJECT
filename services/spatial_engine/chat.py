@@ -96,6 +96,25 @@ SEARCH_PRODUCTS_TOOL: dict[str, Any] = {
     ),
     "input_schema": SearchProductsArguments.model_json_schema(),
 }
+
+
+class RemoveItemsArguments(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
+
+    item_ids: list[str] = Field(min_length=1, max_length=MAX_FURNITURE)
+    not_handled: list[str] = Field(default_factory=list, max_length=8)
+
+
+REMOVE_ITEMS_TOOL: dict[str, Any] = {
+    "name": "remove_items",
+    "description": (
+        "Propose deleting existing furniture from the room by item id. Only non-fixed items "
+        "can be removed; walls, doors, windows and fixed items never can. Remove only what "
+        "the user asked to remove. not_handled: short phrases for parts of the request this "
+        "call does not cover. Nothing is applied yet: the user must accept the proposal."
+    ),
+    "input_schema": RemoveItemsArguments.model_json_schema(),
+}
 _REARRANGE_TOOL = {
     "name": "rearrange_room",
     "description": (
@@ -110,7 +129,8 @@ _SEARCH_SYSTEM = (
 )
 _SYSTEM = (
     "Help with the user's room request using the tools. To add furniture call add_item; "
-    "for rearranging existing furniture call rearrange_room. Never claim an item was added: "
+    "for rearranging existing furniture call rearrange_room; to delete existing furniture "
+    "call remove_items. Never claim an item was added or removed: "
     "the user must apply the proposal. Add exactly one item per request; if more were asked "
     "for, add the first and list the rest in not_handled. You can only add real mesh models "
     "listed in library. Select the requested type by its asset_id and use its exact dimensions. "
@@ -246,6 +266,43 @@ def add_item(
     return ChatReply(text=" ".join(parts), poses=poses, additions=[item], report=report)
 
 
+def remove_items(scene: RoomScene, arguments: object) -> ChatReply:
+    """Validated tool handler: audit the room without the chosen items. Never mutates `scene`.
+
+    Removing furniture only frees floor, so it can add no collision, boundary or door finding.
+    """
+    args = RemoveItemsArguments.model_validate(arguments)
+    known = {item.id: item for item in scene.furniture}
+    if len(set(args.item_ids)) != len(args.item_ids) or any(
+        item_id not in known for item_id in args.item_ids
+    ):
+        raise SpatialInputError("Removals require distinct existing item IDs")
+    if any(known[item_id].is_fixed for item_id in args.item_ids):
+        raise SpatialInputError("Fixed items cannot be removed")
+    before = audit_scene(scene)
+    gone = set(args.item_ids)
+    candidate = scene.model_copy(
+        deep=True,
+        update={
+            "furniture": [i.model_copy(deep=True) for i in scene.furniture if i.id not in gone]
+        },
+    )
+    report = audit_scene(candidate)
+    names = ", ".join(known[item_id].name[:40] for item_id in args.item_ids[:_LISTED])
+    more = f" and {len(gone) - _LISTED} more" if len(gone) > _LISTED else ""
+    parts = [f"Proposed removing {len(gone)} item(s): {names}{more}."]
+    was, now = before.walkable_floor_ratio, report.walkable_floor_ratio
+    if was is not None and now is not None and _percent(was) != _percent(now):
+        parts.append(f"Reachable floor: {_percent(was)} before, {_percent(now)} after.")
+    resolved = (
+        len(before.collisions) + len(before.out_of_bounds_item_ids) + len(before.blocked_doors)
+    ) - (len(report.collisions) + len(report.out_of_bounds_item_ids) + len(report.blocked_doors))
+    if resolved > 0:
+        parts.append(f"This clears {resolved} existing problem(s).")
+    parts.extend(f"Not handled: {note[:_NOTE_LIMIT]}." for note in args.not_handled[:4])
+    return ChatReply(text=" ".join(parts), removals=list(args.item_ids), report=report)
+
+
 def _reply_text(content: object) -> str:
     """The words of a model turn, bounded for display. Blocks are SDK objects or dicts."""
     texts: list[str] = []
@@ -329,6 +386,11 @@ def chat(
         schema = AddItemArguments.model_json_schema()
         schema["properties"]["asset_id"]["enum"] = list(available)
         tools.insert(0, {**ADD_ITEM_TOOL, "input_schema": schema})
+    removable = [item.id for item in scene.furniture if not item.is_fixed]
+    if removable:
+        schema = RemoveItemsArguments.model_json_schema()
+        schema["properties"]["item_ids"]["items"]["enum"] = removable
+        tools.append({**REMOVE_ITEMS_TOOL, "input_schema": schema})
     tools.append(SEARCH_PRODUCTS_TOOL)
     content = {
         **request.model_dump(mode="json"),
@@ -362,6 +424,9 @@ def chat(
                         "verifying", "The new item and moved furniture passed placement checks."
                     )
                     return result
+                if call.name == "remove_items":
+                    budget.update("evaluating", "Checking the room without those items…")
+                    return remove_items(scene, call.arguments)
                 if call.name == "search_products":
                     budget.update("evaluating", "Searching UK retailers for matching products…")
                     return _search_reply(call.arguments, linkup)

@@ -119,12 +119,14 @@ export async function fetchProposalFengShuiScores(
   const candidate: RoomScene = {
     ...scene,
     furniture: [
-      ...scene.furniture.map((item) => ({
-        ...item,
-        pose: Object.hasOwn(proposal.poses, item.id)
-          ? { ...proposal.poses[item.id] }
-          : { ...item.pose },
-      })),
+      ...scene.furniture
+        .filter((item) => !proposal.removals?.includes(item.id))
+        .map((item) => ({
+          ...item,
+          pose: Object.hasOwn(proposal.poses, item.id)
+            ? { ...proposal.poses[item.id] }
+            : { ...item.pose },
+        })),
       ...structuredClone(proposal.additions ?? []),
     ],
   }

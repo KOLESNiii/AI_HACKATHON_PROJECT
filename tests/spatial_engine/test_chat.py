@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from contracts.schema import BBoxM, DoorOpening, FurnitureItem, Pose2D, RoomScene, Vec2, WallSegment
 from services.spatial_engine.agent import ModelReply, ProviderError, ToolCall
-from services.spatial_engine.chat import ChatRequest, add_item, chat
+from services.spatial_engine.chat import ChatRequest, add_item, chat, remove_items
 from services.spatial_engine.furniture_search import ProductOption
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.library import ASSET_ROOT, library_assets
@@ -383,3 +383,53 @@ def test_empty_search_is_a_tool_error_the_model_can_recover_from(
     reply = chat(ChatRequest(scene=room, instruction="Find a gold throne"), model)
     assert "No products found" in tool_error(model)
     assert reply.text == "Nothing found." and not reply.products
+
+
+def remove_turn(arguments: dict[str, Any]) -> ModelReply:
+    block = {"type": "tool_use", "id": "tool-r", "name": "remove_items", "input": arguments}
+    return ModelReply("tool_use", [block], (ToolCall("tool-r", "remove_items", arguments),), 50)
+
+
+def test_removal_is_audited_without_mutation(room: RoomScene) -> None:
+    room.furniture.append(blocker(is_fixed=False))
+    before = room.model_dump()
+    reply = remove_items(room, {"item_ids": ["blocker"]})
+    assert room.model_dump() == before
+    assert reply.removals == ["blocker"] and not reply.additions and not reply.poses
+    assert "Shoe cabinet" in reply.text and "clears 1 existing problem" in reply.text
+    candidate = room.model_copy(deep=True)
+    candidate.furniture = [i for i in candidate.furniture if i.id != "blocker"]
+    assert audit_scene(candidate) == reply.report
+    assert not reply.report.blocked_doors  # type: ignore[union-attr]
+
+
+@pytest.mark.parametrize(
+    "item_ids, message",
+    [
+        (["fixed"], "Fixed items"),
+        (["missing"], "distinct existing"),
+        (["blocker", "blocker"], "distinct existing"),
+    ],
+)
+def test_invalid_removals_are_rejected(room: RoomScene, item_ids: list[str], message: str) -> None:
+    room.furniture.append(blocker(is_fixed=False))
+    with pytest.raises(SpatialInputError, match=message):
+        remove_items(room, {"item_ids": item_ids})
+    with pytest.raises(ValidationError):
+        remove_items(room, {"item_ids": []})
+
+
+def test_agent_removes_after_correcting_a_fixed_choice(room: RoomScene) -> None:
+    room.furniture.append(blocker(is_fixed=False))
+    model = Scripted(remove_turn({"item_ids": ["fixed"]}), remove_turn({"item_ids": ["blocker"]}))
+    reply = chat(ChatRequest(scene=room, instruction="Remove the shoe cabinet"), model)
+    assert "Fixed items cannot be removed" in tool_error(model)
+    assert reply.removals == ["blocker"]
+    tool = next(t for t in model.requests[0]["tools"] if t["name"] == "remove_items")
+    assert tool["input_schema"]["properties"]["item_ids"]["items"]["enum"] == ["blocker"]
+
+
+def test_remove_tool_is_not_offered_when_only_fixed_items_exist(room: RoomScene) -> None:
+    model = Scripted("Nothing can be removed.")
+    chat(ChatRequest(scene=room, instruction="Remove the radiator"), model)
+    assert all(t["name"] != "remove_items" for t in model.requests[0]["tools"])
