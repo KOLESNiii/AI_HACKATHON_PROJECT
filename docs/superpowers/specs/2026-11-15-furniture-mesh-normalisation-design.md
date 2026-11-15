@@ -42,7 +42,9 @@ The four raw SAM 3D meshes of the reviewed opening room each have one node, one 
   the observation above. Detecting the front from geometry is not attempted.
 - **Scale.** Known `target_bbox`: per-axis, exact, with `"dimensions"` requested above 15 %
   distortion. Unknown: uniform from the category's typical height (spec 8.3), `bbox_m`
-  rounded to 1 mm, `"dimensions"` always requested.
+  rounded to 1 mm, `"dimensions"` always requested. PR #54 review follow-up: refuse an
+  estimate if any side exceeds 3 times its corresponding category size, keeping the proxy
+  until dimensions are supplied. This avoids inflating flat/partial meshes by their height.
 - **Provenance** stays with the caller: `dimension_source` is the stated source or
   `estimated`. `NormalisedMesh` is unchanged.
 - **Budgets.** Over 30,000 triangles, 4 primitives or 3 MB is refused with

@@ -16,6 +16,7 @@ from services.reconstruction.assets.collision_templates import template_parts
 from services.reconstruction.assets.models import FurnitureAsset
 from services.reconstruction.assets.normalisation import (
     MAX_TEXTURE_PX,
+    PROVIDER_FRONT,
     NormalisationError,
     normalise_mesh,
 )
@@ -79,6 +80,47 @@ def test_known_dimensions_are_matched_exactly_without_a_correction(tmp_path: Pat
         raw_box(tmp_path), category="sofa", target_bbox=target, data_dir=tmp_path, front="+z"
     )
     assert again.glb_url == result.glb_url, "same input, same bytes: the URL is a content hash"
+
+
+@pytest.mark.parametrize("extents", [(1, 0.01, 1), (1, 0.002, 1), (4, 1, 1), (1, 1, 4)])
+def test_implausible_estimates_are_refused_without_storing_an_asset(
+    tmp_path: Path, extents
+) -> None:
+    with pytest.raises(NormalisationError, match="category"):
+        normalise_mesh(
+            raw_box(tmp_path, extents=extents),
+            category="other",
+            target_bbox=None,
+            data_dir=tmp_path,
+            front="+z",
+        )
+    assert not (tmp_path / "assets").exists()
+
+
+def test_stated_dimensions_can_exceed_the_estimate_limit(tmp_path: Path) -> None:
+    target = BBoxM(width=4, height=0.02, depth=4)
+    result = normalise_mesh(
+        raw_box(tmp_path, extents=(1, 0.002, 1)),
+        category="other",
+        target_bbox=target,
+        data_dir=tmp_path,
+        front="+z",
+    )
+    assert result.bbox_m == target
+    assert_fits(stored(tmp_path, result.glb_url), target)
+
+
+def test_estimate_at_the_category_limit_is_accepted(tmp_path: Path) -> None:
+    result = normalise_mesh(
+        raw_box(tmp_path, extents=(3, 1, 3)),
+        category="other",
+        target_bbox=None,
+        data_dir=tmp_path,
+        front="+z",
+    )
+    assert result.bbox_m == BBoxM(width=1.8, height=0.6, depth=1.8)
+    assert result.correction_needed == ["dimensions"]
+    assert_fits(stored(tmp_path, result.glb_url), result.bbox_m)
 
 
 def test_a_shape_that_disagrees_with_stated_dimensions_asks_for_them(tmp_path: Path) -> None:
@@ -183,6 +225,26 @@ def test_textures_survive_and_are_capped(tmp_path: Path, size: int) -> None:
     assert texture.convert("RGB").getpixel((2, 2)) == (200, 30, 30)
 
 
+def test_unused_vertices_do_not_change_bounds_or_drop_texture_coordinates(tmp_path: Path) -> None:
+    mesh = scene_of(textured(tmp_path, 256).read_bytes()).to_geometry()
+    original_uv = mesh.visual.uv.copy()
+    mesh.vertices = np.vstack([mesh.vertices, [100, -100, 100]])
+    mesh.visual.uv = np.vstack([original_uv, [0, 0]])
+    path = tmp_path / "stray.glb"
+    path.write_bytes(mesh.export(file_type="glb"))
+    assert scene_of(path.read_bytes()).bounds[1, 0] == 100
+    target = BBoxM(width=2, height=1, depth=1.2)
+    result = normalise_mesh(
+        path, category="other", target_bbox=target, data_dir=tmp_path, front="+z"
+    )
+    glb = stored(tmp_path, result.glb_url)
+    assert_fits(glb, target)
+    output = scene_of(glb).to_geometry()
+    assert len(output.vertices) == len(mesh.vertices) - 1
+    np.testing.assert_allclose(output.visual.uv, original_uv)
+    assert output.visual.material.baseColorTexture.size == (256, 256)
+
+
 def test_unusable_or_over_budget_meshes_are_refused_and_nothing_is_stored(tmp_path: Path) -> None:
     garbage = tmp_path / "bad.glb"
     garbage.write_bytes(b"not a mesh")
@@ -272,6 +334,33 @@ def test_a_mesh_that_cannot_be_normalised_keeps_its_proxy_and_says_so(tmp_path: 
     # No mesh at all: nothing to normalise.
     masked_scene(tmp_path / "other", two=False)
     assert reconstruct_furniture("scene", data_dir=tmp_path / "other").items[0].asset is None
+
+
+def test_flat_mesh_keeps_its_proxy_until_dimensions_are_supplied(tmp_path: Path) -> None:
+    masked_scene(tmp_path, two=False)
+    flat = raw_box(tmp_path, extents=(1, 0.002, 1)).read_bytes()
+    result = reconstruct_furniture("scene", data_dir=tmp_path, provider=MeshDouble(glb=flat))
+    item = result.items[0]
+    assert item.mesh is not None and item.asset is None and item.proxy.is_proxy
+    assert "dimensions" in item.proxy.correction_needed
+    assert not result.complete
+    assert any("category" in warning for warning in result.warnings)
+    known = KnownDimensions(bbox_m=BBoxM(width=2, height=0.02, depth=2), source="measured")
+    corrected = reconstruct_furniture(
+        "scene", data_dir=tmp_path, dimensions={item.object_id: known}
+    )
+    assert corrected.complete
+    assert corrected.items[0].asset.bbox_m == known.bbox_m
+
+
+def test_provider_without_front_metadata_requests_orientation(tmp_path: Path, monkeypatch) -> None:
+    masked_scene(tmp_path, two=False)
+    # Simulate a provider registered before its front convention has been established.
+    monkeypatch.delitem(PROVIDER_FRONT, "sam3d")
+    result = reconstruct_furniture("scene", data_dir=tmp_path, provider=MeshDouble())
+    assert result.complete
+    assert "orientation" in result.items[0].asset.correction_needed
+    assert_fits(stored(tmp_path, result.items[0].asset.glb_url), result.items[0].asset.bbox_m)
 
 
 def test_cli_writes_the_normalised_asset_when_there_is_one(tmp_path: Path) -> None:

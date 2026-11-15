@@ -357,7 +357,8 @@ sizes keyed by item ID, for example:
 Allowed sources are `measured`, `catalog`, `user_corrected`. Without known dimensions,
 category defaults are explicitly `estimated` and request a `dimensions` correction. Every
 proxy keeps the item's ID/name, has its bottom-centre at the origin, +Y up and a dark front
-marker at +Z. Fixtures remain fixed; collision parts are empty (one solid bounding box).
+marker at +Z. Fixtures remain fixed; desk, table and chair proxies use category-template
+collision parts. Other categories use one solid bounding box.
 
 **Storage and retries.** Raw GLBs live under `meshes/<scene digest>/<item ID>/` and retain
 provider units/orientation. They must pass binary glTF 2.0, declared-length, 20 MB, triangle
@@ -416,10 +417,10 @@ returns a `NormalisedMesh` whose `glb_url` is stored in the content-addressed as
 
 | Step | Behaviour |
 |---|---|
-| Load | Node transforms are baked into the vertices; the output has identity nodes, no skins, animations, cameras or lights. The raw file is taken to be +Y up, as glTF requires. |
+| Load | Node transforms are baked into the vertices and unused vertices are removed; the output has identity nodes, no skins, animations, cameras or lights. The raw file is taken to be +Y up, as glTF requires. |
 | Front | `front` (`"+z"`, `"+x"`, `"-z"`, `"-x"`) names the raw mesh's front, which is turned to +Z. `None` keeps the mesh as given and adds `"orientation"` to `correction_needed`. |
 | Size, known | With a `target_bbox` each axis is scaled to match it exactly. If that stretches one axis over 15 % more than another (`MAX_DISTORTION`), `"dimensions"` is requested: the shape disagrees with the stated size. |
-| Size, unknown | Without one the mesh is scaled uniformly so its height is the category's typical height (`CATEGORY_SIZE_M`), `bbox_m` is read off the result (rounded to 1 mm) and `"dimensions"` is always requested. |
+| Size, unknown | Without one the mesh is scaled uniformly so its height is the category's typical height (`CATEGORY_SIZE_M`), `bbox_m` is read off the result (rounded to 1 mm) and `"dimensions"` is always requested. Any estimated side over 3 times its corresponding category size is refused; the item keeps its proxy until dimensions are supplied. |
 | Origin | The bounding-box bottom-centre is moved to the origin. |
 | Profile | Textures above 1024 px are downscaled. The written file is re-read: its bounds must equal `bbox_m` within `GLB_BBOX_TOLERANCE_M`. |
 | Parts | `collision_parts` come from the category template fitted to `bbox_m`; `collision_source` is `"template"`. |
@@ -432,15 +433,18 @@ is not used: on the four live meshes it gave a 0.86 m two-seat sofa and a 0.55 m
 
 **Refusals.** `NormalisationError` (a `ValueError`) when the file cannot be read, has no
 triangles or no extent, a side would be under 1 cm, or it exceeds 30,000 triangles, 4
-primitives or 3 MB. There is no decimator among the dependencies, so an over-budget mesh is
-refused, not reduced: providers are asked for a budget instead. Nothing is stored on refusal.
+primitives or 3 MB, or an estimated side exceeds 3 times its category size. This size limit
+does not apply to caller-supplied dimensions. There is no decimator among the dependencies,
+so an over-budget mesh is refused, not reduced: providers are asked for a budget instead.
+Nothing is stored on refusal.
 
 **In the pipeline.** `ItemReconstruction.asset` is the item's normalised `FurnitureAsset`
 (`is_proxy: false`, same ID and evidence as the proxy) when its current raw mesh normalises,
 else `None` with a warning; `proxy` is always present. `complete` now also requires every
 item to have an `asset`. The CLI's `assets.json` holds each item's `asset`, or its `proxy`
 when there is none, and `report.md` lists the normalised size and outstanding corrections.
-SAM 3D meshes are passed `front="+z"` (`PROVIDER_FRONT`). Proxies now carry the same category
+SAM 3D meshes are passed `front="+z"` (`PROVIDER_FRONT`). A provider missing from this map
+keeps its mesh orientation and requests `"orientation"`. Proxies now carry the same category
 template parts, so a desk or table proxy can nest a chair.
 
 **Dependency.** Pillow joins the `reconstruction` extra: without it `trimesh` silently drops

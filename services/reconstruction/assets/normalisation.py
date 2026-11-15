@@ -34,6 +34,8 @@ MAX_TEXTURE_PX = 1024
 MAX_DISTORTION = 0.15
 """Fitting stated dimensions may stretch one axis this much more than another before the
 mesh's shape is taken to disagree with them."""
+MAX_ESTIMATED_SIZE_RATIO = 3.0
+"""Refuse height-based estimates with any side over this multiple of its category size."""
 PROVIDER_FRONT: dict[str, Front] = {"sam3d": "+z"}
 """Where each mesh provider puts the front. SAM 3D Objects: observed 2026-11-15 on the four
 reviewed opening-room meshes (+Y up, axis-aligned, both sofas and the armchair facing +Z)."""
@@ -66,6 +68,9 @@ def _load(raw_glb: Path) -> list[trimesh.Trimesh]:
         raise NormalisationError(
             f"raw mesh has {triangles} triangles; the limit is {MAX_TRIANGLES}"
         )
+    for mesh in meshes:
+        # Bounds and exported accessors must describe the same triangle geometry.
+        mesh.remove_unreferenced_vertices()
     return meshes
 
 
@@ -103,7 +108,8 @@ def normalise_mesh(
     exactly; `"dimensions"` is requested if that distorts the shape by more than
     `MAX_DISTORTION`. Without one the mesh is scaled uniformly from the category's typical
     height and the returned `bbox_m` is an estimate that always requests `"dimensions"`: the
-    caller records it as `dimension_source: "estimated"`.
+    caller records it as `dimension_source: "estimated"`. An estimated side exceeding
+    `MAX_ESTIMATED_SIZE_RATIO` times its category size is refused; supply dimensions instead.
 
     Raises NormalisationError when the file is unusable or over the profile's budgets, and
     ValueError for an unknown category. Nothing is stored in either case.
@@ -129,8 +135,13 @@ def normalise_mesh(
     size: NDArray[np.float64]
     if target_bbox is None:
         # Millimetre-rounded so the recorded size is a clean number the mesh then matches.
-        height = CATEGORY_SIZE_M[cast(Category, category)][1]
-        size = np.round(extents * (height / extents[1]), 3)
+        typical_size = np.array(CATEGORY_SIZE_M[cast(Category, category)])
+        size = np.round(extents * (typical_size[1] / extents[1]), 3)
+        if np.any(size / typical_size > MAX_ESTIMATED_SIZE_RATIO):
+            raise NormalisationError(
+                f"estimated side exceeds {MAX_ESTIMATED_SIZE_RATIO:g} times the category size; "
+                "supply dimensions"
+            )
         corrections.append("dimensions")
     else:
         size = np.array([target_bbox.width, target_bbox.height, target_bbox.depth], dtype=float)

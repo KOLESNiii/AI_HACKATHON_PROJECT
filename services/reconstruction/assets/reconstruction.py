@@ -259,7 +259,7 @@ def reconstruct_furniture(
                     category=obj.category,
                     target_bbox=None if size is None else size.bbox_m,
                     data_dir=data_dir,
-                    front=PROVIDER_FRONT[mesh.provider],
+                    front=PROVIDER_FRONT.get(mesh.provider),
                     url_base=url_base,
                 )
                 # Only stated dimensions are trusted: a size read off the mesh is an estimate.
