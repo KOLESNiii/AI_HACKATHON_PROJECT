@@ -26,7 +26,7 @@ export function connectEditorServices(debounceMs = 250): () => void {
   }
   const unsubscribe = useStore.subscribe((s, before) => {
     if (s.roomSession !== before.roomSession) {
-      void s.loadRoom()
+      start()
       return
     }
     // Drags move poses without a new revision; only committed edits invalidate results.
@@ -51,11 +51,29 @@ export function connectEditorServices(debounceMs = 250): () => void {
     if (sceneChanged || dragEnded || s.roomLoading !== before.roomLoading)
       schedule()
   })
-  void useStore.getState().loadRoom()
+  // A room resumed from this session keeps its edits: audit it instead of reloading.
+  function start() {
+    if (useStore.getState().roomReady) {
+      schedule()
+      useStore.getState().resumeRoomPoll()
+    } else void useStore.getState().loadRoom()
+  }
+  start()
   return () => {
     unsubscribe()
     clearTimeout(timer)
     const s = useStore.getState()
+    if (s.agentBusy)
+      useStore.setState({
+        chat: [
+          ...s.chat,
+          {
+            role: 'assistant',
+            text: 'Layout request cancelled when you left the room. Ask again to continue.',
+            progress: s.agentProgress,
+          },
+        ],
+      })
     s.roomAbort?.abort()
     s.auditAbort?.abort()
     s.agentAbort?.abort()

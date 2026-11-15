@@ -77,6 +77,19 @@ export interface ChatMessage {
   /** Real products found online, each offered with an Add to scene button. */
   products?: ProductOption[]
 }
+/** A room's working state, kept for the session so reopening it resumes where you left off. */
+export interface SavedRoom {
+  scene: RoomScene
+  versions: RoomVersion[]
+  currentVersionId: string
+  hasUnsavedChanges: boolean
+  chat: ChatMessage[]
+  human: Pose2D | null
+  playLighting: PlayLightingSettings
+  roomWarnings: string[]
+  /** Video furniture still being extracted when the room was left. */
+  furnitureProgress: FurnitureProgress | null
+}
 export interface Toast {
   id: number
   text: string
@@ -116,6 +129,12 @@ interface State {
   placingHuman: boolean
   humanPreview: Pose2D | null
   roomLoading: boolean
+  /** True once this room's canonical scene was loaded (or the local fallback kept). */
+  roomReady: boolean
+  /** Rooms opened this session, keyed by `roomKey`; restored instead of reloaded. */
+  rooms: Record<string, SavedRoom>
+  /** `<planId|demo>/<scene_id>` of the open room; null before any room is opened. */
+  roomKey: string | null
   roomWarnings: string[]
   /** Furniture being extracted from the plan's videos; null when none is. */
   furnitureProgress: FurnitureProgress | null
@@ -177,6 +196,8 @@ interface State {
   sendChat: (text: string) => Promise<void>
   cancelAgent: () => void
   loadRoom: () => Promise<void>
+  /** Keeps watching for video furniture in a room resumed from this session. */
+  resumeRoomPoll: () => void
   refreshAudit: () => Promise<void>
   refreshFengShuiScore: () => Promise<void>
   assessFengShui: () => Promise<void>
@@ -255,6 +276,29 @@ function restoreVersion(state: State, version: RoomVersion): Partial<State> {
   }
 }
 
+function savedRoom(s: State): SavedRoom {
+  return {
+    scene: s.scene,
+    versions: s.versions,
+    currentVersionId: s.currentVersionId,
+    hasUnsavedChanges: s.hasUnsavedChanges,
+    chat: s.agentBusy
+      ? [
+          ...s.chat,
+          {
+            role: 'assistant',
+            text: 'Layout request cancelled when you left the room. Ask again to continue.',
+            progress: s.agentProgress,
+          },
+        ]
+      : s.chat,
+    human: s.human,
+    playLighting: { ...s.playLighting },
+    roomWarnings: s.roomWarnings,
+    furnitureProgress: s.furnitureProgress,
+  }
+}
+
 function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
   itemSeq += 1
   const { sku, image_url: _image, ...asset } = c
@@ -327,8 +371,10 @@ function pollRoom(session: number, loaded: RoomScene, attempt = 1) {
           `Furniture from your videos is in: ${result.scene.furniture.length} items.`,
         )
     } else {
+      // Not kept for the session, so reopening loads the furnished room.
       useStore.setState({
         furnitureProgress: null,
+        roomReady: false,
         roomWarnings: [
           'Furniture from your videos is ready: open this room again to load it (your edits here are not carried over).',
         ],
@@ -359,6 +405,9 @@ export const useStore = create<State>((set, get) => ({
   placingHuman: false,
   humanPreview: null,
   roomLoading: false,
+  roomReady: false,
+  rooms: {},
+  roomKey: null,
   roomWarnings: [],
   furnitureProgress: null,
   roomAbort: null,
@@ -456,21 +505,56 @@ export const useStore = create<State>((set, get) => ({
     get().fengShuiAbort?.abort()
     get().fengShuiScoreAbort?.abort()
     set((s) => {
-      const room =
+      const plan =
         findPlanRoom(s.home, s.segmentId) ??
         s.home.floors.flatMap((f) => f.rooms).find((r) => r.selectable)
-      const scene = room ? room.scene() : roomScene(null)
+      const fresh = plan ? plan.scene() : roomScene(null)
+      const roomKey = `${s.home.planId ?? 'demo'}/${fresh.scene_id}`
+      // Keep the room being left once it finished loading; forget one that didn't.
+      const rooms = { ...s.rooms }
+      if (s.roomKey && s.roomReady) rooms[s.roomKey] = savedRoom(s)
+      else if (s.roomKey) delete rooms[s.roomKey]
+      // An untouched room still waiting on video furniture simply loads again.
+      let saved: SavedRoom | undefined = rooms[roomKey]
+      if (
+        saved?.furnitureProgress &&
+        saved.versions.length === 1 &&
+        !saved.hasUnsavedChanges
+      ) {
+        delete rooms[roomKey]
+        saved = undefined
+      }
+      const roomSession = s.roomSession + 1
+      const room = saved
+        ? {
+            ...saved,
+            // Proposals stay usable: their base scene and version are unchanged.
+            chat: saved.chat.map((m) =>
+              m.roomSession == null ? m : { ...m, roomSession },
+            ),
+            playLighting: { ...saved.playLighting },
+            roomReady: true,
+          }
+        : {
+            scene: fresh,
+            ...initialRoomHistory(fresh),
+            chat: [],
+            human: null,
+            playLighting: { ...DEFAULT_PLAY_LIGHTING },
+            roomWarnings: [],
+            furnitureProgress: null,
+            roomReady: false,
+          }
       return {
         screen: 'building',
-        scene,
-        ...initialRoomHistory(scene),
-        roomSession: s.roomSession + 1,
+        rooms,
+        roomKey,
+        ...room,
+        roomSession,
         selectedId: null,
         tab: 'chat',
         mode: 'edit',
         playPhase: 'walking',
-        playLighting: { ...DEFAULT_PLAY_LIGHTING },
-        human: null,
         placingHuman: false,
         humanPreview: null,
         audit: null,
@@ -486,11 +570,8 @@ export const useStore = create<State>((set, get) => ({
         fengShuiScoreError: null,
         fengShuiScoreAbort: null,
         roomLoading: false,
-        roomWarnings: [],
-        furnitureProgress: null,
         roomAbort: null,
         interacting: false,
-        chat: [],
         agentBusy: false,
         agentProgress: [],
         agentAbort: null,
@@ -992,8 +1073,16 @@ export const useStore = create<State>((set, get) => ({
           ],
         })
     } finally {
-      if (current()) set({ roomLoading: false, roomAbort: null })
+      if (current())
+        set({ roomLoading: false, roomAbort: null, roomReady: true })
     }
+  },
+  resumeRoomPoll: () => {
+    const s = get()
+    // The saved original never matches the edited scene, so the user is told to
+    // reopen the room rather than having their edits replaced.
+    if (s.roomReady && s.furnitureProgress)
+      pollRoom(s.roomSession, s.versions[0].scene)
   },
   refreshAudit: async () => {
     const { scene, roomSession, interacting, roomLoading } = get()

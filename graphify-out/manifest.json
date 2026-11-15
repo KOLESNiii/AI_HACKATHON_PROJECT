@@ -36,9 +36,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1794728115.5100183,
-    "seen": 1794729940.8869076,
-    "ast_hash": "dbc35f4494724d8ccb61e4ede971599e",
+    "mtime": 1794738897.232741,
+    "seen": 1794738909.8568978,
+    "ast_hash": "5ee36a4a2f92945e8815ea5c453af95a",
     "semantic_hash": ""
   },
   "frontend/src/audio/cues.ts": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/EditorScreen.tsx": {
-    "mtime": 1794731554.8733408,
-    "seen": 1794731748.3930376,
-    "ast_hash": "3d4042ab30aeb8169f8d9ba9939fdd70",
+    "mtime": 1794738897.232741,
+    "seen": 1794738909.8571146,
+    "ast_hash": "377dac5d2e9b7428f72038ebb5236f22",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Furniture.tsx": {
@@ -132,9 +132,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/intake/FloorPlanScreen.tsx": {
-    "mtime": 1794702601.1660862,
-    "seen": 1794729940.886939,
-    "ast_hash": "b4f9a2965b5b36d45e8056633953b7a6",
+    "mtime": 1794738897.2331836,
+    "seen": 1794738909.8575277,
+    "ast_hash": "02150600547f3818851a26f0c813fa93",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/HomeScreen.tsx": {
@@ -150,15 +150,15 @@
     "semantic_hash": ""
   },
   "frontend/src/components/intake/ProgressScreen.tsx": {
-    "mtime": 1794702601.1662292,
-    "seen": 1794729940.8869438,
-    "ast_hash": "9c175d4fa70dccc5ba976761e2f3ddc0",
+    "mtime": 1794738897.233324,
+    "seen": 1794738909.857594,
+    "ast_hash": "21f6790f9556b7a9f46688529d21cb64",
     "semantic_hash": ""
   },
   "frontend/src/components/intake/UploadScreen.tsx": {
-    "mtime": 1794728115.5114863,
-    "seen": 1794729940.886945,
-    "ast_hash": "7b86c7bb11f6bed26658dca721d6c236",
+    "mtime": 1794738897.2334566,
+    "seen": 1794738909.8575966,
+    "ast_hash": "91083e9d0e1b36f9c8a164424d8e8b6a",
     "semantic_hash": ""
   },
   "frontend/src/components/play/Human.tsx": {
@@ -222,9 +222,9 @@
     "semantic_hash": ""
   },
   "frontend/src/data/demoHome.ts": {
-    "mtime": 1794694681.848426,
-    "seen": 1794729940.8869622,
-    "ast_hash": "0290ac6b5c104cc7b5246d3687494863",
+    "mtime": 1794738897.233602,
+    "seen": 1794738909.8579814,
+    "ast_hash": "91f1dc65ba3d63476171ab612ccdfd77",
     "semantic_hash": ""
   },
   "frontend/src/data/mockScene.ts": {
@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/contracts.ts": {
-    "mtime": 1794732813.069105,
-    "seen": 1794737432.904208,
-    "ast_hash": "5bf582536d14fd445cf3c2caf697245f",
+    "mtime": 1794738897.233698,
+    "seen": 1794738909.8581321,
+    "ast_hash": "77faa8824e3c39c80cb5cabd17617697",
     "semantic_hash": ""
   },
   "frontend/src/lib/geometry.ts": {
@@ -258,9 +258,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/spatial.ts": {
-    "mtime": 1794731554.8768404,
-    "seen": 1794731748.393956,
-    "ast_hash": "5f9d1da24fd4d2da3809b1caad4c5235",
+    "mtime": 1794738897.2340355,
+    "seen": 1794738909.858335,
+    "ast_hash": "42e1f57180f8771244538ff2a2e533ca",
     "semantic_hash": ""
   },
   "frontend/src/lib/spatialPreview.ts": {
@@ -282,9 +282,9 @@
     "semantic_hash": ""
   },
   "frontend/src/store.ts": {
-    "mtime": 1794737764.4357672,
-    "seen": 1794737809.7063265,
-    "ast_hash": "e7694d1ab21ba9e1b0bf3127792dafa2",
+    "mtime": 1794738998.8201199,
+    "seen": 1794739056.474785,
+    "ast_hash": "917e5bfb6c39d41084a86d2c43f6ce08",
     "semantic_hash": ""
   },
   "frontend/tests/agentAddItem.test.ts": {
@@ -360,9 +360,9 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1794666636.8154657,
-    "seen": 1794729940.8870087,
-    "ast_hash": "107e4dd399e6e1d636cf1aa01c66d72b",
+    "mtime": 1794738897.2345738,
+    "seen": 1794738909.8592784,
+    "ast_hash": "8fa9fbd9c698c09dded3aadade049b86",
     "semantic_hash": ""
   },
   "pyproject.toml": {
@@ -558,9 +558,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/config.py": {
-    "mtime": 1794731958.9204974,
-    "seen": 1794731993.7461567,
-    "ast_hash": "8164d11eb5a08dbe9a2dac1fedf1086d",
+    "mtime": 1794738897.2345738,
+    "seen": 1794738909.8605719,
+    "ast_hash": "c8c929c11774404355b357ff653f9832",
     "semantic_hash": ""
   },
   "services/reconstruction/demo_assets.py": {
@@ -570,9 +570,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/main.py": {
-    "mtime": 1794732813.0712583,
-    "seen": 1794737432.9067528,
-    "ast_hash": "47e9708668e44e5ff617f1397919cdf2",
+    "mtime": 1794738897.2345738,
+    "seen": 1794738909.8606071,
+    "ast_hash": "77af26b52c82fe9153029676bc60accf",
     "semantic_hash": ""
   },
   "services/reconstruction/room/__init__.py": {
@@ -606,9 +606,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/room/assemble.py": {
-    "mtime": 1794728115.5336976,
-    "seen": 1794729940.8870845,
-    "ast_hash": "a039746d5e0b57c9ce6131c2bb505926",
+    "mtime": 1794738897.2352977,
+    "seen": 1794738909.8608043,
+    "ast_hash": "a85659a0360bb275394a82a203f00a92",
     "semantic_hash": ""
   },
   "services/reconstruction/room/correct.py": {
@@ -672,9 +672,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/room/routes.py": {
-    "mtime": 1794731958.9240444,
-    "seen": 1794731993.747031,
-    "ast_hash": "b4d7ea4e0e6bbdd6d022075897bba0d9",
+    "mtime": 1794738897.2354794,
+    "seen": 1794738909.861143,
+    "ast_hash": "03f3d8d126ade02b51a20fd493a9095c",
     "semantic_hash": ""
   },
   "services/reconstruction/room/shell.py": {
@@ -690,9 +690,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/scenes.py": {
-    "mtime": 1794731958.9240444,
-    "seen": 1794731993.7471392,
-    "ast_hash": "fa77b897d72c8b911ae7b812e09513ef",
+    "mtime": 1794738897.235926,
+    "seen": 1794738909.8612525,
+    "ast_hash": "a85881f2004d9c979ac6198c2d7c367c",
     "semantic_hash": ""
   },
   "services/spatial_engine/__init__.py": {
@@ -1026,9 +1026,9 @@
     "semantic_hash": ""
   },
   "tests/test_room_routes.py": {
-    "mtime": 1794682055.4274359,
-    "seen": 1794729940.8872023,
-    "ast_hash": "f1d63a37bd40686d73bf696c85a393b8",
+    "mtime": 1794738897.2360964,
+    "seen": 1794738909.863556,
+    "ast_hash": "c8eac7040e090db22191995dca8665be",
     "semantic_hash": ""
   },
   "tests/test_room_shell.py": {
@@ -1242,9 +1242,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/room/README.md": {
-    "mtime": 1794731958.9210443,
-    "seen": 1794731993.750778,
-    "ast_hash": "72e97ebf4eace776a0feaa3e167cea35",
+    "mtime": 1794738897.2351143,
+    "seen": 1794738909.8645313,
+    "ast_hash": "80455c5636fe7898b81bb9878127b59d",
     "semantic_hash": ""
   },
   "services/spatial_engine/README.md": {
@@ -1411,97 +1411,97 @@
   },
   ".graphify_ast.json": {
     "mtime": 1794644052.0582492,
-    "seen": 1794737809.7061663,
+    "seen": 1794739056.4746172,
     "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
     "semantic_hash": ""
   },
   ".graphify_cached.json": {
     "mtime": 1794644029.234256,
-    "seen": 1794737809.7061777,
+    "seen": 1794739056.4746284,
     "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
     "semantic_hash": ""
   },
   ".graphify_detect.json": {
     "mtime": 1794644020.845635,
-    "seen": 1794737809.7061834,
+    "seen": 1794739056.474634,
     "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
     "semantic_hash": ""
   },
   "contracts/mock_room/mock_scene.json": {
     "mtime": 1794674703.9606164,
-    "seen": 1794737809.706186,
+    "seen": 1794739056.474637,
     "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
     "semantic_hash": ""
   },
   "contracts/mock_room/one_floor_scene.json": {
     "mtime": 1794687116.680454,
-    "seen": 1794737809.7061884,
+    "seen": 1794739056.4746394,
     "ast_hash": "5cf9ad89b04d8864803c10445203191e",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_first_scene.json": {
     "mtime": 1794687116.6806648,
-    "seen": 1794737809.7061915,
+    "seen": 1794739056.4746425,
     "ast_hash": "0a4c182b4e46d4e9d4286470cb053411",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_ground_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794737809.706194,
+    "seen": 1794739056.4746459,
     "ast_hash": "93e97084b7ca2f957d1cba386cc3f91a",
     "semantic_hash": ""
   },
   "contracts/mock_room/three_floor_second_scene.json": {
     "mtime": 1794687116.680888,
-    "seen": 1794737809.706196,
+    "seen": 1794739056.474647,
     "ast_hash": "355cebd0f0b1cf9d07b96ec085fb9f47",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/evidence.json": {
     "mtime": 1794674703.9634907,
-    "seen": 1794737809.7064013,
+    "seen": 1794739056.474866,
     "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/one_floor.annotations.json": {
     "mtime": 1794682055.4256458,
-    "seen": 1794737809.7064433,
+    "seen": 1794739056.4749084,
     "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/real_rooms.json": {
     "mtime": 1794728115.5340552,
-    "seen": 1794737809.7064452,
+    "seen": 1794739056.47491,
     "ast_hash": "57763014964ca56a99c6ee7f65976b9d",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.assets.json": {
     "mtime": 1794700786.8696582,
-    "seen": 1794737809.7064466,
+    "seen": 1794739056.4749115,
     "ast_hash": "0530c1f94cc30c63764c6b2abc721441",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/reception.hints.json": {
     "mtime": 1794700786.8698816,
-    "seen": 1794737809.7064488,
+    "seen": 1794739056.4749131,
     "ast_hash": "b9117b2c24745e36a9dfb743af0d5787",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/three_floor.annotations.json": {
     "mtime": 1794682055.4259014,
-    "seen": 1794737809.7064521,
+    "seen": 1794739056.474916,
     "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
     "semantic_hash": ""
   },
   "services/spatial_engine/fixtures/audit_cases.json": {
     "mtime": 1794682055.4266927,
-    "seen": 1794737809.706488,
+    "seen": 1794739056.474966,
     "ast_hash": "288a075b44b0c604498a9fd1baafdf22",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
     "mtime": 1794687676.6252723,
-    "seen": 1794737809.706508,
+    "seen": 1794739056.4749906,
     "ast_hash": "7d500ae57af354b3d9d569dfc0be1d6d",
     "semantic_hash": ""
   },
@@ -2196,9 +2196,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/editorServices.ts": {
-    "mtime": 1794731554.8758404,
-    "seen": 1794731748.3938713,
-    "ast_hash": "9bf9c3b8c7b7c953db2b266d3af4db49",
+    "mtime": 1794738998.8203754,
+    "seen": 1794739056.4747593,
+    "ast_hash": "716973141a0ff106a40dbf38393bf697",
     "semantic_hash": ""
   },
   "frontend/src/lib/fengShui.ts": {
@@ -2256,9 +2256,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/roomVersions.test.tsx": {
-    "mtime": 1794731554.8778403,
-    "seen": 1794731748.3943045,
-    "ast_hash": "8c774d971689ed9920ac9f2d03258b74",
+    "mtime": 1794739037.6399171,
+    "seen": 1794739056.4748228,
+    "ast_hash": "fc0e5090f4cf7984dc710bbbd5532085",
     "semantic_hash": ""
   },
   "frontend/tests/solveStream.ts": {
@@ -2389,14 +2389,62 @@
   },
   "frontend/src/data/ikeaCatalog.json": {
     "mtime": 1794731115.2534328,
-    "seen": 1794737809.7062917,
+    "seen": 1794739056.4747448,
     "ast_hash": "414819acf400eda155fb04441ca8308c",
     "semantic_hash": ""
   },
   "services/reconstruction/room/fixtures/scene_cache/plan-83a12322e933.json": {
     "mtime": 1794731958.9228225,
-    "seen": 1794737809.7064502,
+    "seen": 1794739056.4749146,
     "ast_hash": "df0021c3d865b10ad54bb1b844085bbe",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/editor/ExtractionProgress.tsx": {
+    "mtime": 1794738897.232741,
+    "seen": 1794739056.4746912,
+    "ast_hash": "5c0e6643d0e8c540ab06a6672887e8dd",
+    "semantic_hash": ""
+  },
+  "frontend/src/data/homePlan.ts": {
+    "mtime": 1794738897.233698,
+    "seen": 1794739056.4747412,
+    "ast_hash": "366365b591d58c88f9f1c89e55ad3124",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/floorPlan.ts": {
+    "mtime": 1794738897.233698,
+    "seen": 1794739056.4747632,
+    "ast_hash": "35947e9815bfc2317c8e971b1be3adbb",
+    "semantic_hash": ""
+  },
+  "frontend/src/lib/uploadFiles.ts": {
+    "mtime": 1794738897.2340355,
+    "seen": 1794739056.4747806,
+    "ast_hash": "97336fe1d765c68f5f2160f057b6370e",
+    "semantic_hash": ""
+  },
+  "frontend/tests/planUpload.test.ts": {
+    "mtime": 1794738897.2345738,
+    "seen": 1794739056.4748158,
+    "ast_hash": "25b2c16c9845512e10ae13892153496b",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/video_jobs.py": {
+    "mtime": 1794738897.2356434,
+    "seen": 1794739056.4749362,
+    "ast_hash": "b70a5e4c0c88a55c2c85c2d9917a2aa7",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/videos.py": {
+    "mtime": 1794738897.2357485,
+    "seen": 1794739056.4749377,
+    "ast_hash": "6d725d31469558c9717476b75817c07f",
+    "semantic_hash": ""
+  },
+  "tests/test_video_jobs.py": {
+    "mtime": 1794738897.2362351,
+    "seen": 1794739056.4750762,
+    "ast_hash": "293e34054da2f294c6a4670cdaf88af8",
     "semantic_hash": ""
   }
 }
