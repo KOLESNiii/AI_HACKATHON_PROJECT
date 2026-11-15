@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { catalog, catalogCategories } from '../../data/catalog'
-import { sendAgentMessage } from '../../lib/agent'
+import { proposalSummary, sendAgentMessage } from '../../lib/agent'
 import type { AuditReport, RoomScene } from '../../lib/contracts'
 import { fitsRoom } from '../../lib/geometry'
 import { SpatialError } from '../../lib/spatial'
@@ -60,7 +60,7 @@ function ChatTab() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     const msg = text.trim()
-    if (!msg || busy) return
+    if (!msg || busy || useStore.getState().interacting) return
     setText('')
     const { scene, roomSession } = useStore.getState()
     const baseRevision = scene.revision
@@ -75,6 +75,8 @@ function ChatTab() {
           role: 'assistant',
           text: reply.text,
           poses: reply.poses,
+          additions: reply.additions,
+          report: reply.report,
           outlook: reply.outlook,
           baseRevision,
         })
@@ -120,11 +122,11 @@ function ChatTab() {
             >
               {m.text}
             </p>
-            {m.poses && (
+            {(m.poses || !!m.additions?.length) && (
               <div className="flex w-full flex-col gap-2 rounded-[2px] bg-paper-deep py-2 pr-2 pl-3">
                 <div className="flex items-center justify-between gap-2.5">
                   <span className="text-[11px] font-medium text-ink-medium">
-                    Proposed layout · {Object.keys(m.poses).length} items
+                    {proposalSummary(m)}
                   </span>
                   <span className="flex gap-1.5">
                     {!m.applied && !m.dismissed && (
@@ -164,6 +166,7 @@ function ChatTab() {
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
+          maxLength={500}
           placeholder="Ask Refresh to redesign the room…"
           className="min-w-0 flex-1 rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
         />

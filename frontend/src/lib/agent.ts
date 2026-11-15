@@ -1,12 +1,26 @@
-import type { AuditReport, Pose2D, RoomScene } from './contracts'
-import { solveLayout } from './spatial'
+import type { AuditReport, FurnitureItem, Pose2D, RoomScene } from './contracts'
+import { postSpatial, SpatialError, toServiceScene } from './spatial'
 
 export interface AgentReply {
   text: string
-  /** Proposed poses keyed by item id; only present for a verified, applicable layout. */
   poses?: Record<string, Pose2D>
-  /** The proposed layout's audit in one line, so the user can judge it before applying. */
+  additions?: FurnitureItem[]
+  report?: AuditReport | null
+  /** The proposed audit, shown before Apply. */
   outlook?: string
+}
+
+/** What Apply would do, e.g. "Proposed layout · 1 new item · 2 moves". */
+export function proposalSummary(
+  m: Pick<AgentReply, 'poses' | 'additions'>,
+): string {
+  const moves = Object.keys(m.poses ?? {}).length
+  const added = m.additions?.length ?? 0
+  return [
+    'Proposed layout',
+    ...(added ? [`${added} new item${added === 1 ? '' : 's'}`] : []),
+    ...(moves || !added ? [`${moves} move${moves === 1 ? '' : 's'}`] : []),
+  ].join(' · ')
 }
 
 /** One line on what the audited proposal leaves, from the engine's own report. */
@@ -27,27 +41,30 @@ export function describeOutlook(report: AuditReport): string {
   return parts.join(' · ')
 }
 
-/**
- * Redesign agent client, the only place the Chat tab talks to. It asks the spatial
- * service's `/solve`, which audits every proposal itself; nothing here changes the scene.
- * A reply carries poses only when the engine verified an improvement.
- */
+/** Return a proposal; application is a separate, revision-guarded user action. */
 export async function sendAgentMessage(
   scene: RoomScene,
   text: string,
   signal?: AbortSignal,
 ): Promise<AgentReply> {
-  const proposal = await solveLayout(scene, text, signal)
-  const poses = proposal.improved ? proposal.poses : {}
-  const hasPoses = Object.keys(poses).length > 0
-  const fallback = proposal.improved
-    ? 'Here is a layout I checked.'
-    : proposal.outcome === 'assistant_unavailable'
-      ? 'The layout assistant is not available right now. Nothing was changed.'
-      : 'I could not find a better layout. Nothing was changed.'
+  const reply = await postSpatial<AgentReply>(
+    '/chat',
+    { scene: toServiceScene(scene), instruction: text },
+    100_000,
+    signal,
+  )
+  if (
+    reply.report &&
+    (reply.report.scene_id !== scene.scene_id ||
+      reply.report.scene_revision !== scene.revision)
+  )
+    throw new SpatialError('The room changed while I was thinking. Ask again.')
   return {
-    text: proposal.explanation || fallback,
-    poses: hasPoses ? poses : undefined,
-    outlook: hasPoses ? describeOutlook(proposal.report) : undefined,
+    text: reply.text,
+    report: reply.report,
+    poses:
+      reply.poses && Object.keys(reply.poses).length ? reply.poses : undefined,
+    additions: reply.additions?.length ? reply.additions : undefined,
+    outlook: reply.report ? describeOutlook(reply.report) : undefined,
   }
 }

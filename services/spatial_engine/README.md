@@ -519,3 +519,44 @@ evidence, confidence, recommendation), and missing information. Advice is model
 reasoning, not a deterministic visibility/reflection calculation. Proposed moves
 need a separate geometry audit. No persistence, editor wiring, scoring or changes
 to `AuditReport.feng_shui` or the layout solver are introduced.
+
+## Room chat: `POST /chat`
+
+The editor Chat tab now connects to this route. Send `{scene, instruction}` and
+receive `{text, poses, additions, report}`. `add_item` creates one estimated,
+dimensioned proxy and can move existing non-fixed furniture to make room. Failed
+collision, boundary or door checks feed back to the model for correction; no
+unverified item is returned. Front-clearance warnings remain visible in the report.
+`rearrange_room` uses the existing layout solver. Apply is a separate editor action;
+it rejects stale replies and updates the scene revision and Stats together.
+
+The checks apply to what the request changes. The new item and every moved item must
+not overlap furniture, leave the floor or stand in a door swing, and a room that could
+be entered must stay enterable. Findings among items the request leaves alone are the
+room's own: they do not reject the addition, stay in the returned report and are
+counted in the reply ("1 problem(s) the room already had are unchanged"). Rejecting on
+any finding made additions impossible in a room where a fixed item stands in a door
+swing (`g-kitchen` in the demo home) and unreliable wherever a movable one does
+(`g-master`, the default room). The model is sent those existing findings with the
+scene, and a rejection names each offending item, the new one as "the new item".
+
+When the model ends without a proposal, its own words are returned (at most 900
+characters, no changes attached): an answer to a question, or why nothing fits. The
+reply also names items moved to make room, any change in reachable floor, and parts of
+the request the model reported as not handled, such as a second item.
+
+Checked live on 2026-11-15 with the default model: one addition requested in each of
+the 18 selectable demo rooms gave 17 verified proposals and one refusal with a reason
+(an armchair in the 1.4 m by 1.3 m bathroom), each in 4 to 8 seconds. Results vary
+between runs.
+
+Uses the existing Anthropic configuration. Maximum six model calls, 90 seconds,
+200k tokens, 60 scene items and 500 instruction characters; delegated solves use
+what remains of that allowance. No live calls are made by tests. New items are
+estimated proxies, not retailer-grounded products or generated furniture meshes.
+A missing key, provider failure or exhausted attempt produces text without changes.
+
+```bash
+uv run --extra spatial pytest tests/spatial_engine/test_chat.py
+bun test ./frontend/tests/agentAddItem.test.ts
+```

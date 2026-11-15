@@ -53,7 +53,8 @@ async function describeFailure(response: Response): Promise<string> {
   return 'The spatial service had a problem. Try again in a moment.'
 }
 
-async function post<T>(
+/** Shared spatial transport, including timeout, cancellation and readable errors. */
+export async function postSpatial<T>(
   path: string,
   body: unknown,
   timeoutMs: number,
@@ -86,7 +87,7 @@ export function auditScene(
   scene: RoomScene,
   signal?: AbortSignal,
 ): Promise<AuditReport> {
-  return post<AuditReport>(
+  return postSpatial<AuditReport>(
     '/audit',
     toServiceScene(scene),
     AUDIT_TIMEOUT_MS,
@@ -111,7 +112,7 @@ export async function solveLayout(
     instruction,
     goal,
   }
-  const proposal = await post<LayoutProposal>(
+  const proposal = await postSpatial<LayoutProposal>(
     '/solve',
     request,
     SOLVE_TIMEOUT_MS,

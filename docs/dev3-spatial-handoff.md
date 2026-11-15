@@ -159,14 +159,15 @@ Wired in the editor (`frontend/src/lib/spatial.ts`, `components/editor/useLiveAu
   a newer edit arrives, and a report is stored only if the scene is still at the revision it
   was computed for. The Stats tab shows "Checking the room..." or the service's error. Both
   services must be running (`bun run dev:spatial`); the editor shows the error otherwise.
-- **Chat to `/solve` (#35):** `lib/agent.ts` sends the typed message. A reply with poses shows
+- **Chat to `/chat` (#35, #65):** `lib/agent.ts` sends the typed message; rearrangements
+  delegate to the solver, while additions return one dimensioned proxy. A proposal shows
   the server's explanation, a one-line outlook from the proposal's own audit, and Apply or
   Dismiss. Apply keeps the existing stale-revision check, bumps the revision, and the live
   audit then re-audits the result. Nothing changes the scene until Apply. Dismissed or
   applied proposals cannot be applied again. Errors, 422s and timeouts become readable chat
   messages.
-- Library items added in the editor have an empty `glb_url`, which the contract rejects, so
-  `toServiceScene` substitutes a placeholder URL for requests only. The scene itself is untouched.
+- Library items carry a dimensioned proxy URL. `toServiceScene` still substitutes a
+  placeholder URL for legacy items with an empty `glb_url`, for requests only.
 - The Stats tab lists each Feng Shui judgement with its reason.
 
 Not done yet: a 3D preview of a proposal before applying it, goal chips, and locking the

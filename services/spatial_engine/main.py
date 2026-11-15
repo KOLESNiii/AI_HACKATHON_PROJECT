@@ -2,11 +2,12 @@ import os
 from collections.abc import Iterator
 from contextlib import contextmanager
 from functools import lru_cache
+from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Path, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import ValidationError
 from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
@@ -18,12 +19,14 @@ from services.spatial_engine.agent import (
     LayoutModel,
     propose_layout,
 )
+from services.spatial_engine.chat import ChatReply, ChatRequest, chat
 from services.spatial_engine.feng_shui import (
     FengShuiRequest,
     FengShuiResult,
     assess_feng_shui,
 )
 from services.spatial_engine.geometry import SpatialInputError
+from services.spatial_engine.proxy import proxy_glb
 from services.spatial_engine.report import audit_scene
 
 app = FastAPI(title="SpaceShift spatial_engine", version="0.1.0")
@@ -157,3 +160,26 @@ def feng_shui(
     """Assess traditional layout preferences without changing the scene or audit score."""
     with _input_errors():
         return assess_feng_shui(request, model)
+
+
+@app.post("/chat", response_model=ChatReply)
+def room_chat(
+    request: ChatRequest,
+    model: LayoutModel | None = Depends(get_layout_model),
+) -> ChatReply:
+    """Return an audited proposal for explicit application by the editor."""
+    with _input_errors():
+        return chat(request, model)
+
+
+@app.get("/proxies/{width}/{height}/{depth}.glb")
+def furniture_proxy(
+    width: Annotated[float, Path(gt=0.01, le=20)],
+    height: Annotated[float, Path(gt=0.01, le=10)],
+    depth: Annotated[float, Path(gt=0.01, le=20)],
+) -> Response:
+    return Response(
+        proxy_glb(width, height, depth),
+        media_type="model/gltf-binary",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
