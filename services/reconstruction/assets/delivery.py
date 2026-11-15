@@ -103,6 +103,45 @@ def _gltf_problems(glb: bytes) -> list[str]:
     return problems
 
 
+def _declared_bounds(glb: bytes) -> np.ndarray | None:
+    """The bounds the file declares: the union of its `POSITION` accessors' min/max.
+
+    three.js's GLTFLoader builds each geometry's bounding box from these, and the editor fits
+    the mesh to `bbox_m` from that box (#20), so they must agree with the vertices. None when
+    an accessor omits them (glTF requires both for `POSITION`) or the file is unreadable.
+    """
+    try:
+        length = struct.unpack("<I", glb[12:16])[0]
+        document: dict[str, Any] = json.loads(glb[20 : 20 + length])
+        accessors = [
+            document["accessors"][primitive["attributes"]["POSITION"]]
+            for mesh in document.get("meshes", [])
+            for primitive in mesh["primitives"]
+        ]
+        if not accessors:
+            return None
+        lows = np.array([accessor["min"] for accessor in accessors], dtype=float)
+        highs = np.array([accessor["max"] for accessor in accessors], dtype=float)
+    except (struct.error, ValueError, KeyError, IndexError, TypeError):
+        return None
+    if lows.shape != (len(accessors), 3) or highs.shape != lows.shape:
+        return None
+    return np.array([lows.min(axis=0), highs.max(axis=0)])
+
+
+def _declared_bounds_problems(glb: bytes, expected: np.ndarray) -> list[str]:
+    declared = _declared_bounds(glb)
+    if declared is None:
+        return ["POSITION accessors do not declare min/max bounds"]
+    error = float(np.abs(declared - expected).max())
+    if error < GLB_BBOX_TOLERANCE_M:
+        return []
+    return [
+        f"declared bounds (POSITION min/max, which the editor fits to bbox_m) differ from "
+        f"bbox_m by {error:.4f} m"
+    ]
+
+
 def inspect_asset(
     asset: FurnitureAsset, *, data_dir: Path, url_base: str = ASSET_URL_BASE
 ) -> AssetCheck:
@@ -128,7 +167,8 @@ def inspect_asset(
             problems.append("stored file does not match its content address")
         if len(glb) > MAX_BYTES:
             problems.append(f"file is {len(glb)} bytes; the limit is {MAX_BYTES}")
-        problems += _gltf_problems(glb)
+        graph_problems = _gltf_problems(glb)
+        problems += graph_problems
         try:
             scene = trimesh.load_scene(io.BytesIO(glb), file_type="glb")
             triangles = sum(
@@ -154,6 +194,8 @@ def inspect_asset(
                     f"bounds differ from bbox_m by {error:.4f} m "
                     f"(tolerance {GLB_BBOX_TOLERANCE_M} m, bottom-centre at the origin)"
                 )
+            if not graph_problems:  # Else declared bounds are node-local, a fault already.
+                problems += _declared_bounds_problems(glb, np.asarray(expected))
     return AssetCheck(
         object_id=asset.id,
         delivered="proxy" if asset.is_proxy else "mesh",

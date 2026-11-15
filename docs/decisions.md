@@ -378,6 +378,27 @@
 - Keep the CLI's normalisation preflight and delivery check: the duplicate work is accepted
   for now to preserve the single delivery validation path.
 
+## Demo asset cache (#20)
+
+- The M2 demo's furniture is a published cache, not the pipeline's data directory: a manifest
+  of the delivered assets with every referenced file's SHA-256, installed into the asset store
+  under the same paths. URLs and evidence stay valid. Nothing is regenerated, and a changed file
+  refuses to load.
+- The real-input room uses the cache only when the pipeline has no data for its video, so
+  running the pipeline still takes effect. A broken cache gives the old empty-room answer plus
+  the reason, never a partial room.
+- A publish never takes the cache away: it writes an immutable generation folder, then switches
+  a `CURRENT` pointer file with one atomic replace (no symlink, so it works from git on any OS).
+  A reader resolves the pointer once. Publishing deletes no generation (a reader may be several
+  switches behind); an explicit `prune`, run while nothing reads the cache, removes old ones.
+  Reusing an existing generation requires its manifest bytes to match too.
+- Commit the opening room's four meshes and masks (4.97 MB, derived from the committed example
+  video). Do not commit retailer models (third-party files); catalog scenes are cached locally.
+- Bounds agreement includes the glTF's declared `POSITION` min/max. three.js fits the mesh from
+  them, so `inspect_asset` checks them against `bbox_m` alongside the vertex bounds.
+- The cache does not remove the need for `FAL_KEY` to read plan labels; recorded labels are #12.
+  Layout answers (`/solve`) are not cached (the operator decision above).
+
 ## Agent furniture additions
 
 - Operator authorised backend tool, Chat connection and an explicit Apply action,
