@@ -1,5 +1,20 @@
 # Decisions
 
+## Calm editor audio
+
+- Enable music and effects by default, as chosen by the operator, with immediate
+  master mute, independent channel controls and remembered preferences. Respect
+  browser autoplay gating and pause hidden tabs; do not queue delayed effects.
+- Match the ink editor with short wooden/paper-like synthesized cues and a quiet
+  piano-led recording. Use semantic action completion instead of generic button or
+  hover sounds; keep camera movement, typing and continuous drags silent.
+- Use native Web Audio and streamed music rather than adding an audio framework
+  or decoding a full song into memory. Keep audio outside the room model and
+  shared interfaces. First-person footsteps and environmental ambience are deferred.
+- Bundle Scott Buckley's “Reverie” under CC BY 4.0 with visible attribution and an
+  asset notice. Serve music locally, normalize it, and crossfade repeat boundaries;
+  no live streaming service or paid provider is required.
+
 ## Bootstrap
 
 - Preserve the three FastAPI service boundaries and ports already agreed in the
@@ -151,8 +166,29 @@
 - Require explicit placement and Play activation. Invalid drops preserve the last
   placement; pointer-lock denial preserves the editor. Escape and lost capture
   return to the saved orbit view with the human at its last walking pose.
-- Keep the first version inside one level room with the current lighting. Doorway
-  exits, character animation, jumping and time-of-day controls remain separate work.
+- Keep the first version inside one level room. Doorway exits, character animation
+  and jumping remain separate work. Time-of-day lighting is added as described below.
+
+## Interactive play lighting
+
+- Use the existing Three.js/R3F/Drei renderer for an interactive preview. Avoid
+  path tracing, paid services and backend contract changes. A fixed illustrative
+  06:00–18:00 day follows plan north, assuming -Z when compass data is missing;
+  it does not predict real-world solar exposure or change glare audit results.
+- Keep the ink editor and use cloned PBR materials in Play, preserving source
+  furniture textures. Do not modify/dispose loader-cached geometry or textures.
+- Separate warm artificial lighting from sun/sky illumination. The artificial
+  dimmer controls virtual ceiling sources and their approximate bounce; changing
+  time affects only natural sources. Fix exposure so the dimmer remains meaningful.
+- Spend shadow rendering on one sun and one ceiling source. Use window area lights
+  and a throttled procedural environment for approximate fill and reflections;
+  accept that these do not model occluded multi-bounce light or exact reflections.
+- Use shadow-only doorway infills because adjacent-room geometry is absent. Keep
+  physical window apertures open; glazing, exterior obstructions and fixture-level
+  lamp placement are outside this preview.
+- L pauses first-person control and intentionally releases mouse capture for the
+  sliders; Resume explicitly recaptures it. Preserve unexpected-loss/Esc/focus-loss
+  exits and guard late capture results. Settings are local to the opened room.
 
 ## Individual furniture reconstruction (#16)
 
@@ -231,3 +267,29 @@
   Furniture front orientation alone cannot establish an occupant's gaze or headboard.
 - Use a repository-owned skill as the runtime system instruction, one provider call,
   validated structured findings and explicit unavailable outcomes; no new dependencies.
+
+## Real-input room (#10)
+
+- The M1 room is the parser's own room for `three_floor.png`, not the hand-made demo
+  `g-reception`, so the shell, openings and scale come from real input. It includes the kitchen
+  (an archway the parser does not split); that limit stays visible as a plan warning.
+- Furniture is each item's normalised mesh (#17) when the pipeline has one, otherwise Dev 2's
+  labelled proxy, never a raw mesh (provider scale and orientation). The issue allows proxies
+  when extraction is incomplete, and each one says so (`is_proxy`, estimated size, a warning
+  naming them).
+- The source runs Dev 2's reconstruction offline only. A scene request never pays for or waits
+  on a provider; meshes are made by the pipeline's CLI.
+- Placement uses reviewed hints, not the vision observer, which put this room's sofas on the
+  wrong walls (#8). They are the #8 reviewed hints moved onto the parsed room's walls with the
+  north-west corners aligned: a conversion, not a new judgement, still flagged for correction.
+- A bound room whose furniture is not extracted yet, or only partly (a hinted item is missing:
+  frame selection stores items batch by batch), is not cached (`SceneFurniture.complete =
+  False`), so running the pipeline while the server is up takes effect on the next request
+  (PR #55 review).
+- A binding is checked against the room's walls, not just its scene ID: the ID hashes the plan
+  image, and the same image parsed without labels is a different room. A mismatch places no
+  furniture and says so, rather than putting the reception's furniture in another room (PR #55
+  review). Tolerance 5 % or 5 cm per wall, for small differences in label-derived scale. Making
+  the plan deterministic without labels (recorded labels) is left to #12.
+- The asset store is mounted with the same data directory the source reads (#52), so a proxy
+  URL in a scene is always servable by the same process.

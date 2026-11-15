@@ -90,6 +90,8 @@ optionally, run `bun frontend/scripts/generate-landscapes.ts` with Chromium
 available (`CHROME_BIN` can point to its executable).
 `GET /scenes/<room_id>` returns a whole room assembled for the editor and the audit: a demo
 room (`g-reception`) or a room of an uploaded floor plan (see [architecture](docs/architecture.md#scene-assembly-route-9)).
+The real-input room (`examples/three_floor.png` with the furniture of `examples/three_floor_3.mp4`,
+as labelled proxies) is described in [architecture](docs/architecture.md#real-input-room-10).
 
 The frontend displays live service connection status. The spatial service also
 implements `POST /audit`: send a `RoomScene` to receive collision, boundary, door,
@@ -118,6 +120,28 @@ to relocate it or use Remove human. Walking respects walls and furniture using
 a 50 cm body and 1.6 m eye height; it does not change the room layout or revision.
 Play requires mouse capture in a desktop browser. Jumping, stairs and leaving
 the room through doorways are not supported.
+
+In Play, press **L** to pause walking and open **Room lighting**. Adjust
+**Artificial light** (0–100%) independently of **Time of day** (15-minute steps),
+then click **Resume** to capture the mouse again. Esc or **Return to editor**
+restores the editor camera. Lighting starts at 50% artificial light and 14:00;
+settings survive play sessions until another room is opened.
+
+Music and editor sounds are on by default. Browsers may wait for the first click
+or keypress before playing audio. Use the speaker button or **M** to mute; open
+**Sound** for independent music/effects toggles and volumes. Preferences are saved
+in this browser. M is inactive while typing. In Play, M still works; press L or
+Esc before using the sound panel. Hidden tabs pause audio and resume when visible.
+The bundled soundtrack is “Reverie” by Scott Buckley (CC BY 4.0); credits are in
+the sound panel and [audio notice](frontend/public/audio/NOTICE.md). Include that
+credit in the description when uploading a recorded demo to YouTube.
+
+Play uses textured, physically based materials, window daylight, moving sunlight
+and furniture shadows. The editor retains its ink style. Daylight is an
+illustrative clear day, rising east at 06:00 and setting west at 18:00, using the
+floor-plan north when present (otherwise north is up the plan). Bounced light
+and broad reflections are approximated; this is not a measured daylight or glare
+assessment. No location, API key or external lighting assets are required.
 
 For smaller Python installs, use `uv sync --extra spatial`, `--extra reconstruction`,
 or `--extra media` instead of `--all-extras`. `uv sync` installs the common API and

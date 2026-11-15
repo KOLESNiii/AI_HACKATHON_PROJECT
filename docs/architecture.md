@@ -34,6 +34,30 @@ Frontend and service directories can be developed independently. Coordinate
 changes to root manifests, lockfiles, proxy routing, and shared contracts.
 
 
+## Frontend audio
+
+`frontend/src/audio/` owns a native Web Audio mixer with music, effects and master
+gain buses. One `SoundControls` instance lives outside screen transitions and
+subscribes to typed semantic cues. Store actions emit cues after successful edits;
+drag handlers emit once on completion, and unchanged/cancelled gestures are silent.
+Effects are synthesized from original resonant tones and filtered noise, cached as
+short buffers, capped at six voices, with rotation ticks throttled to 100 ms.
+
+Two streamed HTML audio elements repeat the bundled `public/audio/reverie.mp3`
+with a five-second equal-power crossfade. Navigation preserves playback; Play
+reduces music by 25%. Music loading never gates the room UI. Failed music stops
+retrying for that app session while effects remain available; unsupported audio
+leaves the UI functional. Blocked autoplay retries on user gestures. Hidden tabs
+pause media and suspend the context, and late playback results respect mute and
+disposal. React Strict Mode cleanup removes subscriptions, timers and audio nodes.
+
+A separate Zustand store saves validated audio preferences under
+`spaceshift.audio.v1` in localStorage, tolerating disabled/corrupt storage. Defaults
+are music 20%, effects 55%, both enabled. Audio preferences never enter `RoomScene`
+or bump its revision. No service, API key, runtime dependency or backend contract
+is added. Credits, source and reproducible asset preparation are in
+`frontend/public/audio/NOTICE.md`.
+
 ## Workstream ownership
 
 `ARCHITECTURE_DAG.md` defines the revised four-person execution plan: Dev 1 owns
@@ -133,10 +157,46 @@ requests. The room perimeter remains closed, including at doorways. Placement an
 Play entry share these checks; furniture edits can invalidate an existing placement.
 
 Play switches to a separate camera at 1.6 m eye height and hides editing controls.
-The complete room shell is visible. Escape, pointer-lock loss or window focus loss
-saves the last human position/heading and restores the editor camera and orbit
+The complete room shell is visible. Escape, unexpected pointer-lock loss or window
+focus loss saves the last human position/heading and restores the editor camera and orbit
 target. Pointer-lock denial leaves the editor active with a retry message. Opening
 a room resets the actor; component cleanup releases capture and held keys.
+
+### Play lighting
+
+`frontend/src/lib/lighting.ts` derives an illustrative sun, wall-aligned window
+sources and up to four ceiling sources from the existing room geometry.
+`PlayLighting` renders a shadow-casting directional sun and one shadow-casting
+ceiling spotlight, with additional ceiling sources and window area lights as
+unshadowed fill. The full room shell and furniture cast and receive shadows;
+shadow-only door infills prevent sunlight from entering through missing adjacent
+rooms. Window apertures are treated as exposed to the exterior. No surrounding
+buildings, glazing transmission or astronomical location/date are modelled.
+
+Inputs are local `PlayLightingSettings` (artificial percentage and time in hours)
+plus `RoomScene`; outputs are renderer lights, a procedural reflection environment
+and play-only material clones. GLTF geometry, textures and cached source materials
+are left untouched. The shell receives neutral PBR materials; furniture keeps
+its source PBR textures when available. Lighting and the walking/lighting-panel
+substate remain outside `RoomScene`, revisions and audit requests. Opening another
+room resets lighting to 50% and 14:00; exiting play retains it for that room.
+
+L opens the lighting panel in place, clears movement and deliberately releases
+pointer lock. `PlaySession` distinguishes this release from an unexpected loss.
+Resume requests capture in a user gesture and preserves the camera. Denial leaves
+the panel open with a retry message; Esc, blur, hidden document and room changes
+clean up the session. Pending capture requests are guarded by room session and
+request identity. No backend endpoints, credentials or new packages are needed.
+
+Exposure stays fixed; natural sources are off at night and without valid windows.
+The local 128-pixel environment updates at most five times per second while direct
+lights follow slider input immediately. Reflection shapes and indirect fill are
+approximations, including some fill leakage in concave rooms. There are no exact
+furniture/mirror reflections or multi-bounce light transport. Daylight is a visual
+preview and does not populate the unassessed glare fields in the spatial audit.
+Shadow maps are cached while walking and invalidated when lighting or loaded
+geometry changes. Play caps pixel ratio at 1.5; real GPU frame rate still depends
+on source furniture complexity and the user's hardware.
 
 ## Backend-provided demo models
 
@@ -232,8 +292,8 @@ contract `RoomScene`, ready for the editor and `POST /audit`:
   its own pose and correction flags (`room/assemble.py` → `room/align.py`). Doors are put
   exactly on their walls first, so the audit accepts every room. `revision` is 0.
 - Furniture: demo rooms place the fixture furniture through the same path as video furniture.
-  Uploaded rooms have none until Dev 2's extraction (#16) exists; `get_furniture_source` is the
-  seam it plugs into.
+  An uploaded room bound to a video gets that video's furniture (#10, below); other uploaded
+  rooms have none, with a warning. `get_furniture_source` is the seam.
 - Warnings, such as why a room has no furniture, are in the `X-Reconstruction-Warnings`
   response header (a JSON list, exposed to CORS); the body stays a contract model. How each
   pose was decided is not exposed.
@@ -272,3 +332,46 @@ Existing Anthropic configuration is reused. Output is schema-validated and findi
 IDs are checked against the input; failure remains explicitly unassessed. It does
 not feed layout ranking or populate the deterministic audit's feng shui field.
 See the spatial service README for input semantics and failure behaviour.
+
+## Real-input room (#10)
+
+The M1 room is real input end to end: the plan parser's own room for `examples/three_floor.png`
+and the furniture Dev 2's pipeline extracts from the opening room (0-6 s) of
+`examples/three_floor_3.mp4`.
+
+| | |
+|---|---|
+| Scene ID | `plan-83a12322e933-floor-0-room-3`, "Reception Room / Kitchen (1)" (an open archway merges the two; the plan warns) |
+| Binding | `services/reconstruction/room/fixtures/real_rooms.json`: scene ID, plan, video, Dev 2's furniture scene `reviewed-opening-room`, the room's 18 wall lengths, and a reviewed hint per item |
+| Source | `room/video_furniture.RealRoomFurniture`, the default `get_furniture_source`. Calls Dev 2's `reconstruct_furniture` **offline** (stored results only, never a provider request) |
+| Items | `vid-000001` table, `vid-000002` rear sofa, `vid-000003` right sofa, `vid-000004` office chair: the IDs frame selection allocates on the real video. Dev 2's IDs, names and evidence (masks included) |
+| Meshes | The item's normalised mesh (#17) when the pipeline has one; otherwise Dev 2's labelled proxy: a box of the item's size with a dark front strip, `is_proxy: true`, `dimension_source: "estimated"`, `"dimensions"` in `correction_needed`. The offline runbook below makes no meshes, so all four are proxies |
+| Placement | From the binding's hints (confidence 0.6-0.7), so every item also has `placement` in `correction_needed` |
+| Files | `GET /assets/<sha256>.glb` (browser `/api/reconstruction/assets/...`), Dev 2's content-addressed store, cached as immutable. Other names are 404 |
+| Data | `$FURNITURE_DATA_DIR`, default `artifacts/furniture` in the repository (Dev 2's CLI default) |
+
+Until the pipeline has run for the video, the room comes back alone with the warning "No
+furniture extracted for this room yet". While frame selection is still storing items, it comes
+back with the items so far and "furniture still being extracted: no ... yet". Neither is kept:
+the next request looks again. Once every hinted item is there, the scene is kept in memory
+until restart (re-running the pipeline needs a restart; a persistent cache is #12).
+
+The scene ID only names the plan image. Parsed without its labels (no `FAL_KEY`, or the label
+call fails), the same image gives a different room under the same ID ("Unlabelled space 4",
+11 walls). The source checks the room's walls against the binding (same IDs, lengths within
+5 % or 5 cm) and otherwise places no furniture, with a warning saying the geometry does not
+match and naming the difference.
+
+The first audit of the room reports two things the user can fix by moving furniture: the chair
+stands in the swing of the entrance door (`blocked_doors`: `door0` by `vid-000004`), and the
+table is 0.19 m in front of the rear sofa (a `clearance_issue`). Moving the chair against the
+east wall clears the door; dragging the table onto the sofa adds a collision.
+
+**Handoff to Dev 3 (#25).** Load the room with the fetch above
+(`/api/reconstruction/scenes/plan-83a12322e933-floor-0-room-3`, after the plan is uploaded),
+draw `is_proxy` items as labelled boxes (name plus "proxy"), and after each move POST the
+edited scene with `revision + 1` to `/api/spatial_engine/audit`, ignoring reports for older
+revisions. Show the `X-Reconstruction-Warnings` list. **Dev 4 (#32):** the audit accepts this
+room as is; the findings above are the expected baseline. **Dev 2 (#18):** item IDs and the
+`glb_url`s pass through unchanged; an item's normalised mesh (`ItemReconstruction.asset`)
+replaces its proxy as soon as the pipeline stores one.

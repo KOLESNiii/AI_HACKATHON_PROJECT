@@ -1,10 +1,11 @@
 import { useGLTF } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { memo, useEffect, useLayoutEffect, useMemo } from 'react'
 import type { Object3D } from 'three'
 import type { WallSegment } from '../../lib/contracts'
 import { inwardNormal } from '../../lib/geometry'
 import { disposeInk, inkify } from './ink'
+import { invalidatePlayShadows, preparePlayMaterials } from '../play/materials'
 
 /**
  * Room shell in room coordinates (not normalised). Nodes: floor, ceiling, wall_<id>.
@@ -21,16 +22,20 @@ export const Shell = memo(function Shell({
   cutaway?: boolean
 }) {
   const gltf = useGLTF(url)
-  const root = useMemo(() => {
+  const renderScene = useThree((s) => s.scene)
+  const { root, dispose } = useMemo(() => {
     const clone = gltf.scene.clone(true)
+    if (!cutaway)
+      return { root: clone, dispose: preparePlayMaterials(clone, true) }
     inkify(clone, (m) =>
       m.name.startsWith('floor') || m.parent?.name.startsWith('floor')
         ? '#d9b88a'
         : '#f1e8d8',
     )
-    return clone
-  }, [gltf.scene])
-  useEffect(() => () => disposeInk(root), [root])
+    return { root: clone, dispose: () => disposeInk(clone) }
+  }, [gltf.scene, cutaway])
+  useEffect(() => dispose, [dispose])
+  useLayoutEffect(() => invalidatePlayShadows(renderScene), [renderScene, root])
 
   const wallNodes = useMemo(() => {
     const out: {
@@ -65,5 +70,5 @@ export const Shell = memo(function Shell({
     }
   })
 
-  return <primitive object={root} />
+  return <primitive object={root} dispose={null} />
 })

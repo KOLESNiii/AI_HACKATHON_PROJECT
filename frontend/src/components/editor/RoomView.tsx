@@ -1,19 +1,43 @@
 import { OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import { Suspense, useEffect, useMemo, useState, type RefObject } from 'react'
-import type { PerspectiveCamera } from 'three'
+import {
+  ACESFilmicToneMapping,
+  PCFShadowMap,
+  SRGBColorSpace,
+  type PerspectiveCamera,
+} from 'three'
 import { useShallow } from 'zustand/react/shallow'
+import type { RoomScene } from '../../lib/contracts'
 import { bounds } from '../../lib/geometry'
 import { flaggedItemIds, spatialPreview } from '../../lib/spatialPreview'
 import { useStore } from '../../store'
 import type { PlayControllerHandle } from '../play/controls'
 import { Human } from '../play/Human'
 import { PlayController } from '../play/PlayController'
+import { PlayLighting } from '../play/PlayLighting'
 import { DoorSwings } from './DoorSwings'
 import { Furniture, MeshBoundary } from './Furniture'
 import { KeyboardControls } from './KeyboardControls'
 import { SelectionTools } from './SelectionTools'
 import { Shell } from './Shell'
+
+// Zustand reruns selectors on every store update (hover, chat, play state...), so keep
+// the collision check to once per scene object rather than once per update.
+let flaggedCache: { scene: RoomScene; ids: string[] } | null = null
+function flaggedFor(scene: RoomScene): string[] {
+  if (flaggedCache?.scene !== scene) {
+    const p = spatialPreview(scene)
+    flaggedCache = {
+      scene,
+      ids: [
+        ...flaggedItemIds(p),
+        ...p.blocked_doors.map((d) => `door:${d.door_id}`),
+      ],
+    }
+  }
+  return flaggedCache.ids
+}
 
 /** Interactive room in the ink "clarity" style (Canvas/Room Render in Figma). */
 export function RoomView({
@@ -30,15 +54,7 @@ export function RoomView({
   const ids = useStore(useShallow((s) => s.scene.furniture.map((i) => i.id)))
   // Live preview of the spatial engine's checks. Re-renders this view only when the
   // set of flagged items or blocked doors changes.
-  const flagged = useStore(
-    useShallow((s) => {
-      const p = spatialPreview(s.scene)
-      return [
-        ...flaggedItemIds(p),
-        ...p.blocked_doors.map((d) => `door:${d.door_id}`),
-      ]
-    }),
-  )
+  const flagged = useStore(useShallow((s) => flaggedFor(s.scene)))
   const select = useStore((s) => s.select)
   const toast = useStore((s) => s.toast)
   const play = useStore((s) => s.mode === 'play')
@@ -75,18 +91,31 @@ export function RoomView({
       // Fade in once the GL context exists so the editor doesn't flash an empty canvas.
       style={{ opacity: ready ? 1 : 0, transition: 'opacity 300ms ease-out' }}
       onCreated={() => setReady(true)}
-      gl={{ alpha: true, antialias: true }}
+      gl={{
+        alpha: true,
+        antialias: true,
+        toneMapping: ACESFilmicToneMapping,
+        toneMappingExposure: 1,
+        outputColorSpace: SRGBColorSpace,
+      }}
+      shadows={{ type: PCFShadowMap }}
       camera={cameraOptions}
       onPointerMissed={() => {
         if (useStore.getState().mode === 'edit') select(null)
       }}
-      dpr={[1, 2]}
+      dpr={[1, play ? 1.5 : 2]}
     >
-      <ambientLight intensity={1.6} />
-      <directionalLight
-        position={[centre[0] + 3, 8, centre[2] + 5]}
-        intensity={1.4}
-      />
+      {play ? (
+        <PlayLighting />
+      ) : (
+        <>
+          <ambientLight intensity={1.6} />
+          <directionalLight
+            position={[centre[0] + 3, 8, centre[2] + 5]}
+            intensity={1.4}
+          />
+        </>
+      )}
       <MeshBoundary fallback={<ShellFailed onFail={toast} />}>
         <Suspense fallback={null}>
           <Shell url={shellUrl} walls={walls} cutaway={!play} />

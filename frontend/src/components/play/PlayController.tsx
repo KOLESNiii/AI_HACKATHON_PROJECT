@@ -6,27 +6,17 @@ import {
   useRef,
   type Ref,
 } from 'react'
-import { PerspectiveCamera, Vector3 } from 'three'
+import { PerspectiveCamera } from 'three'
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'
-import { DEG, planAngle } from '../../lib/geometry'
-import {
-  canStand,
-  EYE_HEIGHT_M,
-  walkingDelta,
-  walkingObstacles,
-  walkStep,
-} from '../../lib/walk'
+import { walkingObstacles } from '../../lib/walk'
 import { useStore } from '../../store'
-import { editorKey } from '../editor/keyboard'
 import {
-  captureEditorView,
   pointOnFloor,
-  restoreEditorView,
   resizePlayCamera,
   type EditorOrbit,
-  type EditorView,
   type PlayControllerHandle,
 } from './controls'
+import { PlaySession } from './session'
 
 /** Owns the first-person camera; the editor's camera and orbit target stay separate. */
 export function PlayController({
@@ -47,10 +37,7 @@ export function PlayController({
   }, [camera])
   const scene = useStore((s) => s.scene)
   const obstacles = useMemo(() => walkingObstacles(scene), [scene])
-  const keys = useRef(new Set<string>())
-  const pending = useRef<number | null>(null)
-  const active = useRef<{ view: EditorView; roomSession: number } | null>(null)
-  const forward = useMemo(() => new Vector3(), [])
+  const session = useRef<PlaySession | null>(null)
 
   useEffect(() => {
     resizePlayCamera(camera, size.width, size.height)
@@ -61,168 +48,55 @@ export function PlayController({
     () => ({
       floorPoint: (x, y) =>
         pointOnFloor(x, y, gl.domElement.getBoundingClientRect(), editorCamera),
-      requestPlay: () => {
-        const s = useStore.getState()
-        if (pending.current != null || s.mode !== 'edit' || s.interacting)
-          return
-        if (!s.human || !canStand(s.human, s.scene)) {
-          s.toast('Place the human on clear floor before playing.')
-          return
-        }
-        if (!gl.domElement.requestPointerLock) {
-          s.toast(
-            'This browser does not support mouse capture. Try a desktop browser.',
-          )
-          return
-        }
-        pending.current = s.roomSession
-        // Keep the request in the actual button gesture so browsers can grant capture.
-        try {
-          const result = gl.domElement.requestPointerLock()
-          result?.catch(() => {
-            if (pending.current == null) return
-            pending.current = null
-            useStore
-              .getState()
-              .toast('Mouse capture was blocked. Click Play to retry.')
-          })
-        } catch {
-          pending.current = null
-          s.toast('Mouse capture was blocked. Click Play to retry.')
-        }
-      },
+      requestPlay: () => session.current?.requestPlay(),
+      openLighting: () => session.current?.openLighting(),
+      resumePlay: () => session.current?.resumePlay(),
+      exitPlay: () => session.current?.exit(),
     }),
     [gl, editorCamera],
   )
 
   useEffect(() => {
-    const held = keys.current
-    const clear = () => held.clear()
-    const exit = () => {
-      pending.current = null
-      clear()
-      const session = active.current
-      active.current = null
-      if (session && orbit) {
-        camera.getWorldDirection(forward)
-        const pose = {
-          x: camera.position.x,
-          z: camera.position.z,
-          yaw_deg: ((planAngle(forward.x, forward.z) % 360) + 360) % 360,
-        }
-        if (useStore.getState().roomSession === session.roomSession)
-          useStore.getState().finishPlay(pose)
-        restoreEditorView(editorCamera, orbit, session.view)
-        set({ camera: editorCamera })
-      }
-      if (document.pointerLockElement === gl.domElement)
-        document.exitPointerLock()
-    }
-    const onLock = () => {
-      const s = useStore.getState()
-      if (
-        !orbit ||
-        pending.current !== s.roomSession ||
-        !s.human ||
-        !s.startPlay()
-      ) {
-        exit()
-        return
-      }
-      active.current = {
-        view: captureEditorView(editorCamera, orbit),
-        roomSession: s.roomSession,
-      }
-      pending.current = null
-      clear()
-      orbit.enabled = false
-      camera.position.set(s.human.x, EYE_HEIGHT_M, s.human.z)
-      const yaw = s.human.yaw_deg * DEG
-      camera.lookAt(
-        s.human.x + Math.sin(yaw),
-        EYE_HEIGHT_M,
-        s.human.z + Math.cos(yaw),
-      )
-      set({ camera })
-    }
-    const onError = () => {
-      if (pending.current == null) return
-      pending.current = null
-      useStore
-        .getState()
-        .toast('Mouse capture was blocked. Click Play to retry.')
-    }
-    const onDown = (event: KeyboardEvent) => {
-      if (!active.current) return
-      if (event.key === 'Escape') {
-        exit()
-        return
-      }
-      const key = editorKey(event)
-      if (!key) return clear()
-      if (['w', 'a', 's', 'd'].includes(key)) {
-        event.preventDefault()
-        if (!event.repeat) held.add(key)
-      }
-    }
-    const onUp = (event: KeyboardEvent) => held.delete(event.key.toLowerCase())
+    if (!orbit) return
+    const current = new PlaySession({
+      camera,
+      editorCamera,
+      orbit,
+      surface: gl.domElement,
+      look,
+      setCamera: (next) => set({ camera: next }),
+    })
+    session.current = current
+    const doc = gl.domElement.ownerDocument
     const onVisibility = () => {
-      if (document.hidden) exit()
+      if (doc.hidden) current.exit()
     }
+    const unsubscribe = useStore.subscribe(current.sync)
     look.connect(gl.domElement)
-    look.addEventListener('lock', onLock)
-    look.addEventListener('unlock', exit)
-    document.addEventListener('pointerlockerror', onError)
-    document.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('keydown', onDown)
-    window.addEventListener('keyup', onUp)
-    window.addEventListener('blur', exit)
-    window.addEventListener('focusin', clear)
+    look.addEventListener('lock', current.onLock)
+    look.addEventListener('unlock', current.onUnlock)
+    doc.addEventListener('pointerlockerror', current.onError)
+    doc.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('keydown', current.onDown)
+    window.addEventListener('keyup', current.onUp)
+    window.addEventListener('blur', current.exit)
+    window.addEventListener('focusin', current.clearKeys)
     return () => {
-      exit()
-      look.removeEventListener('lock', onLock)
-      look.removeEventListener('unlock', exit)
+      unsubscribe()
+      current.exit()
+      session.current = null
+      look.removeEventListener('lock', current.onLock)
+      look.removeEventListener('unlock', current.onUnlock)
       look.disconnect()
-      document.removeEventListener('pointerlockerror', onError)
-      document.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('keydown', onDown)
-      window.removeEventListener('keyup', onUp)
-      window.removeEventListener('blur', exit)
-      window.removeEventListener('focusin', clear)
+      doc.removeEventListener('pointerlockerror', current.onError)
+      doc.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('keydown', current.onDown)
+      window.removeEventListener('keyup', current.onUp)
+      window.removeEventListener('blur', current.exit)
+      window.removeEventListener('focusin', current.clearKeys)
     }
-  }, [camera, editorCamera, forward, gl, look, orbit, set])
+  }, [camera, editorCamera, gl, look, orbit, set])
 
-  useFrame((_, dt) => {
-    if (!active.current || !look.isLocked) return
-    const s = useStore.getState()
-    if (
-      s.mode !== 'play' ||
-      !canStand(
-        { x: camera.position.x, z: camera.position.z },
-        s.scene,
-        obstacles,
-      )
-    ) {
-      document.exitPointerLock()
-      return
-    }
-    camera.getWorldDirection(forward)
-    const yaw = Math.atan2(forward.x, forward.z)
-    const held = keys.current
-    const delta = walkingDelta(
-      yaw,
-      Number(held.has('d')) - Number(held.has('a')),
-      Number(held.has('w')) - Number(held.has('s')),
-      dt,
-    )
-    if (!delta.x && !delta.z) return
-    const next = walkStep(
-      { x: camera.position.x, z: camera.position.z },
-      delta,
-      s.scene,
-      obstacles,
-    )
-    camera.position.set(next.x, EYE_HEIGHT_M, next.z)
-  })
+  useFrame((_, dt) => session.current?.update(dt, obstacles))
   return null
 }

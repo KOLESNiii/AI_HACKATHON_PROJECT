@@ -36,7 +36,7 @@ export function Sidebar() {
           </button>
         ))}
       </nav>
-      <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
+      <div className="flex min-h-0 flex-1 flex-col px-6 pt-[76px] pb-5">
         {tab === 'chat' && <ChatTab />}
         {tab === 'stats' && <StatsTab />}
         {tab === 'library' && <LibraryTab />}

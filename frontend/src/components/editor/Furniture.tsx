@@ -5,6 +5,7 @@ import {
   memo,
   Suspense,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   type ReactNode,
@@ -18,19 +19,22 @@ import {
   Vector3,
 } from 'three'
 import type { FurnitureItem } from '../../lib/contracts'
-import { clampToFloor, DEG, footprint } from '../../lib/geometry'
+import { clampToFloor, DEG } from '../../lib/geometry'
 import { useStore } from '../../store'
 import { Tag } from '../ui'
 import { categoryWash, disposeInk, inkify, inkLine } from './ink'
+import { invalidatePlayShadows, preparePlayMaterials } from '../play/materials'
 
 export const floorPlane = new Plane(new Vector3(0, 1, 0), 0)
 
 /** Loads the .glb and fits it to bbox_m (never trust raw mesh scale), bottom-centre at origin. */
-function Mesh({ item }: { item: FurnitureItem }) {
+function Mesh({ item, play }: { item: FurnitureItem; play: boolean }) {
   const gltf = useGLTF(item.glb_url)
-  const { object, scale, offset } = useMemo(() => {
+  const renderScene = useThree((s) => s.scene)
+  const { object, scale, offset, dispose } = useMemo(() => {
     const clone = gltf.scene.clone(true)
-    inkify(clone, () => categoryWash[item.category])
+    const dispose = play ? preparePlayMaterials(clone) : () => disposeInk(clone)
+    if (!play) inkify(clone, () => categoryWash[item.category])
     const box = new Box3().setFromObject(clone)
     const size = box.getSize(new Vector3())
     const s = new Vector3(
@@ -41,6 +45,7 @@ function Mesh({ item }: { item: FurnitureItem }) {
     const centre = box.getCenter(new Vector3())
     return {
       object: clone,
+      dispose,
       scale: s,
       offset: new Vector3(-centre.x * s.x, -box.min.y * s.y, -centre.z * s.z),
     }
@@ -50,11 +55,16 @@ function Mesh({ item }: { item: FurnitureItem }) {
     item.bbox_m.width,
     item.bbox_m.height,
     item.bbox_m.depth,
+    play,
   ])
-  useEffect(() => () => disposeInk(object), [object])
+  useEffect(() => dispose, [dispose])
+  useLayoutEffect(
+    () => invalidatePlayShadows(renderScene),
+    [renderScene, object],
+  )
   return (
     <group position={offset} scale={scale}>
-      <primitive object={object} />
+      <primitive object={object} dispose={null} />
     </group>
   )
 }
@@ -68,6 +78,11 @@ function ProxyBox({
   showLabel: boolean
 }) {
   const { width, height, depth } = item.bbox_m
+  const renderScene = useThree((s) => s.scene)
+  useLayoutEffect(
+    () => invalidatePlayShadows(renderScene),
+    [renderScene, width, height, depth, showLabel],
+  )
   const edges = useMemo(() => {
     const box = new BoxGeometry(width, height, depth)
     const e = new EdgesGeometry(box)
@@ -76,14 +91,31 @@ function ProxyBox({
   }, [width, height, depth])
   useEffect(() => () => edges.dispose(), [edges])
   return (
-    <mesh position={[0, height / 2, 0]}>
+    <mesh
+      position={[0, height / 2, 0]}
+      castShadow={!showLabel}
+      receiveShadow={!showLabel}
+    >
       <boxGeometry args={[width, height, depth]} />
-      <meshToonMaterial
-        color={categoryWash[item.category]}
-        transparent
-        opacity={0.8}
-      />
-      <lineSegments geometry={edges} material={inkLine} raycast={() => null} />
+      {showLabel ? (
+        <meshToonMaterial
+          color={categoryWash[item.category]}
+          transparent
+          opacity={0.8}
+        />
+      ) : (
+        <meshStandardMaterial
+          color={categoryWash[item.category]}
+          roughness={0.8}
+        />
+      )}
+      {showLabel && (
+        <lineSegments
+          geometry={edges}
+          material={inkLine}
+          raycast={() => null}
+        />
+      )}
       <Html
         position={[0, height / 2 + 0.05, 0]}
         center
@@ -162,7 +194,13 @@ export const Furniture = memo(function Furniture({
   const play = useStore((s) => s.mode === 'play')
   const { select, setPose, commitEdit, setInteracting } = useStore.getState()
   const controls = useThree((s) => s.controls) as { enabled: boolean } | null
-  const drag = useRef<{ dx: number; dz: number; moved: boolean } | null>(null)
+  const drag = useRef<{
+    dx: number
+    dz: number
+    moved: boolean
+    startX: number
+    startZ: number
+  } | null>(null)
 
   // If the item disappears mid-drag (e.g. deleted), don't leave the camera locked.
   useEffect(
@@ -176,13 +214,21 @@ export const Furniture = memo(function Furniture({
     [controls, setInteracting],
   )
 
+  // Keyed on size only: the outline is drawn in local space, so a drag (which changes
+  // only the pose) must not rebuild the line geometry on every pointer move.
+  const bbox = item?.bbox_m
   const outline = useMemo(() => {
-    if (!item) return []
-    const local = footprint({ ...item, pose: { x: 0, z: 0, yaw_deg: 0 } })
-    return [...local, local[0]].map(
-      (p) => [p.x, 0.012, p.z] as [number, number, number],
-    )
-  }, [item])
+    if (!bbox) return []
+    const w = bbox.width / 2
+    const d = bbox.depth / 2
+    return [
+      [-w, 0.012, -d],
+      [w, 0.012, -d],
+      [w, 0.012, d],
+      [-w, 0.012, d],
+      [-w, 0.012, -d],
+    ] as [number, number, number][]
+  }, [bbox])
 
   if (!item) return null
 
@@ -201,6 +247,8 @@ export const Furniture = memo(function Furniture({
       dx: item.pose.x - p.x,
       dz: item.pose.z - p.z,
       moved: false,
+      startX: item.pose.x,
+      startZ: item.pose.z,
     }
     ;(e.target as unknown as Element).setPointerCapture(e.pointerId)
     if (controls) controls.enabled = false
@@ -225,7 +273,13 @@ export const Furniture = memo(function Furniture({
   const onUp = (e: ThreeEvent<PointerEvent>) => {
     if (!drag.current) return
     ;(e.target as unknown as Element).releasePointerCapture(e.pointerId)
-    if (drag.current.moved) commitEdit()
+    const live = useStore.getState().scene.furniture.find((i) => i.id === id)
+    const changed =
+      live &&
+      (live.pose.x !== drag.current.startX ||
+        live.pose.z !== drag.current.startZ)
+    if (drag.current.moved)
+      commitEdit(e.type !== 'pointercancel' && changed ? 'place' : null)
     drag.current = null
     if (controls) controls.enabled = true
     setInteracting(false)
@@ -245,7 +299,7 @@ export const Furniture = memo(function Furniture({
         {item.glb_url && !item.is_proxy ? (
           <MeshBoundary fallback={<ProxyBox item={item} showLabel={!play} />}>
             <Suspense fallback={<ProxyBox item={item} showLabel={!play} />}>
-              <Mesh item={item} />
+              <Mesh item={item} play={play} />
             </Suspense>
           </MeshBoundary>
         ) : (

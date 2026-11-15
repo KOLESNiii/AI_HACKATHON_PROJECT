@@ -14,6 +14,14 @@ from .reconstruction import reconstruct_furniture
 from .selection_models import ReconstructionResult
 
 
+def load_dimensions(path: Path) -> dict[str, KnownDimensions]:
+    """Known sizes from a JSON object keyed by item ID: `{bbox_m, source}` each."""
+    payload = json.loads(path.read_text())
+    if not isinstance(payload, dict):
+        raise ValueError("dimensions must be an object keyed by item ID")
+    return {key: KnownDimensions.model_validate(value) for key, value in payload.items()}
+
+
 def write_report(result: ReconstructionResult, output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
     (output / "reconstruction.json").write_text(result.model_dump_json(indent=2) + "\n")
@@ -86,14 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--concurrency", type=int, default=4)
     args = parser.parse_args(argv)
     try:
-        dimensions = None
-        if args.dimensions:
-            payload = json.loads(args.dimensions.read_text())
-            if not isinstance(payload, dict):
-                raise ValueError("dimensions must be an object keyed by item ID")
-            dimensions = {
-                key: KnownDimensions.model_validate(value) for key, value in payload.items()
-            }
+        dimensions = load_dimensions(args.dimensions) if args.dimensions else None
         provider: MeshProvider | None = None
         if args.live:
             provider = FalSam3dProvider(key=os.environ.get("FAL_KEY", ""), refresh=args.refresh)

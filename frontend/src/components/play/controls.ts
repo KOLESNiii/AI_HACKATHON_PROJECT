@@ -12,6 +12,9 @@ import type { Pt } from '../../lib/geometry'
 export interface PlayControllerHandle {
   floorPoint: (clientX: number, clientY: number) => Pt | null
   requestPlay: () => void
+  openLighting: () => void
+  resumePlay: () => void
+  exitPlay: () => void
 }
 
 export interface EditorOrbit {
