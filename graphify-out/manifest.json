@@ -1408,5 +1408,101 @@
     "seen": 1794728205.195628,
     "ast_hash": "0fa5912a7507345c6c0d8707cf58ec8d",
     "semantic_hash": ""
+  },
+  ".graphify_ast.json": {
+    "mtime": 1794644052.0582492,
+    "seen": 1794728220.8859913,
+    "ast_hash": "c5ee2841b914e53df75179e559e9c0e2",
+    "semantic_hash": ""
+  },
+  ".graphify_cached.json": {
+    "mtime": 1794644029.234256,
+    "seen": 1794728220.8860002,
+    "ast_hash": "99bf033bf580e72657f46955ebc72ed3",
+    "semantic_hash": ""
+  },
+  ".graphify_detect.json": {
+    "mtime": 1794644020.845635,
+    "seen": 1794728220.886004,
+    "ast_hash": "8c69f5b954f3fdf291534c07ec038308",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/mock_scene.json": {
+    "mtime": 1794674703.9606164,
+    "seen": 1794728220.8860064,
+    "ast_hash": "aa7e0df76aa1cb0947c53786d20af5c1",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/one_floor_scene.json": {
+    "mtime": 1794687116.680454,
+    "seen": 1794728220.8860085,
+    "ast_hash": "5cf9ad89b04d8864803c10445203191e",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/three_floor_first_scene.json": {
+    "mtime": 1794687116.6806648,
+    "seen": 1794728220.8860104,
+    "ast_hash": "0a4c182b4e46d4e9d4286470cb053411",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/three_floor_ground_scene.json": {
+    "mtime": 1794687116.680888,
+    "seen": 1794728220.8860116,
+    "ast_hash": "93e97084b7ca2f957d1cba386cc3f91a",
+    "semantic_hash": ""
+  },
+  "contracts/mock_room/three_floor_second_scene.json": {
+    "mtime": 1794687116.680888,
+    "seen": 1794728220.886013,
+    "ast_hash": "355cebd0f0b1cf9d07b96ec085fb9f47",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/assets/fixtures/evidence.json": {
+    "mtime": 1794674703.9634907,
+    "seen": 1794728220.8861494,
+    "ast_hash": "0963fedb84b2f8ef8b2fcae1d951fd2d",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/one_floor.annotations.json": {
+    "mtime": 1794682055.4256458,
+    "seen": 1794728220.8861868,
+    "ast_hash": "342b2c4527fd7c6e8550f23c64624aed",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/real_rooms.json": {
+    "mtime": 1794728115.5340552,
+    "seen": 1794728220.886188,
+    "ast_hash": "57763014964ca56a99c6ee7f65976b9d",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/reception.assets.json": {
+    "mtime": 1794700786.8696582,
+    "seen": 1794728220.886189,
+    "ast_hash": "0530c1f94cc30c63764c6b2abc721441",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/reception.hints.json": {
+    "mtime": 1794700786.8698816,
+    "seen": 1794728220.8861907,
+    "ast_hash": "b9117b2c24745e36a9dfb743af0d5787",
+    "semantic_hash": ""
+  },
+  "services/reconstruction/room/fixtures/three_floor.annotations.json": {
+    "mtime": 1794682055.4259014,
+    "seen": 1794728220.8861918,
+    "ast_hash": "983c11192cf2630e9fca9236c4ba0abf",
+    "semantic_hash": ""
+  },
+  "services/spatial_engine/fixtures/audit_cases.json": {
+    "mtime": 1794682055.4266927,
+    "seen": 1794728220.8862205,
+    "ast_hash": "288a075b44b0c604498a9fd1baafdf22",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/fixtures/opening_room.reviewed.json": {
+    "mtime": 1794687676.6252723,
+    "seen": 1794728220.8862402,
+    "ast_hash": "7d500ae57af354b3d9d569dfc0be1d6d",
+    "semantic_hash": ""
   }
 }
