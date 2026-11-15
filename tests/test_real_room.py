@@ -50,19 +50,28 @@ PROXY_PREFIX = "/api/reconstruction"
 (BINDING,) = load_bindings().values()
 PLAN = ROOT / BINDING.plan
 VIDEO = ROOT / BINDING.video
-ITEM_IDS = [hint.asset_id for hint in BINDING.hints]
-SOFA, OTHER_SOFA, TABLE, CHAIR = ITEM_IDS
+ALLOCATED = {
+    "White coffee table": "vid-000001",
+    "Rear sofa": "vid-000002",
+    "Right sofa": "vid-000003",
+    "Office chair": "vid-000004",
+}
+"""The IDs frame selection (#14) gives the reviewed recording's items on the real video;
+`test_the_real_video_furnishes_the_real_room` checks them (not the recording's order)."""
+NAMES = {item_id: name for name, item_id in ALLOCATED.items()}
+ITEM_IDS = sorted(NAMES)
+SOFA, OTHER_SOFA, TABLE, CHAIR = (hint.asset_id for hint in BINDING.hints)
 
 pytestmark = pytest.mark.skipif(not PLAN.exists(), reason="example plan missing")
 
 
 def register_reviewed_items(data_dir: Path) -> None:
     """What frame selection (#14) records for the reviewed recording, without decoding the
-    video: one item per reviewed object, numbered in recording order, as the allocator does."""
+    video: one item per reviewed object, with the IDs the real run allocates."""
     discovery = Discovery.model_validate_json(RECORDING.read_text())
 
     def add(state: RegistryState) -> None:
-        for number, obj in enumerate(discovery.objects, start=1):
+        for obj in discovery.objects:
             for sighting in obj.sightings:
                 source, _, index = sighting.frame_key.split(":")
                 state.frames[sighting.frame_key] = Frame(
@@ -75,7 +84,7 @@ def register_reviewed_items(data_dir: Path) -> None:
                     image_path=f"frames/{source}/{index}.png",
                     quality=0.8,
                 )
-            item_id = f"vid-{number:06d}"
+            item_id = ALLOCATED[obj.name]
             state.objects[item_id] = SelectedObject(
                 id=item_id,
                 name=obj.name,
@@ -173,7 +182,10 @@ def test_the_binding_names_a_room_and_walls_of_the_parsed_plan(client: TestClien
     walls = {wall.id for wall in room.walls}
     assert {hint.wall_id for hint in BINDING.hints} <= walls  # parser drift fails here
     reviewed = Discovery.model_validate_json(RECORDING.read_text()).objects
-    assert ITEM_IDS == [f"vid-{n:06d}" for n in range(1, len(reviewed) + 1)]
+    assert sorted(obj.name for obj in reviewed) == sorted(ALLOCATED)
+    assert sorted(hint.asset_id for hint in BINDING.hints) == ITEM_IDS  # one hint per item
+    named = [NAMES[hint.asset_id] for hint in BINDING.hints]  # SOFA, OTHER_SOFA, TABLE, CHAIR
+    assert named == ["Rear sofa", "Right sofa", "White coffee table", "Office chair"]
 
 
 def test_the_real_room_has_its_video_furniture_as_labelled_proxies(
@@ -181,9 +193,7 @@ def test_the_real_room_has_its_video_furniture_as_labelled_proxies(
 ) -> None:
     register_reviewed_items(data_dir)
     scene, warnings = _scene(client)
-    reviewed = Discovery.model_validate_json(RECORDING.read_text()).objects
-    assert [item.id for item in scene.furniture] == ITEM_IDS
-    assert [item.name for item in scene.furniture] == [obj.name for obj in reviewed]
+    assert {item.id: item.name for item in scene.furniture} == NAMES
     for item in scene.furniture:
         assert item.is_proxy and item.dimension_source == "estimated"
         assert "dimensions" in item.correction_needed  # an estimate, never a measurement
@@ -249,7 +259,7 @@ def test_a_room_whose_furniture_is_not_extracted_yet_is_asked_again(
     assert scene.furniture == [] and warnings == [NOT_EXTRACTED]
     register_reviewed_items(data_dir)  # the pipeline runs while the server is up
     scene, _ = _scene(client)
-    assert [item.id for item in scene.furniture] == ITEM_IDS
+    assert sorted(item.id for item in scene.furniture) == ITEM_IDS
 
 
 def test_furniture_files_are_served_only_by_content_hash(
@@ -285,8 +295,7 @@ def test_the_real_video_furnishes_the_real_room(
     assert segment_furniture(scene_id, data_dir=data_dir).complete
 
     scene, warnings = _scene(client)
-    assert [item.id for item in scene.furniture] == ITEM_IDS
-    assert [item.name for item in scene.furniture] == [obj.name for obj in discovery.objects]
+    assert {item.id: item.name for item in scene.furniture} == NAMES  # the real allocation
     assert all(item.is_proxy for item in scene.furniture)
     assert not any("hints name items" in w or "no mesh" in w for w in warnings)
     furniture = RealRoomFurniture(load_bindings(), data_dir).furniture_for(scene)

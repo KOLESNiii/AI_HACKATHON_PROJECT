@@ -223,7 +223,7 @@ and the furniture Dev 2's pipeline extracts from the opening room (0-6 s) of
 | Scene ID | `plan-83a12322e933-floor-0-room-3`, "Reception Room / Kitchen (1)" (an open archway merges the two; the plan warns) |
 | Binding | `services/reconstruction/room/fixtures/real_rooms.json`: scene ID, plan, video, Dev 2's furniture scene `reviewed-opening-room`, and a reviewed hint per item |
 | Source | `room/video_furniture.RealRoomFurniture`, the default `get_furniture_source`. Calls Dev 2's `reconstruct_furniture` **offline** (stored results only, never a provider request) |
-| Items | `vid-000001` rear sofa, `vid-000002` right sofa, `vid-000003` table, `vid-000004` office chair. Dev 2's IDs, names and evidence (masks included) |
+| Items | `vid-000001` table, `vid-000002` rear sofa, `vid-000003` right sofa, `vid-000004` office chair: the IDs frame selection allocates on the real video. Dev 2's IDs, names and evidence (masks included) |
 | Meshes | Dev 2's labelled proxies until #17 normalises the raw meshes: a box of the item's size with a dark front strip, `is_proxy: true`, `dimension_source: "estimated"`, `"dimensions"` in `correction_needed` |
 | Placement | From the binding's hints (confidence 0.6-0.7), so every item also has `placement` in `correction_needed` |
 | Files | `GET /assets/<sha256>.glb` (browser `/api/reconstruction/assets/...`), Dev 2's content-addressed store, cached as immutable. Other names are 404 |
