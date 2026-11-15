@@ -531,6 +531,20 @@ class ChatRequest(ContractModel):
     instruction: str = Field(min_length=1, max_length=MAX_LAYOUT_INSTRUCTION_CHARS)
 
 
+class ProductOption(ContractModel):
+    """A real retailer product the chat agent found; the editor offers it to add to the room."""
+
+    name: str = Field(min_length=1, max_length=160)
+    retailer: str
+    product_url: str = Field(pattern=r"^https?://\S+$", max_length=2000)
+    image_url: str = Field(pattern=r"^https?://\S+$", max_length=2000)
+    category: Literal["bed", "desk", "chair", "table", "wardrobe", "sofa", "storage", "other"]
+    price_gbp: Optional[float] = None
+    bbox_m: Optional[BBoxM] = None
+    """What the retailer published, if read; the import measures the delivered mesh."""
+    dimensions_text: Optional[str] = None
+
+
 class ChatReply(ContractModel):
     """POST /chat response, and the data of /chat/stream's terminal `reply` event."""
 
@@ -540,6 +554,8 @@ class ChatReply(ContractModel):
     report: Optional[AuditReport] = None
     proposal: Optional[LayoutProposal] = None
     """Preserve goal/outcome metadata when chat delegates to the rearrangement harness."""
+    products: Optional[List[ProductOption]] = None
+    """Products found online by `search_products`; nothing is added until the user picks one."""
 
 
 class ChatProgressEvent(ContractModel):

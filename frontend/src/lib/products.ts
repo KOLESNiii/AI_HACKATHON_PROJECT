@@ -1,17 +1,12 @@
-import type { AuditReport, BBoxM, FurnitureItem, RoomScene } from './contracts'
+import type {
+  AuditReport,
+  FurnitureItem,
+  ProductOption,
+  RoomScene,
+} from './contracts'
 import { postSpatial, SpatialError, toServiceScene } from './spatial'
 
-/** A real product the agent found online (spatial `search_products` tool). */
-export interface ProductOption {
-  name: string
-  retailer: string
-  product_url: string
-  image_url: string
-  category: FurnitureItem['category']
-  price_gbp: number | null
-  bbox_m: BBoxM | null
-  dimensions_text: string | null
-}
+export type { ProductOption }
 
 /** A product imported through the reconstruction pipeline, ready to place again. */
 export interface LibraryEntry {

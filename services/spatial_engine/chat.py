@@ -10,14 +10,12 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from contracts.schema import (
     AuditReport,
+    ChatReply,
     ChatRequest,
     FurnitureItem,
     OptimiseRequest,
     Pose2D,
     RoomScene,
-)
-from contracts.schema import (
-    ChatReply as ContractChatReply,
 )
 from services.spatial_engine.agent import (
     MAX_FURNITURE,
@@ -30,7 +28,6 @@ from services.spatial_engine.agent import (
 )
 from services.spatial_engine.furniture_search import (
     LinkupPost,
-    ProductOption,
     SearchUnavailable,
     search_products,
 )
@@ -48,11 +45,6 @@ _NO_PROPOSAL = (
     "No verified proposal was produced. Choose another Library model or a different location."
 )
 _HARD_FINDINGS = {"collisions", "out_of_bounds_item_ids", "blocked_doors"}
-
-
-class ChatReply(ContractChatReply):
-    products: list[ProductOption] = Field(default_factory=list)
-    """Real products found online; the editor offers each one to add to the room."""
 
 
 class AddItemArguments(BaseModel):

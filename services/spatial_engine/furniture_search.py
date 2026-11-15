@@ -19,9 +19,8 @@ from typing import Any, Literal
 from urllib.parse import urlsplit
 
 import httpx
-from pydantic import BaseModel, Field
 
-from contracts.schema import BBoxM
+from contracts.schema import ProductOption
 from services.reconstruction.assets.retailer import (
     CatalogError,
     RetailerProduct,
@@ -58,19 +57,6 @@ Category = Literal["bed", "desk", "chair", "table", "wardrobe", "sofa", "storage
 
 class SearchUnavailable(Exception):
     """No search could run (no key, provider down). The message is safe to show."""
-
-
-class ProductOption(BaseModel):
-    """One product the user can add. Dimensions are what the retailer published, if read."""
-
-    name: str = Field(min_length=1, max_length=160)
-    retailer: str
-    product_url: str = Field(pattern=r"^https?://\S+$", max_length=2000)
-    image_url: str = Field(pattern=r"^https?://\S+$", max_length=2000)
-    category: Category
-    price_gbp: float | None = None
-    bbox_m: BBoxM | None = None
-    dimensions_text: str | None = None
 
 
 LinkupPost = Callable[[dict[str, Any]], dict[str, Any]]

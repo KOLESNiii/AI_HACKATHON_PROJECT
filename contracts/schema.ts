@@ -377,6 +377,19 @@ export interface ChatRequest {
   instruction: string;
 }
 
+/** A real retailer product the chat agent found; the editor offers it to add to the room. */
+export interface ProductOption {
+  name: string;
+  retailer: string;
+  product_url: string;
+  image_url: string;
+  category: "bed" | "desk" | "chair" | "table" | "wardrobe" | "sofa" | "storage" | "other";
+  price_gbp: number | null;
+  /** What the retailer published, if read; the import measures the delivered mesh. */
+  bbox_m: BBoxM | null;
+  dimensions_text: string | null;
+}
+
 /** POST /chat response, and the data of /chat/stream's terminal `reply` event. */
 export interface ChatReply {
   text: string;
@@ -385,6 +398,8 @@ export interface ChatReply {
   report: AuditReport | null;
   /** Preserves goal/outcome metadata when chat delegates to the rearrangement harness. */
   proposal: LayoutProposal | null;
+  /** Products found online by `search_products`; nothing is added until the user picks one. */
+  products?: ProductOption[] | null;
 }
 
 /** POST /chat/stream SSE. The terminal event is `reply`, never a LayoutStreamEvent `result`. */
