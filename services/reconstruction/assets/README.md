@@ -123,6 +123,7 @@ async def import_catalog_asset(product_url: str, scene_id: str) -> FurnitureAsse
 def normalise_mesh(raw_glb: Path, *, category: str, target_bbox: BBoxM | None,
                    data_dir: Path, front: Front | None = None,
                    url_base: str = ASSET_URL_BASE) -> NormalisedMesh                    # #17, implemented
+def deliver_furniture(scene_id: str, *, data_dir: Path, ...) -> Delivery               # #18, implemented
 ```
 
 `FurnitureAsset` is the pose-less asset from section 2; Dev 1 places one with
@@ -467,3 +468,59 @@ The table's supplied size was an invented test value that stretches the mesh 17 
 correctly asked for `"dimensions"`. Not verified: how the textured results look in the
 editor, the front direction of other SAM 3D outputs, and `trellis-2` output. Estimated sizes
 are category guesses: the "office chair" mesh is an armchair and comes out 1.0 m wide.
+
+## Implemented: delivery to Dev 1 and its checks (#18)
+
+`delivery.deliver_furniture(scene_id, *, data_dir, dimensions=None, object_ids=None,
+url_base=...)` is what Dev 1 places. Per item it returns the normalised mesh when the stored
+file passes its checks, otherwise the labelled proxy, with the same ID either way. It is
+offline (stored results only, no provider request) and returns a `Delivery`: `assets` (one
+`FurnitureAsset` per item, in item-ID order), a matching `AssetCheck` per asset, `warnings`
+and `ok`. Unknown scenes and items raise `ValueError`, as `reconstruct_furniture` does.
+
+| Check (`inspect_asset`) | Fault reported |
+|---|---|
+| Store | `glb_url` is not under the asset URL base, is not a `<sha256>.glb` name, the file is missing, or its bytes do not hash to its name. |
+| Scene graph | Not binary glTF 2.0; has skins, animations or cameras; a node transform is not baked. |
+| Budget | Over 30,000 triangles or 3 MB. |
+| Bounds | Stored bounds differ from `bbox_m` by `GLB_BBOX_TOLERANCE_M` or more on any axis. Passing also fixes the bottom-centre at the origin. |
+| Item rules | The asset no longer validates as a `FurnitureItem` (collision parts, fixtures). |
+| Provenance | An `estimated` size without `"dimensions"` in `correction_needed`. |
+
+**Fallback.** An item with no mesh, a mesh that could not be normalised, or a mesh that fails
+a check is delivered as its proxy; `AssetCheck.fallback_reason` and `warnings` say why. A mesh
+is never delivered with a known fault. A proxy is delivered even if its own file is faulty
+(the item is never dropped), and then `ok` is false. A proxy with stated dimensions keeps
+them and their provenance.
+
+`delivery.check_placed(scene, assets)` lists what an assembled `RoomScene` changed: every
+asset must appear exactly once with every field equal except `pose`, and `correction_needed`
+may only grow (alignment adds `placement` and `orientation`).
+
+```bash
+uv run --extra reconstruction python -m services.reconstruction.assets.check_delivery \
+  --scene-id reviewed-opening-room --data-dir artifacts/furniture --out /tmp/furniture-delivery
+```
+
+Prints a one-line JSON summary and, with `--out`, writes `delivery.json`, `assets.json` (the
+delivered assets) and `report.md`. Exit 0: every delivered asset passed and there are at
+least `--min-items` (default 2); 2: a check failed or too few items; 1: unknown scene or
+item, or unusable input or storage. `--dimensions` and `--object-id` work as in
+`reconstruct_items`.
+
+**Dev 1 handoff.** In `room/video_furniture.RealRoomFurniture` (PR #55) replace
+`[item.proxy for item in result.items]` with `deliver_furniture(...).assets` to serve meshes;
+its `warnings` already name the fallbacks. Nothing else changes: same IDs and evidence, and
+the `/assets` route #55 mounts serves both kinds of file. No contract, entry point, manifest,
+`room/` or frontend file changes in this issue.
+
+**Verification (2026-11-15), stored data, no provider request.** The check CLI on the four
+reviewed opening-room items: four meshes delivered, all checks pass, bounds error under
+0.0001 mm each. The same assets were assembled into the demo reception room through
+`assemble_scene` with the #8 reviewed hints: `check_placed` clean, each `glb_url` served 200
+with immutable caching from `asset_router` and re-measured equal to `bbox_m`. Moving the
+table onto the rear sofa left the other three items identical and the audit reported that
+collision; moving it back cleared it. The editor's store (`frontend/src/store.ts`), loaded
+with that scene, selected and moved the table and the chair separately with all IDs, bounds
+and mesh URLs unchanged. Not verified: the meshes drawn in a browser. The editor has no
+backend scene loader yet (#22, #25), so nothing was looked at on screen.
