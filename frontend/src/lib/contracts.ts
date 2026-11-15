@@ -16,6 +16,7 @@ export type {
   LayoutStreamEvent,
   OptimiseRequest,
   Pose2D,
+  ProductOption,
   RoomScene,
   Vec2,
   WallSegment,

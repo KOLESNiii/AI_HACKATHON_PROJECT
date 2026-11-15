@@ -35,6 +35,16 @@ import { bounds, clampToFloor, fitYaw, snapToNearestWall } from './lib/geometry'
 import type { Pt } from './lib/geometry'
 import { canStand, humanPoseAt } from './lib/walk'
 import {
+  freshItemId,
+  importProduct,
+  loadLibrary,
+  placeItem,
+  saveLibrary,
+  type LibraryEntry,
+  type ProductOption,
+} from './lib/products'
+import { SpatialError } from './lib/spatial'
+import {
   DEFAULT_PLAY_LIGHTING,
   type PlayLightingSettings,
 } from './lib/lighting'
@@ -57,6 +67,8 @@ export interface ChatMessage {
   applied?: boolean
   rejected?: boolean
   progress?: LayoutProgress[]
+  /** Real products found online, each offered with an Add to scene button. */
+  products?: ProductOption[]
 }
 export interface Toast {
   id: number
@@ -106,6 +118,10 @@ interface State {
   /** In-flight agent request, aborted when the room is reopened. */
   agentAbort: AbortController | null
   toasts: Toast[]
+  /** Products imported through the reconstruction pipeline, newest first. */
+  library: LibraryEntry[]
+  /** Product URLs currently being imported or placed. */
+  adding: string[]
 
   setScreen: (s: Screen) => void
   selectSegment: (id: string | null) => void
@@ -125,6 +141,8 @@ interface State {
   resetRotation: (id: string) => void
   deleteItem: (id: string) => void
   addFromCatalog: (c: CatalogItem) => void
+  /** Import a found product into the library, then place it in the room. */
+  addProductToScene: (p: ProductOption) => Promise<void>
   applyPoses: (messageIndex: number) => void
   rejectProposal: (messageIndex: number) => void
   sendChat: (text: string) => Promise<void>
@@ -270,6 +288,8 @@ export const useStore = create<State>((set, get) => ({
   agentProgress: [],
   agentAbort: null,
   toasts: [],
+  library: loadLibrary(),
+  adding: [],
 
   setScreen: (screen) =>
     set({
@@ -543,6 +563,76 @@ export const useStore = create<State>((set, get) => ({
     )
     playCue('add')
   },
+  addProductToScene: async (product) => {
+    const url = product.product_url
+    if (get().adding.includes(url)) return
+    const session = get().roomSession
+    const current = () => get().roomSession === session
+    set((s) => ({ adding: [...s.adding, url] }))
+    try {
+      // 1. The library: imported once per product, reused after that.
+      let entry = get().library.find((e) => e.product.product_url === url)
+      if (!entry) {
+        const item = await importProduct(product, get().scene.scene_id)
+        entry = { product, item }
+        const library = [
+          entry,
+          ...get().library.filter((e) => e.product.product_url !== url),
+        ]
+        set({ library })
+        saveLibrary(library)
+      }
+      if (!current()) return
+      // 2. Placement against the room as it is now, then 3. into the scene.
+      const before = get().scene
+      const taken = new Set(before.furniture.map((i) => i.id))
+      const draft = { ...entry.item, id: freshItemId(entry.item.id, taken) }
+      const placed = await placeItem(before, draft)
+      const scene = get().scene
+      if (!current()) return
+      if (
+        scene.revision !== before.revision ||
+        get().mode !== 'edit' ||
+        get().roomLoading
+      ) {
+        playCue('reject')
+        return get().toast(
+          `The room changed while placing ${product.name}. Add it again from the Library.`,
+        )
+      }
+      const audit =
+        placed.report?.scene_id === scene.scene_id &&
+        placed.report.scene_revision === scene.revision
+          ? { ...placed.report, scene_revision: scene.revision + 1 }
+          : null
+      set({
+        ...editRoomLayout(
+          get(),
+          bump(scene, [...scene.furniture, placed.item]),
+        ),
+        selectedId: placed.item.id,
+        audit,
+        auditStatus: audit ? 'ready' : 'idle',
+        auditError: null,
+      })
+      get().toast(
+        placed.item.is_proxy
+          ? `${placed.text} No 3D model was available, so it is a labelled box.`
+          : placed.text,
+      )
+      playCue('add')
+    } catch (error) {
+      if (!current()) return
+      playCue('reject')
+      get().toast(
+        error instanceof SpatialError
+          ? error.message
+          : `${product.name} could not be added. Try again.`,
+      )
+    } finally {
+      set((s) => ({ adding: s.adding.filter((u) => u !== url) }))
+    }
+  },
   applyPoses: (index) => {
     const {
       chat,
@@ -665,6 +755,7 @@ export const useStore = create<State>((set, get) => ({
             role: 'assistant',
             text: reply.text,
             proposal: reply.proposal,
+            products: reply.products,
             progress: s.agentProgress,
             baseScene: scene,
             roomSession,

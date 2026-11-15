@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from contracts.schema import BBoxM, DoorOpening, FurnitureItem, Pose2D, RoomScene, Vec2, WallSegment
 from services.spatial_engine.agent import ModelReply, ProviderError, ToolCall
 from services.spatial_engine.chat import ChatRequest, add_item, chat
+from services.spatial_engine.furniture_search import ProductOption
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.library import ASSET_ROOT, library_assets
 from services.spatial_engine.main import app, get_layout_model
@@ -227,7 +228,11 @@ def test_agent_corrects_a_collision(room: RoomScene) -> None:
     reply = chat(ChatRequest(scene=room, instruction="Add a table"), model)
     assert len(reply.additions) == 1 and len(model.requests) == 2
     assert tool_error(model) == "Placement rejected: the new item overlaps fixed by 0.11 m2"
-    assert {tool["name"] for tool in model.requests[0]["tools"]} == {"add_item", "rearrange_room"}
+    assert {tool["name"] for tool in model.requests[0]["tools"]} == {
+        "add_item",
+        "rearrange_room",
+        "search_products",
+    }
 
 
 def test_the_model_is_told_what_is_already_wrong_and_why_arguments_failed(
@@ -332,3 +337,49 @@ def test_proxy_faces_wind_outward() -> None:
         assert sum(n * f for n, f in zip(normal, face_centre)) > 0
         volume += sum(p * n for p, n in zip(a, normal)) / 6  # a · (b × c) / 6
     assert volume == pytest.approx(width * height * depth, rel=1e-6)
+
+
+def search_turn(arguments: dict[str, Any]) -> ModelReply:
+    block = {"type": "tool_use", "id": "tool-s", "name": "search_products", "input": arguments}
+    return ModelReply("tool_use", [block], (ToolCall("tool-s", "search_products", arguments),), 50)
+
+
+def test_search_products_returns_options_without_changing_the_room(
+    room: RoomScene, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    option = ProductOption(
+        name="MICKE Desk",
+        retailer="ikea.com",
+        product_url="https://www.ikea.com/gb/en/p/micke-1/",
+        image_url="https://www.ikea.com/gb/en/images/micke.jpg",
+        category="desk",
+        price_gbp=79,
+    )
+    seen: dict[str, Any] = {}
+
+    def search(query: str, **options: Any) -> list[ProductOption]:
+        seen.update(query=query, **options)
+        return [option]
+
+    monkeypatch.setattr("services.spatial_engine.chat.search_products", search)
+    linkup = object()
+    model = Scripted(search_turn({"query": "white desk", "category": "desk"}))
+    reply = chat(ChatRequest(scene=room, instruction="Find me a desk"), model, linkup)  # type: ignore[arg-type]
+    assert reply.products == [option] and not reply.additions and not reply.poses
+    assert "ikea.com" in reply.text
+    assert seen == {
+        "query": "white desk",
+        "category": "desk",
+        "max_price_gbp": None,
+        "linkup": linkup,
+    }
+
+
+def test_empty_search_is_a_tool_error_the_model_can_recover_from(
+    room: RoomScene, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("services.spatial_engine.chat.search_products", lambda *a, **k: [])
+    model = Scripted(search_turn({"query": "gold throne", "category": "chair"}), "Nothing found.")
+    reply = chat(ChatRequest(scene=room, instruction="Find a gold throne"), model)
+    assert "No products found" in tool_error(model)
+    assert reply.text == "Nothing found." and not reply.products

@@ -110,7 +110,7 @@ def calculate_free_floor_ratio(
     return max(0.0, min(1.0, free_area / float(floor.area)))
 
 
-def _height_overlaps(bottom_a: float, top_a: float, bottom_b: float, top_b: float) -> bool:
+def height_overlaps(bottom_a: float, top_a: float, bottom_b: float, top_b: float) -> bool:
     overlap = min(top_a, top_b) - max(bottom_a, bottom_b)
     # Decimal threshold equality must not become a collision through subtraction noise.
     return overlap > MIN_HEIGHT_OVERLAP_M and not isclose(
@@ -145,7 +145,7 @@ def detect_blocked_doors(
         sweep = door_swing_sector(door, walls[door.wall_id], scene.floor_polygon)
         for entry in prepared.furniture:
             for part in entry.volumes:
-                if not _height_overlaps(0, door.head_height_m, part.y_min, part.y_max):
+                if not height_overlaps(0, door.head_height_m, part.y_min, part.y_max):
                     continue
                 area = float(sweep.intersection(part.footprint).area)
                 if not isfinite(area):
@@ -212,7 +212,7 @@ def detect_collisions(
         intersections = []
         for part_a in a.volumes:
             for part_b in b.volumes:
-                if not _height_overlaps(part_a.y_min, part_a.y_max, part_b.y_min, part_b.y_max):
+                if not height_overlaps(part_a.y_min, part_a.y_max, part_b.y_min, part_b.y_max):
                     continue
                 intersection = part_a.footprint.intersection(part_b.footprint)
                 area = float(intersection.area)

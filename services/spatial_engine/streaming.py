@@ -23,6 +23,7 @@ from services.spatial_engine.agent import (
 )
 from services.spatial_engine.chat import chat
 from services.spatial_engine.feng_shui_skill import FengShuiSkillUnavailable
+from services.spatial_engine.furniture_search import LinkupPost
 from services.spatial_engine.layout_tools import LayoutToolbox
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,7 @@ def chat_events(
     request: ChatRequest,
     model: LayoutModel | None,
     prepared: AuditReport,
+    linkup: LinkupPost | None = None,
     *,
     disconnected: Callable[[], Awaitable[bool]] | None = None,
 ) -> AsyncIterator[str]:
@@ -62,6 +64,7 @@ def chat_events(
         lambda progress, cancelled: chat(
             request,
             model,
+            linkup,
             prepared=prepared,
             progress=progress,
             cancelled=cancelled,

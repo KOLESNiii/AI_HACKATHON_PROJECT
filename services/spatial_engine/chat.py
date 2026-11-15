@@ -4,7 +4,7 @@ import json
 import time
 import uuid
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -26,9 +26,15 @@ from services.spatial_engine.agent import (
     _Budget,
     propose_layout,
 )
+from services.spatial_engine.furniture_search import (
+    LinkupPost,
+    SearchUnavailable,
+    search_products,
+)
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.layout_tools import _Move
 from services.spatial_engine.library import describe_library, library_assets
+from services.spatial_engine.placement import place_item
 from services.spatial_engine.report import audit_scene
 
 _REPLY_LIMIT = 900
@@ -69,6 +75,27 @@ ADD_ITEM_TOOL: dict[str, Any] = {
     ),
     "input_schema": AddItemArguments.model_json_schema(),
 }
+
+
+class SearchProductsArguments(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
+
+    query: str = Field(min_length=2, max_length=80)
+    category: Literal["bed", "desk", "chair", "table", "wardrobe", "sofa", "storage", "other"]
+    max_price_gbp: float | None = Field(default=None, gt=0, le=100_000)
+
+
+SEARCH_PRODUCTS_TOOL: dict[str, Any] = {
+    "name": "search_products",
+    "description": (
+        "Search UK retailers (IKEA and others) for real furniture the user can buy and add to "
+        "the room. query: a short shop search phrase naming the product type with key "
+        "attributes, for example 'oak compact desk' or 'grey 3 seater sofa'; no prices or "
+        "sizes in it. The user sees up to three results with photos and picks one; picking "
+        "imports its real dimensions and places it. Nothing is added yet."
+    ),
+    "input_schema": SearchProductsArguments.model_json_schema(),
+}
 _REARRANGE_TOOL = {
     "name": "rearrange_room",
     "description": (
@@ -77,6 +104,10 @@ _REARRANGE_TOOL = {
     ),
     "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
 }
+_SEARCH_SYSTEM = (
+    "When the user wants to find, buy, shop for, browse or see options for furniture, or "
+    "names a retailer, call search_products instead of add_item. "
+)
 _SYSTEM = (
     "Help with the user's room request using the tools. To add furniture call add_item; "
     "for rearranging existing furniture call rearrange_room. Never claim an item was added: "
@@ -228,9 +259,53 @@ def _reply_text(content: object) -> str:
     return " ".join(" ".join(texts).split())[:_REPLY_LIMIT]
 
 
+def _search_reply(arguments: object, linkup: LinkupPost | None) -> ChatReply:
+    """Run the product search. No results is a tool error so the model can say so or retry."""
+    args = SearchProductsArguments.model_validate(arguments)
+    try:
+        options = search_products(
+            args.query, category=args.category, max_price_gbp=args.max_price_gbp, linkup=linkup
+        )
+    except SearchUnavailable as exc:
+        raise SpatialInputError(f"Product search failed: {exc}") from exc
+    if not options:
+        raise SpatialInputError(
+            f"No products found for '{args.query}'. Try broader words or call add_item."
+        )
+    shops = sorted({option.retailer for option in options})
+    return ChatReply(
+        text=(
+            f"Found {len(options)} option(s) for {args.query} from {', '.join(shops)}. "
+            "Press Add to scene on one to import it with its published size and place it."
+        ),
+        products=options,
+    )
+
+
+class PlaceRequest(BaseModel):
+    scene: RoomScene
+    item: FurnitureItem
+    """An imported item; its pose is ignored and chosen here."""
+
+
+def place(request: PlaceRequest) -> ChatReply:
+    """Find an audited spot for one imported item. Nothing else moves."""
+    if len(request.scene.furniture) >= MAX_FURNITURE:
+        raise SpatialInputError(f"At most {MAX_FURNITURE} furniture items are supported")
+    placement = place_item(request.scene, request.item)
+    item = placement.item
+    where = "against a wall" if placement.against_wall else "in open floor"
+    return ChatReply(
+        text=f"Placed {item.name} {where}, clear of doors and other furniture.",
+        additions=[item],
+        report=placement.report,
+    )
+
+
 def chat(
     request: ChatRequest,
     model: LayoutModel | None,
+    linkup: LinkupPost | None = None,
     *,
     progress: ProgressCallback = lambda _: None,
     cancelled: Callable[[], bool] = lambda: False,
@@ -254,16 +329,18 @@ def chat(
         schema = AddItemArguments.model_json_schema()
         schema["properties"]["asset_id"]["enum"] = list(available)
         tools.insert(0, {**ADD_ITEM_TOOL, "input_schema": schema})
+    tools.append(SEARCH_PRODUCTS_TOOL)
     content = {
         **request.model_dump(mode="json"),
         "existing_problems": before.model_dump(mode="json", include=_HARD_FINDINGS),
         "library": describe_library(available),
     }
     messages: list[dict[str, Any]] = [{"role": "user", "content": json.dumps(content)}]
+    system = _SEARCH_SYSTEM + _SYSTEM
     while budget.can_call():
         try:
             budget.update("exploring", "Considering your room request…")
-            reply = budget.call(model, system=_SYSTEM, messages=messages, tools=tools)
+            reply = budget.call(model, system=system, messages=messages, tools=tools)
         except ProviderError:
             return ChatReply(text="The agent could not complete the request. Try again.")
         if reply.stop_reason == "end_turn" and not reply.tool_calls:
@@ -285,6 +362,9 @@ def chat(
                         "verifying", "The new item and moved furniture passed placement checks."
                     )
                     return result
+                if call.name == "search_products":
+                    budget.update("evaluating", "Searching UK retailers for matching products…")
+                    return _search_reply(call.arguments, linkup)
                 if call.name == "rearrange_room" and call.arguments == {}:
                     proposal = propose_layout(
                         OptimiseRequest(scene=scene, instruction=request.instruction),

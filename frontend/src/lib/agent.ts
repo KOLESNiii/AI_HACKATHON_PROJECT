@@ -10,6 +10,7 @@ import {
   type LayoutProgress,
   type RoomScene,
 } from './contracts'
+import type { ProductOption } from './products'
 import { readAudit, postSpatial, SpatialError, toServiceScene } from './spatial'
 
 const LAYOUT_GOALS: readonly LayoutGoal[] = [
@@ -28,6 +29,8 @@ export interface EditorProposal extends LayoutProposal {
 export interface EditorReply {
   text: string
   proposal?: EditorProposal
+  /** Real products found online for the user to pick from. */
+  products?: ProductOption[]
 }
 
 /**
@@ -202,8 +205,12 @@ function readStreamReply(
   const additions = value.additions ?? []
   if (!isRecord(poses) || !Array.isArray(additions))
     throw new Error('The chat proposal is invalid.')
-  if (!Object.keys(poses).length && !additions.length)
-    return { text: value.text }
+  if (!Object.keys(poses).length && !additions.length) {
+    const products = readProducts(value.products)
+    return products.length
+      ? { text: value.text, products }
+      : { text: value.text }
+  }
   const proposal = readProposal(
     {
       proposal_id: crypto.randomUUID(),
@@ -219,6 +226,21 @@ function readStreamReply(
     baseline,
   )
   return { text: value.text, proposal }
+}
+
+/** Products are shown as links and images only, so drop any without safe http(s) URLs. */
+function readProducts(value: unknown): ProductOption[] {
+  if (!Array.isArray(value)) return []
+  return value.filter(
+    (p): p is ProductOption =>
+      isRecord(p) &&
+      typeof p.name === 'string' &&
+      typeof p.retailer === 'string' &&
+      typeof p.product_url === 'string' &&
+      /^https?:\/\//.test(p.product_url) &&
+      typeof p.image_url === 'string' &&
+      /^https?:\/\//.test(p.image_url),
+  )
 }
 
 /** Existing backend agent owns tool calls, feasibility checks and scoring. */
@@ -358,6 +380,8 @@ export interface AgentReply {
   report?: AuditReport | null
   /** The proposed audit, shown before Apply. */
   outlook?: string
+  /** Real products found online for the user to pick from. */
+  products?: ProductOption[]
 }
 
 /** What Apply would do, e.g. "Proposed layout · 1 new item · 2 moves". */
@@ -424,5 +448,6 @@ export async function sendAgentMessage(
       reply.poses && Object.keys(reply.poses).length ? reply.poses : undefined,
     additions: reply.additions?.length ? reply.additions : undefined,
     outlook: reply.report ? describeOutlook(reply.report) : undefined,
+    products: reply.products?.length ? reply.products : undefined,
   }
 }

@@ -29,13 +29,14 @@ from services.spatial_engine.agent import (
     prepare_layout,
     propose_layout,
 )
-from services.spatial_engine.chat import chat
+from services.spatial_engine.chat import PlaceRequest, chat, place
 from services.spatial_engine.feng_shui import (
     FengShuiResult,
     assess_feng_shui,
 )
 from services.spatial_engine.feng_shui_score import score_feng_shui
 from services.spatial_engine.feng_shui_skill import FengShuiSkillUnavailable
+from services.spatial_engine.furniture_search import LinkupPost, linkup_client
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.proxy import proxy_glb
 from services.spatial_engine.report import audit_scene
@@ -204,14 +205,28 @@ def feng_shui(
         return assess_feng_shui(request, model)
 
 
+def get_linkup() -> LinkupPost | None:
+    """Linkup web search, or None when LINKUP_API_KEY is unset (IKEA is still searched)."""
+    api_key = os.environ.get("LINKUP_API_KEY", "").strip()
+    return linkup_client(api_key) if api_key else None
+
+
 @app.post("/chat", response_model=ChatReply)
 def room_chat(
     request: ChatRequest,
     model: LayoutModel | None = Depends(get_layout_model),
+    linkup: LinkupPost | None = Depends(get_linkup),
 ) -> ChatReply:
-    """Return an audited proposal for explicit application by the editor."""
+    """Return an audited proposal, or products found online, for the editor to apply."""
     with _input_errors():
-        return chat(request, model)
+        return chat(request, model, linkup)
+
+
+@app.post("/place", response_model=ChatReply)
+def place_imported(request: PlaceRequest) -> ChatReply:
+    """Choose an audited pose for one imported item; the scene itself is not modified."""
+    with _input_errors():
+        return place(request)
 
 
 @app.post("/chat/stream", response_class=StreamingResponse)
@@ -219,6 +234,7 @@ def room_chat_stream(
     request: ChatRequest,
     http_request: Request,
     model: LayoutModel | None = Depends(get_layout_model),
+    linkup: LinkupPost | None = Depends(get_linkup),
 ) -> StreamingResponse:
     """Stream the same chat additions/rearrangements with factual progress updates."""
     with _input_errors():
@@ -226,7 +242,7 @@ def room_chat_stream(
             raise SpatialInputError("At most 60 furniture items are supported")
         prepared = audit_scene(request.scene)
     return StreamingResponse(
-        chat_events(request, model, prepared, disconnected=http_request.is_disconnected),
+        chat_events(request, model, prepared, linkup, disconnected=http_request.is_disconnected),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
     )
