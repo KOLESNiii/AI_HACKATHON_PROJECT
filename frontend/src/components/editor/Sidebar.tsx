@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { catalog, catalogCategories } from '../../data/catalog'
-import { sendAgentMessage } from '../../lib/agent'
+import { proposalSummary, sendAgentMessage } from '../../lib/agent'
 import type { AuditReport, RoomScene } from '../../lib/contracts'
 import { fitsRoom } from '../../lib/geometry'
 import { useStore, type Tab } from '../../store'
@@ -116,13 +116,10 @@ function ChatTab() {
             >
               {m.text}
             </p>
-            {(m.poses || m.additions?.length) && (
+            {(m.poses || !!m.additions?.length) && (
               <div className="flex w-full items-center justify-between gap-2.5 rounded-[2px] bg-paper-deep py-2 pr-2 pl-3">
                 <span className="text-[11px] font-medium text-ink-medium">
-                  Proposed layout · {Object.keys(m.poses ?? {}).length} moves
-                  {m.additions?.length
-                    ? ` · ${m.additions.length} new item`
-                    : ''}
+                  {proposalSummary(m)}
                 </span>
                 <Button disabled={m.applied} onClick={() => applyPoses(i)}>
                   {m.applied ? 'Applied' : 'Apply'}

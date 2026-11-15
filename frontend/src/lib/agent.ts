@@ -7,6 +7,19 @@ export interface AgentReply {
   report?: AuditReport | null
 }
 
+/** What Apply would do, e.g. "Proposed layout · 1 new item · 2 moves". */
+export function proposalSummary(
+  m: Pick<AgentReply, 'poses' | 'additions'>,
+): string {
+  const moves = Object.keys(m.poses ?? {}).length
+  const added = m.additions?.length ?? 0
+  return [
+    'Proposed layout',
+    ...(added ? [`${added} new item${added === 1 ? '' : 's'}`] : []),
+    ...(moves || !added ? [`${moves} move${moves === 1 ? '' : 's'}`] : []),
+  ].join(' · ')
+}
+
 /** Return a proposal; application is a separate, revision-guarded user action. */
 export async function sendAgentMessage(
   scene: RoomScene,

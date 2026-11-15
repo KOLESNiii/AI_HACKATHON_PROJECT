@@ -1,6 +1,8 @@
 import { afterEach, expect, test } from 'bun:test'
-import { sendAgentMessage } from '../src/lib/agent'
-import { useStore } from '../src/store'
+import { catalog } from '../src/data/catalog'
+import { proposalSummary, sendAgentMessage } from '../src/lib/agent'
+import type { AuditReport } from '../src/lib/contracts'
+import { useStore, type ChatMessage } from '../src/store'
 
 const initial = useStore.getState()
 const originalFetch = globalThis.fetch
@@ -119,4 +121,83 @@ test('duplicate addition IDs are rejected atomically', () => {
   })
   useStore.getState().applyPoses(0)
   expect(useStore.getState().scene).toBe(initial.scene)
+})
+
+test('a Library item keeps the scene acceptable to the spatial service', () => {
+  // The services validate RoomScene: an empty glb_url made every chat request fail (422).
+  useStore.getState().addFromCatalog(catalog[0])
+  const added = useStore.getState().scene.furniture.at(-1)!
+  const { width, height, depth } = catalog[0].bbox_m
+  expect(added.is_proxy).toBe(true)
+  expect(added.glb_url).toBe(
+    `/api/spatial_engine/proxies/${width}/${height}/${depth}.glb`,
+  )
+  for (const item of useStore.getState().scene.furniture) {
+    expect(item.glb_url).toMatch(/^(https?:\/\/|\/[^/])/) // GLB_URL_PATTERN
+    expect(item.id).toMatch(/^[a-z0-9][a-z0-9_-]{0,63}$/) // ITEM_ID_PATTERN
+  }
+})
+
+test('every Library proxy is within the size the proxy route serves', () => {
+  for (const { bbox_m } of catalog) {
+    for (const [size, limit] of [
+      [bbox_m.width, 20],
+      [bbox_m.height, 10],
+      [bbox_m.depth, 20],
+    ]) {
+      expect(size).toBeGreaterThan(0.01)
+      expect(size).toBeLessThanOrEqual(limit)
+    }
+  }
+})
+
+test('Apply carries the audited report into Stats at the new revision', () => {
+  const { scene } = initial
+  const report = {
+    scene_id: scene.scene_id,
+    scene_revision: scene.revision,
+    collisions: [],
+    blocked_doors: [],
+    out_of_bounds_item_ids: [],
+    clearance_issues: [],
+  } as unknown as AuditReport
+  for (const [sent, expected] of [
+    [report, scene.revision + 1],
+    [{ ...report, scene_id: 'another-room' }, null],
+    [{ ...report, scene_revision: scene.revision + 5 }, null],
+  ] as const) {
+    useStore.setState({
+      ...initial,
+      chat: [
+        {
+          role: 'assistant',
+          text: 'Proposed',
+          baseRevision: scene.revision,
+          additions: [proposal()],
+          report: sent,
+        },
+      ],
+    })
+    useStore.getState().applyPoses(0)
+    expect(useStore.getState().scene.revision).toBe(scene.revision + 1)
+    expect(useStore.getState().audit?.scene_revision ?? null).toBe(expected)
+  }
+})
+
+test('the proposal row says what Apply will do', () => {
+  const pose = { x: 1, z: 1, yaw_deg: 0 }
+  const message = (m: Partial<ChatMessage>): ChatMessage => ({
+    role: 'assistant',
+    text: '',
+    ...m,
+  })
+  expect(proposalSummary(message({ additions: [proposal()] }))).toBe(
+    'Proposed layout · 1 new item',
+  )
+  expect(
+    proposalSummary(message({ additions: [proposal()], poses: { a: pose } })),
+  ).toBe('Proposed layout · 1 new item · 1 move')
+  expect(proposalSummary(message({ poses: { a: pose, b: pose } }))).toBe(
+    'Proposed layout · 2 moves',
+  )
 })

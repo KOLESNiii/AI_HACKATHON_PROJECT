@@ -117,7 +117,10 @@ function itemFromCatalog(c: CatalogItem, pose: Pose2D): FurnitureItem {
     name: c.name,
     category: c.category,
     source: 'catalog_search',
-    glb_url: '', // no reconstructed mesh yet: rendered as a labelled proxy box
+    // No reconstructed mesh yet, so the editor draws a labelled proxy box. The contract
+    // still requires a URL (services reject an empty one): the spatial service's
+    // dimensioned placeholder, the same one its agent uses for items it adds.
+    glb_url: `/api/spatial_engine/proxies/${c.bbox_m.width}/${c.bbox_m.height}/${c.bbox_m.depth}.glb`,
     price_gbp: c.price_gbp,
     product_url: c.product_url ?? null,
     bbox_m: { ...c.bbox_m },
