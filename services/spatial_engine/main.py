@@ -11,7 +11,16 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import ValidationError
 from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
-from contracts.schema import AuditReport, LayoutProposal, OptimiseRequest, RoomScene
+from contracts.schema import (
+    AuditReport,
+    ChatReply,
+    ChatRequest,
+    FengShuiRequest,
+    FengShuiScore,
+    LayoutProposal,
+    OptimiseRequest,
+    RoomScene,
+)
 from services.spatial_engine.agent import (
     DEFAULT_INTERPRET_MODEL,
     DEFAULT_MODEL,
@@ -20,13 +29,13 @@ from services.spatial_engine.agent import (
     prepare_layout,
     propose_layout,
 )
-from services.spatial_engine.chat import ChatReply, ChatRequest, chat
+from services.spatial_engine.chat import chat
 from services.spatial_engine.feng_shui import (
-    FengShuiRequest,
     FengShuiResult,
     assess_feng_shui,
 )
-from services.spatial_engine.feng_shui_score import FengShuiScore, score_feng_shui
+from services.spatial_engine.feng_shui_score import score_feng_shui
+from services.spatial_engine.feng_shui_skill import FengShuiSkillUnavailable
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.proxy import proxy_glb
 from services.spatial_engine.report import audit_scene
@@ -154,6 +163,17 @@ def solve_stream(
         ),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.exception_handler(FengShuiSkillUnavailable)
+async def feng_shui_skill_unavailable(
+    _request: Request, exc: FengShuiSkillUnavailable
+) -> JSONResponse:
+    """A missing or malformed skill file is a server configuration error, never a 500 or 422."""
+    return JSONResponse(
+        status_code=503,
+        content={"detail": [{"loc": [], "msg": str(exc), "type": "not_configured"}]},
     )
 
 

@@ -120,7 +120,8 @@ test('room load and committed edits score automatically; continuous dragging doe
   useStore.getState().setPose(scene.furniture[0].id, { x: 3 })
   await tick(20)
   expect(scores).toBe(1)
-  expect(useStore.getState().fengShuiScore).toBeNull()
+  // Drag frames keep the committed revision's score on screen.
+  expect(useStore.getState().fengShuiScore?.revision).toBe(scene.revision)
   useStore.getState().commitEdit(null)
   useStore.getState().setInteracting(false)
   await tick(30)
@@ -128,7 +129,7 @@ test('room load and committed edits score automatically; continuous dragging doe
   expect(useStore.getState().fengShuiScore?.revision).toBe(scene.revision + 1)
 })
 
-test('same-revision edits, version changes and a new room reject late score responses', async () => {
+test('a drag in progress, version changes and a new room reject late score responses', async () => {
   for (const change of ['pose', 'version', 'room']) {
     useStore.setState({ ...initial, scene: freshMockScene(), screen: 'editor' })
     const scene = useStore.getState().scene
@@ -139,9 +140,10 @@ test('same-revision edits, version changes and a new room reject late score resp
       })) as typeof fetch
     const pending = useStore.getState().refreshFengShuiScore()
     const controller = useStore.getState().fengShuiScoreAbort!
-    if (change === 'pose')
+    if (change === 'pose') {
+      useStore.getState().setInteracting(true)
       useStore.getState().setPose(scene.furniture[0].id, { x: 4 })
-    else if (change === 'version') {
+    } else if (change === 'version') {
       useStore.getState().rotateItem(scene.furniture[0].id, 90)
       useStore.getState().saveVersion()
       useStore.getState().selectVersion('version-1')

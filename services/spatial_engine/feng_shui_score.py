@@ -10,18 +10,24 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from math import acos, cos, degrees, hypot, radians, sin
 
-from pydantic import Field
 from shapely.geometry import LineString, Point, Polygon  # type: ignore[import-untyped]
 from shapely.ops import unary_union  # type: ignore[import-untyped]
 
-from contracts.schema import DoorOpening, FengShuiSightline, RoomScene
+from contracts.schema import (
+    AuditReport,
+    DoorOpening,
+    FengShuiRuleScore,
+    FengShuiScore,
+    FengShuiSightline,
+    RoomScene,
+)
 from services.spatial_engine.feng_shui_inputs import (
-    DetailModel,
     FengShuiRequest,
     validate_feng_shui_request,
 )
 from services.spatial_engine.geometry import (
     FurnitureGeometry,
+    SceneGeometry,
     SpatialInputError,
     door_opening_frame,
     prepare_scene,
@@ -57,27 +63,8 @@ WEIGHTS = {
 _DOOR_RULES = ("door_visible", "line_of_sight", "door_axis")
 
 
-class RuleScore(DetailModel):
-    rule: str
-    object_ids: list[str]
-    score: float = Field(ge=0, le=1)
-    weight: float = Field(gt=0)
-    detail: str
-
-
-class FengShuiScore(DetailModel):
-    scene_id: str
-    revision: int
-    score: int | None
-    """0-100. None when the room has no door or no bed, desk or sofa: never read as zero."""
-    coverage: float = Field(ge=0, le=1)
-    """Assessed weight / weight applicable to this room."""
-    capped_by_audit: bool
-    """True when the audit found collisions, blocked doors or out-of-bounds items, which cap
-    the score at AUDIT_CAP: tradition never outranks fit and access."""
-    sightlines: list[FengShuiSightline]
-    rules: list[RuleScore]
-    unassessed: list[str]
+# The response models live in contracts/schema.py (FengShuiScore, FengShuiRuleScore).
+RuleScore = FengShuiRuleScore
 
 
 @dataclass(frozen=True)
@@ -437,11 +424,24 @@ def _mirror(
     return rules
 
 
-def score_feng_shui(request: FengShuiRequest) -> FengShuiScore:
-    """Score a room read-only. Raises SpatialInputError for invalid scenes or references."""
-    audit, _ = validate_feng_shui_request(request)
+def score_feng_shui(
+    request: FengShuiRequest,
+    *,
+    _audit: AuditReport | None = None,
+    _prepared: SceneGeometry | None = None,
+) -> FengShuiScore:
+    """Score a room read-only. Raises SpatialInputError for invalid scenes or references.
+
+    The layout optimiser passes the audit and geometry it already computed for the same
+    scene. That skips the assessment-only request checks (such as IDs unique across object
+    types), which a scene the audit accepts may not meet.
+    """
+    if _audit is None or _prepared is None:
+        _audit, _ = validate_feng_shui_request(request)
+        _prepared = prepare_scene(request.scene)
+    audit = _audit
     scene = request.scene
-    prepared = prepare_scene(scene)
+    prepared = _prepared
     floor = prepared.floor
     furniture = prepared.furniture
     minx, miny, maxx, maxy = floor.bounds

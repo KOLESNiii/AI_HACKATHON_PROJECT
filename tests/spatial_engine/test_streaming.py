@@ -187,7 +187,7 @@ def test_chat_stream_emits_progress_and_audited_additions_without_mutating_the_r
         "evaluating",
         "verifying",
     ]
-    assert frames[-1][0] == "result"
+    assert frames[-1][0] == "reply"
     result = frames[-1][1]
     assert len(result["additions"]) == 1
     assert not result["additions"][0]["is_proxy"]

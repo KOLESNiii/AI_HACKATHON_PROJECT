@@ -106,7 +106,7 @@ test('progress updates status and the expandable log before any proposal can be 
   expect(html).toContain('Activity · 1')
   expect(html).toContain('Cancel')
   expect(html).not.toContain('Accept layout')
-  stream.push('result', candidate)
+  stream.push('reply', candidate)
   await pending
   const complete = useStore.getState()
   expect(complete.scene).toBe(base)
@@ -130,7 +130,7 @@ test('decoder handles split UTF-8, CRLF, comments and multiline JSON event data'
     ': keep-alive\r\n\r\nevent: progress\r\ndata: ' +
     JSON.stringify(message, null, 2).split('\n').join('\r\ndata: ') +
     '\r\n\r\n' +
-    solveEvent('result', candidate).replaceAll('\n', '\r\n')
+    solveEvent('reply', candidate).replaceAll('\n', '\r\n')
   const bytes = encode.encode(wire)
   let offset = 0
   mockResponse(
@@ -160,7 +160,7 @@ test('several events in one chunk are processed in order and reading stops at th
   mockResponse(
     new Response(
       solveEvent('progress', update) +
-        solveEvent('result', candidate) +
+        solveEvent('reply', candidate) +
         solveEvent('progress', update),
       { headers: { 'Content-Type': 'text/event-stream' } },
     ),
@@ -227,7 +227,7 @@ test('malformed events, terminal errors and truncated streams fail without a pro
     'event: progress\ndata: {broken}\n\n',
     solveEvent('error', { message: 'Layout validation failed.' }),
     solveEvent('progress', update),
-    solveEvent('result', {
+    solveEvent('reply', {
       ...proposal(),
       poses: { unknown: { x: 0, z: 0, yaw_deg: 0 } },
     }),

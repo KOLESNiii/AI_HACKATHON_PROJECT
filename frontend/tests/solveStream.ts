@@ -4,7 +4,7 @@ export function solveEvent(event: string, data: unknown): string {
 }
 
 export function solveResponse(proposal: unknown): Response {
-  return new Response(solveEvent('result', proposal), {
+  return new Response(solveEvent('reply', proposal), {
     headers: { 'Content-Type': 'text/event-stream' },
   })
 }

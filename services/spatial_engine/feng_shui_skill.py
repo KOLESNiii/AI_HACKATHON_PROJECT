@@ -6,7 +6,23 @@ from typing import Literal
 SKILL_PATH = Path(__file__).with_name("skills") / "feng-shui" / "SKILL.md"
 
 
+SKILL_UNAVAILABLE_MESSAGE = (
+    "Feng Shui optimisation is not configured on this server. Choose another goal."
+)
+
+
+class FengShuiSkillUnavailable(RuntimeError):
+    """The skill file is missing or malformed: a server configuration error, not retryable."""
+
+
 def load_feng_shui_skill(mode: Literal["assessment", "layout_optimisation"]) -> str:
+    try:
+        return _load(mode)
+    except (OSError, ValueError) as exc:
+        raise FengShuiSkillUnavailable(SKILL_UNAVAILABLE_MESSAGE) from exc
+
+
+def _load(mode: Literal["assessment", "layout_optimisation"]) -> str:
     source = SKILL_PATH.read_text(encoding="utf-8")
     parts = source.split("---", 2)
     body = parts[2].strip() if source.startswith("---\n") and len(parts) == 3 else source.strip()

@@ -155,12 +155,26 @@ def test_unassessable_full_score_remains_unknown_in_the_tool_payload_and_reply()
     assert not proposal.improved
 
 
-def test_missing_skill_fails_closed_without_breaking_other_goals(monkeypatch, tmp_path):
+def test_missing_skill_is_a_configuration_error_without_breaking_other_goals(monkeypatch, tmp_path):
     monkeypatch.setattr(feng_shui_skill, "SKILL_PATH", tmp_path / "missing-skill.md")
     model = RecordingModel(shift_bed())
-    proposal = propose_layout(OptimiseRequest(scene=original_room(), goal="feng_shui"), model)
-    assert proposal.outcome == "assistant_unavailable" and not proposal.improved
+    with pytest.raises(feng_shui_skill.FengShuiSkillUnavailable):
+        propose_layout(OptimiseRequest(scene=original_room(), goal="feng_shui"), model)
     assert not model.requests
+    previous = app.dependency_overrides.copy()
+    app.dependency_overrides[get_layout_model] = lambda: RecordingModel(shift_bed())
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/solve",
+                json=OptimiseRequest(scene=original_room(), goal="feng_shui").model_dump(
+                    mode="json"
+                ),
+            )
+    finally:
+        app.dependency_overrides = previous
+    assert response.status_code == 503
+    assert "not configured" in response.json()["detail"][0]["msg"]
     other = propose_layout(OptimiseRequest(scene=scene()), RecordingModel(move("box", 4, 5.5)))
     assert other.improved
 
@@ -200,3 +214,16 @@ def test_streamed_chat_uses_the_skill_and_returns_the_stats_score_in_its_explana
             assert f"{score['score']} now" in proposal["explanation"]
     finally:
         app.dependency_overrides = previous
+
+
+def test_feng_shui_optimisation_accepts_ids_shared_across_object_types():
+    """The audit only needs IDs unique per type; the optimiser must accept what /audit accepts."""
+    original = original_room()
+    original.doors = [original.doors[0].model_copy(update={"id": original.walls[0].id})]
+    with TestClient(app) as client:
+        assert client.post("/audit", json=original.model_dump(mode="json")).status_code == 200
+    proposal = propose_layout(
+        OptimiseRequest(scene=original, goal="feng_shui"), RecordingModel(shift_bed())
+    )
+    assert proposal.goal == "feng_shui"
+    assert proposal.outcome == "completed"

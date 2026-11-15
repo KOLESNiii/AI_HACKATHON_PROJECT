@@ -615,7 +615,10 @@ call may complete within its original timeout. Reverse proxies must disable
 response buffering for this route. `/solve` continues to return ordinary JSON.
 
 `POST /chat/stream` streams the same addition/rearrangement handler as `/chat`, with
-progress/error events and a terminal `ChatReply` result. Delegated rearrangements
+progress/error events and a terminal `reply` event carrying a `ChatReply`. It is named
+`reply`, not `result`, because `LayoutStreamEvent`'s `result` is always a `LayoutProposal`.
+A missing or malformed Feng Shui skill is a 503 (an `error` event once streaming), never
+`assistant_unavailable`. Delegated rearrangements
 also retain their `LayoutProposal` in `proposal`, including goal and outcome. Input
 validation precedes SSE headers. Cancellation and heartbeat behaviour match solve
 streaming; existing JSON routes remain available.

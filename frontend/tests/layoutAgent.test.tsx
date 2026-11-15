@@ -330,17 +330,19 @@ test('timeout aborts a request and reports a timeout rather than a successful re
   )
 })
 
-test('audit ignores same-revision live changes and supports explicit retry after failure', async () => {
+test('audit ignores results that land mid-drag and supports explicit retry after failure', async () => {
   const late = deferred<Response>()
   const old = audit()
   stubFetch(() => late.promise)
   const pending = useStore.getState().refreshAudit()
+  useStore.getState().setInteracting(true)
   useStore
     .getState()
     .setPose(useStore.getState().scene.furniture[0].id, { x: 3 })
   late.resolve(response(old))
   await pending
   expect(useStore.getState().audit).toBeNull()
+  useStore.getState().setInteracting(false)
   stubFetch(() => response({}, 500))
   await useStore.getState().refreshAudit()
   expect(useStore.getState().auditStatus).toBe('error')
@@ -483,4 +485,26 @@ test('custom-goal proposals from /solve are accepted and flagged as partly check
   expect(() =>
     readProposal({ ...proposal(room), goal: 'cosy' }, room),
   ).toThrow()
+})
+
+test('a doorway the room already had blocked does not invalidate a rearrangement', () => {
+  const room = useStore.getState().scene
+  const door = room.doors[0]
+  const mover = room.furniture.find((i) => !i.is_fixed)!
+  const blocked = {
+    door_id: door.id,
+    blocked_by_item_id: mover.id,
+    overlap_area_m2: 0.1,
+  }
+  const value = {
+    ...proposal(room),
+    poses: { [mover.id]: { ...mover.pose, x: mover.pose.x + 0.1 } },
+    report: { ...proposal(room).report, blocked_doors: [blocked] },
+  }
+  expect(() => readProposal(value, room)).toThrow('unverified')
+  const baseline = {
+    ...proposal(room).report,
+    blocked_doors: [{ ...blocked, blocked_by_item_id: 'fixed_wardrobe' }],
+  }
+  expect(readProposal(value, room, baseline).improved).toBe(true)
 })

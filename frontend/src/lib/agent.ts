@@ -30,7 +30,15 @@ export interface EditorReply {
   proposal?: EditorProposal
 }
 
-export function readProposal(value: unknown, scene: RoomScene): EditorProposal {
+/**
+ * `baseline` is the audit of `scene` itself. As in the backend's `is_acceptable_proposal`,
+ * a door already blocked there may stay blocked; without it every changed blocker is refused.
+ */
+export function readProposal(
+  value: unknown,
+  scene: RoomScene,
+  baseline?: AuditReport,
+): EditorProposal {
   if (
     !isRecord(value) ||
     typeof value.proposal_id !== 'string' ||
@@ -84,16 +92,22 @@ export function readProposal(value: unknown, scene: RoomScene): EditorProposal {
     ...Object.keys(value.poses),
     ...additions.map((i) => i.id),
   ])
+  const blockedBefore = new Set(
+    baseline?.blocked_doors.map((d) => d.door_id) ?? [],
+  )
+  const newlyBlocked = report.blocked_doors.some(
+    (d) => changed.has(d.blocked_by_item_id) && !blockedBefore.has(d.door_id),
+  )
   const invalidFindings =
     additions.length > 0
       ? report.collisions.some(
           (c) => changed.has(c.item_a) || changed.has(c.item_b),
         ) ||
         report.out_of_bounds_item_ids.some((id) => changed.has(id)) ||
-        report.blocked_doors.some((d) => changed.has(d.blocked_by_item_id))
+        newlyBlocked
       : report.collisions.length > 0 ||
         report.out_of_bounds_item_ids.length > 0 ||
-        report.blocked_doors.some((d) => changed.has(d.blocked_by_item_id))
+        newlyBlocked
   if (
     (!value.improved && count > 0) ||
     (value.improved &&
@@ -169,15 +183,19 @@ function validAddition(value: unknown): value is FurnitureItem {
   )
 }
 
-function readStreamReply(value: unknown, scene: RoomScene): EditorReply {
+function readStreamReply(
+  value: unknown,
+  scene: RoomScene,
+  baseline?: AuditReport,
+): EditorReply {
   if (isRecord(value) && typeof value.proposal_id === 'string') {
-    const proposal = readProposal(value, scene)
+    const proposal = readProposal(value, scene, baseline)
     return { text: proposal.explanation, proposal }
   }
   if (!isRecord(value) || typeof value.text !== 'string')
     throw new Error('The chat agent returned an invalid reply.')
   if (value.proposal) {
-    const proposal = readProposal(value.proposal, scene)
+    const proposal = readProposal(value.proposal, scene, baseline)
     return { text: value.text, proposal }
   }
   const poses = value.poses ?? {}
@@ -198,6 +216,7 @@ function readStreamReply(value: unknown, scene: RoomScene): EditorReply {
       explanation: value.text,
     },
     scene,
+    baseline,
   )
   return { text: value.text, proposal }
 }
@@ -208,20 +227,21 @@ export async function streamAgentMessage(
   text: string,
   signal?: AbortSignal,
   onProgress: (progress: LayoutProgress) => void = () => {},
+  baseline?: AuditReport,
 ): Promise<EditorReply> {
   const instruction = text.trim()
   if (!instruction || [...instruction].length > MAX_LAYOUT_INSTRUCTION_CHARS)
     throw new Error(
       `Enter a room request of up to ${MAX_LAYOUT_INSTRUCTION_CHARS} characters.`,
     )
-  const request = { scene, instruction }
+  const request = { scene: toServiceScene(scene), instruction }
   return requestWithTimeout(
     '/api/spatial_engine/chat/stream',
     request,
     signal,
     120_000,
     (response, requestSignal) =>
-      readSolveStream(response, scene, requestSignal, onProgress),
+      readSolveStream(response, scene, requestSignal, onProgress, baseline),
     'text/event-stream',
   )
 }
@@ -240,6 +260,7 @@ async function readSolveStream(
   scene: RoomScene,
   signal: AbortSignal,
   onProgress: (progress: LayoutProgress) => void,
+  baseline?: AuditReport,
 ): Promise<EditorReply> {
   if (
     !response.headers.get('Content-Type')?.startsWith('text/event-stream') ||
@@ -280,7 +301,8 @@ async function readSolveStream(
         if (line === '') {
           if (data.length) {
             const payload: unknown = JSON.parse(data.join('\n'))
-            if (event === 'result') return readStreamReply(payload, scene)
+            if (event === 'reply')
+              return readStreamReply(payload, scene, baseline)
             if (
               event === 'error' &&
               isRecord(payload) &&

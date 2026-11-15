@@ -3,15 +3,16 @@
 import json
 import time
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from contracts.schema import (
     AuditReport,
+    ChatReply,
+    ChatRequest,
     FurnitureItem,
-    LayoutProposal,
     OptimiseRequest,
     Pose2D,
     RoomScene,
@@ -38,20 +39,6 @@ _NO_PROPOSAL = (
     "No verified proposal was produced. Choose another Library model or a different location."
 )
 _HARD_FINDINGS = {"collisions", "out_of_bounds_item_ids", "blocked_doors"}
-
-
-class ChatRequest(BaseModel):
-    scene: RoomScene
-    instruction: str = Field(min_length=1, max_length=500)
-
-
-class ChatReply(BaseModel):
-    text: str
-    poses: dict[str, Pose2D] = Field(default_factory=dict)
-    additions: list[FurnitureItem] = Field(default_factory=list)
-    report: AuditReport | None = None
-    proposal: LayoutProposal | None = None
-    """Preserve goal/outcome metadata when chat delegates to the rearrangement harness."""
 
 
 class AddItemArguments(BaseModel):
@@ -147,10 +134,15 @@ def _percent(value: float) -> str:
     return f"{round(value * 100)}%"
 
 
-def add_item(scene: RoomScene, arguments: object) -> ChatReply:
-    """Validated tool handler. A rejected addition never mutates the caller's scene."""
+def add_item(
+    scene: RoomScene, arguments: object, assets: Mapping[str, FurnitureItem] | None = None
+) -> ChatReply:
+    """Validated tool handler. A rejected addition never mutates the caller's scene.
+
+    `assets` is the Library the model was offered; it defaults to a fresh read.
+    """
     args = AddItemArguments.model_validate(arguments)
-    asset = library_assets().get(args.asset_id)
+    asset = (library_assets() if assets is None else assets).get(args.asset_id)
     if asset is None:
         raise SpatialInputError("Choose an available Library asset_id; this model is unavailable")
     if len(scene.furniture) >= MAX_FURNITURE:
@@ -288,7 +280,7 @@ def chat(
                     budget.update(
                         "evaluating", "Checking the new item and any moves needed to make room…"
                     )
-                    result = add_item(scene, call.arguments)
+                    result = add_item(scene, call.arguments, available)
                     budget.update(
                         "verifying", "The new item and moved furniture passed placement checks."
                     )

@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from contracts.schema import (
     AuditReport,
+    ChatRequest,
     LayoutProgress,
     LayoutStreamError,
     OptimiseRequest,
@@ -20,7 +21,8 @@ from services.spatial_engine.agent import (
     ProgressCallback,
     propose_layout,
 )
-from services.spatial_engine.chat import ChatRequest, chat
+from services.spatial_engine.chat import chat
+from services.spatial_engine.feng_shui_skill import FengShuiSkillUnavailable
 from services.spatial_engine.layout_tools import LayoutToolbox
 
 logger = logging.getLogger(__name__)
@@ -65,6 +67,8 @@ def chat_events(
             cancelled=cancelled,
         ),
         disconnected=disconnected,
+        # Not a `LayoutStreamEvent` result: chat replies are ChatReply, so they get their own name.
+        result_event="reply",
     )
 
 
@@ -73,6 +77,7 @@ async def execution_events(
     *,
     disconnected: Callable[[], Awaitable[bool]] | None = None,
     heartbeat_s: float = 10.0,
+    result_event: str = "result",
 ) -> AsyncIterator[str]:
     """Stop future work on disconnect; an active SDK call retains its existing timeout."""
     loop = asyncio.get_running_loop()
@@ -90,9 +95,12 @@ async def execution_events(
     def work() -> None:
         try:
             result = execute(progress, stop.is_set)
-            publish("result", result)
+            publish(result_event, result)
         except LayoutCancelled:
             return
+        except FengShuiSkillUnavailable as exc:
+            if not stop.is_set():
+                publish("error", LayoutStreamError(message=str(exc)))
         except Exception as exc:
             # Never send raw exceptions, provider content or request data to the client.
             logger.error("Unexpected layout stream failure (%s)", type(exc).__name__)

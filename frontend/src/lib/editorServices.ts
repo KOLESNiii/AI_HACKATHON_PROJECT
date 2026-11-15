@@ -29,7 +29,11 @@ export function connectEditorServices(debounceMs = 250): () => void {
       void s.loadRoom()
       return
     }
-    if (s.scene !== before.scene) {
+    // Drags move poses without a new revision; only committed edits invalidate results.
+    const sceneChanged =
+      s.scene.scene_id !== before.scene.scene_id ||
+      s.scene.revision !== before.scene.revision
+    if (sceneChanged) {
       s.fengShuiAbort?.abort()
       useStore.setState({
         fengShui: null,
@@ -38,11 +42,13 @@ export function connectEditorServices(debounceMs = 250): () => void {
         fengShuiError: null,
       })
     }
-    if (
-      s.scene !== before.scene ||
-      s.interacting !== before.interacting ||
-      s.roomLoading !== before.roomLoading
-    )
+    // Starting a drag keeps the committed revision's results; ending one only
+    // refetches what the drag interrupted or what a mid-drag commit cleared.
+    const dragEnded =
+      before.interacting &&
+      !s.interacting &&
+      (s.auditStatus !== 'ready' || s.fengShuiScoreStatus !== 'ready')
+    if (sceneChanged || dragEnded || s.roomLoading !== before.roomLoading)
       schedule()
   })
   void useStore.getState().loadRoom()

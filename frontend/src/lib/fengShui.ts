@@ -1,5 +1,5 @@
 import { isFiniteNumber, isRecord, requestJson } from './api'
-import type { RoomScene } from './contracts'
+import type { FengShuiScore, RoomScene } from './contracts'
 import type { EditorProposal } from './agent'
 
 /**
@@ -27,28 +27,8 @@ export interface FengShuiResult {
   assessment: FengShuiAssessment | null
 }
 
-/** Mirrors the service-local /feng-shui/score response; scoring stays on the server. */
-export interface FengShuiScore {
-  scene_id: string
-  revision: number
-  score: number | null
-  coverage: number
-  capped_by_audit: boolean
-  sightlines: {
-    from_item_id: string
-    to_door_id: string
-    status: 'command_position' | 'back_to_door' | 'coffin_alignment'
-    reason: string
-  }[]
-  rules: {
-    rule: string
-    object_ids: string[]
-    score: number
-    weight: number
-    detail: string
-  }[]
-  unassessed: string[]
-}
+/** `/feng-shui/score` response; contracts/schema.py is the source of truth. */
+export type { FengShuiScore }
 
 export type ScoreStatus = 'idle' | 'loading' | 'ready' | 'error'
 

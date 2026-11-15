@@ -524,6 +524,104 @@ LayoutStreamEvent = LayoutProgressEvent | LayoutResultEvent | LayoutErrorEvent
 """POST /solve/stream SSE: event is the SSE name; data is its JSON payload."""
 
 
+class ChatRequest(ContractModel):
+    """POST /chat and /chat/stream."""
+
+    scene: RoomScene
+    instruction: str = Field(min_length=1, max_length=MAX_LAYOUT_INSTRUCTION_CHARS)
+
+
+class ChatReply(ContractModel):
+    """POST /chat response, and the data of /chat/stream's terminal `reply` event."""
+
+    text: str
+    poses: Dict[str, Pose2D] = Field(default_factory=dict)
+    additions: List[FurnitureItem] = Field(default_factory=list)
+    report: Optional[AuditReport] = None
+    proposal: Optional[LayoutProposal] = None
+    """Preserve goal/outcome metadata when chat delegates to the rearrangement harness."""
+
+
+class ChatProgressEvent(ContractModel):
+    event: Literal["progress"] = "progress"
+    data: LayoutProgress
+
+
+class ChatReplyEvent(ContractModel):
+    event: Literal["reply"] = "reply"
+    data: ChatReply
+
+
+class ChatErrorEvent(ContractModel):
+    event: Literal["error"] = "error"
+    data: LayoutStreamError
+
+
+ChatStreamEvent = ChatProgressEvent | ChatReplyEvent | ChatErrorEvent
+"""POST /chat/stream SSE: event is the SSE name; data is its JSON payload. The terminal event
+is `reply`, not `result`, so it can never be read as a `LayoutStreamEvent` result."""
+
+
+class _FengShuiModel(ContractModel):
+    model_config = ConfigDict(use_attribute_docstrings=True, extra="forbid", allow_inf_nan=False)
+
+
+class FengShuiMirror(_FengShuiModel):
+    id: str = Field(min_length=1, max_length=100)
+    x: float
+    y: float = Field(ge=0)
+    z: float
+    width_m: float = Field(gt=0)
+    height_m: float = Field(gt=0)
+    normal_yaw_deg: float
+    is_fixed: bool = True
+
+
+class FengShuiActivityAnchor(_FengShuiModel):
+    item_id: str
+    kind: Literal["seated", "headboard"]
+    x: float
+    z: float
+    facing_yaw_deg: float
+
+
+class FengShuiRequest(_FengShuiModel):
+    """POST /feng-shui and /feng-shui/score."""
+
+    scene: RoomScene
+    room_use: str = Field(default="unspecified", max_length=200)
+    main_entry_door_id: Optional[str] = None
+    mirrors: Optional[List[FengShuiMirror]] = Field(default=None, max_length=60)
+    activities: List[FengShuiActivityAnchor] = Field(default_factory=list, max_length=120)
+    observations: str = Field(default="", max_length=3000)
+    """Optional observed beams, clutter, materials, lighting and other non-geometric context."""
+
+
+class FengShuiRuleScore(_FengShuiModel):
+    rule: str
+    object_ids: List[str]
+    score: float = Field(ge=0, le=1)
+    weight: float = Field(gt=0)
+    detail: str
+
+
+class FengShuiScore(_FengShuiModel):
+    """POST /feng-shui/score: deterministic Form School score, no model call."""
+
+    scene_id: str
+    revision: int
+    score: Optional[int]
+    """0-100. None when the room has no door or no bed, desk or sofa: never read as zero."""
+    coverage: float = Field(ge=0, le=1)
+    """Assessed weight / weight applicable to this room."""
+    capped_by_audit: bool
+    """True when the audit found collisions, blocked doors or out-of-bounds items, which cap
+    the score: tradition never outranks fit and access."""
+    sightlines: List[FengShuiSightline]
+    rules: List[FengShuiRuleScore]
+    unassessed: List[str]
+
+
 class RenderCamera(ContractModel):
     position: Vec3
     target: Vec3

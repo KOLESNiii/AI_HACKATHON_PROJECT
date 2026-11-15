@@ -1,10 +1,8 @@
 """Shared Feng Shui inputs and validation, independent of the model harness."""
 
-from typing import Literal
+from pydantic import BaseModel, ConfigDict
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from contracts.schema import AuditReport, RoomScene
+from contracts.schema import AuditReport, FengShuiActivityAnchor, FengShuiMirror, FengShuiRequest
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.report import audit_scene
 
@@ -13,33 +11,10 @@ class DetailModel(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
-class Mirror(DetailModel):
-    id: str = Field(min_length=1, max_length=100)
-    x: float
-    y: float = Field(ge=0)
-    z: float
-    width_m: float = Field(gt=0)
-    height_m: float = Field(gt=0)
-    normal_yaw_deg: float
-    is_fixed: bool = True
-
-
-class ActivityAnchor(DetailModel):
-    item_id: str
-    kind: Literal["seated", "headboard"]
-    x: float
-    z: float
-    facing_yaw_deg: float
-
-
-class FengShuiRequest(DetailModel):
-    scene: RoomScene
-    room_use: str = Field(default="unspecified", max_length=200)
-    main_entry_door_id: str | None = None
-    mirrors: list[Mirror] | None = Field(default=None, max_length=60)
-    activities: list[ActivityAnchor] = Field(default_factory=list, max_length=120)
-    observations: str = Field(default="", max_length=3000)
-    """Optional observed beams, clutter, materials, lighting and other non-geometric context."""
+# The request models live in contracts/schema.py; these names stay for existing imports.
+Mirror = FengShuiMirror
+ActivityAnchor = FengShuiActivityAnchor
+__all__ = ["ActivityAnchor", "DetailModel", "FengShuiRequest", "Mirror"]
 
 
 def validate_feng_shui_request(request: FengShuiRequest) -> tuple[AuditReport, list[str]]:

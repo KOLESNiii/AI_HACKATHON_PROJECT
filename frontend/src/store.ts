@@ -149,6 +149,10 @@ interface State {
   dismissToast: (id: number) => void
 }
 
+/** Results belong to a committed revision; uncommitted drag frames do not invalidate them. */
+const sameRevision = (a: RoomScene, b: RoomScene) =>
+  a.scene_id === b.scene_id && a.revision === b.revision
+
 let toastSeq = 0
 let itemSeq = 0
 
@@ -570,7 +574,7 @@ export const useStore = create<State>((set, get) => ({
     }
     let proposal: EditorProposal
     try {
-      proposal = readProposal(msg.proposal, scene)
+      proposal = readProposal(msg.proposal, scene, msg.baselineAudit)
       if (!proposal.improved || layoutChanges(scene, proposal).length === 0)
         return
     } catch (error) {
@@ -649,6 +653,7 @@ export const useStore = create<State>((set, get) => ({
               agentProgress: [...s.agentProgress, update].slice(-200),
             }))
         },
+        matchingAudit(audit, scene) ? audit : undefined,
       )
       if (!current()) return
       set((s) => ({
@@ -739,7 +744,7 @@ export const useStore = create<State>((set, get) => ({
     const controller = new AbortController()
     const current = () =>
       get().roomSession === roomSession &&
-      get().scene === scene &&
+      sameRevision(get().scene, scene) &&
       !get().interacting &&
       get().auditAbort === controller
     set({
@@ -765,7 +770,7 @@ export const useStore = create<State>((set, get) => ({
     const controller = new AbortController()
     const current = () =>
       get().roomSession === roomSession &&
-      get().scene === scene &&
+      sameRevision(get().scene, scene) &&
       !get().interacting &&
       get().fengShuiScoreAbort === controller
     set({
@@ -794,7 +799,7 @@ export const useStore = create<State>((set, get) => ({
     const controller = new AbortController()
     const current = () =>
       get().roomSession === roomSession &&
-      get().scene === scene &&
+      sameRevision(get().scene, scene) &&
       get().fengShuiAbort === controller
     set({
       fengShui: null,

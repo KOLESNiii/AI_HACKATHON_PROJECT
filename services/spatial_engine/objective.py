@@ -231,7 +231,11 @@ def evaluate_layout(
         if measure_brightness
         else None
     )
-    feng_shui = score_feng_shui(FengShuiRequest(scene=candidate)) if measure_feng_shui else None
+    feng_shui = (
+        score_feng_shui(FengShuiRequest(scene=candidate), _audit=report, _prepared=prepared)
+        if measure_feng_shui
+        else None
+    )
     near_window = _near_window_shortfall(candidate, prepared, near_ids)
     if near_window is not None and not isfinite(near_window):
         raise SpatialInputError("Layout metrics must be finite")

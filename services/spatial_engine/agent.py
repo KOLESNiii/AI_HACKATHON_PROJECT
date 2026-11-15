@@ -24,7 +24,7 @@ from contracts.schema import (
     OptimiseRequest,
     Pose2D,
 )
-from services.spatial_engine.feng_shui_skill import load_feng_shui_skill
+from services.spatial_engine.feng_shui_skill import FengShuiSkillUnavailable, load_feng_shui_skill
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.layout_tools import (
     DEFAULT_MAX_EVALUATIONS,
@@ -349,9 +349,11 @@ def _explore(
     if toolbox.preferences.goal == "feng_shui":
         try:
             system += "\n\n" + load_feng_shui_skill("layout_optimisation")
-        except (OSError, ValueError):
+        except FengShuiSkillUnavailable:
+            # Configuration, not a provider failure: retrying cannot help, so do not report it
+            # as `assistant_unavailable`.
             logger.error("The Feng Shui skill could not be loaded; exploration was not started")
-            return False, True
+            raise
         budget.update("exploring", "Using the Feng Shui skill and full placement scores…")
     budget.update("exploring", "Inspecting the room and its current findings…")
     layout = toolbox.call("inspect_layout", {"draft_id": original})

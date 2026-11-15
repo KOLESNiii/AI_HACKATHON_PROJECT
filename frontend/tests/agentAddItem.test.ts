@@ -137,7 +137,7 @@ async function propose(poses = {}) {
   const base = useStore.getState().scene
   globalThis.fetch = (async () =>
     new Response(
-      solveEvent('result', {
+      solveEvent('reply', {
         text: 'Proposed one item',
         poses,
         additions: [proposal()],
