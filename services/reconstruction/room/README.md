@@ -44,13 +44,22 @@ Walkthrough videos are optional: up to `MAX_ROOM_VIDEOS` may be posted with the 
 (`curl -F files=@plan.png -F videos=@a.mp4 -F videos=@b.mov ...`). They are saved as
 `<upload dir>/<plan_id>/videos/<sha256[:16]>.<ext>` (`$RECONSTRUCTION_UPLOAD_DIR`, default
 `artifacts/uploads`), at most 500 MB each, and their furniture is **extracted live with fal.ai
-in the background** (`video_jobs.py`: vision frame selection, SAM 3 masks, SAM 3D meshes; needs
-`FAL_KEY`, FFmpeg, and minutes per item). Until it is done, `GET /scenes/<room>` of that plan
-returns the room without furniture, a warning and `X-Furniture-Pending: true`, and the editor
-polls. Then the items are placed by the vision observer (`observe_vision.py`), flagged where it
-cannot tell. The videos are assumed to show the room being built: items are not assigned to
-rooms. Requests are capped per job, and every paid result is cached in the furniture data
-directory, so re-uploading the same videos costs nothing.
+in the background** (`video_jobs.py`; needs `FAL_KEY` and FFmpeg):
+
+1. frame selection with fal vision, read leniently (a mistaken answer is repaired, not
+   discarded; batches that still fail are counted in the job's warnings);
+2. every sampled frame matched to a numbered plan room by fal vision, smoothed by walkthrough
+   continuity (rooms change through shared doors), then each item to the room most of its
+   sightings show (`room_frames.py`). Whole-home walkthroughs are fine;
+3. SAM 3 masks of the matched items;
+4. SAM 3D meshes of a room's items when that room is first opened.
+
+Until a room's furniture is ready, `GET /scenes/<room>` returns the room without furniture, a
+warning, `X-Furniture-Pending: true` and `X-Furniture-Progress`, and the editor polls. Then the
+items are placed by the vision observer (`observe_vision.py`), flagged where it cannot tell.
+Requests are capped per job and per room, and every paid result is cached in the furniture data
+directory, so re-uploading the same videos costs nothing. VGGT cameras/depth (probed in #14)
+are not used: they are unscaled and not integrated.
 
 Configuration: `FAL_KEY` (required for labels). Optional: `FAL_VISION_ENDPOINT` (default
 `fal-ai/any-llm/vision`) and `FAL_VISION_MODEL` (default `google/gemini-2.5-flash`). Without

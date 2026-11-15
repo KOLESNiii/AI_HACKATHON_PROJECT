@@ -106,14 +106,21 @@ def _room(scene_id: str = "plan-1-floor-0-room-0") -> RoomScene:
 
 
 def test_video_furniture_by_job_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    jobs = Extractions(lambda: tmp_path, run=lambda job, d: None)
+    release = threading.Event()
+    meshed: list[tuple[str, list[str]]] = []
+
+    def mesh(job: ExtractionJob, room_id: str, ids: list[str], data_dir: Path) -> None:
+        release.wait(5)
+        meshed.append((room_id, ids))
+
+    jobs = Extractions(lambda: tmp_path, run=lambda job, d: None, mesh=mesh)
     source = VideoFurniture(jobs, tmp_path, _Fallback())
     assert source.furniture_for(_room()).warnings == ["fallback"]  # no videos for this plan
 
     job = ExtractionJob("plan-1", "upload-plan-1-x", [])
     jobs._jobs["plan-1"] = job
     running = source.furniture_for(_room())
-    assert running.assets == [] and not running.complete
+    assert running.assets == [] and not running.complete and running.pending
     assert "Extracting furniture" in running.warnings[0]
 
     job.state, job.error = "failed", "FAL_KEY is not set on the reconstruction service"
@@ -121,18 +128,47 @@ def test_video_furniture_by_job_state(tmp_path: Path, monkeypatch: pytest.Monkey
     assert failed.warnings[0].startswith("Furniture could not be extracted")
     assert failed.warnings[1:] == ["fallback"]
 
-    furnished = RoomScene.model_validate_json(MOCK_SCENE.read_text())
-    assets = assets_of(furnished)
-    items = [SimpleNamespace(asset=a, proxy=a) for a in assets]
+    assets = assets_of(RoomScene.model_validate_json(MOCK_SCENE.read_text()))
+    by_id = {a.id: a for a in assets}
+    read: list[list[str] | None] = []
+
+    def reconstruct(scene_id: str, data_dir: Path, object_ids: list[str] | None = None):  # type: ignore[no-untyped-def]
+        read.append(object_ids)
+        items = [SimpleNamespace(asset=by_id[o], proxy=by_id[o]) for o in object_ids or []]
+        return SimpleNamespace(items=items, warnings=[])
+
     monkeypatch.setattr(
-        "services.reconstruction.assets.reconstruction.reconstruct_furniture",
-        lambda scene_id, data_dir: SimpleNamespace(items=items, warnings=[]),
+        "services.reconstruction.assets.reconstruction.reconstruct_furniture", reconstruct
     )
-    job.state = "done"
+    mine, other = assets[0].id, assets[1].id
+    job.state, job.error = "done", None
+    job.rooms = {mine: "floor-0-room-0", other: "floor-0-room-1", "vid-000009": None}
+    job.names = {"vid-000009": "standing lamp"}
+
+    nothing = source.furniture_for(_room("plan-1-floor-0-room-7"))
+    assert nothing.assets == [] and nothing.complete
+    assert nothing.warnings[0] == video_jobs.NOTHING_SEEN
+    assert "standing lamp" in nothing.warnings[1]
+
+    # The first request for a room queues its 3D models; it is pending until they are built.
+    queued = source.furniture_for(_room())
+    assert queued.pending and not queued.complete and queued.assets == []
+    assert jobs.pending("plan-1-floor-0-room-0")
+    assert not jobs.pending("plan-1-floor-0-room-1")  # never opened: nothing built for it
+    progress = jobs.progress("plan-1-floor-0-room-0")
+    assert progress is not None and progress["step"] == 4
+    release.set()
+    deadline = time.monotonic() + 5
+    while job.meshes["floor-0-room-0"].state != "done" and time.monotonic() < deadline:
+        time.sleep(0.01)
+    assert meshed == [("floor-0-room-0", [mine])]
+
     done = source.furniture_for(_room())
-    assert [a.id for a in done.assets] == [a.id for a in assets]
-    assert done.complete
+    assert [a.id for a in done.assets] == [mine]  # only this room's items
+    assert read == [[mine]]
+    assert done.complete and not done.pending
     assert type(done.observer).__name__ == "FalVisionObserver"
+    assert not jobs.pending("plan-1-floor-0-room-0")
 
 
 @pytest.fixture()
@@ -165,7 +201,7 @@ def test_rooms_of_a_plan_with_videos_wait_for_extraction(client: TestClient) -> 
     assert pending.status_code == 200
     assert pending.headers.get(PENDING_HEADER) == "true"
     progress = json.loads(pending.headers[PROGRESS_HEADER])
-    assert progress["steps"] == 3 and progress["elapsed_s"] >= 0
+    assert progress["steps"] == 4 and progress["elapsed_s"] >= 0
     assert isinstance(progress["stage"], str)
     assert "Extracting furniture" in json.loads(pending.headers["X-Reconstruction-Warnings"])[0]
     assert pending.json()["furniture"] == []
