@@ -18,7 +18,13 @@ from contracts.schema import (
     RoomScene,
     Vec2,
     WallSegment,
+    WindowOpening,
 )
+
+POSITION_TOLERANCE_M = 1e-3
+"""How far a door hinge, door leaf or window may sit from its wall, or a wall from the floor
+outline, and still count as on it. Reconstructed scenes round coordinates, so exact
+agreement cannot be required; 1 mm is far below any size the checks act on."""
 
 
 class SpatialInputError(ValueError):
@@ -155,7 +161,7 @@ class _DoorFrame:
 
 def _door_frame(door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2]) -> _DoorFrame:
     """Validate and resolve a door's closed leaf and room side once for all checks."""
-    tolerance = 1e-8
+    tolerance = POSITION_TOLERANCE_M
     floor = room_floor_polygon(floor_points)
     values = (
         wall.start.x,
@@ -253,7 +259,7 @@ def door_swing_sector(
 ) -> Polygon:
     """Conservative zero-thickness door sweep, using stored opening conventions.
 
-    Validate wall/closed leaf on the floor boundary within 1e-8 m. Support angles
+    Validate wall/closed leaf on the floor boundary within POSITION_TOLERANCE_M. Support angles
     0..180 degrees; zero returns an empty sweep. Arc tangents at intervals of at
     most one degree bound the sector from outside (radial excess <= about
     0.000039 * door width). No handle or access margin is added.
@@ -278,6 +284,21 @@ def door_swing_sector(
     if not sector.is_valid or not isfinite(sector.area) or sector.area <= 0:
         raise SpatialInputError("Door sweep must have valid geometry with finite, positive area")
     return sector
+
+
+def window_plan_segment(window: WindowOpening, wall: WallSegment) -> LineString:
+    """The opening's extent along its wall's interior face, in room X/Z coordinates."""
+    dx, dz = wall.end.x - wall.start.x, wall.end.z - wall.start.z
+    length = hypot(dx, dz)
+    values = (dx, dz, window.offset_along_wall_m, window.width_m)
+    if not all(isfinite(value) for value in values) or length <= 1e-8 or window.width_m <= 0:
+        raise SpatialInputError("Window and wall geometry must be finite with positive size")
+    tx, tz = dx / length, dz / length
+    start = (
+        wall.start.x + tx * window.offset_along_wall_m,
+        wall.start.z + tz * window.offset_along_wall_m,
+    )
+    return LineString([start, (start[0] + tx * window.width_m, start[1] + tz * window.width_m)])
 
 
 def room_floor_polygon(points: Sequence[Vec2]) -> Polygon:

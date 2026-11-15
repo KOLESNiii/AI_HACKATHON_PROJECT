@@ -295,11 +295,31 @@ export interface AuditReport {
   feng_shui: FengShuiReport | null;
 }
 
+export const MAX_LAYOUT_INSTRUCTION_CHARS = 500;
+
+/**
+ * What a layout suggestion should favour once it fits and doors are clear. `balanced`: access in
+ * front of furniture, then walking space. `brighter`: unobstructed windows first. `roomier`:
+ * walking space first. `minimal_changes`: move furniture only to fix a fit or access problem.
+ * `custom`: the request is something else (e.g. "a cosy reading corner"); the assistant follows
+ * the user's wording and only fit, doors and access are checked, so the user judges the rest in
+ * the preview.
+ */
+export type LayoutGoal = "balanced" | "brighter" | "roomier" | "minimal_changes" | "custom";
+
 export interface OptimiseRequest {
   scene: RoomScene;
   /** Items the optimiser must not move. Default []. */
   locked_item_ids: string[];
-  max_candidates: number; // default 200
+  /** Upper bound on layouts evaluated; the server applies its own lower cap. Default 200. */
+  max_candidates: number;
+  /**
+   * The user's request in their own words (max MAX_LAYOUT_INSTRUCTION_CHARS). The assistant can
+   * add locks from it but never unlock or move fixed items. Optional; default null.
+   */
+  instruction?: string | null;
+  /** Explicit choice from the UI; overrides a goal read from `instruction`. Default null. */
+  goal?: LayoutGoal | null;
 }
 
 /**
@@ -313,8 +333,22 @@ export interface LayoutProposal {
   /** item_id -> proposed pose; unlisted items keep their pose. */
   poses: Record<string, Pose2D>;
   report: AuditReport;
-  /** False when nothing beat the current layout. That is an honest result, not an error. */
+  /**
+   * False when nothing beat the current layout. That is an honest result, not an error.
+   * When false, `poses` is empty and `report` audits the unchanged base scene.
+   */
   improved: boolean;
+  /**
+   * `completed`: the assistant finished exploring. `stopped_early`: a limit or an assistant error
+   * cut exploration short; an `improved` proposal is still fully verified.
+   * `assistant_unavailable`: the assistant could not be used and nothing was found. Show the last
+   * two as such; do not present them as "no better layout".
+   */
+  outcome: "completed" | "stopped_early" | "assistant_unavailable";
+  /** The goal that was applied (explicit, read from the instruction, or `balanced`). */
+  goal: LayoutGoal | null;
+  /** Plain text for the preview, built by the server from measured results. */
+  explanation: string;
 }
 
 export interface RenderCamera {

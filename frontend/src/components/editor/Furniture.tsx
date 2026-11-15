@@ -19,7 +19,7 @@ import {
   Vector3,
 } from 'three'
 import type { FurnitureItem } from '../../lib/contracts'
-import { clampToFloor, DEG, footprint } from '../../lib/geometry'
+import { clampToFloor, DEG } from '../../lib/geometry'
 import { useStore } from '../../store'
 import { Tag } from '../ui'
 import { categoryWash, disposeInk, inkify, inkLine } from './ink'
@@ -194,7 +194,13 @@ export const Furniture = memo(function Furniture({
   const play = useStore((s) => s.mode === 'play')
   const { select, setPose, commitEdit, setInteracting } = useStore.getState()
   const controls = useThree((s) => s.controls) as { enabled: boolean } | null
-  const drag = useRef<{ dx: number; dz: number; moved: boolean } | null>(null)
+  const drag = useRef<{
+    dx: number
+    dz: number
+    moved: boolean
+    startX: number
+    startZ: number
+  } | null>(null)
 
   // If the item disappears mid-drag (e.g. deleted), don't leave the camera locked.
   useEffect(
@@ -208,13 +214,21 @@ export const Furniture = memo(function Furniture({
     [controls, setInteracting],
   )
 
+  // Keyed on size only: the outline is drawn in local space, so a drag (which changes
+  // only the pose) must not rebuild the line geometry on every pointer move.
+  const bbox = item?.bbox_m
   const outline = useMemo(() => {
-    if (!item) return []
-    const local = footprint({ ...item, pose: { x: 0, z: 0, yaw_deg: 0 } })
-    return [...local, local[0]].map(
-      (p) => [p.x, 0.012, p.z] as [number, number, number],
-    )
-  }, [item])
+    if (!bbox) return []
+    const w = bbox.width / 2
+    const d = bbox.depth / 2
+    return [
+      [-w, 0.012, -d],
+      [w, 0.012, -d],
+      [w, 0.012, d],
+      [-w, 0.012, d],
+      [-w, 0.012, -d],
+    ] as [number, number, number][]
+  }, [bbox])
 
   if (!item) return null
 
@@ -233,6 +247,8 @@ export const Furniture = memo(function Furniture({
       dx: item.pose.x - p.x,
       dz: item.pose.z - p.z,
       moved: false,
+      startX: item.pose.x,
+      startZ: item.pose.z,
     }
     ;(e.target as unknown as Element).setPointerCapture(e.pointerId)
     if (controls) controls.enabled = false
@@ -257,7 +273,13 @@ export const Furniture = memo(function Furniture({
   const onUp = (e: ThreeEvent<PointerEvent>) => {
     if (!drag.current) return
     ;(e.target as unknown as Element).releasePointerCapture(e.pointerId)
-    if (drag.current.moved) commitEdit()
+    const live = useStore.getState().scene.furniture.find((i) => i.id === id)
+    const changed =
+      live &&
+      (live.pose.x !== drag.current.startX ||
+        live.pose.z !== drag.current.startZ)
+    if (drag.current.moved)
+      commitEdit(e.type !== 'pointercancel' && changed ? 'place' : null)
     drag.current = null
     if (controls) controls.enabled = true
     setInteracting(false)

@@ -38,7 +38,7 @@ export function PlayOverlay({
     return (
       <div className="pointer-events-none absolute inset-0 select-none">
         <div className="scroll-panel absolute top-6 left-6 px-3 py-2 text-[12px]">
-          WASD walk · Mouse look · L lighting · Esc return to editor
+          WASD walk · Mouse look · L lighting · M mute · Esc return to editor
         </div>
         {lighting ? (
           <LightingPanel controller={controller} />

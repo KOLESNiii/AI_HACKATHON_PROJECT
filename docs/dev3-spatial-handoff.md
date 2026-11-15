@@ -125,3 +125,26 @@ Verification from the repository root:
 ```bash
 uv run --extra spatial pytest tests/spatial_engine/test_handoff_cases.py
 ```
+
+## Layout suggestions (`POST /solve`)
+
+Implemented. Send `OptimiseRequest`: the scene, `locked_item_ids`, and optionally
+the user's typed `instruction` (max 500 characters) and a `goal` chip
+(`balanced`, `brighter`, `roomier`, `minimal_changes`, `custom`; the chip overrides what
+the assistant reads from the text). Expect several seconds up to 90 seconds, so
+show progress and allow the user to keep editing.
+
+Handling the `LayoutProposal`:
+
+- Discard it if `report.scene_id` or `report.scene_revision` no longer matches
+  the editor's scene.
+- `improved: true`: preview `poses` (only changed items are listed) with
+  `explanation`. On accept, copy poses by item ID, increment the revision and
+  call `/audit`. On reject, change nothing.
+- `improved: false` with `outcome: "completed"`: tell the user nothing better
+  was found and show `explanation`.
+- `outcome: "assistant_unavailable"`: show it as a service problem, not as "your
+  room is fine". `outcome: "stopped_early"` with `improved: true` is still a
+  verified layout; mention the search was cut short.
+- `goal` is the goal that was applied; show it so the user can correct it.
+- HTTP 422 means the request was invalid (for example an unknown locked ID).

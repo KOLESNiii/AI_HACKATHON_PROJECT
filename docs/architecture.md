@@ -34,6 +34,30 @@ Frontend and service directories can be developed independently. Coordinate
 changes to root manifests, lockfiles, proxy routing, and shared contracts.
 
 
+## Frontend audio
+
+`frontend/src/audio/` owns a native Web Audio mixer with music, effects and master
+gain buses. One `SoundControls` instance lives outside screen transitions and
+subscribes to typed semantic cues. Store actions emit cues after successful edits;
+drag handlers emit once on completion, and unchanged/cancelled gestures are silent.
+Effects are synthesized from original resonant tones and filtered noise, cached as
+short buffers, capped at six voices, with rotation ticks throttled to 100 ms.
+
+Two streamed HTML audio elements repeat the bundled `public/audio/reverie.mp3`
+with a five-second equal-power crossfade. Navigation preserves playback; Play
+reduces music by 25%. Music loading never gates the room UI. Failed music stops
+retrying for that app session while effects remain available; unsupported audio
+leaves the UI functional. Blocked autoplay retries on user gestures. Hidden tabs
+pause media and suspend the context, and late playback results respect mute and
+disposal. React Strict Mode cleanup removes subscriptions, timers and audio nodes.
+
+A separate Zustand store saves validated audio preferences under
+`spaceshift.audio.v1` in localStorage, tolerating disabled/corrupt storage. Defaults
+are music 20%, effects 55%, both enabled. Audio preferences never enter `RoomScene`
+or bump its revision. No service, API key, runtime dependency or backend contract
+is added. Credits, source and reproducible asset preparation are in
+`frontend/public/audio/NOTICE.md`.
+
 ## Workstream ownership
 
 `ARCHITECTURE_DAG.md` defines the revised four-person execution plan: Dev 1 owns
@@ -101,8 +125,21 @@ Audit requests build a request-local geometry context once, reusing item volumes
 walking projections, broad-phase bounds and free-floor geometry across checks.
 It is rebuilt after each request and is never retained across scene revisions.
 
-Scoring/optimisation, persistence and live editor wiring are separate work. No
-`POST /solve` route exists yet. See the spatial README and Dev 3 handoff for examples.
+Persistence and live editor wiring are separate work. See the spatial README and
+Dev 3 handoff for examples.
+
+## Layout suggestion API
+
+`POST /solve` on port 8002 accepts `OptimiseRequest` and returns `LayoutProposal`.
+It is the only spatial route that calls a provider: Claude Sonnet through the
+official `anthropic` SDK (spatial extra), using `ANTHROPIC_API_KEY` and optional
+`SPACESHIFT_LAYOUT_MODEL` from root `.env`. The model proposes furniture poses
+through three validated tools; the service audits each draft, enforces fixed and
+locked items and per-request limits, re-audits the best draft and returns it only
+if it is valid and better. Assistant failures and limits are reported in the
+response's `outcome` with HTTP 200, never as a clean or successful proposal;
+invalid input is HTTP 422. Nothing is persisted and the editor's scene is not
+changed. Details and limits are in the spatial README.
 
 ## Editor play mode
 
@@ -232,7 +269,8 @@ JSON/Markdown reports; see the asset README for configuration and retry commands
 
 `assets/normalisation.py` fits raw meshes to metric bounds before serving them. Known
 dimensions are matched exactly; unknown dimensions use the category height and require
-correction. If any estimated side exceeds 3 times its category size, normalisation refuses
+correction. Retailer GLBs instead keep their metre-scale extents, still marked estimated
+and requiring dimension correction. If any estimated side exceeds 3 times its category size, normalisation refuses
 the mesh and reconstruction retains its proxy with a warning. Supplying dimensions allows
 the stored raw mesh to be retried offline. Unused vertices are removed before fitting;
 providers without a known front convention request an orientation correction.
@@ -283,6 +321,18 @@ export async function fetchRoomScene(roomId: string): Promise<RoomScene> {
 
 The response matches `roomScene(roomId)` (same IDs, shell and model URLs, fixture poses) except
 that doors sit exactly on their walls. The editor still owns `revision` after load.
+
+## Read-only feng shui evaluation
+
+The spatial service exposes `POST /feng-shui`; service-local request/result models
+in `feng_shui.py` wrap the unchanged `RoomScene` with optional mirror surfaces,
+activity anchors and observations. The complete scene and deterministic audit feed
+one bounded model call using the repository skill at
+`services/spatial_engine/skills/feng-shui/SKILL.md` as the system instruction.
+Existing Anthropic configuration is reused. Output is schema-validated and finding
+IDs are checked against the input; failure remains explicitly unassessed. It does
+not feed layout ranking or populate the deterministic audit's feng shui field.
+See the spatial service README for input semantics and failure behaviour.
 
 ## Real-input room (#10)
 

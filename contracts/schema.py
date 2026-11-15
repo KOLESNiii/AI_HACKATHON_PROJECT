@@ -85,6 +85,16 @@ MIN_HEIGHT_OVERLAP_M = 0.005
 WALK_HEADROOM_M = 2.0
 """A part whose y_min is below this blocks the floor beneath it for walking."""
 
+MAX_LAYOUT_INSTRUCTION_CHARS = 500
+
+LayoutGoal = Literal["balanced", "brighter", "roomier", "minimal_changes", "custom"]
+"""What a layout suggestion should favour once it fits and doors are clear. `balanced`: access
+in front of furniture, then walking space. `brighter`: unobstructed windows first. `roomier`:
+walking space first. `minimal_changes`: move furniture only to fix a fit or access problem.
+`custom`: the request is something else (e.g. "a cosy reading corner"); the assistant
+follows the user's wording and only fit, doors and access are checked, so the user judges
+the rest in the preview."""
+
 MAX_FLOOR_PLAN_IMAGES = 5
 MAX_ROOM_VIDEOS = 5
 MediaUrl = Annotated[str, Field(pattern=GLB_URL_PATTERN)]
@@ -440,6 +450,13 @@ class OptimiseRequest(ContractModel):
     locked_item_ids: List[str] = []
     """Items the optimiser must not move."""
     max_candidates: int = Field(default=200, ge=1)
+    """Upper bound on layouts evaluated; the server applies its own lower cap."""
+    instruction: Optional[str] = Field(default=None, max_length=MAX_LAYOUT_INSTRUCTION_CHARS)
+    """The user's request in their own words, e.g. "keep the bed, move the desk near the
+    window". Interpreted by the assistant; it can add locks but never unlock or move fixed items."""
+    goal: Optional[LayoutGoal] = None
+    """An explicit choice from the UI. It overrides any goal read from `instruction`. When both
+    are None the goal is `balanced`."""
 
 
 class LayoutProposal(ContractModel):
@@ -457,7 +474,18 @@ class LayoutProposal(ContractModel):
     """item_id -> proposed pose. Items not listed keep their current pose."""
     report: AuditReport
     improved: bool
-    """False when no candidate beat the current layout. That is an honest result, not an error."""
+    """False when no candidate beat the current layout. That is an honest result, not an error.
+    When False, `poses` is empty and `report` audits the unchanged base scene."""
+    outcome: Literal["completed", "stopped_early", "assistant_unavailable"] = "completed"
+    """`completed`: the assistant finished exploring. `stopped_early`: a time, call or evaluation
+    limit, or an assistant error, cut exploration short; an `improved` proposal is still fully
+    verified. `assistant_unavailable`: the assistant could not be used and nothing was found, so
+    `improved` is False. Show the last two as such; do not present them as "no better layout"."""
+    goal: Optional[LayoutGoal] = None
+    """The goal that was applied (explicit, read from the instruction, or `balanced`)."""
+    explanation: str = ""
+    """Plain text for the preview, built by the server from measured results. It also lists
+    parts of the instruction that could not be handled."""
 
 
 class RenderCamera(ContractModel):

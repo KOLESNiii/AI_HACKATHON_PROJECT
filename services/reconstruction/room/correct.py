@@ -66,7 +66,7 @@ class InvalidEdit(Exception):
 
 def _point(p: Vec2, factor: float) -> Vec2:
     # Full precision: rounding endpoints and widths separately can make a door wider than its
-    # wall (the audit's tolerance is 1e-8 m). Unrounded, the room is exactly similar.
+    # wall (the audit allows only POSITION_TOLERANCE_M). Unrounded, the room is exactly similar.
     return Vec2(x=p.x * factor, z=p.z * factor)
 
 

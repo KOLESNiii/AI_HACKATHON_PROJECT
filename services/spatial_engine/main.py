@@ -1,11 +1,28 @@
-from fastapi import FastAPI, HTTPException, Request
+import os
+from collections.abc import Iterator
+from contextlib import contextmanager
+from functools import lru_cache
+
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from shapely.errors import ShapelyError  # type: ignore[import-untyped]
 
-from contracts.schema import AuditReport, RoomScene
+from contracts.schema import AuditReport, LayoutProposal, OptimiseRequest, RoomScene
+from services.spatial_engine.agent import (
+    DEFAULT_INTERPRET_MODEL,
+    DEFAULT_MODEL,
+    AnthropicLayoutModel,
+    LayoutModel,
+    propose_layout,
+)
+from services.spatial_engine.feng_shui import (
+    FengShuiRequest,
+    FengShuiResult,
+    assess_feng_shui,
+)
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.report import audit_scene
 
@@ -38,11 +55,11 @@ async def invalid_request(_request: Request, exc: RequestValidationError) -> JSO
     )
 
 
-@app.post("/audit", response_model=AuditReport)
-def audit(scene: RoomScene) -> AuditReport:
-    """Return current spatial findings; scoring, glare and Feng Shui are not assessed."""
+@contextmanager
+def _input_errors() -> Iterator[None]:
+    """Report bad scenes and geometry as 422 without echoing input; other errors stay 500s."""
     try:
-        return audit_scene(scene)
+        yield
     except ValidationError as exc:
         raise HTTPException(
             status_code=422,
@@ -68,6 +85,53 @@ def audit(scene: RoomScene) -> AuditReport:
         ) from exc
 
 
+@app.post("/audit", response_model=AuditReport)
+def audit(scene: RoomScene) -> AuditReport:
+    """Return current spatial findings; scoring, glare and Feng Shui are not assessed."""
+    with _input_errors():
+        return audit_scene(scene)
+
+
+@lru_cache(maxsize=8)
+def _cached_model(api_key: str, model: str, effort: str = "medium") -> AnthropicLayoutModel:
+    return AnthropicLayoutModel(api_key, model, effort=effort)
+
+
+def get_layout_model() -> LayoutModel | None:
+    """The configured assistant, or None when no API key is set. The key is never logged."""
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return None
+    model = os.environ.get("SPACESHIFT_LAYOUT_MODEL", "").strip() or DEFAULT_MODEL
+    return _cached_model(api_key, model)
+
+
+def get_interpreter_model(request: OptimiseRequest) -> LayoutModel | None:
+    """The faster model that reads the typed request; None falls back to the main model."""
+    if not (request.instruction or "").strip():
+        return None
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return None
+    model = os.environ.get("SPACESHIFT_INTERPRET_MODEL", "").strip() or DEFAULT_INTERPRET_MODEL
+    return _cached_model(api_key, model, effort="low")
+
+
+@app.post("/solve", response_model=LayoutProposal)
+def solve(
+    request: OptimiseRequest,
+    model: LayoutModel | None = Depends(get_layout_model),
+    interpreter: LayoutModel | None = Depends(get_interpreter_model),
+) -> LayoutProposal:
+    """Suggest furniture poses for the request; never modifies the submitted scene.
+
+    Always inspect `improved` and `outcome`: assistant failures and limits are reported
+    in a 200 response, not as a clean or successful proposal.
+    """
+    with _input_errors():
+        return propose_layout(request, model, interpreter=interpreter)
+
+
 @app.exception_handler(Exception)
 async def unexpected_failure(_request: Request, _exc: Exception) -> JSONResponse:
     """Programming errors remain 500s; return structured output without leaking internals."""
@@ -83,3 +147,13 @@ async def unexpected_failure(_request: Request, _exc: Exception) -> JSONResponse
             ]
         },
     )
+
+
+@app.post("/feng-shui", response_model=FengShuiResult)
+def feng_shui(
+    request: FengShuiRequest,
+    model: LayoutModel | None = Depends(get_layout_model),
+) -> FengShuiResult:
+    """Assess traditional layout preferences without changing the scene or audit score."""
+    with _input_errors():
+        return assess_feng_shui(request, model)
