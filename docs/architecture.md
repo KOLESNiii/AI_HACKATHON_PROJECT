@@ -158,13 +158,18 @@ processing, room selection and editing. Framer Motion coordinates screen and
 room-panel transitions using the existing dependency; processing still advances
 on demo timers rather than reconstruction-job progress.
 
-`Landscape` stays mounted for the app session and is shown on home/processing
-screens. It lazy-loads the locally vendored MIT-licensed Shan Shui Inf engine as
-text into an iframe with `sandbox="allow-scripts"`. The adapter hides the original
-controls, fits the viewport and pauses/resumes drift through source-checked
-`postMessage` events. A procedural canvas fallback paints while the engine starts
-or if loading/adaptation fails. No provider requests or extra configuration are
-required. Attribution and the original license live beside the vendored source.
+`Landscape` stays mounted for the app session and scrolls four pre-rendered WebP
+panoramas on home/processing screens. Each panorama has two adjacent copies for a
+seamless CSS transform loop; hidden panoramas pause, and reduced-motion preferences
+pause the landscape animation. Home and floor-plan processing have distinct images;
+room builds alternate between the other two. No landscape engine runs in the browser.
+
+`frontend/scripts/generate-landscapes.ts` optionally regenerates the checked-in
+images from the locally vendored MIT-licensed Shan Shui Inf engine, using fixed
+seeds and headless Chromium. Set `CHROME_BIN` if Chromium is not in Playwright's
+local cache. Image regeneration needs no provider keys and is not part of normal
+setup or builds. Attribution/licenses accompany the vendored source and the public
+landscapes; the vendored HTML is retained only for regeneration, not bundled at runtime.
 
 ## Individual furniture meshes and proxies (#16)
 

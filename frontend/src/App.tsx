@@ -51,6 +51,16 @@ export default function App() {
   const toFloorPlan = useCallback(() => setScreen('floorplan'), [setScreen])
   const toEditor = useCallback(() => setScreen('editor'), [setScreen])
   const roomLabel = findRoom(segmentId)?.label
+  const roomSession = useStore((s) => s.roomSession)
+  // A different panorama per screen; room builds alternate between two.
+  const landscape =
+    screen === 'home'
+      ? 0
+      : screen === 'reading'
+        ? 1
+        : screen === 'building'
+          ? 2 + (roomSession % 2)
+          : null
 
   // Direction of the latest screen change, derived during render (React's
   // "adjust state on prop change" pattern) so entering and exiting screens agree.
@@ -93,11 +103,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
       <div className="h-full">
         {/* Mounted for the whole session so the loader opens on a drawn landscape. */}
-        <Landscape
-          visible={
-            screen === 'home' || screen === 'reading' || screen === 'building'
-          }
-        />
+        <Landscape index={landscape} />
         <AnimatePresence mode="wait" initial={false} custom={dir}>
           <motion.div
             key={screen}

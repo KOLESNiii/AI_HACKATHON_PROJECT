@@ -85,6 +85,9 @@ upload your inputs or **Skip with demo home**. Pick a floor and room; use **Buil
 this room**, double-click the room, or press Enter on the selected room to open it.
 Processing screens show an ink landscape and progress indicator while the demo
 advances through its simulated processing steps.
+The landscape images are included in the frontend assets. To regenerate them
+optionally, run `bun frontend/scripts/generate-landscapes.ts` with Chromium
+available (`CHROME_BIN` can point to its executable).
 `GET /scenes/<room_id>` returns a whole room assembled for the editor and the audit: a demo
 room (`g-reception`) or a room of an uploaded floor plan (see [architecture](docs/architecture.md#scene-assembly-route-9)).
 

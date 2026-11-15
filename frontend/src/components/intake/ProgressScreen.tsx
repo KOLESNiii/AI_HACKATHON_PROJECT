@@ -1,6 +1,30 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import './ProgressScreen.css'
-import { PROVERBS } from './shanShui'
+
+/** Chinese proverbs shown while processing, with English glosses. */
+const PROVERBS: [string, string][] = [
+  [
+    '千里之行，始于足下',
+    'A journey of a thousand miles begins with a single step.',
+  ],
+  ['上善若水', 'The highest goodness is like water.'],
+  ['水滴石穿', 'Dripping water wears through stone.'],
+  ['山高水长', 'As enduring as mountains and flowing rivers.'],
+  ['塞翁失马，焉知非福', 'What seems a misfortune may be a blessing.'],
+  [
+    '海纳百川，有容乃大',
+    'The sea embraces all rivers; openness makes greatness.',
+  ],
+  ['静水流深', 'Still waters run deep.'],
+  ['读万卷书，行万里路', 'Read ten thousand books; travel ten thousand miles.'],
+  ['不积跬步，无以至千里', 'Great journeys are made of small steps.'],
+  [
+    '山不转路转，路不转人转',
+    'When the mountain cannot turn, find another path.',
+  ],
+  ['知足常乐', 'Contentment brings lasting happiness.'],
+  ['顺其自然', 'Let things follow their natural course.'],
+]
 
 const PROVERB_MS = 11500 // ~0.5s dissolve, ~0.8s reveal, the rest held
 const DISSOLVE_MS = 550

@@ -1,23 +1,11 @@
-/* Processing screen: Shan Shui landscape, proverb in mist, and the loading bar. */
+/* Front page and processing screens: Shan Shui landscape, proverb in mist, loading bar. */
 
-.mist-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-  pointer-events: none;
-}
-/* The engine's white fills multiply into our paper; its ink stays ink. */
-.mist-art--engine {
-  opacity: 0;
-  mix-blend-mode: multiply;
-  background: transparent;
-  transition: opacity 1.6s ease;
-}
-.mist-art--engine.is-ready {
-  opacity: 1;
+/* Landscape backdrop: two copies of a seamless panorama slide one width per loop
+   (duration set per panorama in Landscape.tsx). */
+@keyframes landscape-drift {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 /* The words condense out of a pool of mist. */
@@ -145,7 +133,7 @@
     transform 0.7s ease-out 0.3s;
 }
 
-/* Determinate fill; runs on the compositor so it stays smooth while the engine paints. */
+/* Determinate fill; runs on the compositor, so it stays smooth under main-thread work. */
 .mist-fill {
   transform-origin: left;
   transform: scaleX(0);
@@ -221,7 +209,7 @@
   .mist-dots {
     width: 3ch;
   }
-  .mist-art--engine {
-    transition-duration: 0.3s;
+  .landscape-strip {
+    animation-play-state: paused !important;
   }
 }

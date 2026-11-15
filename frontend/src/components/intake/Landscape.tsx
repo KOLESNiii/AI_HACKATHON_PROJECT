@@ -1,100 +1,77 @@
-import { useEffect, useRef, useState } from 'react'
+/**
+ * Endless Shan Shui landscape behind the front page and the processing screens.
+ *
+ * Each landscape is a pre-rendered panorama that wraps seamlessly (made by
+ * scripts/generate-landscapes.ts from Lingdong Huang's Shan Shui Inf, MIT). Two
+ * copies sit side by side and slide by one image width forever with a CSS transform
+ * animation, so the compositor does all the work and nothing is generated at runtime.
+ *
+ * Mounted once for the whole app (see App.tsx) so every panorama is loaded before
+ * it's needed. Hidden panoramas pause, so each one resumes where it left off.
+ */
+import { useState } from 'react'
 import './ProgressScreen.css'
-import {
-  SHAN_SHUI_READY,
-  SHAN_SHUI_RUN,
-  adaptShanShui,
-  loadShanShui,
-  paintFallback,
-} from './shanShui'
+
+const LANDSCAPES = [1, 2, 3, 4].map(
+  (n) => `${import.meta.env.BASE_URL}landscapes/landscape-${n}.webp`,
+)
+
+// Drift at the engine's own pace: 36 world units/s, rendered 1200px per 800/1.142
+// units of height. Loops differ in length, so each one's duration follows its width.
+const IMAGE_PX_PER_S = 36 * (1200 / (800 / 1.142))
 
 /**
- * Endless Shan Shui landscape behind the processing screens.
- *
- * Mounted once for the whole app (see App.tsx) so the engine boots while the user is
- * still on the upload screen. A fresh engine per screen needs about a second to draw,
- * which is longer than a short processing step. While hidden, the engine is paused
- * with its last frame kept, so each wait opens on a drawn landscape that carries on
- * drifting from where the previous wait left it. The procedural fallback only paints
- * while the landscape is visible and the engine isn't ready (still booting, or failed).
+ * Where each panorama starts, as a fraction of its loop. Its wrap crossfade sits in
+ * the first ~12%, so every landscape opens on clean scenery past it.
  */
-export function Landscape({ visible }: { visible: boolean }) {
-  const canvas = useRef<HTMLCanvasElement>(null)
-  const frame = useRef<HTMLIFrameElement>(null)
-  const [srcDoc, setSrcDoc] = useState<string>()
-  const [ready, setReady] = useState(false)
+const startAt = (i: number) => 0.15 + 0.12 * i
 
-  // Boot the engine once the app is idle, so it doesn't compete with first paint.
-  useEffect(() => {
-    let live = true
-    const boot = () =>
-      loadShanShui().then((src) => {
-        const doc = src && adaptShanShui(src)
-        if (live && doc) setSrcDoc(doc)
-      })
-    const idle = window.requestIdleCallback
-      ? window.requestIdleCallback(boot, { timeout: 1500 })
-      : window.setTimeout(boot, 300)
-    const onMessage = (e: MessageEvent) => {
-      if (
-        e.source === frame.current?.contentWindow &&
-        e.data?.type === SHAN_SHUI_READY
-      )
-        setReady(true)
-    }
-    window.addEventListener('message', onMessage)
-    return () => {
-      live = false
-      if (window.cancelIdleCallback) window.cancelIdleCallback(idle)
-      else clearTimeout(idle)
-      window.removeEventListener('message', onMessage)
-    }
-  }, [])
-
-  // Drift only while shown.
-  useEffect(() => {
-    if (!ready) return
-    frame.current?.contentWindow?.postMessage(
-      { type: SHAN_SHUI_RUN, run: visible },
-      '*',
-    )
-  }, [ready, visible])
-
-  // Fallback painting while shown and the engine isn't up yet. It stays a little
-  // after the engine is ready, so the engine can fade in over it.
-  const [engineIn, setEngineIn] = useState(false)
-  useEffect(() => {
-    if (!ready) return
-    const t = setTimeout(() => setEngineIn(true), 1800)
-    return () => clearTimeout(t)
-  }, [ready])
-  useEffect(() => {
-    if (!visible || engineIn || !canvas.current) return
-    return paintFallback(canvas.current)
-  }, [visible, engineIn])
+export function Landscape({ index }: { index: number | null }) {
+  // Loop durations in seconds, known once each image has loaded.
+  const [loops, setLoops] = useState<(number | null)[]>(() =>
+    LANDSCAPES.map(() => null),
+  )
 
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 -z-10 isolate bg-paper-base transition-opacity duration-300 ease-out"
-      style={{ opacity: visible ? 1 : 0 }}
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-paper-base transition-opacity duration-300 ease-out"
+      style={{ opacity: index == null ? 0 : 1 }}
     >
-      {/* Fades out as the engine fades in, so its frozen last frame never shows through. */}
-      <canvas
-        ref={canvas}
-        className="mist-art transition-opacity duration-[1600ms]"
-        style={{ opacity: ready ? 0 : 1 }}
-      />
-      {srcDoc && (
-        <iframe
-          ref={frame}
-          srcDoc={srcDoc}
-          sandbox="allow-scripts"
-          tabIndex={-1}
-          title="Endlessly generated Chinese landscape"
-          className={`mist-art mist-art--engine ${ready ? 'is-ready' : ''}`}
-        />
-      )}
+      {LANDSCAPES.map((src, i) => {
+        const active = i === index
+        const loop = loops[i]
+        return (
+          <div
+            key={src}
+            className="absolute inset-0 transition-opacity duration-700 ease-out"
+            style={{ opacity: active && loop ? 1 : 0 }}
+          >
+            <div
+              className="landscape-strip flex h-full w-max will-change-transform"
+              style={
+                loop
+                  ? {
+                      animation: `landscape-drift ${loop}s linear ${-startAt(i) * loop}s infinite`,
+                      animationPlayState: active ? 'running' : 'paused',
+                    }
+                  : undefined
+              }
+            >
+              <img
+                src={src}
+                alt=""
+                className="h-full max-w-none"
+                onLoad={(e) => {
+                  const s = e.currentTarget.naturalWidth / IMAGE_PX_PER_S
+                  setLoops((l) => l.map((v, j) => (j === i ? s : v)))
+                }}
+              />
+              <img src={src} alt="" className="h-full max-w-none" />
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
