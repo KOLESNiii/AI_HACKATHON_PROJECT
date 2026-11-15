@@ -1,0 +1,191 @@
+"""Room corrections (#11): rescaling a floor, carrying furniture over, and pose edits."""
+
+from __future__ import annotations
+
+import io
+import math
+
+import pytest
+
+from contracts.schema import FurnitureItem, ParsedFloor, ParsedRoom, Pose2D, RoomScene
+from services.reconstruction.room import footprint as fp
+from services.reconstruction.room.correct import (
+    InvalidEdit,
+    StaleEdit,
+    apply_pose_edit,
+    carry_furniture,
+    rescale_floor,
+    rescale_room,
+)
+from services.reconstruction.room.openings import conform_openings
+
+URL = "/api/reconstruction/shells/plan-x-floor-0-room-0.glb"
+
+
+def room(width: float = 6.0, depth: float = 4.0) -> RoomScene:
+    pts = [(0.0, 0.0), (width, 0.0), (width, depth), (0.0, depth)]
+    walls = [
+        {
+            "id": f"w{i}",
+            "start": {"x": pts[i][0], "z": pts[i][1]},
+            "end": {"x": pts[(i + 1) % 4][0], "z": pts[(i + 1) % 4][1]},
+            "thickness_m": 0.2,
+        }
+        for i in range(4)
+    ]
+    return RoomScene.model_validate(
+        {
+            "scene_id": "plan-x-floor-0-room-0",
+            "shell_glb_url": URL,
+            "floor_polygon": [{"x": x, "z": z} for x, z in pts],
+            "walls": walls,
+            "windows": [
+                {
+                    "id": "win0",
+                    "wall_id": "w0",
+                    "offset_along_wall_m": 1.0,
+                    "width_m": 1.2,
+                    "plan_normal_deg": 0.0,
+                }
+            ],
+            "doors": [{"id": "door0", "wall_id": "w2", "hinge_pos": {"x": 5.0, "z": depth}}],
+            "furniture": [],
+        }
+    )
+
+
+def item(item_id: str, x: float, z: float, yaw: float, w: float, d: float) -> FurnitureItem:
+    return FurnitureItem.model_validate(
+        {
+            "id": item_id,
+            "name": item_id,
+            "category": "storage",
+            "source": "extracted_video",
+            "glb_url": f"/api/reconstruction/assets/{item_id}.glb",
+            "bbox_m": {"width": w, "height": 1.0, "depth": d},
+            "pose": {"x": x, "z": z, "yaw_deg": yaw},
+            "correction_needed": ["dimensions", "placement"],
+        }
+    )
+
+
+def length(scene: RoomScene, wall_id: str) -> float:
+    w = next(w for w in scene.walls if w.id == wall_id)
+    return math.dist((w.start.x, w.start.z), (w.end.x, w.end.z))
+
+
+def inside(scene: RoomScene, it: FurnitureItem) -> bool:
+    poly = [(p.x, p.z) for p in scene.floor_polygon]
+    return fp.covered_by(fp.footprint(it.bbox_m, it.pose).points, poly)
+
+
+def test_rescaling_scales_plan_lengths_and_keeps_heights() -> None:
+    before = room()
+    after = rescale_room(before, 1.1)
+    for wall in before.walls:
+        assert length(after, wall.id) == pytest.approx(length(before, wall.id) * 1.1, abs=1e-3)
+    assert [w.height_m for w in after.walls] == [w.height_m for w in before.walls]
+    assert [w.thickness_m for w in after.walls] == [0.22] * 4  # traced at image scale
+    (win,) = after.windows
+    assert (win.offset_along_wall_m, win.width_m) == (1.1, 1.32)
+    assert (win.sill_height_m, win.plan_normal_deg) == (0.9, 0.0)
+    (door,) = after.doors
+    assert (door.hinge_pos.x, door.hinge_pos.z, door.width_m) == (5.5, 4.4, 0.935)
+    assert door.head_height_m == before.doors[0].head_height_m
+    assert conform_openings(after) == (after, [])  # every door exactly on its wall
+    assert after.shell_glb_url.startswith(URL.removesuffix(".glb") + ".")  # a new file
+
+
+def test_a_rescaled_shell_matches_the_rescaled_room() -> None:
+    trimesh = pytest.importorskip("trimesh")
+    pytest.importorskip("shapely")
+    from services.reconstruction.room.shell import shell_glb
+
+    after = rescale_room(room(), 1.25)
+    shell = trimesh.load(io.BytesIO(shell_glb(after)), file_type="glb")
+    lo, hi = shell.bounds
+    t = 0.2 * 1.25  # walls extend outward by their thickness
+    assert lo[0] == pytest.approx(-t, abs=1e-6) and hi[0] == pytest.approx(7.5 + t, abs=1e-6)
+    assert lo[2] == pytest.approx(-t, abs=1e-6) and hi[2] == pytest.approx(5.0 + t, abs=1e-6)
+
+
+def test_a_factor_of_one_is_the_parse() -> None:
+    assert rescale_room(room(), 1.0) == room()
+
+
+def test_a_rescaled_floor_has_user_corrected_dimensions() -> None:
+    parsed = ParsedRoom(
+        room_id="floor-0-room-0",
+        name="Bedroom",
+        area_m2=24.0,
+        dimension_source="estimated",
+        correction_needed=["dimensions", "openings"],
+        scene=room(),
+    )
+    floor = ParsedFloor(
+        floor_id="floor-0", name="Ground", level=0, source_image_index=0, rooms=[parsed]
+    )
+    (after,) = rescale_floor(floor, 0.5).rooms
+    assert after.dimension_source == "user_corrected"
+    assert after.correction_needed == ["openings"]
+    assert after.area_m2 == 6.0
+    assert length(after.scene, "w0") == pytest.approx(3.0)
+
+
+def test_furniture_is_carried_along_its_wall_with_its_yaw() -> None:
+    before = room()
+    flush = item("wardrobe", 6.0 - 0.3, 2.0, 270.0, 1.0, 0.6)  # back on the east wall
+    turned = item("table", 2.0, 2.0, 30.0, 0.8, 0.8)
+    old = before.model_copy(update={"furniture": [flush, turned]})
+    new = rescale_room(before, 1.5)
+    result = carry_furniture(old, new)
+    wardrobe, table = result.items
+    assert (wardrobe.pose.x, wardrobe.pose.z) == pytest.approx((9.0 - 0.3, 3.0))  # still flush
+    assert wardrobe.pose.yaw_deg == 270.0 and table.pose.yaw_deg == 30.0
+    for a, b in ((flush, wardrobe), (turned, table)):
+        assert b.model_dump(exclude={"pose"}) == a.model_dump(exclude={"pose"})
+    assert {r.method for r in result.records.values()} == {"kept"}
+
+
+def test_an_item_pushed_out_of_a_smaller_room_is_placed_again() -> None:
+    before = room()
+    middle = item("chest", 3.0, 2.0, 0.0, 0.5, 0.5)  # 1.75 m from the north wall
+    old = before.model_copy(update={"furniture": [middle]})
+    new = rescale_room(before, 0.5)  # 3 x 2 m: 1.75 m from that wall is on the far one
+    result = carry_furniture(old, new)
+    (moved,) = result.items
+    assert inside(new, moved)
+    assert result.records["chest"].method == "hint"  # placed again, not kept
+    assert result.records["chest"].notes[0].startswith("left the room")
+    assert moved.pose.yaw_deg == 0.0 and moved.correction_needed == middle.correction_needed
+
+
+def test_a_pose_edit_keeps_poses_only() -> None:
+    kept = room().model_copy(
+        update={
+            "furniture": [
+                item("a", 1.0, 1.0, 0.0, 0.5, 0.5),
+                item("b", 3.0, 1.0, 0.0, 0.5, 0.5).model_copy(
+                    update={"correction_needed": ["placement", "orientation"]}
+                ),
+            ]
+        }
+    )
+    a, b = kept.furniture
+    turned = b.model_copy(update={"pose": Pose2D(x=3.0, z=1.0, yaw_deg=90.0)})
+    edit = kept.model_copy(update={"furniture": [turned], "revision": 3, "sun_hour": 9.0})
+    saved = apply_pose_edit(kept, edit)
+    assert saved.revision == 3 and saved.sun_hour == 9.0
+    assert saved.furniture[0] == a  # left out of the edit: unchanged
+    assert saved.furniture[1].pose.yaw_deg == 90.0
+    assert saved.furniture[1].correction_needed == ["placement"]  # turned, not moved
+
+    with pytest.raises(StaleEdit):
+        apply_pose_edit(saved, edit)  # not newer
+    with pytest.raises(StaleEdit):
+        apply_pose_edit(kept, edit.model_copy(update={"walls": rescale_room(kept, 2).walls}))
+    with pytest.raises(InvalidEdit, match="twice"):
+        apply_pose_edit(kept, edit.model_copy(update={"furniture": [turned, turned]}))
+    with pytest.raises(InvalidEdit, match="is_proxy"):
+        proxy = turned.model_copy(update={"is_proxy": True})
+        apply_pose_edit(kept, edit.model_copy(update={"furniture": [proxy]}))

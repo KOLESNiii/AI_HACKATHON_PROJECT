@@ -92,6 +92,8 @@ available (`CHROME_BIN` can point to its executable).
 room (`g-reception`) or a room of an uploaded floor plan (see [architecture](docs/architecture.md#scene-assembly-route-9)).
 The real-input room (`examples/three_floor.png` with the furniture of `examples/three_floor_3.mp4`,
 as labelled proxies) is described in [architecture](docs/architecture.md#real-input-room-10).
+`PUT /scenes/<scene_id>` keeps the user's furniture poses and `POST /scenes/<scene_id>/scale`
+corrects a floor's scale from one wall's real length (see [architecture](docs/architecture.md#corrections-11)).
 
 The frontend displays live service connection status. The spatial service also
 implements `POST /audit`: send a `RoomScene` to receive collision, boundary, door,

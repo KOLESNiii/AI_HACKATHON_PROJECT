@@ -9,7 +9,8 @@ labelled proxy (a dimensioned box with a front marker, `is_proxy`).
 
 Rooms without a binding get `NoFurniture`. A bound room is checked against the walls the
 binding was made for: a scene ID only names the plan image, and the same image parsed without
-its labels is a different room. Such a room gets no furniture and says why. A bound room
+its labels is a different room. Such a room gets no furniture and says why. The check is on
+shape, so a room whose scale the user corrected (#11) keeps its furniture. A bound room
 whose furniture is not (fully) extracted yet gets what there is so far, a warning, and
 `complete = False`, so the scene is not kept and the next request looks again.
 """
@@ -35,7 +36,7 @@ log = logging.getLogger(__name__)
 BINDINGS_PATH = Path(__file__).parent / "fixtures" / "real_rooms.json"
 
 WALL_TOLERANCE = 0.05
-"""Relative wall-length tolerance: absorbs small scale differences between label readings."""
+"""Relative wall-length tolerance, after fitting the room's scale."""
 WALL_TOLERANCE_M = 0.05
 """Absolute floor for the tolerance, for very short walls."""
 
@@ -78,11 +79,17 @@ def default_bindings() -> dict[str, RoomVideo]:
 
 
 def geometry_mismatch(binding: RoomVideo, room: RoomScene) -> str | None:
-    """Why `room` is not the room `binding` was made for, or None when it is."""
+    """Why `room` is not the room `binding` was made for, or None when it is.
+
+    Compares shape, not size: the user may correct the floor's scale (#11), so the walls are
+    compared after fitting one factor (total length over total expected length).
+    """
     walls = {w.id: math.dist((w.start.x, w.start.z), (w.end.x, w.end.z)) for w in room.walls}
     if walls.keys() != binding.walls_m.keys():
         return f"{len(walls)} walls, expected {len(binding.walls_m)}"
-    for wall_id, expected in binding.walls_m.items():
+    factor = sum(walls.values()) / sum(binding.walls_m.values())
+    for wall_id, parsed in binding.walls_m.items():
+        expected = parsed * factor
         if abs(walls[wall_id] - expected) > max(WALL_TOLERANCE * expected, WALL_TOLERANCE_M):
             return f"{wall_id} is {walls[wall_id]:.2f} m, expected {expected:.2f} m"
     return None

@@ -309,8 +309,9 @@ until restart (re-running the pipeline needs a restart; a persistent cache is #1
 
 The scene ID only names the plan image. Parsed without its labels (no `FAL_KEY`, or the label
 call fails), the same image gives a different room under the same ID ("Unlabelled space 4",
-11 walls). The source checks the room's walls against the binding (same IDs, lengths within
-5 % or 5 cm) and otherwise places no furniture, with a warning saying the geometry does not
+11 walls). The source checks the room's walls against the binding (same IDs; same shape:
+lengths within 5 % or 5 cm after fitting one scale, so a scale correction (#11) keeps the
+furniture) and otherwise places no furniture, with a warning saying the geometry does not
 match and naming the difference.
 
 The first audit of the room reports two things the user can fix by moving furniture: the chair
@@ -326,3 +327,51 @@ revisions. Show the `X-Reconstruction-Warnings` list. **Dev 4 (#32):** the audit
 room as is; the findings above are the expected baseline. **Dev 2 (#18):** item IDs and the
 `glb_url`s pass through unchanged; an item's normalised mesh (`ItemReconstruction.asset`)
 replaces its proxy as soon as the pipeline stores one.
+
+## Corrections (#11)
+
+The user corrects what the reconstruction flags: a floor's scale (`"dimensions"` on
+`ParsedRoom`) and where furniture stands (`placement`, `orientation` on `FurnitureItem`). The
+service keeps both, in memory, for as long as it keeps the scene (persistence is #12). No
+contract model changed: the pose route takes a `RoomScene`, the scale route takes query
+parameters. Code: `services/reconstruction/room/correct.py`, routes in `scenes.py`.
+
+| Route | Does |
+|---|---|
+| `PUT /scenes/{scene_id}` (body `RoomScene`) | Keeps the edited scene's poses (and `sun_hour`). Returns the kept scene; the next `GET` returns the same |
+| `POST /scenes/{scene_id}/scale?wall_id=w16&length_m=4.81&revision=N` | Rescales the room's whole floor so that wall is that long. Returns the corrected scene |
+
+Pose correction rules:
+
+- **409** when the scene is not kept yet (its furniture is still being extracted), when
+  `revision` is not newer than the kept one, or when the geometry (polygon, walls, openings,
+  shell URL, north) differs from the kept scene, i.e. it was edited before a scale correction.
+- **422** for an unknown item, an item changed in anything but `pose`, or an added correction
+  flag. Asset identity (ID, mesh URL, size, proxy state) cannot change through an edit.
+- Moving an item clears its `placement` flag and turning it clears `orientation`; the editor
+  may also clear a flag the user confirmed. Items left out keep their pose. Poses are not
+  checked: the audit reports problems.
+
+Scale correction:
+
+- One drawing has one scale and one frame, so every room on the floor is rescaled about the
+  floor's origin, from the original parse: the factor is `length_m` over the wall's parsed
+  length, so corrections never compound and correcting back restores the parse.
+- Plan lengths scale: polygon, walls (and their traced thickness), window offsets and widths,
+  door hinges and widths. Heights, bearings and IDs do not; doors are conformed to their walls
+  again. The rooms become `dimension_source: "user_corrected"` without `"dimensions"`, and the
+  plan carries one note per corrected floor.
+- The shell is immutable per URL, so a corrected room gets `shells/<scene_id>.<digest>.glb`;
+  the superseded URL is 404.
+- Every kept scene of the floor carries its furniture over and goes up one revision. Each
+  item keeps its fraction along the wall it stands in front of, its distance from that wall
+  and its yaw; sizes do not change (they come from the video, not the plan). Only an item the
+  rescale pushes out of a smaller room is placed again, by the aligner from that wall.
+- **422** for a demo room (fixture geometry), an unknown wall, or a factor outside 0.25-4;
+  **409** when the scene is not kept, or `revision` is not the kept one (save edits first).
+
+**Handoff to Dev 3 (#25, #26).** PUT the scene when a drag or rotation ends (the revision the
+editor already bumps). To correct scale, PUT first, then POST with the current revision and
+replace the scene with the response; reload the shell when `shell_glb_url` changes. Prompt for
+the flags that remain. On 409, reload the scene. **Dev 4:** nothing changes; the audit receives
+the corrected scene, and the tests check it accepts it with openings on their walls.
