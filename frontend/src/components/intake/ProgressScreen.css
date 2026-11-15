@@ -1,0 +1,215 @@
+/* Front page and processing screens: Shan Shui landscape, proverb in mist, loading bar. */
+
+/* Landscape backdrop: two copies of a seamless panorama slide one width per loop
+   (duration set per panorama in Landscape.tsx). */
+@keyframes landscape-drift {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* The words condense out of a pool of mist. */
+.mist-quote-zone {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  width: min(1100px, calc(100% - 64px));
+  min-height: clamp(250px, 39vh, 420px);
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+  isolation: isolate;
+}
+/* Already soft at its edges, so no blur filter: it only animates transform and opacity. */
+.mist-quote-zone::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -22% -12%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(234 224 206 / 0.86) 0%,
+    rgb(234 224 206 / 0.66) 30%,
+    rgb(234 224 206 / 0.3) 52%,
+    rgb(234 224 206 / 0.1) 66%,
+    rgb(234 224 206 / 0) 76%
+  );
+  will-change: transform, opacity;
+  animation: mist-breathe 16s ease-in-out infinite alternate;
+}
+@keyframes mist-breathe {
+  from {
+    opacity: 0.76;
+    transform: translateX(-12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(12px) scale(1.055);
+  }
+}
+
+/*
+ * The proverb "condenses out of mist" without animating any filter (that repaints big,
+ * shadowed text every frame). A pre-blurred ghost copy flashes in and fades as the
+ * sharp copy resolves on top; both animate only opacity and transform, each on its
+ * own layer, so the compositor does the work.
+ */
+.mist-quote {
+  display: grid;
+}
+.mist-quote-layer {
+  grid-area: 1 / 1;
+  will-change: opacity, transform;
+}
+.mist-quote-ghost {
+  opacity: 0;
+  filter: blur(10px);
+}
+.mist-quote.is-visible .mist-quote-ghost {
+  animation: mist-ghost 0.8s ease-out forwards;
+}
+@keyframes mist-ghost {
+  0% {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  30% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: none;
+  }
+}
+.mist-quote-sharp {
+  opacity: 0;
+  transform: translateY(12px) scale(1.03);
+  transition:
+    opacity 0.5s ease-in,
+    transform 0.5s ease-in;
+}
+.mist-quote.is-visible .mist-quote-sharp {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s ease-out 0.12s,
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.mist-quote-cn {
+  margin: 0;
+  font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'SimSun', serif;
+  font-weight: 400;
+  font-size: clamp(36px, 5vw, 72px);
+  letter-spacing: 0.13em;
+  line-height: 1.42;
+  color: var(--color-ink-primary);
+  text-wrap: balance;
+  text-shadow: 0 0 18px rgb(234 224 206 / 0.95);
+}
+.mist-quote-en {
+  margin: 16px 0 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: clamp(16px, 1.6vw, 23px);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--color-ink-medium);
+  text-wrap: balance;
+  opacity: 0;
+  transform: translateY(6px);
+  will-change: opacity, transform;
+  transition:
+    opacity 0.4s ease-in,
+    transform 0.4s ease-in;
+}
+.mist-quote.is-visible .mist-quote-en {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s ease-out 0.3s,
+    transform 0.7s ease-out 0.3s;
+}
+
+/* Determinate fill; runs on the compositor, so it stays smooth under main-thread work. */
+.mist-fill {
+  transform-origin: left;
+  transform: scaleX(0);
+  animation: mist-fill var(--mist-duration) linear forwards;
+}
+@keyframes mist-fill {
+  to {
+    transform: scaleX(1);
+  }
+}
+/* A brush stroke sweeping the track to show it is alive. */
+.mist-sweep {
+  position: absolute;
+  inset: 0;
+  width: 28%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(247 239 226 / 0.75),
+    transparent
+  );
+  transform: translateX(-110%);
+  animation: mist-sweep 2.4s ease-in-out infinite;
+}
+@keyframes mist-sweep {
+  to {
+    transform: translateX(400%);
+  }
+}
+
+/* Loading dots that don't shift the layout (needs a monospace face). */
+.mist-dots {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  width: 1ch;
+  animation: mist-dots 1.56s steps(3, jump-none) infinite;
+}
+@keyframes mist-dots {
+  to {
+    width: 3ch;
+  }
+}
+
+@media (max-width: 600px) {
+  .mist-quote-zone {
+    width: calc(100% - 36px);
+    min-height: 270px;
+  }
+  .mist-quote-cn {
+    font-size: clamp(32px, 8.6vw, 49px);
+    letter-spacing: 0.065em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mist-quote-ghost {
+    display: none;
+  }
+  .mist-quote-sharp,
+  .mist-quote.is-visible .mist-quote-sharp,
+  .mist-quote-en,
+  .mist-quote.is-visible .mist-quote-en {
+    transition-duration: 0.3s;
+    transition-delay: 0s;
+    transform: none;
+  }
+  .mist-quote-zone::before,
+  .mist-sweep,
+  .mist-dots {
+    animation: none;
+  }
+  .mist-dots {
+    width: 3ch;
+  }
+  .landscape-strip {
+    animation-play-state: paused !important;
+  }
+}

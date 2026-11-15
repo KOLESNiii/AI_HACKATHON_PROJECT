@@ -151,6 +151,26 @@ proxy-box/shell-error fallback. These named demo URLs use `Cache-Control: no-cac
 Restart the reconstruction service after changing source fixture geometry to clear
 the in-memory room/shell cache. The frontend's former copy/build script is removed.
 
+## Home screen and intake presentation
+
+The frontend starts at the local `home` screen, branded Refresh, before upload,
+processing, room selection and editing. Framer Motion coordinates screen and
+room-panel transitions using the existing dependency; processing still advances
+on demo timers rather than reconstruction-job progress.
+
+`Landscape` stays mounted for the app session and scrolls four pre-rendered WebP
+panoramas on home/processing screens. Each panorama has two adjacent copies for a
+seamless CSS transform loop; hidden panoramas pause, and reduced-motion preferences
+pause the landscape animation. Home and floor-plan processing have distinct images;
+room builds alternate between the other two. No landscape engine runs in the browser.
+
+`frontend/scripts/generate-landscapes.ts` optionally regenerates the checked-in
+images from the locally vendored MIT-licensed Shan Shui Inf engine, using fixed
+seeds and headless Chromium. Set `CHROME_BIN` if Chromium is not in Playwright's
+local cache. Image regeneration needs no provider keys and is not part of normal
+setup or builds. Attribution/licenses accompany the vendored source and the public
+landscapes; the vendored HTML is retained only for regeneration, not bundled at runtime.
+
 ## Individual furniture meshes and proxies (#16)
 
 `assets/reconstruction.py` consumes the #14 registry and #15 masks, calling an injected
