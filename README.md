@@ -167,7 +167,8 @@ In the editor's **Chat** tab, ask to add one item (for example, “Add a small
 0.5 m wide side table”) or rearrange existing furniture. Start the spatial service
 and configure `ANTHROPIC_API_KEY` in the root `.env` for agent requests. Review the
 proposal, then click **Apply**. New furniture uses a labelled proxy with estimated
-dimensions that need checking; collision, floor-boundary and door checks run before
-it is proposed. Stats shows the accepted audit, including any front-clearance
+dimensions that need checking; collision, floor-boundary and door checks run on it,
+and on anything moved to make room, before it is proposed. Problems the room already
+had are reported rather than blocking the addition. Stats shows the accepted audit, including any front-clearance
 warnings. Editing the room invalidates older proposals. Retailer search and live
 furniture-mesh generation are separate from this flow.

@@ -377,5 +377,16 @@
   estimates requiring correction; retailer lookup and live asset generation are separate.
 - Audit additions and supporting moves together before returning a proposal. Never
   trade collisions, floor containment, fixed items or clear door swings for extra furniture.
+- Hold an addition to account only for what it changes: the new item and moved items must
+  be clean, and the room must stay enterable. Problems among untouched items are reported,
+  not grounds for refusal. The first version refused on any finding in the audit, so a room
+  with a fixed item in a door swing could never receive an item, and the default demo room
+  could only when the model also fixed an unrelated blocked door. The solver's rule (no
+  overlaps at all, blocked doors only if already blocked) was not reused because an
+  addition cannot repair overlaps it did not cause.
+- Return the model's words when it proposes nothing, capped and with no changes attached.
+  A generic "no proposal" message hid correct explanations such as "the room is 2.1 m wide".
+- Library items use the spatial service's proxy URL instead of an empty `glb_url`. The
+  editor still draws them as labelled boxes; the scene now validates in every service.
 - Require explicit application against the submitted revision and preserve room-session
   cancellation. No automatic scene mutations, persistence or new dependencies.
