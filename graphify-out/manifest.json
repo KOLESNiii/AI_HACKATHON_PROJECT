@@ -516,9 +516,9 @@
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794700786.8649216,
-    "seen": 1794700789.868749,
-    "ast_hash": "260adeceb43ddf0d616828972945a061",
+    "mtime": 1794702055.1348526,
+    "seen": 1794702251.9220526,
+    "ast_hash": "bc4bf239401f1fd1c16d94b3fcce105e",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
@@ -558,9 +558,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/README.md": {
-    "mtime": 1794701367.9815996,
-    "seen": 1794701432.6718392,
-    "ast_hash": "eeeee0866f05bef173740d52497e3152",
+    "mtime": 1794702078.7909346,
+    "seen": 1794702251.9220815,
+    "ast_hash": "b01121acbcd633a9334cad0e834f1dda",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/fixtures/README.md": {
@@ -870,9 +870,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/normalisation.py": {
-    "mtime": 1794701229.0501046,
-    "seen": 1794701432.6715643,
-    "ast_hash": "24b099c28d5a878cae6be88727e9f649",
+    "mtime": 1794702054.929852,
+    "seen": 1794702251.9218864,
+    "ast_hash": "be1cfd419170d9ed1f5dc5e7a9b054fb",
     "semantic_hash": ""
   },
   "services/reconstruction/assets/proxies.py": {
@@ -888,9 +888,9 @@
     "semantic_hash": ""
   },
   "services/reconstruction/assets/reconstruction.py": {
-    "mtime": 1794701162.6862524,
-    "seen": 1794701432.6715758,
-    "ast_hash": "6baf26f4f553803716574803ef83e84f",
+    "mtime": 1794702016.968691,
+    "seen": 1794702251.9218981,
+    "ast_hash": "737e65730de19c849ad97e82d56fc489",
     "semantic_hash": ""
   },
   "services/reconstruction/room/align.py": {
@@ -954,9 +954,9 @@
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_normalisation.py": {
-    "mtime": 1794701162.7255964,
-    "seen": 1794701432.6716993,
-    "ast_hash": "da13da8596b385644cdf07184d19ad50",
+    "mtime": 1794702055.206853,
+    "seen": 1794702251.9219859,
+    "ast_hash": "cdab2bf0a09b3bccf5ec504911c363cb",
     "semantic_hash": ""
   },
   "tests/reconstruction/assets/test_reconstruction.py": {
@@ -996,9 +996,9 @@
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-11-15-furniture-mesh-normalisation-design.md": {
-    "mtime": 1794701367.9858298,
-    "seen": 1794701432.671833,
-    "ast_hash": "e7840b44b8f1860e99435058da1ff6fc",
+    "mtime": 1794702055.0498524,
+    "seen": 1794702251.9220777,
+    "ast_hash": "f0f8689f692d81544af583028a6b4909",
     "semantic_hash": ""
   }
 }
