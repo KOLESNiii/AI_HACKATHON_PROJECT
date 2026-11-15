@@ -3,6 +3,7 @@ import { canStand } from '../../lib/walk'
 import { useStore } from '../../store'
 import { Button } from '../ui'
 import type { PlayControllerHandle } from './controls'
+import { LightingPanel } from './LightingPanel'
 
 export function PlayOverlay({
   controller,
@@ -10,6 +11,7 @@ export function PlayOverlay({
   controller: RefObject<PlayControllerHandle | null>
 }) {
   const play = useStore((s) => s.mode === 'play')
+  const lighting = useStore((s) => s.playPhase === 'lighting')
   const human = useStore((s) => s.human)
   const scene = useStore((s) => s.scene)
   const placing = useStore((s) => s.placingHuman)
@@ -36,9 +38,13 @@ export function PlayOverlay({
     return (
       <div className="pointer-events-none absolute inset-0 select-none">
         <div className="scroll-panel absolute top-6 left-6 px-3 py-2 text-[12px]">
-          WASD walk · Mouse look · Esc return to editor
+          WASD walk · Mouse look · L lighting · Esc return to editor
         </div>
-        <div className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-seal-paper shadow" />
+        {lighting ? (
+          <LightingPanel controller={controller} />
+        ) : (
+          <div className="absolute top-1/2 left-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-seal-paper shadow" />
+        )}
       </div>
     )
 

@@ -10,6 +10,10 @@ import type {
 import { bounds, clampToFloor, fitYaw, snapToNearestWall } from './lib/geometry'
 import type { Pt } from './lib/geometry'
 import { canStand, humanPoseAt } from './lib/walk'
+import {
+  DEFAULT_PLAY_LIGHTING,
+  type PlayLightingSettings,
+} from './lib/lighting'
 
 export type Screen =
   'home' | 'upload' | 'reading' | 'floorplan' | 'building' | 'editor'
@@ -41,6 +45,8 @@ interface State {
   interacting: boolean
   tab: Tab
   mode: EditorMode
+  playPhase: 'walking' | 'lighting'
+  playLighting: PlayLightingSettings
   /** Local preview actor, never included in RoomScene or its revision. */
   human: Pose2D | null
   placingHuman: boolean
@@ -77,6 +83,10 @@ interface State {
   removeHuman: () => void
   startPlay: () => boolean
   finishPlay: (pose?: Pose2D) => void
+  openLightingPanel: () => boolean
+  resumeWalking: () => boolean
+  setArtificialLight: (percent: number) => void
+  setTimeOfDay: (hour: number) => void
   pushChat: (m: ChatMessage) => void
   setAgentBusy: (b: boolean, abort?: AbortController | null) => void
   toast: (text: string) => void
@@ -130,6 +140,8 @@ export const useStore = create<State>((set, get) => ({
   interacting: false,
   tab: 'chat',
   mode: 'edit',
+  playPhase: 'walking',
+  playLighting: { ...DEFAULT_PLAY_LIGHTING },
   human: null,
   placingHuman: false,
   humanPreview: null,
@@ -143,6 +155,7 @@ export const useStore = create<State>((set, get) => ({
     set({
       screen,
       mode: 'edit',
+      playPhase: 'walking',
       placingHuman: false,
       humanPreview: null,
       interacting: false,
@@ -157,6 +170,8 @@ export const useStore = create<State>((set, get) => ({
       selectedId: null,
       tab: 'chat',
       mode: 'edit',
+      playPhase: 'walking',
+      playLighting: { ...DEFAULT_PLAY_LIGHTING },
       human: null,
       placingHuman: false,
       humanPreview: null,
@@ -334,7 +349,7 @@ export const useStore = create<State>((set, get) => ({
       !canStand(s.human, s.scene)
     )
       return false
-    set({ mode: 'play', selectedId: null })
+    set({ mode: 'play', playPhase: 'walking', selectedId: null })
     return true
   },
   finishPlay: (pose) => {
@@ -345,7 +360,39 @@ export const useStore = create<State>((set, get) => ({
       Number.isFinite(pose.x) &&
       Number.isFinite(pose.z) &&
       Number.isFinite(pose.yaw_deg)
-    set({ mode: 'edit', human: valid && s.human ? { ...pose } : s.human })
+    set({
+      mode: 'edit',
+      playPhase: 'walking',
+      human: valid && s.human ? { ...pose } : s.human,
+    })
+  },
+  openLightingPanel: () => {
+    if (get().mode !== 'play') return false
+    set({ playPhase: 'lighting' })
+    return true
+  },
+  resumeWalking: () => {
+    if (get().mode !== 'play' || get().playPhase !== 'lighting') return false
+    set({ playPhase: 'walking' })
+    return true
+  },
+  setArtificialLight: (percent) => {
+    if (Number.isFinite(percent))
+      set((s) => ({
+        playLighting: {
+          ...s.playLighting,
+          artificialPercent: Math.max(0, Math.min(100, percent)),
+        },
+      }))
+  },
+  setTimeOfDay: (hour) => {
+    if (Number.isFinite(hour))
+      set((s) => ({
+        playLighting: {
+          ...s.playLighting,
+          timeOfDay: Math.round(Math.max(0, Math.min(24, hour)) * 4) / 4,
+        },
+      }))
   },
   pushChat: (m) => set((s) => ({ chat: [...s.chat, m] })),
   setAgentBusy: (agentBusy, agentAbort = null) =>
