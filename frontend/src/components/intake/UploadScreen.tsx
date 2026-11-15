@@ -6,6 +6,8 @@ import {
   type DragEvent,
   type ReactNode,
 } from 'react'
+import { MAX_FLOOR_PLAN_IMAGES, MAX_ROOM_VIDEOS } from '../../lib/contracts'
+import { addFiles, isPlanImage, isVideo } from '../../lib/uploadFiles'
 import { useStore } from '../../store'
 import { Button } from '../ui'
 import './ProgressScreen.css'
@@ -68,29 +70,44 @@ function DropCard({
   hint,
   accept,
   glyph,
-  file,
-  onFile,
+  files,
+  max,
+  matches,
+  kind,
+  onFiles,
 }: {
   step: string
   title: string
   hint: string
   accept: string
   glyph: ReactNode
-  file: File | null
-  onFile: (f: File) => void
+  files: File[]
+  max: number
+  matches: (f: File) => boolean
+  kind: string
+  onFiles: (files: File[]) => void
 }) {
   const [over, setOver] = useState(false)
-  const url = usePreview(file)
-  const kind = file?.type.startsWith('image/')
+  const [note, setNote] = useState<string | null>(null)
+  const first = files[0] ?? null
+  const url = usePreview(first)
+  const preview = first?.type.startsWith('image/')
     ? 'image'
-    : file?.type.startsWith('video/')
+    : first?.type.startsWith('video/')
       ? 'video'
       : 'other'
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault()
-    setOver(false)
-    const f = e.dataTransfer.files[0]
-    if (f) onFile(f)
+  const add = (incoming: Iterable<File>) => {
+    const { files: next, skipped } = addFiles(files, incoming, max, matches)
+    setNote(
+      skipped
+        ? `${skipped} file${skipped === 1 ? '' : 's'} skipped: ${kind} only, ${max} at most`
+        : null,
+    )
+    onFiles(next)
+  }
+  const remove = (i: number) => {
+    setNote(null)
+    onFiles(files.filter((_, j) => j !== i))
   }
   return (
     <label
@@ -99,50 +116,83 @@ function DropCard({
         setOver(true)
       }}
       onDragLeave={() => setOver(false)}
-      onDrop={onDrop}
-      className={`scroll-panel drop-card group relative flex h-[230px] w-full max-w-[300px] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden px-6 text-center transition-colors sm:w-[300px] ${
+      onDrop={(e: DragEvent) => {
+        e.preventDefault()
+        setOver(false)
+        add(e.dataTransfer.files)
+      }}
+      className={`scroll-panel drop-card group relative flex min-h-[230px] w-full max-w-[300px] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden px-6 py-4 text-center transition-colors sm:w-[300px] ${
         over ? 'is-over bg-seal-vermilion/6' : 'hover:bg-paper-card'
       }`}
     >
       <input
         type="file"
         accept={accept}
+        multiple
         className="sr-only"
-        onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+        onChange={(e) => {
+          if (e.target.files) add(e.target.files)
+          // Let the same file be chosen again after removing it.
+          e.target.value = ''
+        }}
       />
       <span className="mono absolute top-4 left-4 text-[10px] tracking-[0.24em] text-ink-mist uppercase">
         {step}
       </span>
 
-      {file ? (
+      {files.length ? (
         <>
           <span className="seal-stamp" aria-hidden="true">
             已收
           </span>
-          {url && kind === 'image' && (
+          {url && preview === 'image' && (
             <img
               src={url}
               alt=""
-              className="mt-6 h-[130px] w-full object-contain mix-blend-multiply"
+              className="mt-6 h-[90px] w-full object-contain mix-blend-multiply"
             />
           )}
-          {url && kind === 'video' && (
+          {url && preview === 'video' && (
             <video
               src={`${url}#t=0.1`}
               muted
               playsInline
               preload="metadata"
-              className="mt-6 h-[130px] w-full rounded-[2px] object-contain"
+              className="mt-6 h-[90px] w-full rounded-[2px] object-contain"
             />
           )}
-          {kind === 'other' && (
+          {preview === 'other' && (
             <span className="mt-4 text-ink-medium">{glyph}</span>
           )}
-          <span className="mono max-w-full truncate text-[11px] text-accent-celadon">
-            {file.name}
-          </span>
+          <ul className="flex w-full flex-col gap-1">
+            {files.map((f, i) => (
+              <li
+                key={`${f.name}-${f.size}-${f.lastModified}`}
+                className="flex items-center gap-2"
+              >
+                <span className="mono min-w-0 flex-1 truncate text-left text-[11px] text-accent-celadon">
+                  {f.name}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Remove ${f.name}`}
+                  onClick={(e) => {
+                    // Inside the label: don't open the file browser.
+                    e.preventDefault()
+                    e.stopPropagation()
+                    remove(i)
+                  }}
+                  className="mono cursor-pointer px-1 text-[13px] leading-none text-ink-mist hover:text-seal-vermilion"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
           <span className="mono text-[10px] tracking-[0.18em] text-ink-mist uppercase opacity-0 transition-opacity group-hover:opacity-100">
-            Click or drop to replace
+            {files.length < max
+              ? `Click or drop to add (${files.length}/${max})`
+              : `${max}/${max} · remove one to add another`}
           </span>
         </>
       ) : (
@@ -156,19 +206,26 @@ function DropCard({
             {title}
           </span>
           <span className="text-[12px] text-ink-medium">
-            Drop file or click to browse
+            Drop files or click to browse
           </span>
           <span className="mono text-[10px] text-ink-mist">{hint}</span>
         </>
+      )}
+      {note && (
+        <span role="status" className="text-[11px] text-seal-vermilion-dark">
+          {note}
+        </span>
       )}
     </label>
   )
 }
 
 export function UploadScreen() {
-  const setScreen = useStore((s) => s.setScreen)
-  const [plan, setPlan] = useState<File | null>(null)
-  const [video, setVideo] = useState<File | null>(null)
+  const plans = useStore((s) => s.uploadPlans)
+  const videos = useStore((s) => s.uploadVideos)
+  const setUploadFiles = useStore((s) => s.setUploadFiles)
+  const submitUpload = useStore((s) => s.submitUpload)
+  const chooseDemoHome = useStore((s) => s.chooseDemoHome)
   return (
     <div className="relative h-full overflow-hidden">
       <motion.section
@@ -194,45 +251,50 @@ export function UploadScreen() {
             variants={rise}
             className={`mt-3 max-w-[40ch] font-serif text-[clamp(15px,1.5vw,20px)] leading-[1.45] text-ink-medium italic ${glow}`}
           >
-            A floor plan to read, and a walkthrough to furnish it.
+            A floor plan to read, and walkthroughs to furnish it.
           </motion.p>
 
           <motion.div
             variants={rise}
-            className="mt-8 flex w-full flex-col items-center justify-center gap-5 sm:flex-row"
+            className="mt-8 flex w-full flex-col items-center justify-center gap-5 sm:flex-row sm:items-stretch"
           >
             <DropCard
               step="壹 · Floor plan"
-              title="Floor plan image"
-              hint="PNG · JPG · PDF"
-              accept="image/*,application/pdf"
+              title="Floor plan images"
+              hint={`PNG · JPG · up to ${MAX_FLOOR_PLAN_IMAGES}`}
+              accept="image/png,image/jpeg"
               glyph={PlanGlyph}
-              file={plan}
-              onFile={setPlan}
+              files={plans}
+              max={MAX_FLOOR_PLAN_IMAGES}
+              matches={isPlanImage}
+              kind="PNG or JPG images"
+              onFiles={(f) => setUploadFiles('plans', f)}
             />
             <DropCard
-              step="贰 · Walkthrough"
-              title="Walkthrough video"
-              hint="MP4 · MOV"
+              step="贰 · Walkthrough · optional"
+              title="Walkthrough videos"
+              hint={`MP4 · MOV · up to ${MAX_ROOM_VIDEOS}`}
               accept="video/*"
               glyph={VideoGlyph}
-              file={video}
-              onFile={setVideo}
+              files={videos}
+              max={MAX_ROOM_VIDEOS}
+              matches={isVideo}
+              kind="videos"
+              onFiles={(f) => setUploadFiles('videos', f)}
             />
           </motion.div>
 
           <motion.div variants={rise} className="mt-7 w-full max-w-[620px]">
             <hr className="ink-divider mb-5" />
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Button size="lg" onClick={() => setScreen('reading')}>
+              <Button size="lg" onClick={chooseDemoHome}>
                 Skip with demo home
               </Button>
-              {/* Upload to the reconstruction service is not wired yet; files stay in the browser. */}
               <Button
                 variant="primary"
                 size="lg"
-                disabled={!plan || !video}
-                onClick={() => setScreen('reading')}
+                disabled={!plans.length}
+                onClick={() => void submitUpload()}
               >
                 Read floor plan
               </Button>

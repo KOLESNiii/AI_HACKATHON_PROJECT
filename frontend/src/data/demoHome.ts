@@ -103,7 +103,7 @@ function edgeDistance(p: Vec2, a: Vec2, b: Vec2): number {
 }
 
 /** Grid search for the interior point furthest from every edge (halls are L-shaped). */
-function labelPoint(poly: Vec2[]): { centre: Vec2; clear: number } {
+export function labelPoint(poly: Vec2[]): { centre: Vec2; clear: number } {
   const b = bounds(poly)
   const N = 24
   let centre = { x: (b.minX + b.maxX) / 2, z: (b.minZ + b.maxZ) / 2 }
@@ -123,7 +123,7 @@ function labelPoint(poly: Vec2[]): { centre: Vec2; clear: number } {
   return { centre, clear }
 }
 
-function area(poly: Vec2[]): number {
+export function area(poly: Vec2[]): number {
   let sum = 0
   for (let i = 0; i < poly.length; i++) {
     const a = poly[i],

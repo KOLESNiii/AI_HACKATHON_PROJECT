@@ -4,6 +4,8 @@ import { useStore } from '../../store'
 import type { PlayControllerHandle } from '../play/controls'
 import { PlayOverlay } from '../play/PlayOverlay'
 import { Button } from '../ui'
+import { isExtractingWarning } from '../../lib/spatial'
+import { ExtractionProgress } from './ExtractionProgress'
 import { RoomView } from './RoomView'
 import { Sidebar } from './Sidebar'
 import { VersionTree } from './VersionTree'
@@ -13,7 +15,12 @@ export function EditorScreen() {
   const setScreen = useStore((s) => s.setScreen)
   const play = useStore((s) => s.mode === 'play')
   const roomLoading = useStore((s) => s.roomLoading)
-  const warnings = useStore((s) => s.roomWarnings)
+  const allWarnings = useStore((s) => s.roomWarnings)
+  const extracting = useStore((s) => s.furnitureProgress !== null)
+  // The progress panel says it better than the service's warning.
+  const warnings = extracting
+    ? allWarnings.filter((w) => !isExtractingWarning(w))
+    : allWarnings
   const controller = useRef<PlayControllerHandle>(null)
   useLiveAudit()
 
@@ -40,6 +47,7 @@ export function EditorScreen() {
             ))}
           </div>
         )}
+        {!play && !roomLoading && <ExtractionProgress />}
         {!play && (
           <div className="absolute top-6 left-6">
             <Button onClick={() => setScreen('floorplan')}>← Floor plan</Button>
