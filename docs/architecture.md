@@ -1,5 +1,20 @@
 # Architecture
 
+## Bundled retailer library
+
+`scripts/cache_ikea_library.py` reads IKEA UK search and product pages through the
+existing retailer parser, then uses the shared mesh normalizer and delivery checks.
+Only products with published dimensions, a usable retailer mesh and a thumbnail
+enter the balanced 100-product snapshot. Unsupported candidates are skipped; an
+unfilled category fails the refresh. No paid provider or runtime service is needed.
+
+Metadata and source evidence live in `frontend/src/data/ikeaCatalog.json`; bundled
+content-addressed GLBs and thumbnails live in `frontend/public/catalog/ikea/`.
+The Library displays local images and passes each complete asset through the existing
+catalog addition path, preserving dimensions, collision templates and model URLs.
+Browsing and adding work offline. Prices and availability are snapshots, with links
+to IKEA for current details. Refresh setup and ownership are in the asset notice.
+
 The ownership and geometry rules in `ARCHITECTURE_DAG.md`, `CLAUDE.md`, and
 `contracts/` remain the source of truth. Bootstrap preserves those contracts.
 

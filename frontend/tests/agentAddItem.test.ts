@@ -189,18 +189,18 @@ test('a Library item keeps the scene acceptable to the spatial service', () => {
   // The services validate RoomScene: an empty glb_url made every chat request fail (422).
   useStore.getState().addFromCatalog(catalog[0])
   const added = useStore.getState().scene.furniture.at(-1)!
-  const { width, height, depth } = catalog[0].bbox_m
-  expect(added.is_proxy).toBe(true)
-  expect(added.glb_url).toBe(
-    `/api/spatial_engine/proxies/${width}/${height}/${depth}.glb`,
-  )
+  expect(added.is_proxy).toBe(false)
+  expect(added.glb_url).toBe(catalog[0].asset!.glb_url)
+  expect(added.bbox_m).toEqual(catalog[0].bbox_m)
+  expect(added.product_url).toBe(catalog[0].product_url)
+  expect(added.collision_parts).toEqual(catalog[0].asset!.collision_parts)
   for (const item of useStore.getState().scene.furniture) {
     expect(item.glb_url).toMatch(/^(https?:\/\/|\/[^/])/) // GLB_URL_PATTERN
     expect(item.id).toMatch(/^[a-z0-9][a-z0-9_-]{0,63}$/) // ITEM_ID_PATTERN
   }
 })
 
-test('every Library proxy is within the size the proxy route serves', () => {
+test('every Library product has usable metric dimensions', () => {
   for (const { bbox_m } of catalog) {
     for (const [size, limit] of [
       [bbox_m.width, 20],

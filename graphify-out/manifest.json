@@ -108,9 +108,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/editor/Sidebar.tsx": {
-    "mtime": 1794729931.9239001,
-    "seen": 1794729940.886932,
-    "ast_hash": "b0ff6e8d745ccceedfc30057905eab2f",
+    "mtime": 1794730240.9123402,
+    "seen": 1794731129.7251165,
+    "ast_hash": "a410c1a6421fecf00a6b15c4ed24bda9",
     "semantic_hash": ""
   },
   "frontend/src/components/editor/ink.ts": {
@@ -216,9 +216,9 @@
     "semantic_hash": ""
   },
   "frontend/src/data/catalog.ts": {
-    "mtime": 1794729931.924153,
-    "seen": 1794729940.8869603,
-    "ast_hash": "e6ae95d5b2a38783b917fefb2fc47bf4",
+    "mtime": 1794730240.9107993,
+    "seen": 1794731129.7257829,
+    "ast_hash": "219244a95804f4b69d830c3dc36d8265",
     "semantic_hash": ""
   },
   "frontend/src/data/demoHome.ts": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "frontend/tests/agentAddItem.test.ts": {
-    "mtime": 1794728171.6744916,
-    "seen": 1794729940.886984,
-    "ast_hash": "4949cb7e00e40564c93f5c8e044eae9d",
+    "mtime": 1794730240.9150255,
+    "seen": 1794731129.726203,
+    "ast_hash": "6430888b8c1111d4b9cb30ea9b72a1cb",
     "semantic_hash": ""
   },
   "frontend/tests/audio.test.ts": {
@@ -1080,9 +1080,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1794729931.9231641,
-    "seen": 1794729940.887218,
-    "ast_hash": "7d67ff475b1cb1263fc0dc5ac90f3c74",
+    "mtime": 1794730996.6996086,
+    "seen": 1794731129.7307131,
+    "ast_hash": "857b926385a97013b2b2eaac0bb7b18d",
     "semantic_hash": ""
   },
   "contracts/mock_room/README.txt": {
@@ -1092,15 +1092,15 @@
     "semantic_hash": ""
   },
   "docs/architecture.md": {
-    "mtime": 1794729931.9235728,
-    "seen": 1794729940.8872206,
-    "ast_hash": "a1205c202157681bd4b5d155ea7bbac2",
+    "mtime": 1794730358.0463104,
+    "seen": 1794731129.7307508,
+    "ast_hash": "028632a769abe8f2fb564916f9413659",
     "semantic_hash": ""
   },
   "docs/decisions.md": {
-    "mtime": 1794729931.9239001,
-    "seen": 1794729940.8872223,
-    "ast_hash": "a0742eb77929ca23ecad0c8dbcb716b5",
+    "mtime": 1794730996.7011933,
+    "seen": 1794731129.7307527,
+    "ast_hash": "e5ae25e8d9f7285acd31180b47b1fc64",
     "semantic_hash": ""
   },
   "docs/dev3-spatial-handoff.md": {
@@ -1527,6 +1527,636 @@
     "mtime": 1794729931.9411533,
     "seen": 1794729940.8871813,
     "ast_hash": "fcd872bd5d2c0e5655c26c2ff5af4eff",
+    "semantic_hash": ""
+  },
+  "frontend/tests/ikeaCatalog.test.ts": {
+    "mtime": 1794730402.4494667,
+    "seen": 1794731129.7263672,
+    "ast_hash": "9f9692f1755bda6a433ca3c13f29f2b2",
+    "semantic_hash": ""
+  },
+  "scripts/cache_ikea_library.py": {
+    "mtime": 1794730996.1361008,
+    "seen": 1794731129.7266252,
+    "ast_hash": "fdc86a5edd1f9675c951206ceeb6d001",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/test_ikea_library.py": {
+    "mtime": 1794730270.6801922,
+    "seen": 1794731129.729317,
+    "ast_hash": "c3dbc2670205341032fc5071e96e3f5e",
+    "semantic_hash": ""
+  },
+  "tests/reconstruction/assets/test_ikea_unpack.py": {
+    "mtime": 1794731052.7467663,
+    "seen": 1794731129.7293189,
+    "ast_hash": "fda2b9e5be1d38918f79930f8659162f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/NOTICE.md": {
+    "mtime": 1794730996.6999264,
+    "seen": 1794731129.7313287,
+    "ast_hash": "fb44446e7c0003c939d76c326cbaf619",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00104291.webp": {
+    "mtime": 1794730414.8272436,
+    "seen": 1794731129.731784,
+    "ast_hash": "74fd899ce9883470d0cde19cf7fdc143",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00217797.webp": {
+    "mtime": 1794730384.9207914,
+    "seen": 1794731129.7317858,
+    "ast_hash": "f4658d868643b863320c1b64d98094ea",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00228705.webp": {
+    "mtime": 1794730290.5357368,
+    "seen": 1794731129.7317867,
+    "ast_hash": "8ad4d09a772ec7a2cf3d7472523fff53",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00263850.webp": {
+    "mtime": 1794730612.9742959,
+    "seen": 1794731129.7317884,
+    "ast_hash": "6d25ab6212dbd8101092c62ea42af88e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00320134.webp": {
+    "mtime": 1794730304.897418,
+    "seen": 1794731129.7317894,
+    "ast_hash": "534fd95dfbf0ddde21eb34ee4a389e52",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00324518.webp": {
+    "mtime": 1794730704.0552638,
+    "seen": 1794731129.7317905,
+    "ast_hash": "1058bc353358cc4e37e491bc40f9f83d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00396242.webp": {
+    "mtime": 1794731019.982956,
+    "seen": 1794731129.7317922,
+    "ast_hash": "bf59bceaca7467a6a5b07cc58a7ba549",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00441758.webp": {
+    "mtime": 1794730431.5399508,
+    "seen": 1794731129.7317934,
+    "ast_hash": "a496a8105d93291c3311fb4f5d445cd9",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00457235.webp": {
+    "mtime": 1794730385.3867826,
+    "seen": 1794731129.7317946,
+    "ast_hash": "c73c80c134d9aec16656aec40abd8b3e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00506231.webp": {
+    "mtime": 1794730594.665525,
+    "seen": 1794731129.7317958,
+    "ast_hash": "46c496421a53e06dd0e2d88b74d29384",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00595086.webp": {
+    "mtime": 1794730361.9392335,
+    "seen": 1794731129.7317967,
+    "ast_hash": "bf095ff61d0e9c13c8161e3bedbc48a3",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00609125.webp": {
+    "mtime": 1794730416.827208,
+    "seen": 1794731129.7317982,
+    "ast_hash": "96b2d1178e718a0a70833e7e52264574",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-00635167.webp": {
+    "mtime": 1794730382.6718338,
+    "seen": 1794731129.7317994,
+    "ast_hash": "2d6d1d0e6d04528f21554027e61891c8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10401931.webp": {
+    "mtime": 1794730727.7120228,
+    "seen": 1794731129.7318003,
+    "ast_hash": "16be3c54933611ffe5daf966754cd39d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10473555.webp": {
+    "mtime": 1794730372.0120373,
+    "seen": 1794731129.7318013,
+    "ast_hash": "51ad2a94ecaba3ff1763587081ac7fa0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10576718.webp": {
+    "mtime": 1794730379.916886,
+    "seen": 1794731129.731803,
+    "ast_hash": "cb2a0f3fd7706852f6a52597fbbfe558",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10603547.webp": {
+    "mtime": 1794730277.490034,
+    "seen": 1794731129.731804,
+    "ast_hash": "41d9d28f014bb44761c899ac4d0d3ce5",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10605424.webp": {
+    "mtime": 1794730378.2479177,
+    "seen": 1794731129.731805,
+    "ast_hash": "068d92efad1bb5b95f16f3b2f140aa71",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-10608998.webp": {
+    "mtime": 1794730419.2151659,
+    "seen": 1794731129.731806,
+    "ast_hash": "5c40ad36ab1b4662156975de675f75d9",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20436713.webp": {
+    "mtime": 1794730693.8133714,
+    "seen": 1794731129.7318077,
+    "ast_hash": "c3b312aeedf8fbed05ad93a5930427b5",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20487873.webp": {
+    "mtime": 1794730418.5661774,
+    "seen": 1794731129.7318094,
+    "ast_hash": "822878d2baa82d6caa09fb0da1f35c89",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20530065.webp": {
+    "mtime": 1794730421.9761174,
+    "seen": 1794731129.7318106,
+    "ast_hash": "c6f85fabb2f3260ab0e0c234d1c9f627",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20530621.webp": {
+    "mtime": 1794730381.1028636,
+    "seen": 1794731129.731812,
+    "ast_hash": "c0ed71c870db4066c591f35a685eadcc",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-20532743.webp": {
+    "mtime": 1794731013.6679938,
+    "seen": 1794731129.7318134,
+    "ast_hash": "01dd3d7886fddac8424c35371f7d33da",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30213076.webp": {
+    "mtime": 1794730367.3521278,
+    "seen": 1794731129.7318149,
+    "ast_hash": "03cf96285576a9d063e55b9c16b7df2f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30263844.webp": {
+    "mtime": 1794730612.9742959,
+    "seen": 1794731129.7318163,
+    "ast_hash": "be9ca93bd6f20c29b1b4815d961da831",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30298396.webp": {
+    "mtime": 1794731021.483947,
+    "seen": 1794731129.7318175,
+    "ast_hash": "d8dadae48c655199fd81559c0b5f40fd",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30582445.webp": {
+    "mtime": 1794730365.9161556,
+    "seen": 1794731129.7318187,
+    "ast_hash": "0f6bad95faae64738b849c018e395015",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-30602429.webp": {
+    "mtime": 1794730358.4033034,
+    "seen": 1794731129.73182,
+    "ast_hash": "d893fe41db3cad723e48f0574ed7d30b",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40104294.webp": {
+    "mtime": 1794730415.373234,
+    "seen": 1794731129.731822,
+    "ast_hash": "430792a2e96ef2cdbefe4741dee0e4b1",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40301223.webp": {
+    "mtime": 1794730703.3492713,
+    "seen": 1794731129.7318227,
+    "ast_hash": "8cc5c73b1d1bb93505ce21f107cde653",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40407922.webp": {
+    "mtime": 1794730429.6329837,
+    "seen": 1794731129.7318244,
+    "ast_hash": "f6f1e71d7b09734e7863a8206a4bbbb1",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40415465.webp": {
+    "mtime": 1794730713.6861644,
+    "seen": 1794731129.7318258,
+    "ast_hash": "717a10e5861c5928a264c2dcd9e521d3",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40492675.webp": {
+    "mtime": 1794730989.4291427,
+    "seen": 1794731129.7318275,
+    "ast_hash": "11a6227dafc46a4fb09c904c79f86eb6",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40500005.webp": {
+    "mtime": 1794730423.7710857,
+    "seen": 1794731129.7318285,
+    "ast_hash": "3bea833fc028c3d44433e3a36d445df8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40503546.webp": {
+    "mtime": 1794730714.3701575,
+    "seen": 1794731129.7318296,
+    "ast_hash": "1a64a584ecaf0d6ec89354c1d4fca9d7",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40534152.webp": {
+    "mtime": 1794730419.089168,
+    "seen": 1794731129.7318313,
+    "ast_hash": "4696fedf4dd49aa29a5b7eeebb37b18f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40554381.webp": {
+    "mtime": 1794731028.0459082,
+    "seen": 1794731129.731832,
+    "ast_hash": "5b8ee7189fda3e3e53a51cb9b1d80531",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40566751.webp": {
+    "mtime": 1794730406.7583885,
+    "seen": 1794731129.7318337,
+    "ast_hash": "1558eb8c6b6d04482f0199056be86845",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40598610.webp": {
+    "mtime": 1794730435.898876,
+    "seen": 1794731129.7318347,
+    "ast_hash": "f38befce4ce8503d1a34cfa4aa68ecbc",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-40613677.webp": {
+    "mtime": 1794730369.183092,
+    "seen": 1794731129.731836,
+    "ast_hash": "328ec9e8365f7aec39fddde475ebf684",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50161321.webp": {
+    "mtime": 1794730419.9781525,
+    "seen": 1794731129.731837,
+    "ast_hash": "ea035ec4c1d7370c3286e675be876bd6",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50250713.webp": {
+    "mtime": 1794730374.0279984,
+    "seen": 1794731129.7318382,
+    "ast_hash": "3019bb3010ade83a4b790faddac5976b",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50263838.webp": {
+    "mtime": 1794730693.8133714,
+    "seen": 1794731129.7318394,
+    "ast_hash": "ee60043da5903105336bf931ea46ccd8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50403669.webp": {
+    "mtime": 1794730378.6679099,
+    "seen": 1794731129.731841,
+    "ast_hash": "f414176d682f6c6086b30f642f508c2c",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50453758.webp": {
+    "mtime": 1794730437.0978553,
+    "seen": 1794731129.7318425,
+    "ast_hash": "f7c6c50d9d1cd5162fa2611c917f9779",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50530988.webp": {
+    "mtime": 1794731029.3939004,
+    "seen": 1794731129.7318442,
+    "ast_hash": "ac2b0fa7ab49cb54a725332f18ec7789",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50569103.webp": {
+    "mtime": 1794730381.0078652,
+    "seen": 1794731129.7318454,
+    "ast_hash": "759d9be02cc234068c49c629cbec1076",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-50586145.webp": {
+    "mtime": 1794731028.8609035,
+    "seen": 1794731129.7318466,
+    "ast_hash": "8bf9169eaf9177808dfc96c8f7bf87fe",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60456916.webp": {
+    "mtime": 1794730438.8948247,
+    "seen": 1794731129.731848,
+    "ast_hash": "eb74ecbf2fd2687e08c753c5c22cc54e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60483255.webp": {
+    "mtime": 1794730439.2028196,
+    "seen": 1794731129.7318492,
+    "ast_hash": "0c12240dfd3499d2a1787144181d2fcf",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60518274.webp": {
+    "mtime": 1794730345.0765705,
+    "seen": 1794731129.7318509,
+    "ast_hash": "86a0bb7518d0cdf509ef164b391312db",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60538205.webp": {
+    "mtime": 1794730372.556027,
+    "seen": 1794731129.7318516,
+    "ast_hash": "df3e6ddc32f3413dbd91617754756c2d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60607171.webp": {
+    "mtime": 1794730987.958152,
+    "seen": 1794731129.731853,
+    "ast_hash": "700c55477e0873a68065e59b72f99d18",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-60627980.webp": {
+    "mtime": 1794730421.3801277,
+    "seen": 1794731129.7318547,
+    "ast_hash": "db952d1ddd23f1db158e36366b22a7f0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70239710.webp": {
+    "mtime": 1794730414.694246,
+    "seen": 1794731129.7318559,
+    "ast_hash": "c8b98e7d4505f3eb019e8eeab5a77d20",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70453762.webp": {
+    "mtime": 1794730431.4909515,
+    "seen": 1794731129.7318566,
+    "ast_hash": "eb622cfc72739e5cae93499ef8612b8c",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70458203.webp": {
+    "mtime": 1794730437.4468493,
+    "seen": 1794731129.7318583,
+    "ast_hash": "c43b93fdaa82a36428d73c6080333fcb",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70515915.webp": {
+    "mtime": 1794731016.5989761,
+    "seen": 1794731129.731859,
+    "ast_hash": "953e02a486a081f3a45540ee3f627321",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70530609.webp": {
+    "mtime": 1794730435.9258754,
+    "seen": 1794731129.7318604,
+    "ast_hash": "ef502bfb4d9d94bfc7d0d03aec5db58e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-70544866.webp": {
+    "mtime": 1794730382.9308288,
+    "seen": 1794731129.7318618,
+    "ast_hash": "cea4366c4743eb9bd1e3d9cfb720ef1f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80213074.webp": {
+    "mtime": 1794730365.9841545,
+    "seen": 1794731129.7318633,
+    "ast_hash": "297308c712ba52c61ad0b40d83a24392",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80437234.webp": {
+    "mtime": 1794730431.530951,
+    "seen": 1794731129.731865,
+    "ast_hash": "3fb43d17435a1e1cdf353b117607e0d4",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80458231.webp": {
+    "mtime": 1794730441.9177735,
+    "seen": 1794731129.731866,
+    "ast_hash": "6bf98eb669f47988f1d4f303f2982f26",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80506393.webp": {
+    "mtime": 1794730986.4891613,
+    "seen": 1794731129.7318673,
+    "ast_hash": "ba363622a18ff5f861c1a19803551ce0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80507627.webp": {
+    "mtime": 1794730375.8549635,
+    "seen": 1794731129.7318687,
+    "ast_hash": "2e97c3d28907c459a9afdb85710625a5",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80569998.webp": {
+    "mtime": 1794730406.6343906,
+    "seen": 1794731129.7318702,
+    "ast_hash": "8c9662310b11c7dd677fd219d906dd1a",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-80608103.webp": {
+    "mtime": 1794730344.6535792,
+    "seen": 1794731129.7318716,
+    "ast_hash": "5c46c3cb33be41ad8a4c9cda6840ec63",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90214308.webp": {
+    "mtime": 1794730370.6020646,
+    "seen": 1794731129.7318728,
+    "ast_hash": "683de31f4d4f56e34d7d0caec6f58f8e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90349326.webp": {
+    "mtime": 1794730265.6033115,
+    "seen": 1794731129.731874,
+    "ast_hash": "a4142e77a5290eafc155224bc17e9ce8",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90399316.webp": {
+    "mtime": 1794730594.0245333,
+    "seen": 1794731129.731876,
+    "ast_hash": "851e182e17fac315ab73764b013f0903",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90401932.webp": {
+    "mtime": 1794730715.09215,
+    "seen": 1794731129.731877,
+    "ast_hash": "522b9f610e3d1761174dd5b9bce17d26",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90437238.webp": {
+    "mtime": 1794730432.8499281,
+    "seen": 1794731129.731878,
+    "ast_hash": "90c586847bb274b1173c43ed06254a72",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90493955.webp": {
+    "mtime": 1794730368.518105,
+    "seen": 1794731129.7318795,
+    "ast_hash": "02f47797bafdbe9792de1aa8b90dca46",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90540706.webp": {
+    "mtime": 1794730423.3260937,
+    "seen": 1794731129.7318802,
+    "ast_hash": "15c1484275b82133c4d18c75da50d30a",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90551120.webp": {
+    "mtime": 1794730379.5148935,
+    "seen": 1794731129.731882,
+    "ast_hash": "2eed1a77e78c756a4e479e3d7a89d2d7",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90562246.webp": {
+    "mtime": 1794730423.2790945,
+    "seen": 1794731129.7318828,
+    "ast_hash": "d4f485beaf70bbf5936c776e71f60935",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-90606820.webp": {
+    "mtime": 1794730407.4583757,
+    "seen": 1794731129.7318842,
+    "ast_hash": "31c6d92875cb2cffcdc2f0134599db96",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s09489637.webp": {
+    "mtime": 1794730586.3726313,
+    "seen": 1794731129.7318857,
+    "ast_hash": "44c971c898e8e6a0c500ea7a8df934c4",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s09536177.webp": {
+    "mtime": 1794731013.6999936,
+    "seen": 1794731129.7318869,
+    "ast_hash": "957d8293beaea4043859b125f7e7fa3f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s09903014.webp": {
+    "mtime": 1794730367.5871232,
+    "seen": 1794731129.7318945,
+    "ast_hash": "9fb0d76a13a74beea863802e9894540d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19031704.webp": {
+    "mtime": 1794730588.5396035,
+    "seen": 1794731129.7318962,
+    "ast_hash": "ba0d0023faab313d3c24024d2053debb",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19270313.webp": {
+    "mtime": 1794730585.644641,
+    "seen": 1794731129.7318976,
+    "ast_hash": "31cc15b4f819b6dca749ca5dd1c202cc",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19306294.webp": {
+    "mtime": 1794730597.3564909,
+    "seen": 1794731129.7319007,
+    "ast_hash": "51bd16bcdb9ad28f6d36a2157a34fc2f",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s19508862.webp": {
+    "mtime": 1794730596.8294976,
+    "seen": 1794731129.7319024,
+    "ast_hash": "920240bcbfaccf34da5c11273b964763",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29006940.webp": {
+    "mtime": 1794730270.8031895,
+    "seen": 1794731129.731904,
+    "ast_hash": "ff06e0f9b0782da3ad8d85fdce2fb958",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29006978.webp": {
+    "mtime": 1794730220.9227567,
+    "seen": 1794731129.7319055,
+    "ast_hash": "823f7780a47a9ee331c52e458c587bd1",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29281066.webp": {
+    "mtime": 1794730714.3581576,
+    "seen": 1794731129.7319071,
+    "ast_hash": "0cf483d81731bbcde9aaecf86e77f9e7",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s29416758.webp": {
+    "mtime": 1794730371.9000394,
+    "seen": 1794731129.7319088,
+    "ast_hash": "c61cdd3b8f4a08dae883d355fc215cb2",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s39284998.webp": {
+    "mtime": 1794730703.2152727,
+    "seen": 1794731129.7319138,
+    "ast_hash": "a2152a121faeb78b871a51b18414ab9d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s39494760.webp": {
+    "mtime": 1794730444.0447376,
+    "seen": 1794731129.7319157,
+    "ast_hash": "f47e52654f6414e72ffdf19f2d5fa7fd",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s39514683.webp": {
+    "mtime": 1794731012.953998,
+    "seen": 1794731129.731918,
+    "ast_hash": "fef266ce9df3313fea2296a1709f309c",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s49431927.webp": {
+    "mtime": 1794730369.80908,
+    "seen": 1794731129.7319195,
+    "ast_hash": "80934fc6bd28496580b474087855be1a",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s59399031.webp": {
+    "mtime": 1794730587.872612,
+    "seen": 1794731129.7319214,
+    "ast_hash": "da85fef6ab6f02ce2820d3056caf5e5e",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s69440596.webp": {
+    "mtime": 1794730584.318658,
+    "seen": 1794731129.7319229,
+    "ast_hash": "8119b68b4b498257563079ee9a1b7991",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s69537409.webp": {
+    "mtime": 1794730593.2075436,
+    "seen": 1794731129.7319243,
+    "ast_hash": "e236098dcdaca606de1df76b8f374dff",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s79017837.webp": {
+    "mtime": 1794730708.477218,
+    "seen": 1794731129.7319255,
+    "ast_hash": "d5c75b5b2432ca8285f81cbfbe964a68",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s79270273.webp": {
+    "mtime": 1794730594.4585276,
+    "seen": 1794731129.7319264,
+    "ast_hash": "93a5a5c1384e37e0234f3697de2d70f0",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s89246862.webp": {
+    "mtime": 1794730454.6545606,
+    "seen": 1794731129.731928,
+    "ast_hash": "e66cf3363ea56043007c8665b08e7c8d",
+    "semantic_hash": ""
+  },
+  "frontend/public/catalog/ikea/images/ikea-s99270291.webp": {
+    "mtime": 1794730594.736524,
+    "seen": 1794731129.7319293,
+    "ast_hash": "323fd65de065cd0e1a3a344ee82b439a",
     "semantic_hash": ""
   }
 }

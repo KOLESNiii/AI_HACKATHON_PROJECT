@@ -106,6 +106,13 @@ or health checks. Reconstruction, search, generated media and editor integration
 remain planned work. See the [spatial service guide](services/spatial_engine/README.md)
 and [frontend handoff](docs/dev3-spatial-handoff.md).
 
+The Library includes 100 bundled IKEA products: 13 each for beds, desks, chairs,
+tables, wardrobes, sofas and storage, plus nine Other items. Their thumbnails,
+published dimensions, GBP price snapshots and normalized 3D models load locally,
+without retailer access or provider keys. Product links open the source IKEA pages.
+See the [library notice](frontend/public/catalog/ikea/NOTICE.md) for provenance and
+the refresh command.
+
 ```bash
 bun run build             # TypeScript check + production frontend bundle
 bun run check             # Frontend lint/format/types + Python lint/format/types/tests

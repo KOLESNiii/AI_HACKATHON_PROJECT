@@ -369,7 +369,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Furniture library with retailer URL import and a local starter catalog. */
+/** Furniture library with retailer URL import and an offline IKEA catalog. */
 function LibraryTab() {
   const floor = useStore((s) => s.scene.floor_polygon)
   const addFromCatalog = useStore((s) => s.addFromCatalog)
@@ -478,11 +478,30 @@ function LibraryTab() {
               key={c.sku}
               className="flex items-center gap-3 rounded-[2px] border border-hairline-ink bg-paper-card/65 p-2.5"
             >
-              <div className="size-14 shrink-0 rounded-[2px] bg-ink-medium/16" />
+              {c.image_url ? (
+                <img
+                  src={c.image_url}
+                  alt={c.name}
+                  loading="lazy"
+                  className="size-14 shrink-0 rounded-[2px] bg-white object-contain"
+                />
+              ) : (
+                <div className="size-14 shrink-0 rounded-[2px] bg-ink-medium/16" />
+              )}
               <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
                 <span className="truncate text-[13px] font-medium">
                   {c.name}
                 </span>
+                {c.product_url && (
+                  <a
+                    href={c.product_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-ink-medium underline"
+                  >
+                    View product
+                  </a>
+                )}
                 <span className="mono text-[11px] text-ink-medium">
                   {c.bbox_m.width.toFixed(2)}m × {c.bbox_m.depth.toFixed(2)}m ×{' '}
                   {c.bbox_m.height.toFixed(2)}m
