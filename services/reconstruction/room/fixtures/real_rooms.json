@@ -1,0 +1,44 @@
+[
+  {
+    "scene_id": "plan-83a12322e933-floor-0-room-3",
+    "plan": "examples/three_floor.png",
+    "room_id": "floor-0-room-3",
+    "video": "examples/three_floor_3.mp4",
+    "furniture_scene_id": "reviewed-opening-room",
+    "note": "Reception Room / Kitchen (1) of the parsed plan and the opening room (0-6 s) of the video. Hints: the reviewed g-reception hints moved onto the parsed room's walls (north-west corners aligned), asset IDs from Dev 2's reviewed recording. Reviewed by the coding agent against the frames, not measured.",
+    "hints": [
+      {
+        "asset_id": "vid-000001",
+        "wall_id": "w16",
+        "along_frac": 0.51,
+        "offset_m": 0.0,
+        "facing": "into_room",
+        "confidence": 0.7
+      },
+      {
+        "asset_id": "vid-000002",
+        "wall_id": "w17",
+        "along_frac": 0.47,
+        "offset_m": 0.0,
+        "facing": "into_room",
+        "confidence": 0.7
+      },
+      {
+        "asset_id": "vid-000003",
+        "wall_id": "w16",
+        "along_frac": 0.44,
+        "offset_m": 0.94,
+        "facing": null,
+        "confidence": 0.6
+      },
+      {
+        "asset_id": "vid-000004",
+        "wall_id": "w17",
+        "along_frac": 0.8,
+        "offset_m": 0.81,
+        "facing": null,
+        "confidence": 0.6
+      }
+    ]
+  }
+]

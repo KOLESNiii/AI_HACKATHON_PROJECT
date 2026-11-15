@@ -59,6 +59,41 @@ and every room carries `dimension_source = "estimated"` and `"dimensions"` in
 - Door hinge and swing are inferred from the drawn leaf. When no leaf is found, the room gets
   `"openings"` in `correction_needed`.
 
+## Real-input room (#10)
+
+`fixtures/real_rooms.json` binds the parsed reception room of `examples/three_floor.png`
+(`plan-83a12322e933-floor-0-room-3`) to the furniture Dev 2's pipeline extracts from
+`examples/three_floor_3.mp4` (`reviewed-opening-room`), with a reviewed hint per item.
+`video_furniture.RealRoomFurniture` reads that furniture offline from `$FURNITURE_DATA_DIR`
+(default `artifacts/furniture`) and places it from the hints; items are labelled proxies until
+#17. Runbook (needs FFmpeg; no provider requests, no charges):
+
+```bash
+# 1. Furniture of the video: reviewed recording (#14) and GrabCut masks (#15), offline
+uv run --extra reconstruction python -m services.reconstruction.assets.select_frames \
+  examples/three_floor_3.mp4 --scene-id reviewed-opening-room --start 0 --end 6 --max-frames 8 \
+  --data-dir artifacts/furniture --out /tmp/reviewed-furniture \
+  --recorded tests/reconstruction/assets/fixtures/opening_room.reviewed.json
+uv run --extra reconstruction python -m services.reconstruction.assets.segment_items \
+  --scene-id reviewed-opening-room --data-dir artifacts/furniture --out /tmp/furniture-masks
+
+# 2. Services (from the repository root)
+uv run --extra reconstruction uvicorn services.reconstruction.main:app --port 8001
+uv run --extra spatial uvicorn services.spatial_engine.main:app --port 8002
+
+# 3. Upload the plan, load the room, audit it; edit a pose and audit again
+curl -F files=@examples/three_floor.png localhost:8001/floor-plans > /dev/null
+curl -D headers.txt -o scene.json localhost:8001/scenes/plan-83a12322e933-floor-0-room-3
+curl -H 'Content-Type: application/json' -d @scene.json localhost:8002/audit
+```
+
+Tests parse the plan with the recorded labels (`fixtures/three_floor.annotations.json`). Live
+labels (`FAL_KEY`) are expected to give the same room; without a key the scale is estimated and
+the room may not match the binding. The hints are the #8 reviewed `g-reception` hints moved onto
+this room's walls (north-west corners aligned); `tests/test_real_room.py` fails if the parser's
+wall IDs drift from them. The chair's hint lands in the entrance door's swing, which alignment
+flags and the audit reports until the chair is moved.
+
 ## Scene assembly (#9)
 
 `assemble.assemble_scene(room, source)` returns one room with its furniture placed, for
@@ -68,8 +103,9 @@ pose-less assets and an observer, places them with `align_assets`, and keeps the
 ID, shell URL and openings. A failing source still gives the room, with a warning and
 `Assembly.complete = False` (also set when the placement observer fails); the route does not
 keep incomplete assemblies, so the next request retries.
-`NoFurniture` is the default for uploaded rooms until #16; the demo home's source reuses its
-fixture furniture. See [architecture](../../../docs/architecture.md#scene-assembly-route-9).
+Uploaded rooms bound to a video get its furniture (`video_furniture.RealRoomFurniture`, below);
+others get `NoFurniture`. The demo home's source reuses its fixture furniture. See
+[architecture](../../../docs/architecture.md#scene-assembly-route-9).
 
 ## Furniture alignment (#8)
 

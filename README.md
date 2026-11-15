@@ -81,6 +81,8 @@ The frontend requests them through `/api/reconstruction`; no GLBs are copied int
 in `services/reconstruction/fixtures/mock_room/`. These demo routes need no API keys.
 `GET /scenes/<room_id>` returns a whole room assembled for the editor and the audit: a demo
 room (`g-reception`) or a room of an uploaded floor plan (see [architecture](docs/architecture.md#scene-assembly-route-9)).
+The real-input room (`examples/three_floor.png` with the furniture of `examples/three_floor_3.mp4`,
+as labelled proxies) is described in [architecture](docs/architecture.md#real-input-room-10).
 
 The frontend displays live service connection status. The spatial service also
 implements `POST /audit`: send a `RoomScene` to receive collision, boundary, door,

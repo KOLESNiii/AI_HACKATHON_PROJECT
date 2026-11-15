@@ -188,3 +188,21 @@
   timeout) yields the room with a warning, but caching that would make the failure permanent for
   the process, so the next request retries. Retrying is safe for paid providers: Dev 2's registry
   re-reads saved requests instead of resubmitting them.
+
+## Real-input room (#10)
+
+- The M1 room is the parser's own room for `three_floor.png`, not the hand-made demo
+  `g-reception`, so the shell, openings and scale come from real input. It includes the kitchen
+  (an archway the parser does not split); that limit stays visible as a plan warning.
+- Furniture is Dev 2's labelled proxies, not raw meshes: raw meshes keep provider scale and
+  orientation until #17. The issue allows proxies when extraction is incomplete, and each one
+  says so (`is_proxy`, estimated size, a warning naming them).
+- The source runs Dev 2's reconstruction offline only. A scene request never pays for or waits
+  on a provider; meshes are made by the pipeline's CLI.
+- Placement uses reviewed hints, not the vision observer, which put this room's sofas on the
+  wrong walls (#8). They are the #8 reviewed hints moved onto the parsed room's walls with the
+  north-west corners aligned: a conversion, not a new judgement, still flagged for correction.
+- A bound room whose furniture is not extracted yet is not cached (`SceneFurniture.complete =
+  False`), so running the pipeline while the server is up takes effect on the next request.
+- The asset store is mounted with the same data directory the source reads (#52), so a proxy
+  URL in a scene is always servable by the same process.
