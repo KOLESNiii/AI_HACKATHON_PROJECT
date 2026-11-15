@@ -7,6 +7,7 @@ from shapely.ops import unary_union  # type: ignore[import-untyped]
 
 from contracts.schema import WALK_HEADROOM_M, RoomScene
 from services.spatial_engine.geometry import (
+    POSITION_TOLERANCE_M,
     SceneGeometry,
     SpatialInputError,
     door_entry_segment,
@@ -63,7 +64,9 @@ def calculate_reachable_floor_ratio(
     reachable = [
         region
         for region in regions
-        if isinstance(region, Polygon) and any(region.intersects(entry) for entry in entry_segments)
+        # Reconstructed hinges sit fractionally off their wall, so allow the shared tolerance.
+        if isinstance(region, Polygon)
+        and any(region.distance(entry) <= POSITION_TOLERANCE_M for entry in entry_segments)
     ]
     if not reachable:
         return 0.0

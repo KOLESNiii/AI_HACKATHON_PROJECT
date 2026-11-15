@@ -21,6 +21,11 @@ from contracts.schema import (
     WindowOpening,
 )
 
+POSITION_TOLERANCE_M = 1e-3
+"""How far a door hinge, door leaf or window may sit from its wall, or a wall from the floor
+outline, and still count as on it. Reconstructed scenes round coordinates, so exact
+agreement cannot be required; 1 mm is far below any size the checks act on."""
+
 
 class SpatialInputError(ValueError):
     """A validated domain-input failure whose message is safe to show to the caller."""
@@ -156,7 +161,7 @@ class _DoorFrame:
 
 def _door_frame(door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2]) -> _DoorFrame:
     """Validate and resolve a door's closed leaf and room side once for all checks."""
-    tolerance = 1e-8
+    tolerance = POSITION_TOLERANCE_M
     floor = room_floor_polygon(floor_points)
     values = (
         wall.start.x,
@@ -254,7 +259,7 @@ def door_swing_sector(
 ) -> Polygon:
     """Conservative zero-thickness door sweep, using stored opening conventions.
 
-    Validate wall/closed leaf on the floor boundary within 1e-8 m. Support angles
+    Validate wall/closed leaf on the floor boundary within POSITION_TOLERANCE_M. Support angles
     0..180 degrees; zero returns an empty sweep. Arc tangents at intervals of at
     most one degree bound the sector from outside (radial excess <= about
     0.000039 * door width). No handle or access margin is added.

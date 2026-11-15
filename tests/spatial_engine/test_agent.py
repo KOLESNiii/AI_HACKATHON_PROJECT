@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from contracts.schema import (
     BBoxM,
+    DoorOpening,
     FurnitureItem,
     LayoutProposal,
     OptimiseRequest,
@@ -30,6 +31,7 @@ from services.spatial_engine.agent import (
 )
 from services.spatial_engine.geometry import SpatialInputError
 from services.spatial_engine.main import app, get_interpreter_model, get_layout_model
+from services.spatial_engine.objective import evaluate_layout
 from services.spatial_engine.report import audit_scene
 
 Step = ModelReply | Exception | Callable[[list[dict[str, Any]]], ModelReply]
@@ -483,3 +485,109 @@ def test_non_brightness_goals_accept_audit_valid_windows(goal: str) -> None:
     audit_scene(original)
     result = propose_layout(OptimiseRequest(scene=original, goal=goal), Scripted(GOOD))
     assert result.improved
+
+
+def test_a_room_where_nothing_can_move_is_answered_without_calling_the_model() -> None:
+    model = Scripted(GOOD)
+    request = OptimiseRequest(
+        scene=scene(), locked_item_ids=["wardrobe", "box"], instruction="make it nicer"
+    )
+    for proposal in (propose_layout(request, model), propose_layout(request, None)):
+        assert (proposal.improved, proposal.outcome) == (False, "completed")
+        assert "Nothing in this room can be moved." in proposal.explanation
+    assert model.requests == []
+
+
+def test_a_door_blocked_by_a_fixed_item_does_not_prevent_suggestions() -> None:
+    room = scene()
+    room.doors = [DoorOpening(id="door", wall_id="north", hinge_pos=Vec2(x=5, z=0), width_m=1)]
+    room.furniture[2].pose = Pose2D(x=5.5, z=0.5)  # the fixed radiator sits in the door swing
+    assert [issue.door_id for issue in audit_scene(room).blocked_doors] == ["door"]
+
+    proposal = propose_layout(OptimiseRequest(scene=room), Scripted(GOOD))
+    assert proposal.improved and proposal.poses == {"box": Pose2D(x=5, z=5.5)}
+    assert [issue.door_id for issue in proposal.report.blocked_doors] == ["door"]
+    assert "1 door swing(s) are still blocked, as before." in proposal.explanation
+
+
+def test_blocking_a_clear_door_or_overlapping_furniture_is_never_accepted() -> None:
+    room = scene()
+    room.doors = [DoorOpening(id="door", wall_id="north", hinge_pos=Vec2(x=5, z=0), width_m=1)]
+    for bad in (move("box", 5.5, 0.5), move("box", 7.5, 4.5)):  # into the swing; onto the radiator
+        proposal = propose_layout(OptimiseRequest(scene=room), Scripted(bad, END))
+        assert not proposal.improved and proposal.poses == {}
+
+
+def test_an_unreadable_instruction_is_dropped_with_a_note_and_never_reported_as_honoured() -> None:
+    reader = Scripted(ProviderError("request_rejected", retryable=False))
+    explorer = Scripted(GOOD)
+    request = OptimiseRequest(scene=scene(), instruction="keep the box")
+    proposal = propose_layout(request, explorer, interpreter=reader)
+    assert proposal.improved and proposal.outcome == "stopped_early"
+    assert "could not be read, so it was not applied" in proposal.explanation
+
+
+def valid_scene() -> RoomScene:
+    room = scene()
+    room.furniture[1].pose = Pose2D(x=5, z=5.5)  # access already fine: nothing measurable to gain
+    return room
+
+
+def test_a_custom_request_hands_the_wording_to_the_model_and_accepts_a_valid_move() -> None:
+    reader = Scripted(interpret("custom", [], [], []))
+    explorer = Scripted(move("box", 6, 6), END)
+    request = OptimiseRequest(scene=valid_scene(), instruction="a cosy corner for the box")
+    proposal = propose_layout(request, explorer, interpreter=reader)
+
+    first = json.loads(explorer.requests[0]["messages"][0]["content"])
+    assert first["person_request"] == "a cosy corner for the box"
+    assert proposal.improved and proposal.goal == "custom"
+    assert proposal.poses == {"box": Pose2D(x=6, z=6)}
+    assert "judge it in the preview" in proposal.explanation
+
+
+def test_a_custom_request_still_refuses_invalid_layouts_and_worse_access() -> None:
+    request = OptimiseRequest(scene=valid_scene(), instruction="make it cosy")
+    for bad in (
+        move("box", 7.5, 4.5),
+        move("box", 2, 5.5),
+    ):  # onto the radiator; in front of wardrobe
+        reader = Scripted(interpret("custom", [], [], []))
+        assert not propose_layout(request, Scripted(bad, END), interpreter=reader).improved
+
+
+def test_the_same_move_is_not_suggested_for_a_measurable_goal() -> None:
+    request = OptimiseRequest(scene=valid_scene(), goal="balanced")
+    assert not propose_layout(request, Scripted(move("box", 6, 6), END)).improved
+
+
+def test_custom_solve_rejects_a_circulation_regression(divided_access_room: RoomScene) -> None:
+    proposal = propose_layout(
+        OptimiseRequest(scene=divided_access_room, goal="custom"),
+        Scripted(move("box", 4, 7.5), END),
+    )
+    assert not proposal.improved and proposal.poses == {}
+    assert proposal.report == audit_scene(divided_access_room)
+
+
+def test_custom_final_reaudit_rejects_a_circulation_regression(
+    divided_access_room: RoomScene,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    blocked = divided_access_room.model_copy(deep=True)
+    blocked.furniture[1].pose = Pose2D(x=4, z=7.5)
+    reaudit = evaluate_layout(divided_access_room, blocked)
+    checked = []
+
+    def final_check(*args: Any, **kwargs: Any):
+        checked.append(True)
+        return reaudit
+
+    monkeypatch.setattr("services.spatial_engine.agent.evaluate_layout", final_check)
+    proposal = propose_layout(
+        OptimiseRequest(scene=divided_access_room, goal="custom"),
+        Scripted(move("box", 2, 5.7)),
+    )
+    assert checked == [True]
+    assert not proposal.improved and proposal.poses == {}
+    assert proposal.report == audit_scene(divided_access_room)

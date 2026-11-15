@@ -130,7 +130,7 @@ uv run --extra spatial pytest tests/spatial_engine/test_handoff_cases.py
 
 Implemented. Send `OptimiseRequest`: the scene, `locked_item_ids`, and optionally
 the user's typed `instruction` (max 500 characters) and a `goal` chip
-(`balanced`, `brighter`, `roomier`, `minimal_changes`; the chip overrides what
+(`balanced`, `brighter`, `roomier`, `minimal_changes`, `custom`; the chip overrides what
 the assistant reads from the text). Expect several seconds up to 90 seconds, so
 show progress and allow the user to keep editing.
 
