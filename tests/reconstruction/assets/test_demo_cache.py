@@ -14,14 +14,17 @@ import pytest
 import trimesh
 from test_catalog import URL, Web, page
 
+from services.reconstruction.assets import demo_cache
 from services.reconstruction.assets.asset_store import store_asset
 from services.reconstruction.assets.catalog import catalog_scene, import_catalog_asset
 from services.reconstruction.assets.delivery import inspect_asset
 from services.reconstruction.assets.demo_cache import (
+    CURRENT,
     MANIFEST,
     CacheError,
     DemoCache,
     cache_folder,
+    current_generation,
     install_demo_cache,
     main,
     publish_catalog_scene,
@@ -76,22 +79,36 @@ def test_a_cache_installs_into_a_fresh_data_directory(
     assert install_demo_cache(SCENE, cache_dir=cache_dir, data_dir=fresh) == cache  # idempotent
 
 
+def _generation(cache_dir: Path) -> Path:
+    generation = current_generation(cache_dir, SCENE)
+    assert generation is not None
+    return generation
+
+
 def test_the_manifest_is_deterministic_and_a_republish_drops_stale_files(
     published: tuple[Path, Path, DemoCache],
 ) -> None:
     data_dir, cache_dir, cache = published
     folder = cache_folder(cache_dir, SCENE)
-    first = (folder / MANIFEST).read_bytes()
+    first = _generation(cache_dir)
+    manifest = (first / MANIFEST).read_bytes()
     publish_catalog_scene("room", data_dir=data_dir, cache_dir=cache_dir)
-    assert (folder / MANIFEST).read_bytes() == first
+    assert _generation(cache_dir) == first and (first / MANIFEST).read_bytes() == manifest
 
-    desk = next(a for a in cache.assets if not a.is_proxy)
+    desk, chair = sorted(cache.assets, key=lambda a: a.is_proxy)
     smaller = publish_demo_cache(
         SCENE, [desk], data_dir=data_dir, cache_dir=cache_dir, source="catalog"
     )
-    on_disk = sorted(str(p.relative_to(folder)) for p in folder.rglob("*") if p.is_file())
+    second = _generation(cache_dir)
+    on_disk = sorted(str(p.relative_to(second)) for p in second.rglob("*") if p.is_file())
     assert on_disk == sorted([MANIFEST, *(f.path for f in smaller.files)])
-    assert [p.name for p in cache_dir.iterdir()] == [folder.name]  # no staging left behind
+    # The replaced generation stays for readers that resolved it; no staging is left behind.
+    assert sorted(p.name for p in folder.iterdir()) == sorted([CURRENT, first.name, second.name])
+    assert [p.name for p in cache_dir.iterdir()] == [folder.name]
+
+    publish_demo_cache(SCENE, [chair], data_dir=data_dir, cache_dir=cache_dir, source="catalog")
+    third = _generation(cache_dir)
+    assert sorted(p.name for p in folder.iterdir()) == sorted([CURRENT, second.name, third.name])
 
 
 def test_a_refused_publish_keeps_the_previous_cache(
@@ -113,6 +130,10 @@ def test_a_refused_publish_keeps_the_previous_cache(
             )
     assert read_demo_cache(SCENE, cache_dir=cache_dir) == cache
     assert len(list(cache_dir.iterdir())) == 1
+    folder = cache_folder(cache_dir, SCENE)
+    assert sorted(p.name for p in folder.iterdir()) == sorted(
+        [CURRENT, _generation(cache_dir).name]
+    )
 
 
 def test_a_missing_evidence_mask_refuses_the_publish(
@@ -126,16 +147,16 @@ def test_a_missing_evidence_mask_refuses_the_publish(
 
 
 def _manifest(cache_dir: Path) -> dict:
-    return json.loads((cache_folder(cache_dir, SCENE) / MANIFEST).read_text())
+    return json.loads((_generation(cache_dir) / MANIFEST).read_text())
 
 
 def _rewrite(cache_dir: Path, manifest: dict) -> None:
-    (cache_folder(cache_dir, SCENE) / MANIFEST).write_text(json.dumps(manifest))
+    (_generation(cache_dir) / MANIFEST).write_text(json.dumps(manifest))
 
 
 def test_a_broken_cache_is_refused(published: tuple[Path, Path, DemoCache], tmp_path: Path) -> None:
     _, cache_dir, cache = published
-    folder = cache_folder(cache_dir, SCENE)
+    folder = _generation(cache_dir)
     glb = folder / next(f.path for f in cache.files if f.path.endswith(".glb"))
     original = _manifest(cache_dir)
 
@@ -159,6 +180,13 @@ def test_a_broken_cache_is_refused(published: tuple[Path, Path, DemoCache], tmp_
         _rewrite(cache_dir, {**original, **change})
         with pytest.raises(CacheError, match=reason):
             read_demo_cache(SCENE, cache_dir=cache_dir)
+    _rewrite(cache_dir, original)
+
+    pointer = cache_folder(cache_dir, SCENE) / CURRENT
+    for name, reason in (("../x", "not a generation"), (f"g-{'0' * 16}", "is missing")):
+        pointer.write_text(name)
+        with pytest.raises(CacheError, match=reason):
+            read_demo_cache(SCENE, cache_dir=cache_dir)
     assert not (tmp_path / "x" / "assets").exists() or not any((tmp_path / "x/assets").iterdir())
 
 
@@ -176,8 +204,91 @@ def test_install_repairs_a_damaged_copy_in_the_data_directory(
     glb = fresh / next(f.path for f in cache.files if f.path.endswith(".glb"))
     glb.write_bytes(b"glTF broken")
     install_demo_cache(SCENE, cache_dir=cache_dir, data_dir=fresh)
-    cached = cache_folder(cache_dir, SCENE) / glb.relative_to(fresh)
+    cached = _generation(cache_dir) / glb.relative_to(fresh)
     assert glb.read_bytes() == cached.read_bytes()
+
+
+def test_a_cache_keeps_the_url_base_it_was_published_with(
+    published: tuple[Path, Path, DemoCache], tmp_path: Path
+) -> None:
+    """An asset store served from another prefix publishes, reads and installs alike."""
+    data_dir, _, cache = published
+    base = "https://cdn.example/assets"
+    desk = next(a for a in cache.assets if not a.is_proxy)
+    hosted = desk.model_copy(update={"glb_url": f"{base}/{desk.glb_url.rsplit('/', 1)[1]}"})
+    cache_dir, fresh = tmp_path / "cdn-cache", tmp_path / "fresh"
+    published_cdn = publish_demo_cache(
+        SCENE, [hosted], data_dir=data_dir, cache_dir=cache_dir, source="catalog", url_base=base
+    )
+    assert read_demo_cache(SCENE, cache_dir=cache_dir, url_base=base) == published_cdn
+    installed = install_demo_cache(SCENE, cache_dir=cache_dir, data_dir=fresh, url_base=base)
+    assert installed == published_cdn
+    assert not inspect_asset(hosted, data_dir=fresh, url_base=base).problems
+    with pytest.raises(CacheError, match="not under"):
+        read_demo_cache(SCENE, cache_dir=cache_dir)  # read with another base: refused, loudly
+
+
+def test_a_read_during_replacement_sees_one_whole_generation(
+    published: tuple[Path, Path, DemoCache], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Up to the switch a reader gets the old cache, after it the new one; never nothing."""
+    data_dir, cache_dir, cache = published
+    desk = next(a for a in cache.assets if not a.is_proxy)
+    switch = demo_cache.write_atomic
+    seen: list[DemoCache | None] = []
+
+    def switching(path: Path, data: bytes) -> None:
+        seen.append(read_demo_cache(SCENE, cache_dir=cache_dir))  # the new generation is ready
+        switch(path, data)
+        seen.append(read_demo_cache(SCENE, cache_dir=cache_dir))
+
+    monkeypatch.setattr(demo_cache, "write_atomic", switching)
+    smaller = publish_demo_cache(
+        SCENE, [desk], data_dir=data_dir, cache_dir=cache_dir, source="catalog"
+    )
+    assert seen == [cache, smaller]
+
+
+def test_a_publish_that_dies_before_the_switch_keeps_the_previous_cache(
+    published: tuple[Path, Path, DemoCache], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data_dir, cache_dir, cache = published
+    desk = next(a for a in cache.assets if not a.is_proxy)
+
+    def dies(path: Path, data: bytes) -> None:
+        raise OSError("killed")
+
+    monkeypatch.setattr(demo_cache, "write_atomic", dies)
+    with pytest.raises(OSError, match="killed"):
+        publish_demo_cache(SCENE, [desk], data_dir=data_dir, cache_dir=cache_dir, source="catalog")
+    monkeypatch.undo()
+    assert read_demo_cache(SCENE, cache_dir=cache_dir) == cache
+    folder = cache_folder(cache_dir, SCENE)
+    assert not [p for p in folder.iterdir() if p.name.startswith(".")]  # no staging left
+    publish_demo_cache(SCENE, [desk], data_dir=data_dir, cache_dir=cache_dir, source="catalog")
+    assert len([p for p in folder.iterdir() if p.name.startswith("g-")]) == 2  # orphan reused
+
+
+def test_an_install_reads_the_generation_it_resolved(
+    published: tuple[Path, Path, DemoCache], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A publish between reading the manifest and copying the files does not mix the two."""
+    data_dir, cache_dir, cache = published
+    desk = next(a for a in cache.assets if not a.is_proxy)
+    read = demo_cache._read
+
+    def then_republish(*args: object) -> tuple[DemoCache, Path] | None:
+        result = read(*args)  # type: ignore[arg-type]
+        publish_demo_cache(SCENE, [desk], data_dir=data_dir, cache_dir=cache_dir, source="catalog")
+        return result
+
+    monkeypatch.setattr(demo_cache, "_read", then_republish)
+    fresh = tmp_path / "fresh"
+    assert install_demo_cache(SCENE, cache_dir=cache_dir, data_dir=fresh) == cache
+    for file in cache.files:
+        assert (fresh / file.path).is_file()
+    monkeypatch.undo()
+    assert read_demo_cache(SCENE, cache_dir=cache_dir) != cache  # the new one is now published
 
 
 def test_scene_ids_that_read_alike_get_their_own_folders(tmp_path: Path) -> None:

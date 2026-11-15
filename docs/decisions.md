@@ -376,6 +376,9 @@
 - The real-input room uses the cache only when the pipeline has no data for its video, so
   running the pipeline still takes effect. A broken cache gives the old empty-room answer plus
   the reason, never a partial room.
+- A publish never takes the cache away: it writes an immutable generation folder, then switches
+  a `CURRENT` pointer file with one atomic replace (no symlink, so it works from git on any OS).
+  A reader resolves the pointer once; the replaced generation is kept for readers still on it.
 - Commit the opening room's four meshes and masks (4.97 MB, derived from the committed example
   video). Do not commit retailer models (third-party files); catalog scenes are cached locally.
 - Bounds agreement includes the glTF's declared `POSITION` min/max. three.js fits the mesh from

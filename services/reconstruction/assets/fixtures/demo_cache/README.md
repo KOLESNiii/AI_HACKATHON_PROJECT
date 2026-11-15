@@ -1,8 +1,11 @@
 # Committed demo cache (#20)
 
 Published furniture that loads with no provider, key or network. One folder per scene, written
-by `python -m services.reconstruction.assets.demo_cache publish`. Do not edit the files by hand:
-`manifest.json` lists each file's SHA-256, and a changed file makes the cache refuse to load.
+by `python -m services.reconstruction.assets.demo_cache publish`: `CURRENT` names the published
+generation, `g-<hex>/`, which holds `manifest.json` and the files. Do not edit the files by
+hand: `manifest.json` lists each file's SHA-256, and a changed file makes the cache refuse to
+load. After regenerating, commit the new generation and `CURRENT`, and delete the replaced
+generation from git (it is only kept on disk for readers mid-install).
 
 | Folder | Scene | Contents |
 |---|---|---|

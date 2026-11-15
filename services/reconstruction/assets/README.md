@@ -646,9 +646,14 @@ are GrabCut and approximate; they matter only when a mesh is generated from the 
 
 ## Implemented: validation and demo cache (#20)
 
-**Demo cache.** `demo_cache.py` publishes a scene's delivered assets as a folder:
-`manifest.json` (the `FurnitureAsset`s exactly as delivered, and every file they reference with
-its SHA-256 and size) plus those files, at the paths they have in the data directory. Installing
+**Demo cache.** `demo_cache.py` publishes a scene's delivered assets as a generation folder,
+`g-<hex>` named by its manifest's hash: `manifest.json` (the `FurnitureAsset`s exactly as
+delivered, and every file they reference with its SHA-256 and size) plus those files, at the
+paths they have in the data directory. The scene folder's `CURRENT` file names the published
+generation. A publish writes a complete generation, then switches `CURRENT` with one atomic
+replace: readers see the old cache or the new one, never none. A reader resolves `CURRENT` once
+and reads only that generation, which is never changed. The generation just replaced is kept
+for readers still using it; older ones are removed. Run one publisher at a time. Installing
 a cache copies the files into a data directory, so each `glb_url` is served by the existing
 asset route and each evidence `mask_url` resolves with `segmentation.read_mask`. The delivery
 checks (`inspect_asset`) then run again on the installed files. Nothing is regenerated and no
@@ -658,9 +663,12 @@ provider, key or network is used. Contracts, routes and dependencies do not chan
 |---|---|
 | `publish_video_scene(scene_id, *, data_dir, cache_dir, ...)` | `deliver_furniture` (#18), which must be `ok`, then publish. A delivered proxy stays a proxy. |
 | `publish_catalog_scene(scene_id, *, data_dir, cache_dir)` | `imported_assets` (#19), each `ok`, published under `catalog:<scene_id>` with its retailer provenance. |
-| `publish_demo_cache(scene_id, assets, ...)` | The common step. Refuses (`CacheError`, the earlier cache untouched) on too few items, a repeated ID, a failed check or a missing file. Written to a staging folder and swapped in. The manifest is deterministic. |
-| `read_demo_cache(scene_id, *, cache_dir)` | `None` when nothing is published. Otherwise the verified manifest: `CacheError` for a bad manifest, another scene's, a path leaving the folder, or a missing or altered file. |
-| `install_demo_cache(scene_id, *, cache_dir, data_dir)` | Read, copy what is missing or damaged, check every asset again. |
+| `publish_demo_cache(scene_id, assets, ...)` | The common step. Refuses (`CacheError`, the earlier cache untouched) on too few items, a repeated ID, a failed check or a missing file. Written as a new generation, then switched to. The manifest is deterministic, so republishing the same assets reuses their generation. |
+| `read_demo_cache(scene_id, *, cache_dir, url_base=...)` | `None` when nothing is published. Otherwise the verified manifest: `CacheError` for a bad `CURRENT`, a bad manifest, another scene's, an asset outside `url_base`, a path leaving the folder, or a missing or altered file. |
+| `install_demo_cache(scene_id, *, cache_dir, data_dir, url_base=...)` | Read, copy what is missing or damaged from that one generation, check every asset again. |
+
+`url_base` is the asset store's URL prefix (default `/api/reconstruction/assets`). Publish, read
+and install a cache with the same one.
 
 ```bash
 uv run --extra reconstruction python -m services.reconstruction.assets.demo_cache publish \

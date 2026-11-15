@@ -1,15 +1,21 @@
 """Published demo assets that load with no provider, key or network (#20).
 
-A demo cache is one folder per scene: `manifest.json` (the delivered `FurnitureAsset`s and
-every file they reference, each with its SHA-256) and those files, under the same paths they
-have in the pipeline's data directory. Installing a cache copies the files into a data
-directory, so each `glb_url` is served by the existing asset route and each evidence
-`mask_url` resolves with `segmentation.read_mask`, then runs the delivery checks again on
-the installed files. Nothing is regenerated: a cache is exactly what was delivered.
+A demo cache is one folder per scene holding generations. A generation is a folder,
+`g-<hex>`, named by the hash of its `manifest.json` (the delivered `FurnitureAsset`s and every
+file they reference, each with its SHA-256) and holding those files, under the same paths they
+have in the pipeline's data directory. The scene folder's `CURRENT` file names the published
+generation. Installing a cache copies the files into a data directory, so each `glb_url` is
+served by the existing asset route and each evidence `mask_url` resolves with
+`segmentation.read_mask`, then runs the delivery checks again on the installed files. Nothing
+is regenerated: a cache is exactly what was delivered.
 
 Publishing takes a scene that already passed delivery (`deliver_furniture` for video
-furniture, `imported_assets` for catalog imports). It writes a new folder and swaps it in, so
-a refused or interrupted publish leaves the previous cache as it was.
+furniture, `imported_assets` for catalog imports). It writes a complete new generation, then
+switches `CURRENT` to it with one atomic replace, so a reader sees the old cache or the new
+one, and a refused or interrupted publish leaves the previous cache published. A generation is
+never changed once written; a reader resolves `CURRENT` once and reads only that generation.
+The generation just replaced is kept, so a reader that resolved it before the switch can
+finish; older ones are removed. Run one publisher at a time per cache directory.
 
 CLI, offline:
 
@@ -25,7 +31,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import shutil
 import sqlite3
@@ -46,6 +51,8 @@ from .selection_models import Record
 
 CACHE_FORMAT: Literal[1] = 1
 MANIFEST = "manifest.json"
+CURRENT = "CURRENT"
+_GENERATION = re.compile(r"g-[a-f0-9]{16}")
 _SLUG = re.compile(r"[^a-z0-9_-]+")
 _SHA256 = re.compile(r"[a-f0-9]{64}")
 
@@ -100,10 +107,11 @@ def _inside(root: Path, relative: str) -> Path:
 
 
 def referenced_files(asset: FurnitureAsset, *, url_base: str = ASSET_URL_BASE) -> list[str]:
-    """Data-directory paths of an asset's mesh and evidence masks."""
+    """Data-directory paths of an asset's mesh and evidence masks; `url_base` is the asset
+    store's URL prefix the cache was published with."""
     prefix, _, name = asset.glb_url.rpartition("/")
     if prefix != url_base.rstrip("/"):
-        raise CacheError(f"{asset.id}: glb_url is not in the asset store")
+        raise CacheError(f"{asset.id}: glb_url is not under {url_base!r}")
     paths = [f"{ASSET_DIR}/{name}"]
     paths += [f.mask_url for f in asset.evidence.frames if f.mask_url is not None]
     return paths
@@ -136,14 +144,16 @@ def publish_demo_cache(
         faults += [f"{asset.id}: {problem}" for problem in check.problems]
     if faults:
         raise CacheError("; ".join(faults))
-    paths = sorted({path for asset in assets for path in referenced_files(asset)})
+    paths = sorted(
+        {path for asset in assets for path in referenced_files(asset, url_base=url_base)}
+    )
     sources = {path: _inside(data_dir, path) for path in paths}
     if missing := [path for path, file in sources.items() if not file.is_file()]:
         raise CacheError(f"referenced files are missing: {', '.join(missing)}")
 
     folder = cache_folder(cache_dir, scene_id)
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    staging = Path(tempfile.mkdtemp(dir=cache_dir, prefix=f".{folder.name}.new-"))
+    folder.mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(dir=folder, prefix=".staging-"))
     try:
         files = []
         for path, file in sources.items():
@@ -160,29 +170,34 @@ def publish_demo_cache(
             assets=list(assets),
             files=files,
         )
-        (staging / MANIFEST).write_text(cache.model_dump_json(indent=2) + "\n")
-        _swap(staging, folder)
+        manifest = (cache.model_dump_json(indent=2) + "\n").encode()
+        (staging / MANIFEST).write_bytes(manifest)
+        generation = folder / f"g-{hashlib.sha256(manifest).hexdigest()[:16]}"
+        if _intact(generation, cache):
+            shutil.rmtree(staging)  # Exactly this content is already a generation.
+        else:
+            shutil.rmtree(generation, ignore_errors=True)  # A damaged copy, never served.
+            staging.rename(generation)
     except BaseException:
         shutil.rmtree(staging, ignore_errors=True)
         raise
+    try:
+        previous = current_generation(cache_dir, scene_id)
+    except CacheError:
+        previous = None
+    write_atomic(folder / CURRENT, f"{generation.name}\n".encode())  # The switch.
+    keep = {generation.name} | ({previous.name} if previous is not None else set())
+    for entry in folder.iterdir():
+        if _GENERATION.fullmatch(entry.name) and entry.name not in keep:
+            shutil.rmtree(entry, ignore_errors=True)
     return cache
 
 
-def _swap(staging: Path, folder: Path) -> None:
-    """Put `staging` at `folder`; a reader sees the old cache or the new one, never a mix."""
-    retired = None
-    if folder.exists():
-        retired = folder.with_name(f".{folder.name}.old-{os.getpid()}")
-        shutil.rmtree(retired, ignore_errors=True)
-        folder.rename(retired)
+def _intact(generation: Path, cache: DemoCache) -> bool:
     try:
-        staging.rename(folder)
-    except BaseException:
-        if retired is not None:
-            retired.rename(folder)
-        raise
-    if retired is not None:
-        shutil.rmtree(retired, ignore_errors=True)
+        return all(_sha256(generation / f.path) == f.sha256 for f in cache.files)
+    except OSError:
+        return False
 
 
 def publish_video_scene(
@@ -231,34 +246,58 @@ def publish_catalog_scene(
     )
 
 
-def read_demo_cache(scene_id: str, *, cache_dir: Path) -> DemoCache | None:
+def current_generation(cache_dir: Path, scene_id: str) -> Path | None:
+    """The folder of the scene's published generation; None when none is published."""
+    folder = cache_folder(cache_dir, scene_id)
+    try:
+        name = (folder / CURRENT).read_text().strip()
+    except FileNotFoundError:
+        return None
+    if not _GENERATION.fullmatch(name):
+        raise CacheError(f"{CURRENT} names {name[:40]!r}, not a generation")
+    return folder / name
+
+
+def read_demo_cache(
+    scene_id: str, *, cache_dir: Path, url_base: str = ASSET_URL_BASE
+) -> DemoCache | None:
     """The scene's published cache, its files verified; None when none is published.
 
-    Raises CacheError for an unreadable manifest, one for another scene, a path outside the
-    folder, or a missing or altered file.
+    Raises CacheError for a bad `CURRENT`, an unreadable manifest, one for another scene, an
+    asset outside `url_base`, a path outside the folder, or a missing or altered file.
     """
-    folder = cache_folder(cache_dir, scene_id)
-    manifest = folder / MANIFEST
-    if not manifest.is_file():
+    read = _read(scene_id, cache_dir, url_base)
+    return None if read is None else read[0]
+
+
+def _read(scene_id: str, cache_dir: Path, url_base: str) -> tuple[DemoCache, Path] | None:
+    """The verified cache and the generation it was read from, resolved once."""
+    generation = current_generation(cache_dir, scene_id)
+    if generation is None:
         return None
     try:
-        cache = DemoCache.model_validate_json(manifest.read_bytes())
+        raw = (generation / MANIFEST).read_bytes()
+    except FileNotFoundError as exc:
+        raise CacheError(f"the published generation {generation.name} is missing") from exc
+    try:
+        cache = DemoCache.model_validate_json(raw)
     except ValidationError as exc:
         raise CacheError(f"unreadable cache manifest ({exc.error_count()} errors)") from exc
     if cache.scene_id != scene_id:
         raise CacheError(f"the cache folder holds {cache.scene_id!r}, not {scene_id!r}")
     listed = {file.path for file in cache.files}
-    if missing := sorted({p for a in cache.assets for p in referenced_files(a)} - listed):
+    referenced = {p for a in cache.assets for p in referenced_files(a, url_base=url_base)}
+    if missing := sorted(referenced - listed):
         raise CacheError(f"the manifest does not list {', '.join(missing)}")
     for file in cache.files:
-        path = _inside(folder, file.path)
+        path = _inside(generation, file.path)
         if not _SHA256.fullmatch(file.sha256):
             raise CacheError(f"{file.path}: not a SHA-256 digest")
         if not path.is_file():
             raise CacheError(f"{file.path}: missing from the cache")
         if _sha256(path) != file.sha256:
             raise CacheError(f"{file.path}: altered since it was published")
-    return cache
+    return cache, generation
 
 
 def install_demo_cache(
@@ -268,17 +307,22 @@ def install_demo_cache(
 
     Returns None when no cache is published. A file already in `data_dir` with the same
     digest is kept; a different one is replaced (paths are content-named, so that only repairs
-    a damaged file). Raises CacheError when the cache is broken or an installed asset fails
-    `inspect_asset`; OSError when `data_dir` cannot be written.
+    a damaged file). Every file comes from the one generation that was read, even if another
+    is published meanwhile. `url_base` must be the one the cache was published with. Raises
+    CacheError when the cache is broken or an installed asset fails `inspect_asset`; OSError
+    when `data_dir` cannot be written.
     """
-    cache = read_demo_cache(scene_id, cache_dir=cache_dir)
-    if cache is None:
+    read = _read(scene_id, cache_dir, url_base)
+    if read is None:
         return None
-    folder = cache_folder(cache_dir, scene_id)
+    cache, generation = read
     for file in cache.files:
         target = _inside(data_dir, file.path)
         if not target.is_file() or _sha256(target) != file.sha256:
-            write_atomic(target, (folder / file.path).read_bytes())
+            data = (generation / file.path).read_bytes()
+            if hashlib.sha256(data).hexdigest() != file.sha256:
+                raise CacheError(f"{file.path}: altered since it was published")
+            write_atomic(target, data)
     faults = []
     for asset in cache.assets:
         check = inspect_asset(asset, data_dir=data_dir, url_base=url_base)
@@ -342,7 +386,7 @@ def main(argv: list[str] | None = None) -> int:
                     object_ids=args.object_id,
                     min_items=2 if args.min_items is None else args.min_items,
                 )
-            folder = cache_folder(args.cache_dir, scene_id)
+            folder = current_generation(args.cache_dir, scene_id)
             print(json.dumps(summary(cache) | {"folder": str(folder)}))
             return 0
         with tempfile.TemporaryDirectory(prefix="demo-cache-verify-") as temporary:

@@ -46,13 +46,17 @@ auditor (Dev 4) measures. Provider setup is spread over five README sections.
 - `DemoCache` manifest: `format`, `scene_id` (registry key), `source` (`video`, `catalog`),
   `registry_revision`, `assets`, `files` (`path`, `sha256`, `size_bytes`).
 - `publish_demo_cache(scene_id, assets, ...)`: every asset passes `inspect_asset`, IDs are
-  unique, every `glb_url` and evidence mask exists. Written to a temporary folder and swapped
-  in, so a failed publish keeps the previous cache. The manifest is deterministic.
+  unique, every `glb_url` and evidence mask exists. Written as a complete generation folder
+  (`g-<manifest hash>`), then published by atomically replacing the scene folder's `CURRENT`
+  file, so a failed publish keeps the previous cache and a concurrent reader always finds one.
+  Readers resolve `CURRENT` once; generations are immutable, and the replaced one is kept for
+  readers still using it. The manifest is deterministic.
 - `publish_video_scene` (via `deliver_furniture`, which must be `ok`) and
   `publish_catalog_scene` (via `imported_assets`, each `ok`).
-- `read_demo_cache` returns `None` when absent; `CacheError` for a bad manifest, a path outside
-  the folder, or a missing or altered file. `install_demo_cache` copies into the data directory
-  and re-inspects every asset there.
+- `read_demo_cache` returns `None` when absent; `CacheError` for a bad pointer or manifest, a
+  path outside the folder, or a missing or altered file. `install_demo_cache` copies from the
+  generation it read into the data directory and re-inspects every asset there. Publish, read
+  and install all take the same `url_base`.
 - CLI: `publish` and `verify` subcommands; exit 0 / 2 / 1 as the other furniture CLIs.
 
 `delivery.inspect_asset` also compares the declared `POSITION` bounds with `bbox_m`, because
