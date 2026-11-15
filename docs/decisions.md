@@ -352,6 +352,17 @@
 - An instruction that could not be read is dropped with a note and the result is reported as
   `stopped_early`, so it is never presented as honouring what the user wrote.
 
+## Feng Shui placement metric
+
+- `AuditReport.feng_shui` is filled by a small deterministic rule set (desk or bed in
+  command position, back to the door, bed foot at the door) instead of staying null, so the
+  editor can show and the layout goals can rank it. It judges beds and desks only and is null
+  when nothing can be judged. It is labelled a traditional rule of thumb, never a prediction.
+- This differs from the qualitative AI assessment on the `feat/feng-shui-evaluation-agent`
+  branch, which deliberately has no score; the two are complementary and share no code.
+- A `feng_shui` goal was added to `LayoutGoal`: score first, then access, walking space and
+  movement. Fit, door and lock rules still come before it.
+
 ## Retailer import review (#60)
 
 - Classify the product's head phrase before `with`, `and` or a comma, using the last
@@ -390,3 +401,6 @@
   editor still draws them as labelled boxes; the scene now validates in every service.
 - Require explicit application against the submitted revision and preserve room-session
   cancellation. No automatic scene mutations, persistence or new dependencies.
+- Merge #35's live audit and proposal controls with #65's `/chat` route: keep audit
+  previews and Dismiss for both additions and rearrangements, and reuse the same spatial
+  transport for cancellation, timeouts and service errors.

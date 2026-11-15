@@ -51,7 +51,7 @@ def test_shared_cases_through_http(case: dict[str, Any]) -> None:
 
 
 @pytest.mark.parametrize("compass", [None, 0, 45, 270])
-def test_unimplemented_assessments_are_explicit_nulls_even_with_compass(
+def test_unassessed_checks_stay_null_and_feng_shui_ignores_the_compass(
     compass: float | None,
 ) -> None:
     body = payload()
@@ -61,7 +61,9 @@ def test_unimplemented_assessments_are_explicit_nulls_even_with_compass(
     assert response.status_code == 200
     report = response.json()
     assert report["overall_score"] is None
-    assert report["feng_shui"] is None
+    # Feng shui is judged from door and furniture geometry only, so north does not matter.
+    assert report["feng_shui"]["score"] == 100
+    assert {x["status"] for x in report["feng_shui"]["sightlines"]} == {"command_position"}
     assert report["glare_alerts"] is None
     assert report["glare_orientation_grounded"] is None
 

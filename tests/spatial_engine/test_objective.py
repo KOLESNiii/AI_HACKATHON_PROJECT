@@ -457,6 +457,29 @@ def test_custom_goal_ignores_movement_but_never_accepts_worse_access() -> None:
     assert not beats_original(old, evaluate_layout(original, blocked), "custom")
 
 
+def test_feng_shui_goal_ranks_the_score_first_and_is_never_traded_for_validity() -> None:
+    from contracts.schema import DoorOpening
+
+    desk = item("desk", 4.5, 3)
+    desk.category, desk.bbox_m.width, desk.bbox_m.depth = "desk", 1.2, 0.7
+    original = room([desk])
+    original.doors = [DoorOpening(id="door", wall_id="north", hinge_pos=Vec2(x=2, z=0), width_m=1)]
+    original.furniture[0].pose = Pose2D(x=4.5, z=3, yaw_deg=180)  # back to the door
+    turned = original.model_copy(deep=True)
+    turned.furniture[0].pose = Pose2D(x=4.5, z=3, yaw_deg=0)  # now facing it
+    old, new = evaluate_layout(original, original), evaluate_layout(original, turned)
+    assert (old.metrics.feng_shui_score, new.metrics.feng_shui_score) == (0, 100)
+    better = compare_evaluations(old, new, "feng_shui")
+    assert better.outcome == "better" and better.deciding_metric == "feng_shui_score"
+    # Under the balanced goal the extra movement makes the same turn a loss.
+    assert compare_evaluations(old, new, "balanced").outcome == "worse"
+    outside = original.model_copy(deep=True)
+    outside.furniture[0].pose = Pose2D(x=-5, z=3, yaw_deg=0)
+    assert (
+        compare_evaluations(old, evaluate_layout(original, outside), "feng_shui").outcome == "worse"
+    )
+
+
 def test_custom_clearance_gain_cannot_compensate_for_lost_circulation(
     divided_access_room: RoomScene,
 ) -> None:

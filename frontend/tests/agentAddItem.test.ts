@@ -27,7 +27,9 @@ test('chat sends scene and instruction, preserving cancellation and additions', 
   const controller = new AbortController()
   globalThis.fetch = (async (url, options) => {
     expect(url).toBe('/api/spatial_engine/chat')
-    expect(options?.signal).toBe(controller.signal)
+    expect(options?.signal?.aborted).toBe(false)
+    controller.abort()
+    expect(options?.signal?.aborted).toBe(true)
     expect(JSON.parse(options?.body as string)).toEqual({
       scene: initial.scene,
       instruction: 'Add a chair',
@@ -51,6 +53,66 @@ test('agent errors do not become successful proposals', async () => {
   globalThis.fetch = (async () =>
     new Response('', { status: 503 })) as typeof fetch
   await expect(sendAgentMessage(initial.scene, 'Add a chair')).rejects.toThrow()
+})
+
+test('chat preserves readable validation errors from the spatial transport', async () => {
+  globalThis.fetch = (async () =>
+    Response.json(
+      { detail: [{ msg: 'Door hinge must lie on its wall segment' }] },
+      { status: 422 },
+    )) as typeof fetch
+  await expect(sendAgentMessage(initial.scene, 'Add a chair')).rejects.toThrow(
+    'The room could not be checked: Door hinge must lie on its wall segment',
+  )
+})
+
+test('chat previews the proposed audit and rejects a report for another revision', async () => {
+  const report = {
+    scene_id: initial.scene.scene_id,
+    scene_revision: initial.scene.revision,
+    collisions: [],
+    blocked_doors: [],
+    out_of_bounds_item_ids: [],
+    clearance_issues: [],
+    walkable_floor_ratio: 0.75,
+    feng_shui: null,
+  }
+  globalThis.fetch = (async () =>
+    Response.json({
+      text: 'Proposed',
+      additions: [proposal()],
+      report,
+    })) as typeof fetch
+  const reply = await sendAgentMessage(initial.scene, 'Add a chair')
+  expect(reply.outlook).toContain('75% walkable')
+  expect(reply.additions?.[0].id).toBe('new-item')
+  report.scene_revision += 1
+  await expect(sendAgentMessage(initial.scene, 'Add a chair')).rejects.toThrow(
+    'The room changed while I was thinking. Ask again.',
+  )
+})
+
+test('Dismiss prevents both addition-only and pose-only proposals from applying', () => {
+  for (const change of [
+    { additions: [proposal()] },
+    { poses: { [initial.scene.furniture[0].id]: { x: 3, z: 3, yaw_deg: 0 } } },
+  ]) {
+    useStore.setState({
+      ...initial,
+      chat: [
+        {
+          role: 'assistant',
+          text: 'Proposed',
+          baseRevision: initial.scene.revision,
+          ...change,
+        },
+      ],
+    })
+    useStore.getState().dismissProposal(0)
+    expect(useStore.getState().chat[0].dismissed).toBe(true)
+    useStore.getState().applyPoses(0)
+    expect(useStore.getState().scene).toBe(initial.scene)
+  }
 })
 
 test('Apply adds the proxy and moves existing furniture once, in one revision', () => {

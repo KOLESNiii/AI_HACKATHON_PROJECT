@@ -223,7 +223,8 @@ match its current scene. Input is not modified and no provider credentials are
 needed. The shared room has a blocked door and a bed-clearance issue; it is not
 a universally clean demo layout.
 
-`overall_score`, `glare_alerts` and `feng_shui` return **null**, meaning not assessed.
+`overall_score` and `glare_alerts` return **null**, meaning not assessed. `feng_shui` is
+null only when the room has no door or no bed or desk to judge (see below).
 They must not be rendered as zero, a perfect score or no glare. The shared Python
 and TypeScript types were updated together. `glare_orientation_grounded` is also
 null until glare is assessed. Later, true denotes grounded orientation and false
@@ -459,7 +460,32 @@ Each row is a single run of 2 model calls and 4,000 to 5,500 tokens. Results
 vary between runs. There is no cached or fallback answer: if the assistant is
 unavailable the response says so.
 
-## Feng shui assessment
+## Feng Shui placement metric (rule-based, in `/audit`)
+
+`feng_shui_metric.calculate_feng_shui` fills `AuditReport.feng_shui` from geometry alone,
+using the command-position tradition. For each desk and bed it takes the nearest door and
+asks where the occupant looks. A desk's front is the sitter's side, so the sitter faces the
+opposite way; a bed's front is its foot, and the sleeper lies facing it.
+
+| Status | Meaning | Points |
+| --- | --- | --- |
+| `command_position` | The door is within 100 degrees of facing and the line to it stays inside the room and is unobstructed at 1.2 m | 1 |
+| `back_to_door` | The door is more than 100 degrees from facing, so it is behind the occupant | 0 |
+| `coffin_alignment` | A bed's foot points at the door (within 20 degrees, and the door is no wider than the bed's width plus 0.3 m off its axis) | 0 |
+| not listed | The view is obstructed, leaves the room, or a desk faces the door head-on | 0.5 |
+
+`score` is the rounded average, 0 to 100, over the beds and desks that were judged. Rooms
+with no door, or no bed or desk, return `feng_shui: null`, never zero. The score ignores
+the compass and says nothing about the rest of the room. These are design traditions, not
+predictions of health or luck. The `feng_shui` layout goal ranks this score first, after the
+fit and door rules. Timofey's `feng-shui` branch is a separate, AI-written qualitative review;
+this metric is the small deterministic part that can be shown and ranked on every edit.
+
+```bash
+uv run --extra spatial pytest tests/spatial_engine/test_feng_shui_metric.py
+```
+
+## Feng shui assessment (AI-written, `POST /feng-shui`)
 
 `POST /feng-shui` accepts `{ "scene": <RoomScene> }` and optional fields:
 

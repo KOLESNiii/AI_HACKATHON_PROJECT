@@ -31,6 +31,10 @@ export interface ChatMessage {
   /** Scene revision the agent saw; poses only apply while the scene is still at it. */
   baseRevision?: number
   applied?: boolean
+  /** The user chose not to apply this proposal. */
+  dismissed?: boolean
+  /** What the proposed layout would look like once audited, e.g. "0 collisions · feng shui 100". */
+  outlook?: string
 }
 export interface Toast {
   id: number
@@ -54,8 +58,10 @@ interface State {
   human: Pose2D | null
   placingHuman: boolean
   humanPreview: Pose2D | null
-  /** Latest AuditReport from the spatial engine (hooked up in a later PR). */
+  /** Latest AuditReport from the spatial engine; shown only for the matching revision. */
   audit: AuditReport | null
+  /** Why the last audit failed, or null. */
+  auditError: string | null
   chat: ChatMessage[]
   agentBusy: boolean
   /** In-flight agent request, aborted when the room is reopened. */
@@ -78,6 +84,8 @@ interface State {
   deleteItem: (id: string) => void
   addFromCatalog: (c: CatalogItem) => void
   applyPoses: (messageIndex: number) => void
+  dismissProposal: (messageIndex: number) => void
+  setAudit: (report: AuditReport | null, error?: string | null) => void
   setTab: (t: Tab) => void
   beginHumanPlacement: () => boolean
   previewHuman: (p: Pt | null) => void
@@ -170,6 +178,7 @@ export const useStore = create<State>((set, get) => ({
   placingHuman: false,
   humanPreview: null,
   audit: null,
+  auditError: null,
   chat: [],
   agentBusy: false,
   agentAbort: null,
@@ -200,6 +209,7 @@ export const useStore = create<State>((set, get) => ({
       placingHuman: false,
       humanPreview: null,
       audit: null,
+      auditError: null,
       interacting: false,
       chat: [],
       agentBusy: false,
@@ -345,6 +355,7 @@ export const useStore = create<State>((set, get) => ({
       !msg ||
       (!msg.poses && !msg.additions?.length) ||
       msg.applied ||
+      msg.dismissed ||
       get().interacting ||
       get().mode !== 'edit'
     )
@@ -374,10 +385,20 @@ export const useStore = create<State>((set, get) => ({
           msg.report.scene_revision === scene.revision
             ? { ...msg.report, scene_revision: scene.revision + 1 }
             : null,
+        auditError: null,
         chat: chat.map((m, i) => (i === index ? { ...m, applied: true } : m)),
       }),
     )
   },
+  dismissProposal: (index) =>
+    set((s) => ({
+      chat: s.chat.map((m, i) =>
+        i === index && (m.poses || m.additions?.length) && !m.applied
+          ? { ...m, dismissed: true }
+          : m,
+      ),
+    })),
+  setAudit: (audit, auditError = null) => set({ audit, auditError }),
   setTab: (tab) => {
     if (get().tab === tab) return
     set({ tab })

@@ -110,8 +110,8 @@ floor ratio using a 50 cm person and entry through any physically passable door.
 Door swing obstruction is reported separately: clipping the swing arc does not
 exclude an entry unless obstacles actually prevent passage through the doorway.
 
-Scoring, glare and Feng Shui remain unimplemented. `overall_score`, `glare_alerts`
-and `feng_shui` are nullable in both shared schemas. Consumers must display null
+Scoring and glare remain unimplemented; Feng Shui is a small rule-based placement metric.
+`overall_score`, `glare_alerts` and `feng_shui` are nullable in both shared schemas. Consumers must display null
 as unassessed, not zero/no issues. `glare_orientation_grounded` is also nullable:
 null means glare was not assessed, true means assessed with grounded orientation,
 and false means an assessment used the plan-normal/-Z fallback.
@@ -464,9 +464,11 @@ The editor displays them through its existing labelled proxy renderer.
 
 The Chat tab calls `/api/spatial_engine/chat`. Apply appends additions and applies
 poses atomically with one revision bump; stale replies, duplicate IDs, repeated
-application and application during a gesture or Play are rejected. Room-session
+application, dismissed proposals and application during a gesture or Play are rejected. Room-session
 cancellation still discards responses from rooms that have been closed. The audited
-report follows the accepted revision into Stats. Provider failure or no key returns
+report provides a preview before Apply and follows the accepted revision into Stats;
+the live audit then checks the new revision. Chat reuses the spatial client's timeout,
+cancellation and readable error handling. Provider failure or no key returns
 an explanation with no changes. Library items carry the same proxy URL form as agent
 additions, because the services reject a scene whose item has an empty `glb_url`.
 No new configuration or dependencies are introduced;

@@ -30,7 +30,8 @@ none must be converted into a clean report. Internal error details stay server-s
 
 The audit response uses the shared models with these nullable fields:
 `overall_score: number | null`, `glare_alerts: GlareAlert[] | null`, and
-`feng_shui: FengShuiReport | null`. All three currently return null: display
+`feng_shui: FengShuiReport | null`. `overall_score` and `glare_alerts` currently return
+null; `feng_shui` is null only without a door or a bed/desk. Display null as
 "not checked", never zero/perfect scores or "no glare". Python and TypeScript
 schemas changed together; use this revision when wiring the frontend. A future
 assessed empty glare list means no alerts, whereas null means not checked.
@@ -130,7 +131,7 @@ uv run --extra spatial pytest tests/spatial_engine/test_handoff_cases.py
 
 Implemented. Send `OptimiseRequest`: the scene, `locked_item_ids`, and optionally
 the user's typed `instruction` (max 500 characters) and a `goal` chip
-(`balanced`, `brighter`, `roomier`, `minimal_changes`, `custom`; the chip overrides what
+(`balanced`, `brighter`, `roomier`, `minimal_changes`, `feng_shui`, `custom`; the chip overrides what
 the assistant reads from the text). Expect several seconds up to 90 seconds, so
 show progress and allow the user to keep editing.
 
@@ -148,3 +149,26 @@ Handling the `LayoutProposal`:
   verified layout; mention the search was cut short.
 - `goal` is the goal that was applied; show it so the user can correct it.
 - HTTP 422 means the request was invalid (for example an unknown locked ID).
+
+## Editor integration status (issues #32 and #35)
+
+Wired in the editor (`frontend/src/lib/spatial.ts`, `components/editor/useLiveAudit.ts`):
+
+- **Live audit (#32):** every committed edit, which is a new scene revision, is audited
+  through `/api/spatial_engine/audit` after a 250 ms pause. An older request is cancelled when
+  a newer edit arrives, and a report is stored only if the scene is still at the revision it
+  was computed for. The Stats tab shows "Checking the room..." or the service's error. Both
+  services must be running (`bun run dev:spatial`); the editor shows the error otherwise.
+- **Chat to `/chat` (#35, #65):** `lib/agent.ts` sends the typed message; rearrangements
+  delegate to the solver, while additions return one dimensioned proxy. A proposal shows
+  the server's explanation, a one-line outlook from the proposal's own audit, and Apply or
+  Dismiss. Apply keeps the existing stale-revision check, bumps the revision, and the live
+  audit then re-audits the result. Nothing changes the scene until Apply. Dismissed or
+  applied proposals cannot be applied again. Errors, 422s and timeouts become readable chat
+  messages.
+- Library items carry a dimensioned proxy URL. `toServiceScene` still substitutes a
+  placeholder URL for legacy items with an empty `glb_url`, for requests only.
+- The Stats tab lists each Feng Shui judgement with its reason.
+
+Not done yet: a 3D preview of a proposal before applying it, goal chips, and locking the
+selected item (`locked_item_ids` is always sent empty, so the user's wording is the only lock).

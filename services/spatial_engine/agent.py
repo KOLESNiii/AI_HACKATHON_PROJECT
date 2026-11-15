@@ -155,10 +155,11 @@ class AnthropicLayoutModel:
 
 _GOALS_TEXT = (
     "balanced: sensible default; brighter: keep windows unobstructed; roomier: more "
-    "walking space; minimal_changes: move as little as possible; custom: the main wish is "
-    "something none of the other four can express, such as a cosy reading corner, a desk "
-    "facing the door or a bed away from the radiator. Prefer a specific goal whenever one "
-    "fits, and use custom only when that other wish is the point of the request."
+    "walking space; minimal_changes: move as little as possible; feng_shui: the person asks "
+    "for better feng shui, or for a bed or desk placed so the door is in view; custom: the "
+    "main wish is something none of the others can express, such as a cosy reading corner "
+    "or a bed away from the radiator. Prefer a specific goal whenever one fits, and use "
+    "custom only when that other wish is the point of the request."
 )
 
 _INTERPRET_SYSTEM = (
@@ -393,6 +394,14 @@ def _explain_result(
                 if was == now
                 else f"Unobstructed window area (a geometric estimate, not measured light): "
                 f"{was} before, {now} now."
+            )
+        if preferences.goal == "feng_shui" and None not in (a.feng_shui_score, b.feng_shui_score):
+            parts.append(
+                f"Feng shui score (a traditional placement rule of thumb, not a prediction): "
+                f"{a.feng_shui_score} before, {b.feng_shui_score} now."
+                if a.feng_shui_score != b.feng_shui_score
+                else f"The feng shui score stays at {b.feng_shui_score}: no move that keeps the "
+                "room valid changed how the beds and desks face the door."
             )
         if preferences.near_window_item_ids and b.near_window_shortfall_m is not None:
             parts.append(

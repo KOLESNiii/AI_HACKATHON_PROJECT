@@ -347,3 +347,14 @@ def furniture_footprint(item: FurnitureItem) -> Polygon:
             "Furniture footprint must have finite, positive area and valid geometry"
         )
     return footprint
+
+
+def door_center(
+    door: DoorOpening, wall: WallSegment, floor_points: Sequence[Vec2]
+) -> tuple[float, float]:
+    """The middle of a closed door, on the wall's interior face."""
+    frame = _door_frame(door, wall, floor_points)
+    return (
+        (frame.hinge[0] + frame.endpoint[0]) / 2,
+        (frame.hinge[1] + frame.endpoint[1]) / 2,
+    )

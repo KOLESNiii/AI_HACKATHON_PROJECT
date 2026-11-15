@@ -1,10 +1,13 @@
 import type { AuditReport, FurnitureItem, Pose2D, RoomScene } from './contracts'
+import { postSpatial, SpatialError, toServiceScene } from './spatial'
 
 export interface AgentReply {
   text: string
   poses?: Record<string, Pose2D>
   additions?: FurnitureItem[]
   report?: AuditReport | null
+  /** The proposed audit, shown before Apply. */
+  outlook?: string
 }
 
 /** What Apply would do, e.g. "Proposed layout · 1 new item · 2 moves". */
@@ -20,25 +23,48 @@ export function proposalSummary(
   ].join(' · ')
 }
 
+/** One line on what the audited proposal leaves, from the engine's own report. */
+export function describeOutlook(report: AuditReport): string {
+  const overlaps =
+    report.collisions.length + report.out_of_bounds_item_ids.length
+  const parts = [
+    overlaps === 0 ? 'nothing overlapping' : `${overlaps} overlap(s)`,
+    report.blocked_doors.length === 0
+      ? 'doors clear'
+      : `${report.blocked_doors.length} door(s) blocked`,
+    `${report.clearance_issues.length} access issue(s)`,
+  ]
+  if (report.walkable_floor_ratio != null)
+    parts.push(`${Math.round(report.walkable_floor_ratio * 100)}% walkable`)
+  if (report.feng_shui != null)
+    parts.push(`feng shui ${report.feng_shui.score}`)
+  return parts.join(' · ')
+}
+
 /** Return a proposal; application is a separate, revision-guarded user action. */
 export async function sendAgentMessage(
   scene: RoomScene,
   text: string,
   signal?: AbortSignal,
 ): Promise<AgentReply> {
-  const response = await fetch('/api/spatial_engine/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ scene, instruction: text }),
+  const reply = await postSpatial<AgentReply>(
+    '/chat',
+    { scene: toServiceScene(scene), instruction: text },
+    100_000,
     signal,
-  })
-  if (!response.ok) throw new Error(`Agent request failed (${response.status})`)
-  const reply: AgentReply = await response.json()
+  )
+  if (
+    reply.report &&
+    (reply.report.scene_id !== scene.scene_id ||
+      reply.report.scene_revision !== scene.revision)
+  )
+    throw new SpatialError('The room changed while I was thinking. Ask again.')
   return {
     text: reply.text,
     report: reply.report,
     poses:
       reply.poses && Object.keys(reply.poses).length ? reply.poses : undefined,
     additions: reply.additions?.length ? reply.additions : undefined,
+    outlook: reply.report ? describeOutlook(reply.report) : undefined,
   }
 }
