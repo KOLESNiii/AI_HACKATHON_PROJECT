@@ -235,3 +235,18 @@
   the plan deterministic without labels (recorded labels) is left to #12.
 - The asset store is mounted with the same data directory the source reads (#52), so a proxy
   URL in a scene is always servable by the same process.
+
+## Retailer import review (#60)
+
+- Classify the product's head phrase before `with`, `and` or a comma, using the last
+  furniture/accessory noun and preserving compound names such as bedside table. This
+  keeps classification offline, deterministic and free; no Anthropic key is required.
+- Retailer GLBs use their metre-scale extents when published/user dimensions are absent.
+  Their dimensions remain estimated and request correction; generated meshes still use
+  category height. Both paths retain the normaliser's size and geometry checks.
+- Product IDs discard query strings, fragments and trailing slashes. Read image dimensions
+  with Pillow before OpenCV decode and refuse images over 25 million pixels. Downloads
+  share a monotonic deadline across redirects and body chunks, with each network operation
+  also limited by the remaining budget at the start of its request.
+- Keep the CLI's normalisation preflight and delivery check: the duplicate work is accepted
+  for now to preserve the single delivery validation path.

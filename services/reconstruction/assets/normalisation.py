@@ -104,6 +104,7 @@ def normalise_mesh(
     target_bbox: BBoxM | None,
     data_dir: Path,
     front: Front | None = None,
+    preserve_scale: bool = False,
     url_base: str = ASSET_URL_BASE,
 ) -> NormalisedMesh:
     """Fit a raw glTF 2.0 binary to the furniture profile, store it and return its `glb_url`.
@@ -117,6 +118,9 @@ def normalise_mesh(
     height and the returned `bbox_m` is an estimate that always requests `"dimensions"`: the
     caller records it as `dimension_source: "estimated"`. An estimated side exceeding
     `MAX_ESTIMATED_SIZE_RATIO` times its category size is refused; supply dimensions instead.
+
+    `preserve_scale=True` keeps metre-scale retailer extents when no target is supplied,
+    with the same estimated provenance, dimension correction and size limits.
 
     Raises NormalisationError when the file is unusable or over the profile's budgets, and
     ValueError for an unknown category. Nothing is stored in either case.
@@ -143,7 +147,7 @@ def normalise_mesh(
     if target_bbox is None:
         # Millimetre-rounded so the recorded size is a clean number the mesh then matches.
         typical_size = np.array(CATEGORY_SIZE_M[cast(Category, category)])
-        size = np.round(extents * (typical_size[1] / extents[1]), 3)
+        size = np.round(extents if preserve_scale else extents * (typical_size[1] / extents[1]), 3)
         if np.any(size / typical_size > MAX_ESTIMATED_SIZE_RATIO):
             raise NormalisationError(
                 f"estimated side exceeds {MAX_ESTIMATED_SIZE_RATIO:g} times the category size; "

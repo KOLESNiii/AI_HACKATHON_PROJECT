@@ -13,6 +13,7 @@ import json
 import math
 import re
 import socket
+import time
 from collections.abc import Callable, Iterator
 from html.parser import HTMLParser
 from typing import Any, Literal, get_args
@@ -87,7 +88,16 @@ def _check_public(url: str) -> str:
 
 def fetch_public(url: str, limit: int, *, timeout_s: float = 20) -> tuple[bytes, str]:
     """Download a public URL with a size cap, re-checking every redirect hop."""
+    deadline = time.monotonic() + timeout_s
+
+    def remaining() -> float:
+        budget = deadline - time.monotonic()
+        if budget <= 0:
+            raise CatalogError("the retailer download exceeded its time limit")
+        return budget
+
     for _ in range(MAX_REDIRECTS + 1):
+        remaining()
         address = _check_public(url)
         target = httpx.URL(url)
         try:
@@ -97,7 +107,7 @@ def fetch_public(url: str, limit: int, *, timeout_s: float = 20) -> tuple[bytes,
                     "GET",
                     target.copy_with(host=address),
                     extensions={"sni_hostname": target.host},
-                    timeout=timeout_s,
+                    timeout=remaining(),
                     follow_redirects=False,
                     headers={
                         "Host": target.netloc.decode(),
@@ -106,15 +116,18 @@ def fetch_public(url: str, limit: int, *, timeout_s: float = 20) -> tuple[bytes,
                     },
                 ) as response,
             ):
+                remaining()
                 if response.is_redirect and "location" in response.headers:
                     url = urljoin(url, response.headers["location"])
                     continue
                 response.raise_for_status()
                 data = bytearray()
                 for chunk in response.iter_bytes():
+                    remaining()
                     if len(data) + len(chunk) > limit:
                         raise CatalogError("the retailer's response is too large")
                     data.extend(chunk)
+                remaining()
                 return bytes(data), url
         except httpx.HTTPStatusError as exc:
             raise CatalogError(f"the retailer answered HTTP {exc.response.status_code}") from exc
@@ -232,18 +245,27 @@ _CATEGORY_WORDS: list[tuple[Category, tuple[str, ...]]] = [
 
 
 def guess_category(*texts: str) -> Category:
-    """A category from the product's own words, most specific first; "other" when none fits."""
+    """Classify the head phrase, using its last furniture or accessory noun.
+
+    Complements after with/and/a comma describe included items, not the main product.
+    Longer noun phrases take precedence over words inside them (e.g. bedside table).
+    """
+    vocabulary = (
+        [(word, category) for category, words in _CATEGORY_WORDS for word in words]
+        + [
+            (word, "other")
+            for word in ("lamp", "pad", "cover", "cushion", "accessory", "accessories")
+        ]
+        + [("bedside table", "storage"), ("sofa-bed", "sofa")]
+    )
+    vocabulary.sort(key=lambda entry: len(entry[0]), reverse=True)
+    categories = dict(vocabulary)
+    pattern = re.compile(r"\b(" + "|".join(re.escape(word) for word, _ in vocabulary) + r")s?\b")
     for text in texts:
-        lowered = text.lower()
-        if re.search(r"\b(lamps?|pads?|covers?|cushions?|accessories)\b", lowered):
-            return "other"
-        if re.search(r"\bdesk chairs?\b", lowered):
-            return "chair"
-        if re.search(r"\btable and \d+ chairs?\b", lowered):
-            return "table"
-        for category, words in _CATEGORY_WORDS:
-            if any(re.search(rf"\b{re.escape(word)}s?\b", lowered) for word in words):
-                return category
+        head = re.split(r"\b(?:with|and)\b|,", text.lower(), maxsplit=1)[0]
+        matches = list(pattern.finditer(head))
+        if matches:
+            return categories[matches[-1].group(1)]
     return "other"
 
 

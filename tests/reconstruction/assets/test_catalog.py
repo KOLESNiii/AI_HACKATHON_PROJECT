@@ -29,7 +29,7 @@ from services.reconstruction.assets.delivery import deliver_furniture
 from services.reconstruction.assets.import_product import main
 from services.reconstruction.assets.mesh_providers import MeshError
 from services.reconstruction.assets.normalisation import MAX_BYTES, normalise_mesh
-from services.reconstruction.assets.proxies import CATEGORY_SIZE_M, KnownDimensions
+from services.reconstruction.assets.proxies import KnownDimensions
 from services.reconstruction.assets.retailer import (
     CatalogError,
     RetailerProduct,
@@ -351,7 +351,12 @@ def test_missing_dimensions_request_a_correction_and_a_user_size_settles_it(
     asset = result.asset
     assert result.ok and not asset.is_proxy, "the published model is still used"
     assert asset.dimension_source == "estimated" and "dimensions" in asset.correction_needed
-    assert asset.bbox_m.height == CATEGORY_SIZE_M["desk"][1]
+    assert asset.bbox_m == BBoxM(width=1.049, height=0.754, depth=0.5)
+    assert np.ptp(bounds(tmp_path, asset.glb_url), axis=0) == pytest.approx(
+        [1.049, 0.754, 0.5], abs=GLB_BBOX_TOLERANCE_M
+    )
+    again = import_catalog_asset(URL, "room", data_dir=tmp_path, fetch=web)
+    assert again.asset == asset
     assert any("ask the user" in note for note in result.warnings)
     assert main(["--url", URL, "--scene-id", "room", "--data-dir", str(tmp_path)]) == 1, (
         "the CLI uses the real network guard; example hosts do not resolve to a product"
@@ -589,3 +594,69 @@ def test_download_pins_checked_address(monkeypatch):
     monkeypatch.setattr(retailer.httpx.Client, "stream", stream)
     assert retailer.fetch_public("https://shop.example/product", 100)[0] == b"ok"
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Dining table and chairs", "table"),
+        ("Table with 4 chairs", "table"),
+        ("Desk and chair set", "desk"),
+        ("Corner sofa with removable covers", "sofa"),
+        ("Armchair with cushion", "chair"),
+        ("Office desk chair with pads", "chair"),
+        ("Dining chair cushions", "other"),
+        ("Table lamp with shade", "other"),
+        ("Desk, chair included", "desk"),
+        ("Bedside table with drawers", "storage"),
+    ],
+)
+def test_category_uses_head_noun(name: str, expected: str) -> None:
+    assert guess_category(name) == expected
+
+
+def test_catalog_identity_ignores_tracking_and_trailing_slashes() -> None:
+    assert catalog_id(URL) == catalog_id(URL.rstrip("/") + "?utm_source=test#details")
+    assert catalog_id(URL) != catalog_id(URL + "different")
+
+
+def test_image_pixel_limit_is_checked_before_opencv_decode(monkeypatch) -> None:
+    from PIL import Image
+
+    from services.reconstruction.assets import catalog
+
+    data = io.BytesIO()
+    Image.new("RGB", (64, 64)).save(data, format="PNG")
+    monkeypatch.setattr(catalog, "MAX_IMAGE_PIXELS", 4000)
+
+    def unexpected_decode(*args):
+        pytest.fail("oversized image must be refused before decoding")
+
+    monkeypatch.setattr(catalog.cv2, "imdecode", unexpected_decode)
+    with pytest.raises(CatalogError):
+        catalog._decode(data.getvalue())
+
+
+def test_download_deadline_stops_trickling_response(monkeypatch) -> None:
+    from contextlib import contextmanager
+
+    import httpx
+
+    now = [0.0]
+    monkeypatch.setattr(retailer.time, "monotonic", lambda: now[0])
+    monkeypatch.setattr(retailer, "_check_public", lambda url: "93.184.216.34")
+
+    class Trickle(httpx.SyncByteStream):
+        def __iter__(self):
+            for _ in range(100):
+                now[0] += 0.4
+                yield b"a"
+
+    @contextmanager
+    def stream(self, method, url, **kwargs):
+        yield httpx.Response(200, stream=Trickle(), request=httpx.Request(method, url))
+
+    monkeypatch.setattr(httpx.Client, "stream", stream)
+    with pytest.raises(CatalogError, match="time limit"):
+        retailer.fetch_public("https://shop.example/x", 1000, timeout_s=1)
+    assert now[0] == pytest.approx(1.2)

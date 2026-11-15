@@ -232,7 +232,8 @@ JSON/Markdown reports; see the asset README for configuration and retry commands
 
 `assets/normalisation.py` fits raw meshes to metric bounds before serving them. Known
 dimensions are matched exactly; unknown dimensions use the category height and require
-correction. If any estimated side exceeds 3 times its category size, normalisation refuses
+correction. Retailer GLBs instead keep their metre-scale extents, still marked estimated
+and requiring dimension correction. If any estimated side exceeds 3 times its category size, normalisation refuses
 the mesh and reconstruction retains its proxy with a warning. Supplying dimensions allows
 the stored raw mesh to be retried offline. Unused vertices are removed before fitting;
 providers without a known front convention request an orientation correction.

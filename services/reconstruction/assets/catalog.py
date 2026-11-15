@@ -14,14 +14,17 @@ for `"dimensions"`: a size is never invented.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import math
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit, urlunsplit
 
 import cv2
 import numpy as np
 from numpy.typing import NDArray
+from PIL import Image, UnidentifiedImageError
 from pydantic import computed_field
 
 from contracts.schema import BBoxM
@@ -57,6 +60,7 @@ from .selection_models import (
 from .video import image_quality
 
 MAX_IMAGE_BYTES = 15_000_000
+MAX_IMAGE_PIXELS = 25_000_000
 MAX_IMAGE_SIDE_PX = 2048
 MIN_IMAGE_SIDE_PX = 64
 BACKGROUND_TOLERANCE = 18
@@ -78,7 +82,11 @@ def catalog_scene(scene_id: str) -> str:
 
 def catalog_id(product_url: str) -> str:
     """One product URL is one item ID, so importing it again updates the same item."""
-    return f"cat-{hashlib.sha256(product_url.encode()).hexdigest()[:12]}"
+    parts = urlsplit(product_url)
+    canonical = urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), parts.path.rstrip("/"), "", "")
+    )
+    return f"cat-{hashlib.sha256(canonical.encode()).hexdigest()[:12]}"
 
 
 class ImageProvenance(Record):
@@ -163,6 +171,13 @@ class RetailerModelProvider:
 
 def _decode(data: bytes) -> NDArray[np.uint8]:
     """An upright BGR image; transparency becomes white, as in a product shot."""
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            width, height = image.size
+            if width * height > MAX_IMAGE_PIXELS:
+                raise CatalogError("the product image has too many pixels")
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
+        raise CatalogError("the product image could not be read safely") from exc
     pixels = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_UNCHANGED)
     if pixels is None or pixels.dtype != np.uint8:
         raise CatalogError("the product image could not be read")
@@ -270,6 +285,7 @@ def _normalises(item: ItemReconstruction, known: KnownDimensions | None, data_di
             target_bbox=None if known is None else known.bbox_m,
             data_dir=data_dir,
             front=PROVIDER_FRONT.get(item.mesh.provider),
+            preserve_scale=item.mesh.provider == "retailer",
         )
     except NormalisationError:
         return False
