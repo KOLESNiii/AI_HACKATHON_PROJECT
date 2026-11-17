@@ -6,6 +6,8 @@ import type { RoomScene, Vec2 } from '../../lib/contracts'
 import { bounds, doorSwing } from '../../lib/geometry'
 import { useStore } from '../../store'
 import { Button, Chip, Panel, StatusDot } from '../ui'
+import { DEMO, DEVPOST_URL, REPO_URL } from '../../demo/config'
+import { examplesFor } from '../../demo/examples'
 
 const M = 60 // px per metre
 const PAD = 40
@@ -72,6 +74,9 @@ function PlanRoom({
           className={`pointer-events-none font-serif font-semibold ${selected ? 'fill-seal-vermilion-dark' : seg.selectable ? 'fill-ink-primary' : 'fill-ink-mist'}`}
         >
           {seg.label}
+          {DEMO && examplesFor(seg.room_id).length > 0 && (
+            <tspan className="fill-seal-vermilion"> ✦</tspan>
+          )}
         </text>
       )}
       {detail && (
@@ -203,23 +208,35 @@ export function FloorPlanScreen() {
       <div className="relative flex-1">
         <div className="absolute top-6 left-6 z-10 flex flex-col items-start gap-3">
           {/* Back to the upload step ("reading" is transient, so it is skipped). */}
-          <Button
-            onClick={() => {
-              selectSegment(null)
-              setScreen('upload')
-            }}
+          {!DEMO && (
+            <Button
+              onClick={() => {
+                selectSegment(null)
+                setScreen('upload')
+              }}
+            >
+              ← Upload
+            </Button>
+          )}
+          <Panel
+            className={`flex flex-col gap-3 px-5 py-4 ${DEMO ? 'max-w-[236px]' : ''}`}
           >
-            ← Upload
-          </Button>
-          <Panel className="flex flex-col gap-3 px-5 py-4">
             <div className="flex flex-col gap-1">
               <h1 className="font-serif text-[20px] leading-[23px] font-semibold">
-                Your home
+                {DEMO ? 'A demo home' : 'Your home'}
               </h1>
               <p className="text-[11px] font-medium text-ink-medium">
                 {plural(home.floors.length, 'floor')} segmented into{' '}
                 {plural(count, 'room')} · pick one to build
               </p>
+              {DEMO && (
+                <p className="text-[11px] leading-[16px] text-ink-mist">
+                  Read from a real estate-agent plan, with furniture rebuilt
+                  from a phone walkthrough. Rooms marked{' '}
+                  <span className="text-seal-vermilion">✦</span> have recorded
+                  agent runs.
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
               {home.floors.map((f) => (
@@ -249,7 +266,9 @@ export function FloorPlanScreen() {
           </Panel>
         </div>
 
-        <div className="grid h-full place-items-center pr-[380px] pl-[340px]">
+        <div
+          className={`grid h-full place-items-center pr-[380px] ${DEMO ? 'pl-[260px]' : 'pl-[340px]'}`}
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.svg
               key={floor.id}
@@ -364,9 +383,13 @@ export function FloorPlanScreen() {
                   ))}
                 </div>
                 <p className="text-[14px] leading-[23px] text-ink-medium">
-                  {uploaded
-                    ? 'Next, Refresh builds this room in 3D from your plan. Furniture found in your walkthrough videos is matched to its room automatically, and this room’s 3D models are built when you open it: allow a few minutes.'
-                    : "Next, Refresh extracts this room's furniture from your walkthrough video and assembles it in 3D. Other rooms stay untouched until you pick them."}
+                  {DEMO
+                    ? examplesFor(selected.room_id).length
+                      ? `Open it in 3D: drag the furniture around, watch the checks update, add IKEA pieces and walk through it. ${examplesFor(selected.room_id).length === 1 ? 'One recorded agent run is' : `${examplesFor(selected.room_id).length} recorded agent runs are`} ready to replay here.`
+                      : 'Open it in 3D: drag the furniture around, watch the checks update, add IKEA pieces and walk through it.'
+                    : uploaded
+                      ? 'Next, Refresh builds this room in 3D from your plan. Furniture found in your walkthrough videos is matched to its room automatically, and this room’s 3D models are built when you open it: allow a few minutes.'
+                      : "Next, Refresh extracts this room's furniture from your walkthrough video and assembles it in 3D. Other rooms stay untouched until you pick them."}
                 </p>
                 <div className="flex-1" />
                 <Button
@@ -380,6 +403,27 @@ export function FloorPlanScreen() {
                 <span className="-mt-2 text-center text-[11px] font-medium text-ink-mist">
                   or double-click the room on the plan
                 </span>
+                {DEMO && (
+                  <span className="flex justify-center gap-3 border-t border-hairline-ink pt-3 text-[11px] font-medium text-ink-medium">
+                    <a
+                      className="hover:text-seal-vermilion"
+                      href={REPO_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Source on GitHub
+                    </a>
+                    <span aria-hidden>·</span>
+                    <a
+                      className="hover:text-seal-vermilion"
+                      href={DEVPOST_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Devpost
+                    </a>
+                  </span>
+                )}
               </motion.div>
             </AnimatePresence>
           </motion.aside>

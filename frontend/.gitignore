@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Embeddable demo build (scripts/build-demo.ts)
+demo-public/
+dist-demo/

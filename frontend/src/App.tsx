@@ -13,6 +13,7 @@ import { ProgressScreen } from './components/intake/ProgressScreen'
 import { UploadScreen } from './components/intake/UploadScreen'
 import { Toasts } from './components/ui'
 import { SoundControls } from './components/SoundControls'
+import { DEMO } from './demo/config'
 import { findPlanRoom } from './data/homePlan'
 import { useStore, type Screen } from './store'
 
@@ -139,7 +140,7 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
         <Toasts toasts={toasts} onDismiss={dismissToast} />
-        <SoundControls />
+        {!DEMO && <SoundControls />}
         <div className="aged-vignette" />
         <div className="paper-grain-overlay" />
       </div>

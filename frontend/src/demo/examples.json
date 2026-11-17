@@ -1,0 +1,1158 @@
+{
+  "g-reception": [
+    {
+      "prompt": "Make it feel roomier: open up the middle of the room so it's easy to walk through.",
+      "blurb": "Moves both sofas, the table and the chair. Clears the blocked doors, and walkable floor goes from 56% to 64%.",
+      "progress": [
+        {
+          "t": 0.05,
+          "data": {
+            "stage": "validating",
+            "message": "Room geometry and existing findings checked."
+          }
+        },
+        {
+          "t": 0.1,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering your room request\u2026"
+          }
+        },
+        {
+          "t": 0.69,
+          "data": {
+            "stage": "interpreting",
+            "message": "Reading your room request\u2026"
+          }
+        },
+        {
+          "t": 1.21,
+          "data": {
+            "stage": "exploring",
+            "message": "Inspecting the room and its current findings\u2026"
+          }
+        },
+        {
+          "t": 1.21,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering furniture positions\u2026"
+          }
+        },
+        {
+          "t": 3.76,
+          "data": {
+            "stage": "evaluating",
+            "message": "Checking placement: fit, doors and access\u2026"
+          }
+        },
+        {
+          "t": 3.76,
+          "data": {
+            "stage": "evaluating",
+            "message": "Placement checked: 0 overlap(s), 0 outside-room item(s), 0 door finding(s), 0 access warning(s)."
+          }
+        },
+        {
+          "t": 3.76,
+          "data": {
+            "stage": "verifying",
+            "message": "Validating the final layout independently\u2026"
+          }
+        },
+        {
+          "t": 3.76,
+          "data": {
+            "stage": "exploring",
+            "message": "Working on the next step\u2026"
+          }
+        }
+      ],
+      "duration": 4.5,
+      "reply": {
+        "text": "Moved 4 item(s): Dark two-seat sofa, Brown two-seat sofa, White rectangular table, Brown office chair. Fixed 1 fit or door problem(s). Front-access issues: 1 before, 0 now. Reachable floor: 56% before, 64% now. I've proposed a new layout that opens up the middle of the room. Nothing changes until you apply it. - **Sofas:** Both sofas now sit against the right-hand wall. - **Table and chair:** The table and office chair are moved to a new spot. - **Door:** The sofa and chair that were blocking the entrance door no longer do. - **Walkable floor:** About 64% of the floor can now be reached, up from 56%. The fridge freezer, upright freezer and radiator are fixed, so they stay where they are.",
+        "poses": {
+          "g-reception-o01": {
+            "x": 3.04,
+            "z": 6.62,
+            "yaw_deg": 270.0
+          },
+          "g-reception-o02": {
+            "x": 3.04,
+            "z": 8.25,
+            "yaw_deg": 270.0
+          },
+          "g-reception-o03": {
+            "x": 1.5,
+            "z": 6.6,
+            "yaw_deg": 0.0
+          },
+          "g-reception-o04": {
+            "x": 1.5,
+            "z": 5.3,
+            "yaw_deg": 270.0
+          }
+        },
+        "additions": [],
+        "report": {
+          "scene_id": "g-reception",
+          "scene_revision": 0,
+          "overall_score": null,
+          "walkable_floor_ratio": 0.6387799046053595,
+          "glare_orientation_grounded": null,
+          "collisions": [],
+          "blocked_doors": [],
+          "out_of_bounds_item_ids": [],
+          "clearance_issues": [],
+          "glare_alerts": null,
+          "feng_shui": null
+        },
+        "proposal": {
+          "proposal_id": "0d3c5530a5ef43a48cb832c5465d6215",
+          "poses": {
+            "g-reception-o01": {
+              "x": 3.04,
+              "z": 6.62,
+              "yaw_deg": 270.0
+            },
+            "g-reception-o02": {
+              "x": 3.04,
+              "z": 8.25,
+              "yaw_deg": 270.0
+            },
+            "g-reception-o03": {
+              "x": 1.5,
+              "z": 6.6,
+              "yaw_deg": 0.0
+            },
+            "g-reception-o04": {
+              "x": 1.5,
+              "z": 5.3,
+              "yaw_deg": 270.0
+            }
+          },
+          "report": {
+            "scene_id": "g-reception",
+            "scene_revision": 0,
+            "overall_score": null,
+            "walkable_floor_ratio": 0.6387799046053595,
+            "glare_orientation_grounded": null,
+            "collisions": [],
+            "blocked_doors": [],
+            "out_of_bounds_item_ids": [],
+            "clearance_issues": [],
+            "glare_alerts": null,
+            "feng_shui": null
+          },
+          "improved": true,
+          "outcome": "completed",
+          "goal": "roomier",
+          "explanation": "Moved 4 item(s): Dark two-seat sofa, Brown two-seat sofa, White rectangular table, Brown office chair. Fixed 1 fit or door problem(s). Front-access issues: 1 before, 0 now. Reachable floor: 56% before, 64% now."
+        },
+        "products": null,
+        "removals": []
+      }
+    },
+    {
+      "prompt": "Add a desk from the library so I can work from home here.",
+      "blurb": "Picks a real IKEA desk from the Library and finds a spot that passes the collision and door checks.",
+      "progress": [
+        {
+          "t": 0.09,
+          "data": {
+            "stage": "validating",
+            "message": "Room geometry and existing findings checked."
+          }
+        },
+        {
+          "t": 0.21,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering your room request\u2026"
+          }
+        },
+        {
+          "t": 3.46,
+          "data": {
+            "stage": "evaluating",
+            "message": "Checking the new item and any moves needed to make room\u2026"
+          }
+        },
+        {
+          "t": 3.47,
+          "data": {
+            "stage": "verifying",
+            "message": "The new item and moved furniture passed placement checks."
+          }
+        },
+        {
+          "t": 3.47,
+          "data": {
+            "stage": "exploring",
+            "message": "Working on the next step\u2026"
+          }
+        }
+      ],
+      "duration": 4.5,
+      "reply": {
+        "text": "Proposed MICKE Desk - white 105x50 cm from Library with its existing mesh and dimensions 1.05 \u00d7 0.5 \u00d7 0.75 m (width \u00d7 depth \u00d7 height). The new item passes collision, boundary and door checks. 2 problem(s) the room already had are unchanged. Reachable floor: 56% before, 50% with it. I've added a MICKE desk (white, 105\u00d750 cm) against the north wall, at x 1.3, z 5.1. It clears the door swing, but I haven't checked that it leaves a walkable route through the room. The desk passes the collision, boundary and door checks. Reachable floor drops from 56% to 50%. I didn't add a chair, so you'd need to use the existing brown office chair or ask me to add one.",
+        "poses": {},
+        "additions": [
+          {
+            "id": "a902e44fc6574ba49e3baed94f810b79",
+            "name": "MICKE Desk - white 105x50 cm",
+            "category": "desk",
+            "source": "catalog_search",
+            "glb_url": "/catalog/ikea/assets/0df194362f710adec45f7a79661cfa5d66122b87ad47b4671d55b0e788e13eed.glb",
+            "product_url": "https://www.ikea.com/gb/en/p/micke-desk-white-80213074/",
+            "price_gbp": 79.0,
+            "bbox_m": {
+              "width": 1.05,
+              "height": 0.75,
+              "depth": 0.5
+            },
+            "pose": {
+              "x": 1.3,
+              "z": 5.1,
+              "yaw_deg": 0.0
+            },
+            "has_screen": false,
+            "requires_front_clear_m": 0.6,
+            "wall_flush_preferred": true,
+            "is_proxy": false,
+            "dimension_source": "catalog",
+            "correction_needed": [],
+            "collision_parts": [
+              {
+                "x": 0.0,
+                "z": 0.0,
+                "width": 1.05,
+                "depth": 0.5,
+                "y_min": 0.71,
+                "y_max": 0.75
+              },
+              {
+                "x": -0.505,
+                "z": 0.0,
+                "width": 0.04,
+                "depth": 0.5,
+                "y_min": 0.0,
+                "y_max": 0.71
+              },
+              {
+                "x": 0.505,
+                "z": 0.0,
+                "width": 0.04,
+                "depth": 0.5,
+                "y_min": 0.0,
+                "y_max": 0.71
+              }
+            ],
+            "collision_source": "template",
+            "is_fixed": false
+          }
+        ],
+        "report": {
+          "scene_id": "g-reception",
+          "scene_revision": 0,
+          "overall_score": null,
+          "walkable_floor_ratio": 0.49757338630401965,
+          "glare_orientation_grounded": null,
+          "collisions": [],
+          "blocked_doors": [
+            {
+              "door_id": "g-reception-opening-08",
+              "blocked_by_item_id": "g-reception-o01"
+            },
+            {
+              "door_id": "g-reception-opening-08",
+              "blocked_by_item_id": "g-reception-o04"
+            }
+          ],
+          "out_of_bounds_item_ids": [],
+          "clearance_issues": [
+            {
+              "item_id": "g-reception-o01",
+              "required_m": 0.5,
+              "actual_m": 0.18474499999999938,
+              "blocked_by_item_id": "g-reception-o03"
+            }
+          ],
+          "glare_alerts": null,
+          "feng_shui": {
+            "score": 100,
+            "sightlines": [
+              {
+                "from_item_id": "a902e44fc6574ba49e3baed94f810b79",
+                "to_door_id": "g-reception-opening-08",
+                "status": "command_position",
+                "reason": "From this desk you can see the door without facing it head-on."
+              }
+            ]
+          }
+        },
+        "proposal": null,
+        "products": null,
+        "removals": []
+      }
+    }
+  ],
+  "g-master": [
+    {
+      "prompt": "Improve the feng shui: put the bed in the command position.",
+      "blurb": "Turns the bed to face the door and moves the wardrobe out of the door swing. Feng Shui goes from 50 to 99.",
+      "progress": [
+        {
+          "t": 0.07,
+          "data": {
+            "stage": "validating",
+            "message": "Room geometry and existing findings checked."
+          }
+        },
+        {
+          "t": 0.15,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering your room request\u2026"
+          }
+        },
+        {
+          "t": 0.73,
+          "data": {
+            "stage": "interpreting",
+            "message": "Reading your room request\u2026"
+          }
+        },
+        {
+          "t": 1.27,
+          "data": {
+            "stage": "exploring",
+            "message": "Using the Feng Shui skill and full placement scores\u2026"
+          }
+        },
+        {
+          "t": 1.27,
+          "data": {
+            "stage": "exploring",
+            "message": "Inspecting the room and its current findings\u2026"
+          }
+        },
+        {
+          "t": 1.27,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering furniture positions\u2026"
+          }
+        },
+        {
+          "t": 3.89,
+          "data": {
+            "stage": "evaluating",
+            "message": "Checking placement: fit, doors and access\u2026"
+          }
+        },
+        {
+          "t": 3.89,
+          "data": {
+            "stage": "evaluating",
+            "message": "Placement checked: 0 overlap(s), 0 outside-room item(s), 0 door finding(s), 0 access warning(s)."
+          }
+        },
+        {
+          "t": 3.89,
+          "data": {
+            "stage": "verifying",
+            "message": "Validating the final layout independently\u2026"
+          }
+        },
+        {
+          "t": 3.9,
+          "data": {
+            "stage": "exploring",
+            "message": "Working on the next step\u2026"
+          }
+        }
+      ],
+      "duration": 4.5,
+      "reply": {
+        "text": "Moved 2 item(s): Black upholstered double bed, White two-door wardrobe. Fixed 1 fit or door problem(s). Reachable floor: 74% before, 75% now. Feng shui score (a traditional placement rule of thumb, not a prediction): 50 before, 99 now. Assessed rule coverage: 93%. I rearranged the room to put the bed in the command position. The Feng Shui score goes from 50 to 99. The bed now sits against the left wall, turned to face east. I also moved the wardrobe along the bottom wall, away from the door, which fixes the blocked door. Nothing is applied until you accept the proposal.",
+        "poses": {
+          "g-master-o01": {
+            "x": 1.22,
+            "z": 2.6,
+            "yaw_deg": 90.0
+          },
+          "g-master-o02": {
+            "x": 2.5,
+            "z": 4.42,
+            "yaw_deg": 180.0
+          }
+        },
+        "additions": [],
+        "report": {
+          "scene_id": "g-master",
+          "scene_revision": 0,
+          "overall_score": null,
+          "walkable_floor_ratio": 0.7485807932458269,
+          "glare_orientation_grounded": null,
+          "collisions": [],
+          "blocked_doors": [],
+          "out_of_bounds_item_ids": [],
+          "clearance_issues": [],
+          "glare_alerts": null,
+          "feng_shui": {
+            "score": 100,
+            "sightlines": [
+              {
+                "from_item_id": "g-master-o01",
+                "to_door_id": "g-master-opening-07",
+                "status": "command_position",
+                "reason": "From this bed you can see the door without facing it head-on."
+              }
+            ]
+          }
+        },
+        "proposal": {
+          "proposal_id": "a57268d12df34c6598f7760c5e5fc6a6",
+          "poses": {
+            "g-master-o01": {
+              "x": 1.22,
+              "z": 2.6,
+              "yaw_deg": 90.0
+            },
+            "g-master-o02": {
+              "x": 2.5,
+              "z": 4.42,
+              "yaw_deg": 180.0
+            }
+          },
+          "report": {
+            "scene_id": "g-master",
+            "scene_revision": 0,
+            "overall_score": null,
+            "walkable_floor_ratio": 0.7485807932458269,
+            "glare_orientation_grounded": null,
+            "collisions": [],
+            "blocked_doors": [],
+            "out_of_bounds_item_ids": [],
+            "clearance_issues": [],
+            "glare_alerts": null,
+            "feng_shui": {
+              "score": 100,
+              "sightlines": [
+                {
+                  "from_item_id": "g-master-o01",
+                  "to_door_id": "g-master-opening-07",
+                  "status": "command_position",
+                  "reason": "From this bed you can see the door without facing it head-on."
+                }
+              ]
+            }
+          },
+          "improved": true,
+          "outcome": "completed",
+          "goal": "feng_shui",
+          "explanation": "Moved 2 item(s): Black upholstered double bed, White two-door wardrobe. Fixed 1 fit or door problem(s). Reachable floor: 74% before, 75% now. Feng shui score (a traditional placement rule of thumb, not a prediction): 50 before, 99 now. Assessed rule coverage: 93%."
+        },
+        "products": null,
+        "removals": []
+      }
+    },
+    {
+      "prompt": "Unblock the door without moving the bed.",
+      "blurb": "Follows the constraint: only the wardrobe slides along the wall.",
+      "progress": [
+        {
+          "t": 0.05,
+          "data": {
+            "stage": "validating",
+            "message": "Room geometry and existing findings checked."
+          }
+        },
+        {
+          "t": 0.19,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering your room request\u2026"
+          }
+        },
+        {
+          "t": 0.97,
+          "data": {
+            "stage": "interpreting",
+            "message": "Reading your room request\u2026"
+          }
+        },
+        {
+          "t": 2.02,
+          "data": {
+            "stage": "exploring",
+            "message": "Inspecting the room and its current findings\u2026"
+          }
+        },
+        {
+          "t": 2.02,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering furniture positions\u2026"
+          }
+        },
+        {
+          "t": 3.89,
+          "data": {
+            "stage": "evaluating",
+            "message": "Checking placement: fit, doors and access\u2026"
+          }
+        },
+        {
+          "t": 3.89,
+          "data": {
+            "stage": "evaluating",
+            "message": "Placement checked: 0 overlap(s), 0 outside-room item(s), 0 door finding(s), 0 access warning(s)."
+          }
+        },
+        {
+          "t": 3.9,
+          "data": {
+            "stage": "verifying",
+            "message": "Validating the final layout independently\u2026"
+          }
+        },
+        {
+          "t": 3.9,
+          "data": {
+            "stage": "exploring",
+            "message": "Working on the next step\u2026"
+          }
+        }
+      ],
+      "duration": 4.5,
+      "reply": {
+        "text": "Moved 1 item(s): White two-door wardrobe. Fixed 1 fit or door problem(s). This follows your wording as the assistant understood it. We checked fit, doors and access, but cannot measure whether it matches your wish, so please judge it in the preview. I moved the wardrobe along the bottom wall, from x\u22483.6 to x\u22482.5, which clears the door swing. The bed hasn't moved. The change is only a proposal until you apply it, so check the preview first.",
+        "poses": {
+          "g-master-o02": {
+            "x": 2.5,
+            "z": 4.44,
+            "yaw_deg": 180.0
+          }
+        },
+        "additions": [],
+        "report": {
+          "scene_id": "g-master",
+          "scene_revision": 0,
+          "overall_score": null,
+          "walkable_floor_ratio": 0.7358081863929838,
+          "glare_orientation_grounded": null,
+          "collisions": [],
+          "blocked_doors": [],
+          "out_of_bounds_item_ids": [],
+          "clearance_issues": [],
+          "glare_alerts": null,
+          "feng_shui": {
+            "score": 100,
+            "sightlines": [
+              {
+                "from_item_id": "g-master-o01",
+                "to_door_id": "g-master-opening-07",
+                "status": "command_position",
+                "reason": "From this bed you can see the door without facing it head-on."
+              }
+            ]
+          }
+        },
+        "proposal": {
+          "proposal_id": "f6f33a866476443cadb1e776f0194085",
+          "poses": {
+            "g-master-o02": {
+              "x": 2.5,
+              "z": 4.44,
+              "yaw_deg": 180.0
+            }
+          },
+          "report": {
+            "scene_id": "g-master",
+            "scene_revision": 0,
+            "overall_score": null,
+            "walkable_floor_ratio": 0.7358081863929838,
+            "glare_orientation_grounded": null,
+            "collisions": [],
+            "blocked_doors": [],
+            "out_of_bounds_item_ids": [],
+            "clearance_issues": [],
+            "glare_alerts": null,
+            "feng_shui": {
+              "score": 100,
+              "sightlines": [
+                {
+                  "from_item_id": "g-master-o01",
+                  "to_door_id": "g-master-opening-07",
+                  "status": "command_position",
+                  "reason": "From this bed you can see the door without facing it head-on."
+                }
+              ]
+            }
+          },
+          "improved": true,
+          "outcome": "completed",
+          "goal": "custom",
+          "explanation": "Moved 1 item(s): White two-door wardrobe. Fixed 1 fit or door problem(s). This follows your wording as the assistant understood it. We checked fit, doors and access, but cannot measure whether it matches your wish, so please judge it in the preview."
+        },
+        "products": null,
+        "removals": []
+      }
+    },
+    {
+      "prompt": "Add a desk and a chair from the library.",
+      "blurb": "Adds two IKEA pieces in one proposal, with the chair pulled up to the desk.",
+      "progress": [
+        {
+          "t": 0.09,
+          "data": {
+            "stage": "validating",
+            "message": "Room geometry and existing findings checked."
+          }
+        },
+        {
+          "t": 0.2,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering your room request\u2026"
+          }
+        },
+        {
+          "t": 3.42,
+          "data": {
+            "stage": "evaluating",
+            "message": "Checking the new item and any moves needed to make room\u2026"
+          }
+        },
+        {
+          "t": 3.43,
+          "data": {
+            "stage": "verifying",
+            "message": "The new item and moved furniture passed placement checks."
+          }
+        },
+        {
+          "t": 3.43,
+          "data": {
+            "stage": "exploring",
+            "message": "Working on the next step\u2026"
+          }
+        }
+      ],
+      "duration": 4.5,
+      "reply": {
+        "text": "Proposed 2 steps as one change: 1. Add MICKE Desk - white 105x50 cm 1.05 \u00d7 0.5 \u00d7 0.75 m. 2. Add VIHALS Chair - white 0.45 \u00d7 0.47 \u00d7 0.79 m. Reachable floor: 74% before, 67% after. I've proposed a MICKE desk (105x50 cm) against the west wall, with a VIHALS chair pulled up to it facing the desk. Both passed the collision, boundary and door checks, but nothing is added until you apply the proposal. The wardrobe was already blocking the door before I started, and I left it where it is. The desk and chair cut the reachable floor from 74% to 67%.",
+        "poses": {},
+        "additions": [
+          {
+            "id": "ccc9b636c2bb41e89f63ef1db16d91fd",
+            "name": "MICKE Desk - white 105x50 cm",
+            "category": "desk",
+            "source": "catalog_search",
+            "glb_url": "/catalog/ikea/assets/0df194362f710adec45f7a79661cfa5d66122b87ad47b4671d55b0e788e13eed.glb",
+            "product_url": "https://www.ikea.com/gb/en/p/micke-desk-white-80213074/",
+            "price_gbp": 79.0,
+            "bbox_m": {
+              "width": 1.05,
+              "height": 0.75,
+              "depth": 0.5
+            },
+            "pose": {
+              "x": 0.42,
+              "z": 3.9,
+              "yaw_deg": 90.0
+            },
+            "has_screen": false,
+            "requires_front_clear_m": 0.6,
+            "wall_flush_preferred": true,
+            "is_proxy": false,
+            "dimension_source": "catalog",
+            "correction_needed": [],
+            "collision_parts": [
+              {
+                "x": 0.0,
+                "z": 0.0,
+                "width": 1.05,
+                "depth": 0.5,
+                "y_min": 0.71,
+                "y_max": 0.75
+              },
+              {
+                "x": -0.505,
+                "z": 0.0,
+                "width": 0.04,
+                "depth": 0.5,
+                "y_min": 0.0,
+                "y_max": 0.71
+              },
+              {
+                "x": 0.505,
+                "z": 0.0,
+                "width": 0.04,
+                "depth": 0.5,
+                "y_min": 0.0,
+                "y_max": 0.71
+              }
+            ],
+            "collision_source": "template",
+            "is_fixed": false
+          },
+          {
+            "id": "b0fcc081e0d54e038c7c4fae8cfafb89",
+            "name": "VIHALS Chair - white",
+            "category": "chair",
+            "source": "catalog_search",
+            "glb_url": "/catalog/ikea/assets/084378229fad6cdedc7c9f6d07a759640ca90fce72b7c480fce0b1172fe8a39d.glb",
+            "product_url": "https://www.ikea.com/gb/en/p/vihals-chair-white-50569103/",
+            "price_gbp": 20.0,
+            "bbox_m": {
+              "width": 0.45,
+              "height": 0.79,
+              "depth": 0.47
+            },
+            "pose": {
+              "x": 0.95,
+              "z": 3.9,
+              "yaw_deg": 270.0
+            },
+            "has_screen": false,
+            "requires_front_clear_m": 0.6,
+            "wall_flush_preferred": true,
+            "is_proxy": false,
+            "dimension_source": "catalog",
+            "correction_needed": [],
+            "collision_parts": [
+              {
+                "x": 0.0,
+                "z": 0.03525,
+                "width": 0.45,
+                "depth": 0.39949999999999997,
+                "y_min": 0.0,
+                "y_max": 0.395
+              },
+              {
+                "x": 0.0,
+                "z": -0.19974999999999998,
+                "width": 0.45,
+                "depth": 0.0705,
+                "y_min": 0.0,
+                "y_max": 0.79
+              }
+            ],
+            "collision_source": "template",
+            "is_fixed": false
+          }
+        ],
+        "report": {
+          "scene_id": "g-master",
+          "scene_revision": 0,
+          "overall_score": null,
+          "walkable_floor_ratio": 0.6673477125190174,
+          "glare_orientation_grounded": null,
+          "collisions": [],
+          "blocked_doors": [
+            {
+              "door_id": "g-master-opening-07",
+              "blocked_by_item_id": "g-master-o02"
+            }
+          ],
+          "out_of_bounds_item_ids": [],
+          "clearance_issues": [
+            {
+              "item_id": "g-master-o01",
+              "required_m": 0.5,
+              "actual_m": 0.42384599999999995,
+              "blocked_by_item_id": "ccc9b636c2bb41e89f63ef1db16d91fd"
+            }
+          ],
+          "glare_alerts": null,
+          "feng_shui": {
+            "score": 50,
+            "sightlines": [
+              {
+                "from_item_id": "ccc9b636c2bb41e89f63ef1db16d91fd",
+                "to_door_id": "g-master-opening-07",
+                "status": "back_to_door",
+                "reason": "Sitting at this desk puts the door behind you."
+              },
+              {
+                "from_item_id": "g-master-o01",
+                "to_door_id": "g-master-opening-07",
+                "status": "command_position",
+                "reason": "From this bed you can see the door without facing it head-on."
+              }
+            ]
+          }
+        },
+        "proposal": null,
+        "products": null,
+        "removals": []
+      }
+    }
+  ],
+  "f-bed4": [
+    {
+      "prompt": "Rearrange it for better feng shui.",
+      "blurb": "Moves the bed, wardrobe and bookcase. Clears the door, and walkable floor goes from 0% to 59%.",
+      "progress": [
+        {
+          "t": 0.0,
+          "data": {
+            "stage": "validating",
+            "message": "Room geometry and existing findings checked."
+          }
+        },
+        {
+          "t": 0.01,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering your room request\u2026"
+          }
+        },
+        {
+          "t": 0.5,
+          "data": {
+            "stage": "interpreting",
+            "message": "Reading your room request\u2026"
+          }
+        },
+        {
+          "t": 1.04,
+          "data": {
+            "stage": "exploring",
+            "message": "Using the Feng Shui skill and full placement scores\u2026"
+          }
+        },
+        {
+          "t": 1.04,
+          "data": {
+            "stage": "exploring",
+            "message": "Inspecting the room and its current findings\u2026"
+          }
+        },
+        {
+          "t": 1.04,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering furniture positions\u2026"
+          }
+        },
+        {
+          "t": 3.91,
+          "data": {
+            "stage": "evaluating",
+            "message": "Checking placement: fit, doors and access\u2026"
+          }
+        },
+        {
+          "t": 3.91,
+          "data": {
+            "stage": "evaluating",
+            "message": "Placement checked: 0 overlap(s), 0 outside-room item(s), 0 door finding(s), 1 access warning(s)."
+          }
+        },
+        {
+          "t": 3.91,
+          "data": {
+            "stage": "verifying",
+            "message": "Validating the final layout independently\u2026"
+          }
+        },
+        {
+          "t": 3.92,
+          "data": {
+            "stage": "exploring",
+            "message": "Working on the next step\u2026"
+          }
+        }
+      ],
+      "duration": 4.5,
+      "reply": {
+        "text": "Moved 3 item(s): Black upholstered double bed, Pine two-door wardrobe, White open bookcase. Fixed 1 fit or door problem(s). Front-access issues: 0 before, 1 now. Reachable floor: 0% before, 59% now. Feng shui score (a traditional placement rule of thumb, not a prediction): 50 before, 62 now. Assessed rule coverage: 96%. I've proposed a new layout that raises the feng shui score from 50 to 62. Nothing changes until you apply it. - **Bed:** moved to the left side of the room. - **Wardrobe:** moved to the back of the room. - **Bookcase:** moved to the right-hand wall, which also clears the door. - **Desk and chair:** left where they were, under the window. One front-access issue remains. Before the change there were none by that measure, and after it there is one.",
+        "poses": {
+          "f-bed4-o01": {
+            "x": 1.2,
+            "z": 3.2,
+            "yaw_deg": 90.0
+          },
+          "f-bed4-o02": {
+            "x": 2.0,
+            "z": 4.25,
+            "yaw_deg": 180.0
+          },
+          "f-bed4-o03": {
+            "x": 3.55,
+            "z": 2.6,
+            "yaw_deg": 270.0
+          }
+        },
+        "additions": [],
+        "report": {
+          "scene_id": "f-bed4",
+          "scene_revision": 0,
+          "overall_score": null,
+          "walkable_floor_ratio": 0.5905669739155045,
+          "glare_orientation_grounded": null,
+          "collisions": [],
+          "blocked_doors": [],
+          "out_of_bounds_item_ids": [],
+          "clearance_issues": [
+            {
+              "item_id": "f-bed4-o02",
+              "required_m": 0.5,
+              "actual_m": 0.06499999999999984,
+              "blocked_by_item_id": "f-bed4-o01"
+            }
+          ],
+          "glare_alerts": null,
+          "feng_shui": {
+            "score": 0,
+            "sightlines": [
+              {
+                "from_item_id": "f-bed4-o01",
+                "to_door_id": "f-bed4-opening-19",
+                "status": "coffin_alignment",
+                "reason": "The foot of this bed points straight at the door."
+              },
+              {
+                "from_item_id": "f-bed4-o04",
+                "to_door_id": "f-bed4-opening-19",
+                "status": "back_to_door",
+                "reason": "Sitting at this desk puts the door behind you."
+              }
+            ]
+          }
+        },
+        "proposal": {
+          "proposal_id": "e64b4a257c27432dbbae48d53691ebd6",
+          "poses": {
+            "f-bed4-o01": {
+              "x": 1.2,
+              "z": 3.2,
+              "yaw_deg": 90.0
+            },
+            "f-bed4-o02": {
+              "x": 2.0,
+              "z": 4.25,
+              "yaw_deg": 180.0
+            },
+            "f-bed4-o03": {
+              "x": 3.55,
+              "z": 2.6,
+              "yaw_deg": 270.0
+            }
+          },
+          "report": {
+            "scene_id": "f-bed4",
+            "scene_revision": 0,
+            "overall_score": null,
+            "walkable_floor_ratio": 0.5905669739155045,
+            "glare_orientation_grounded": null,
+            "collisions": [],
+            "blocked_doors": [],
+            "out_of_bounds_item_ids": [],
+            "clearance_issues": [
+              {
+                "item_id": "f-bed4-o02",
+                "required_m": 0.5,
+                "actual_m": 0.06499999999999984,
+                "blocked_by_item_id": "f-bed4-o01"
+              }
+            ],
+            "glare_alerts": null,
+            "feng_shui": {
+              "score": 0,
+              "sightlines": [
+                {
+                  "from_item_id": "f-bed4-o01",
+                  "to_door_id": "f-bed4-opening-19",
+                  "status": "coffin_alignment",
+                  "reason": "The foot of this bed points straight at the door."
+                },
+                {
+                  "from_item_id": "f-bed4-o04",
+                  "to_door_id": "f-bed4-opening-19",
+                  "status": "back_to_door",
+                  "reason": "Sitting at this desk puts the door behind you."
+                }
+              ]
+            }
+          },
+          "improved": true,
+          "outcome": "completed",
+          "goal": "feng_shui",
+          "explanation": "Moved 3 item(s): Black upholstered double bed, Pine two-door wardrobe, White open bookcase. Fixed 1 fit or door problem(s). Front-access issues: 0 before, 1 now. Reachable floor: 0% before, 59% now. Feng shui score (a traditional placement rule of thumb, not a prediction): 50 before, 62 now. Assessed rule coverage: 96%."
+        },
+        "products": null,
+        "removals": []
+      }
+    }
+  ],
+  "g-bed2": [
+    {
+      "prompt": "Unblock the door and fix the clearance problems.",
+      "blurb": "Moves three pieces, so the wardrobe doors and the drawers can open again. Fixes 3 access issues.",
+      "progress": [
+        {
+          "t": 0.01,
+          "data": {
+            "stage": "validating",
+            "message": "Room geometry and existing findings checked."
+          }
+        },
+        {
+          "t": 0.01,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering your room request\u2026"
+          }
+        },
+        {
+          "t": 0.32,
+          "data": {
+            "stage": "interpreting",
+            "message": "Reading your room request\u2026"
+          }
+        },
+        {
+          "t": 1.83,
+          "data": {
+            "stage": "exploring",
+            "message": "Inspecting the room and its current findings\u2026"
+          }
+        },
+        {
+          "t": 1.83,
+          "data": {
+            "stage": "exploring",
+            "message": "Considering furniture positions\u2026"
+          }
+        },
+        {
+          "t": 4.11,
+          "data": {
+            "stage": "evaluating",
+            "message": "Checking placement: fit, doors and access\u2026"
+          }
+        },
+        {
+          "t": 4.11,
+          "data": {
+            "stage": "evaluating",
+            "message": "Placement checked: 0 overlap(s), 0 outside-room item(s), 0 door finding(s), 0 access warning(s)."
+          }
+        },
+        {
+          "t": 4.11,
+          "data": {
+            "stage": "verifying",
+            "message": "Validating the final layout independently\u2026"
+          }
+        },
+        {
+          "t": 4.11,
+          "data": {
+            "stage": "exploring",
+            "message": "Working on the next step\u2026"
+          }
+        }
+      ],
+      "duration": 4.5,
+      "reply": {
+        "text": "Moved 3 item(s): Black upholstered double bed, Pine two-door wardrobe, Pine chest of drawers. Fixed 1 fit or door problem(s). Front-access issues: 3 before, 0 now. Reachable floor: 0% before, 47% now. I've proposed a new layout that moves the wardrobe out of the door's swing. It also moves the bed and the chest of drawers. The audit now finds no front-access problems, down from 3. Nothing is applied until you accept the proposal. The bed goes to the east side of the room. The wardrobe and the chest of drawers go along the west wall. 47% of the floor is now reachable, up from 0%.",
+        "poses": {
+          "g-bed2-o01": {
+            "x": 5.37,
+            "z": 10.39,
+            "yaw_deg": 270.0
+          },
+          "g-bed2-o02": {
+            "x": 3.4855,
+            "z": 10.9,
+            "yaw_deg": 90.0
+          },
+          "g-bed2-o03": {
+            "x": 3.42,
+            "z": 10.0,
+            "yaw_deg": 90.0
+          }
+        },
+        "additions": [],
+        "report": {
+          "scene_id": "g-bed2",
+          "scene_revision": 0,
+          "overall_score": null,
+          "walkable_floor_ratio": 0.4700515098815484,
+          "glare_orientation_grounded": null,
+          "collisions": [],
+          "blocked_doors": [],
+          "out_of_bounds_item_ids": [],
+          "clearance_issues": [],
+          "glare_alerts": null,
+          "feng_shui": {
+            "score": 100,
+            "sightlines": [
+              {
+                "from_item_id": "g-bed2-o01",
+                "to_door_id": "g-bed2-opening-11",
+                "status": "command_position",
+                "reason": "From this bed you can see the door without facing it head-on."
+              }
+            ]
+          }
+        },
+        "proposal": {
+          "proposal_id": "aa9ab1bbb7b04ce19444280ddc8a307c",
+          "poses": {
+            "g-bed2-o01": {
+              "x": 5.37,
+              "z": 10.39,
+              "yaw_deg": 270.0
+            },
+            "g-bed2-o02": {
+              "x": 3.4855,
+              "z": 10.9,
+              "yaw_deg": 90.0
+            },
+            "g-bed2-o03": {
+              "x": 3.42,
+              "z": 10.0,
+              "yaw_deg": 90.0
+            }
+          },
+          "report": {
+            "scene_id": "g-bed2",
+            "scene_revision": 0,
+            "overall_score": null,
+            "walkable_floor_ratio": 0.4700515098815484,
+            "glare_orientation_grounded": null,
+            "collisions": [],
+            "blocked_doors": [],
+            "out_of_bounds_item_ids": [],
+            "clearance_issues": [],
+            "glare_alerts": null,
+            "feng_shui": {
+              "score": 100,
+              "sightlines": [
+                {
+                  "from_item_id": "g-bed2-o01",
+                  "to_door_id": "g-bed2-opening-11",
+                  "status": "command_position",
+                  "reason": "From this bed you can see the door without facing it head-on."
+                }
+              ]
+            }
+          },
+          "improved": true,
+          "outcome": "completed",
+          "goal": "roomier",
+          "explanation": "Moved 3 item(s): Black upholstered double bed, Pine two-door wardrobe, Pine chest of drawers. Fixed 1 fit or door problem(s). Front-access issues: 3 before, 0 now. Reachable floor: 0% before, 47% now."
+        },
+        "products": null,
+        "removals": []
+      }
+    }
+  ]
+}

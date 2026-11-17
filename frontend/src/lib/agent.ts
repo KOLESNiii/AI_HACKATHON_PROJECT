@@ -205,7 +205,7 @@ function validAddition(value: unknown): value is FurnitureItem {
   )
 }
 
-function readStreamReply(
+export function readStreamReply(
   value: unknown,
   scene: RoomScene,
   baseline?: AuditReport,

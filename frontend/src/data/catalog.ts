@@ -1,5 +1,6 @@
 import type { FurnitureItem } from '../lib/contracts'
 import ikeaCatalog from './ikeaCatalog.json'
+import { withBase } from '../demo/config'
 
 /** Available, backend-served room models. Retain their dimensions and collision evidence. */
 export interface CatalogItem extends Omit<
@@ -13,7 +14,11 @@ export interface CatalogItem extends Omit<
 /** Offline IKEA snapshot shared with the spatial service. */
 export const catalog: CatalogItem[] = ikeaCatalog.map((entry) => {
   const { id: _id, is_fixed: _fixed, ...asset } = entry.asset
-  return { ...asset, sku: entry.sku, image_url: entry.image_url } as CatalogItem
+  return {
+    ...asset,
+    sku: entry.sku,
+    image_url: entry.image_url && withBase(entry.image_url),
+  } as CatalogItem
 })
 
 /** Agent additions must be exact copies of a real Library asset, except ID and pose. */

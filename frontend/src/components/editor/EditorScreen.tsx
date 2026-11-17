@@ -9,6 +9,8 @@ import { ExtractionProgress } from './ExtractionProgress'
 import { RoomView } from './RoomView'
 import { Sidebar } from './Sidebar'
 import { VersionTree } from './VersionTree'
+import { DEMO } from '../../demo/config'
+import { isStartingLayout } from '../../demo/examples'
 
 /** Room editor (edit mode): ink room view on the left, sidebar on the right. */
 export function EditorScreen() {
@@ -21,12 +23,14 @@ export function EditorScreen() {
   const warnings = extracting
     ? allWarnings.filter((w) => !isExtractingWarning(w))
     : allWarnings
+  const changed = useStore((s) => DEMO && !isStartingLayout(s.scene))
+  const resetRoom = useStore((s) => s.resetRoom)
   const controller = useRef<PlayControllerHandle>(null)
   useLiveAudit()
 
   return (
     <div className="flex h-full">
-      {!play && <VersionTree />}
+      {!play && !DEMO && <VersionTree />}
       <div className="relative min-w-0 flex-1">
         <RoomView controller={controller} />
         {roomLoading && (
@@ -49,14 +53,20 @@ export function EditorScreen() {
         )}
         {!play && !roomLoading && <ExtractionProgress />}
         {!play && (
-          <div className="absolute top-6 left-6">
+          <div className="absolute top-6 left-6 flex gap-2">
             <Button onClick={() => setScreen('floorplan')}>← Floor plan</Button>
+            {changed && (
+              <Button onClick={resetRoom} disabled={roomLoading}>
+                Reset room
+              </Button>
+            )}
           </div>
         )}
         {!play && (
           <div className="pointer-events-none absolute bottom-6 left-6 scroll-panel max-w-[calc(100%-300px)] px-3 py-2 text-[11px] text-ink-medium">
-            WASD pan · Q/E rotate 90° · ←/→ rotate 5° · Select furniture to
-            rotate
+            {DEMO
+              ? 'Drag furniture to move it · Q/E rotate 90° · ←/→ rotate 5° · WASD pan'
+              : 'WASD pan · Q/E rotate 90° · ←/→ rotate 5° · Select furniture to rotate'}
           </div>
         )}
         <PlayOverlay controller={controller} />

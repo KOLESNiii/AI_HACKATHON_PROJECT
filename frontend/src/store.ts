@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { DEMO } from './demo/config'
 import { playCue, type SoundCue } from './audio/cues'
 import type { CatalogItem } from './data/catalog'
 import { roomScene } from './data/demoHome'
@@ -180,6 +181,8 @@ interface State {
   selectVersion: (id: string) => void
   saveVersion: () => void
   discardChanges: () => void
+  /** Back to the room as it opened: its first version, edits and later versions dropped. */
+  resetRoom: () => void
   select: (id: string | null) => void
   setInteracting: (b: boolean) => void
   /** Live pose update while dragging/rotating; does not bump the revision. */
@@ -389,14 +392,15 @@ function pollRoom(session: number, loaded: RoomScene, attempt = 1) {
 }
 
 export const useStore = create<State>((set, get) => ({
-  screen: 'home',
+  // The demo opens straight onto the demo home's plan, with the reception room picked.
+  screen: DEMO ? 'floorplan' : 'home',
   home: demoPlan,
   uploadPlans: [],
   uploadVideos: [],
   planStatus: 'idle',
   planError: null,
   planAbort: null,
-  segmentId: null,
+  segmentId: DEMO ? 'g-reception' : null,
   scene: initialScene,
   ...initialRoomHistory(initialScene),
   roomSession: 0,
@@ -433,7 +437,7 @@ export const useStore = create<State>((set, get) => ({
   agentProgress: [],
   agentAbort: null,
   toasts: [],
-  library: loadLibrary(),
+  library: DEMO ? [] : loadLibrary(),
   adding: [],
   prefetch: {},
 
@@ -653,6 +657,19 @@ export const useStore = create<State>((set, get) => ({
       return
     const version = s.versions.find((v) => v.id === s.currentVersionId)
     if (version) set(restoreVersion(s, version))
+  },
+  resetRoom: () => {
+    const s = get()
+    if (
+      s.screen !== 'editor' ||
+      s.mode !== 'edit' ||
+      s.roomLoading ||
+      s.interacting
+    )
+      return
+    const first = s.versions[0]
+    set({ ...restoreVersion(s, first), versions: [first] })
+    playCue('select')
   },
   select: (selectedId) => {
     const s = get()

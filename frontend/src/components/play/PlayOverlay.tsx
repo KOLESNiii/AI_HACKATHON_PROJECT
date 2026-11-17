@@ -4,6 +4,7 @@ import { useStore } from '../../store'
 import { Button } from '../ui'
 import type { PlayControllerHandle } from './controls'
 import { LightingPanel } from './LightingPanel'
+import { DEMO } from '../../demo/config'
 
 export function PlayOverlay({
   controller,
@@ -38,7 +39,8 @@ export function PlayOverlay({
     return (
       <div className="pointer-events-none absolute inset-0 select-none">
         <div className="scroll-panel absolute top-6 left-6 px-3 py-2 text-[12px]">
-          WASD walk · Mouse look · L lighting · M mute · Esc return to editor
+          WASD walk · Mouse look · L lighting{DEMO ? '' : ' · M mute'} · Esc
+          return to editor
         </div>
         {lighting ? (
           <LightingPanel controller={controller} />

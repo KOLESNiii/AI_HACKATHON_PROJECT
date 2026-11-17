@@ -17,6 +17,9 @@ import { LayoutProposalCard } from './LayoutProposalCard'
 import { CatalogPreview } from './CatalogPreview'
 import { FengShuiScoreCard } from './FengShuiScoreCard'
 import { matchingFengShuiScore, type FengShuiScore } from '../../lib/fengShui'
+import { DEMO } from '../../demo/config'
+import { ExamplePrompts } from './ExamplePrompts'
+import { examplesFor } from '../../demo/examples'
 
 const tabs: [Tab, string][] = [
   ['chat', 'Chat'],
@@ -129,12 +132,25 @@ function ChatTab() {
 
   return (
     <>
-      <p className="mb-3 text-[11px] font-medium text-ink-mist">
-        Working from {versionLabel ?? 'this layout'}
-        {hasUnsavedChanges ? ' · Unsaved changes' : ''}
-      </p>
+      {!DEMO && (
+        <p className="mb-3 text-[11px] font-medium text-ink-mist">
+          Working from {versionLabel ?? 'this layout'}
+          {hasUnsavedChanges ? ' · Unsaved changes' : ''}
+        </p>
+      )}
       <div className="flex min-h-0 flex-1 flex-col gap-[18px] overflow-y-auto">
-        {chat.length === 0 && (
+        {chat.length === 0 &&
+          DEMO &&
+          examplesFor(scene.scene_id).length > 0 && (
+            <p className="text-[14px] leading-[23px] text-ink-medium">
+              Ask Refresh to redesign this room. It proposes a layout, checks
+              every move for collisions, blocked doors and access, and changes
+              nothing until you press{' '}
+              <strong className="font-semibold text-ink-primary">Accept</strong>
+              .
+            </p>
+          )}
+        {chat.length === 0 && !DEMO && (
           <p className="text-[14px] leading-[23px] text-ink-medium">
             Ask Refresh to redesign this room, e.g.{' '}
             <em className="font-serif text-[16px]">
@@ -189,24 +205,28 @@ function ChatTab() {
         {busy && <HarnessStatus updates={progress} onCancel={cancelAgent} />}
         <div ref={end} />
       </div>
-      <form onSubmit={submit} className="flex items-center gap-2 pt-4">
-        <input
-          aria-label="Room redesign request"
-          maxLength={MAX_LAYOUT_INSTRUCTION_CHARS}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Ask Refresh to redesign the room…"
-          className="min-w-0 flex-1 rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
-        />
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          disabled={busy || blocked || !text.trim()}
-        >
-          Send
-        </Button>
-      </form>
+      {DEMO ? (
+        <ExamplePrompts compact={chat.length > 0} />
+      ) : (
+        <form onSubmit={submit} className="flex items-center gap-2 pt-4">
+          <input
+            aria-label="Room redesign request"
+            maxLength={MAX_LAYOUT_INSTRUCTION_CHARS}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Ask Refresh to redesign the room…"
+            className="min-w-0 flex-1 rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
+          />
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            disabled={busy || blocked || !text.trim()}
+          >
+            Send
+          </Button>
+        </form>
+      )}
     </>
   )
 }
@@ -348,8 +368,12 @@ function StatsTab() {
         blocked={interacting || roomLoading}
         onRetry={() => void refreshScore()}
       />
-      <hr className="ink-divider" />
-      <FengShuiSection />
+      {!DEMO && (
+        <>
+          <hr className="ink-divider" />
+          <FengShuiSection />
+        </>
+      )}
     </div>
   )
 }
@@ -596,7 +620,7 @@ function LibraryTab() {
   const [notice, setNotice] = useState('')
   const request = useRef<AbortController | null>(null)
   useEffect(() => () => request.current?.abort(), [])
-  const isUrl = /^https?:\/\//i.test(query.trim())
+  const isUrl = !DEMO && /^https?:\/\//i.test(query.trim())
   const importLink = async () => {
     request.current?.abort()
     const controller = new AbortController()
@@ -664,8 +688,14 @@ function LibraryTab() {
         onKeyDown={(e) => {
           if (e.key === 'Enter' && isUrl && !busy) void importLink()
         }}
-        aria-label="Search furniture or paste a product link"
-        placeholder="Search furniture or paste a product link"
+        aria-label={
+          DEMO ? 'Search furniture' : 'Search furniture or paste a product link'
+        }
+        placeholder={
+          DEMO
+            ? 'Search 100 IKEA pieces'
+            : 'Search furniture or paste a product link'
+        }
         className="rounded-[2px] border border-hairline-ink bg-paper-card/65 px-3 py-[11px] text-[14px] placeholder:text-ink-mist focus:border-ink-medium focus:outline-none"
       />
       {isUrl && (

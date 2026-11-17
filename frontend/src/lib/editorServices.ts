@@ -1,3 +1,5 @@
+import { DEMO } from '../demo/config'
+import { engineReady } from '../demo/engine'
 import { useStore } from '../store'
 
 /** One editor lifetime, independent of the selected tab and play mode. */
@@ -20,8 +22,27 @@ export function connectEditorServices(debounceMs = 250): () => void {
     })
     if (!s.interacting && !s.roomLoading)
       timer = setTimeout(() => {
-        void useStore.getState().refreshAudit()
-        void useStore.getState().refreshFengShuiScore()
+        // The demo's engine downloads Python first; show the checks as running meanwhile.
+        if (DEMO)
+          useStore.setState({
+            auditStatus: 'loading',
+            fengShuiScoreStatus: 'loading',
+          })
+        void (DEMO ? engineReady : Promise.resolve()).then(
+          () => {
+            void useStore.getState().refreshAudit()
+            void useStore.getState().refreshFengShuiScore()
+          },
+          () =>
+            useStore.setState({
+              auditStatus: 'error',
+              auditError:
+                'The in-browser spatial engine could not load. Check your connection and reload.',
+              fengShuiScoreStatus: 'error',
+              fengShuiScoreError:
+                'The in-browser spatial engine could not load.',
+            }),
+        )
       }, debounceMs)
   }
   const unsubscribe = useStore.subscribe((s, before) => {
