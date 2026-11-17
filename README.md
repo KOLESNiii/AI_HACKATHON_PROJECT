@@ -3,6 +3,11 @@
 </p>
 
 <p align="center">
+  🥈 <strong>Runner-up (2nd place), Voice, Vision &amp; Generative Media track</strong><br>
+  <sub>Imperial AI Soc AI Hackathon 2026 · <a href="https://devpost.com/software/refresh-xgdq08">View the Devpost submission →</a></sub>
+</p>
+
+<p align="center">
   <em>Photograph a floor plan. Film a walkthrough on your phone.<br>
   Refresh turns them into a room you can rearrange in 3D, ask an agent to fix, and walk through yourself.</em>
 </p>
@@ -11,7 +16,8 @@
   <a href="#-see-it-in-motion">See it in motion</a> ·
   <a href="#-try-it-locally">Try it</a> ·
   <a href="#-under-the-hood">Under the hood</a> ·
-  <a href="docs/DEVELOPMENT.md">Developer guide</a>
+  <a href="docs/DEVELOPMENT.md">Developer guide</a> ·
+  <a href="https://devpost.com/software/refresh-xgdq08">Devpost</a>
 </p>
 
 <br>
@@ -165,6 +171,9 @@ furniture from video.
 ## ♡ &nbsp;Made by
 
 **Timofey Kolesnichenko · Leo Matteucci · Anita Kercso-Molnar · Dorian Turner**
+
+Built at the **Imperial AI Soc AI Hackathon 2026**, where Refresh won 🥈 **2nd place in the Voice, Vision & Generative Media track**.
+Read the full story on [Devpost](https://devpost.com/software/refresh-xgdq08).
 
 <sub>
 Ink landscapes generated with <a href="https://github.com/LingDong-/shan-shui-inf">shan-shui-inf</a> by Lingdong Huang (MIT).
